@@ -1,0 +1,27 @@
+
+[
+  { "insurers": ["Medicare", "Medicaid", "UHC", "BCBS", "Aetna", "Cigna", "Meridian"], "testName": "Strep Test", "cpt": "87880", "billToClient": true },
+  { "insurers": ["Medicare", "Medicaid", "UHC", "BCBS", "Aetna", "Cigna", "Meridian"], "testName": "Influenza", "cpt": "87804", "billToClient": true },
+  { "insurers": ["Medicare", "Medicaid", "UHC", "BCBS", "Aetna", "Cigna", "Meridian"], "testName": "Urinalysis (UA)", "cpt": "81003", "billToClient": true },
+  { "insurers": ["Medicare", "Medicaid", "UHC", "BCBS", "Aetna", "Cigna", "Meridian"], "testName": "HbA1c", "cpt": "83036", "billToClient": true },
+  { "insurers": ["Medicare", "Medicaid", "UHC", "BCBS", "Aetna", "Cigna", "Meridian"], "testName": "Pregnancy", "cpt": "81025", "billToClient": true },
+  { "insurers": ["Medicare", "Medicaid", "UHC", "BCBS", "Aetna", "Cigna", "Meridian"], "testName": "Mono Spot", "cpt": "86308", "billToClient": true },
+  { "insurers": ["BCBS", "Aetna", "Cigna", "Meridian"], "testName": "CBC", "cpt": "85025", "billToClient": true },
+  { "insurers": ["BCBS", "Aetna", "Cigna"], "testName": "CMP (Comprehensive)", "cpt": "80053", "billToClient": true },
+  { "insurers": ["Meridian"], "testName": "CMP (Comprehensive) QW", "cpt": "80053-QW", "billToClient": true },
+  { "insurers": ["BCBS", "Aetna", "Cigna"], "testName": "Lipid Panel", "cpt": "80061", "billToClient": true },
+  { "insurers": ["Meridian"], "testName": "Lipid Panel QW", "cpt": "80061-QW", "billToClient": true },
+  { "insurers": ["BCBS", "Aetna", "Cigna", "Meridian"], "testName": "General Health Panel", "cpt": "80050", "billToClient": true },
+  { "insurers": ["BCBS", "Aetna", "Cigna"], "testName": "TSH", "cpt": "84443", "billToClient": true },
+  { "insurers": ["Meridian"], "testName": "TSH QW", "cpt": "84443-QW", "billToClient": true },
+  { "insurers": ["BCBS", "Aetna", "Cigna", "Meridian"], "testName": "T3 Total", "cpt": "84481", "billToClient": true },
+  { "insurers": ["BCBS", "Aetna", "Cigna", "Meridian"], "testName": "T4 Free", "cpt": "84439", "billToClient": true },
+  { "insurers": ["BCBS", "Aetna", "Cigna", "Meridian"], "testName": "FSH", "cpt": "83001", "billToClient": true },
+  { "insurers": ["BCBS", "Aetna", "Cigna", "Meridian"], "testName": "PSA Total", "cpt": "84153", "billToClient": true },
+  { "insurers": ["BCBS", "Aetna", "Cigna", "Meridian"], "testName": "GGT", "cpt": "82977", "billToClient": true },
+  { "insurers": ["BCBS", "Aetna", "Cigna", "Meridian"], "testName": "Vitamin B12", "cpt": "82607", "billToClient": true },
+  { "insurers": ["BCBS", "Aetna", "Cigna", "Meridian"], "testName": "Folate", "cpt": "82746", "billToClient": true },
+  { "insurers": ["BCBS", "Aetna", "Cigna", "Meridian"], "testName": "Urine Culture", "cpt": "87086", "billToClient": true },
+  { "insurers": ["Meridian"], "testName": "Sedimentation Rate", "cpt": "85652", "billToClient": true },
+  { "insurers": ["Meridian"], "testName": "Vitamin D, 25-Hydroxy", "cpt": "82306", "billToClient": true }
+]

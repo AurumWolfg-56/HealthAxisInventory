@@ -1,0 +1,8 @@
+{
+  "name": "HealthAxis Inventory PWA",
+  "description": "A secure, multi-device inventory management system for clinical environments featuring AI scanning and responsive design.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

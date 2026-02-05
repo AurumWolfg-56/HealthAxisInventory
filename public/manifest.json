@@ -1,0 +1,17 @@
+{
+    "name": "HealthAxis Inventory",
+    "short_name": "HealthAxis",
+    "description": "Premium Medical Inventory Management System",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#14b8a6",
+    "icons": [
+        {
+            "src": "/logo.png",
+            "sizes": "1024x1024",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
