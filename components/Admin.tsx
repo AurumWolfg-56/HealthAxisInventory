@@ -56,12 +56,30 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
         fetchUsers();
     }, []);
 
+    const [error, setError] = useState<string | null>(null);
+
     const fetchUsers = async () => {
         setLoading(true);
+        setError(null);
+
+        // Safety timeout to prevent infinite spinner
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Request timed out')), 10000)
+        );
+
         try {
-            const { data: profiles, error: pError } = await supabase
+            const fetchPromise = supabase
                 .from('profiles')
                 .select('id, full_name, permissions, user_roles(role_id)');
+
+            const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
+
+            // Handle timeout or fetch result
+            if (!result || !result.data && !result.error && !result.count) {
+                // Try to discriminate result shape
+            }
+
+            const { data: profiles, error: pError } = result;
 
             if (pError) throw pError;
 
@@ -76,7 +94,7 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
             setUsers(formattedUsers);
         } catch (err: any) {
             console.error('Error fetching users:', err);
-            // alert('Error loading users: ' + (err.message || 'Unknown error'));
+            setError(err.message || 'Failed to load personnel list');
         } finally {
             setLoading(false);
         }
@@ -299,6 +317,14 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                                     <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                                         {loading ? (
                                             <tr><td colSpan={3} className="p-20 text-center"><i className="fa-solid fa-circle-notch fa-spin text-indigo-500 text-3xl"></i></td></tr>
+                                        ) : error ? (
+                                            <tr>
+                                                <td colSpan={3} className="p-20 text-center text-red-500 font-bold">
+                                                    <i className="fa-solid fa-triangle-exclamation mr-2"></i>
+                                                    {error}
+                                                    <button onClick={fetchUsers} className="block mx-auto mt-4 text-sm text-indigo-600 underline">Retry</button>
+                                                </td>
+                                            </tr>
                                         ) : filteredUsers.length === 0 ? (
                                             <tr><td colSpan={3} className="p-20 text-center text-slate-400 font-medium">No personnel found.</td></tr>
                                         ) : filteredUsers.map(u => (
