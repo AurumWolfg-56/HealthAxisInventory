@@ -243,7 +243,15 @@ export const translations = {
     btn_access: "Access System",
     login_footer: "Protected by HealthAxis Enterprise Security.",
     login_hero_title: "Next-Gen Inventory.",
-    login_hero_sub: "Secure, AI-powered inventory management for modern clinical environments."
+    login_hero_sub: "Secure, AI-powered inventory management for modern clinical environments.",
+
+    // Auth Forms
+    lbl_email: "Email Address",
+    lbl_password: "Password",
+    btn_login: "Sign In",
+    lbl_new_password: "New Password",
+    btn_save_password: "Save Password",
+    msg_login_success: "Login successful. Redirecting..."
   },
   es: {
     // Sidebar
@@ -484,6 +492,14 @@ export const translations = {
     btn_access: "Acceder al Sistema",
     login_footer: "Protegido por Seguridad Enterprise HealthAxis.",
     login_hero_title: "Inventario Next-Gen.",
-    login_hero_sub: "Gestión segura con IA para entornos clínicos modernos."
+    login_hero_sub: "Gestión segura con IA para entornos clínicos modernos.",
+
+    // Auth Forms
+    lbl_email: "Correo Electrónico",
+    lbl_password: "Contraseña",
+    btn_login: "Iniciar Sesión",
+    lbl_new_password: "Nueva Contraseña",
+    btn_save_password: "Guardar Contraseña",
+    msg_login_success: "Inicio de sesión exitoso. Redirigiendo..."
   }
 };

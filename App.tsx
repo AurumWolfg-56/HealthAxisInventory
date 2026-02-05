@@ -186,7 +186,7 @@ const App: React.FC = () => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             console.log('Auth Event:', event, session?.user?.email);
 
-            if (event === 'PASSWORD_RECOVERY' || isInviteLink) {
+            if (event === 'PASSWORD_RECOVERY') {
                 setNeedsPasswordUpdate(true);
             }
         });
