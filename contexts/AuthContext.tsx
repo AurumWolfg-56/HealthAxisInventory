@@ -132,9 +132,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         }
                         return baseUser; // No change
                     });
+                } else {
+                    // Fallback if no profile exists (e.g. invite flow not fully complete in DB trigger)
+                    console.warn('[AuthContext] No profile found in DB for user, using session fallback');
+                    setUser({
+                        id: sessionUser.id,
+                        email: sessionUser.email,
+                        username: sessionUser.email?.split('@')[0] || 'New User',
+                        role: UserRole.FRONT_DESK, // Default safe role
+                        permissions: []
+                    });
                 }
             } catch (e) {
                 console.error('[AuthContext] Error fetching profile:', e);
+                // Even on error, set basic user if we have session, so we don't hang
+                setUser({
+                    id: sessionUser.id,
+                    email: sessionUser.email,
+                    username: 'User (Offline)',
+                    role: UserRole.FRONT_DESK,
+                    permissions: []
+                });
             } finally {
                 setIsLoading(false);
             }

@@ -63,9 +63,9 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
     // --- 2. Calculate Aggregates ---
 
     // KPI Totals
-    const totalRevenue = filteredReports.reduce((acc, r) => acc + r.totals.revenue, 0);
-    const totalPatients = filteredReports.reduce((acc, r) => acc + r.totals.patients, 0);
-    const totalSpend = filteredOrders.reduce((acc, o) => acc + o.grandTotal, 0);
+    const totalRevenue = filteredReports.reduce((acc, r) => acc + (r.totals?.revenue || 0), 0);
+    const totalPatients = filteredReports.reduce((acc, r) => acc + (r.totals?.patients || 0), 0);
+    const totalSpend = filteredOrders.reduce((acc, o) => acc + (o.grandTotal || 0), 0);
     const netIncome = totalRevenue - totalSpend;
 
     // Clinical Stats
@@ -76,10 +76,10 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
 
     // Financial Breakdown
     const collectionsByMethod = filteredReports.reduce((acc, r) => {
-        acc.cash += r.financials.methods.cash;
-        acc.credit += r.financials.methods.credit;
-        acc.check += r.financials.methods.check;
-        acc.moneyOrder += (r.financials.methods as any).moneyOrder || 0; // Handle legacy type compatibility
+        acc.cash += r.financials?.methods?.cash || 0;
+        acc.credit += r.financials?.methods?.credit || 0;
+        acc.check += r.financials?.methods?.check || 0;
+        acc.moneyOrder += (r.financials?.methods as any)?.moneyOrder || 0; // Handle legacy type compatibility
         return acc;
     }, { cash: 0, credit: 0, check: 0, moneyOrder: 0 });
 
@@ -137,8 +137,8 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
 
     const revenueTrendData = filteredReports.map(r => ({
         date: new Date(r.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-        revenue: r.totals.revenue,
-        patients: r.totals.patients
+        revenue: r.totals?.revenue || 0,
+        patients: r.totals?.patients || 0
     }));
     // If data is dense (year view), maybe aggregate by month?
     // automated aggregation for cleanliness if > 31 points
