@@ -51,6 +51,7 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
     const [editingUser, setEditingUser] = useState<DBUser | null>(null);
     const [permissionMode, setPermissionMode] = useState<'role' | 'user'>('role');
     const [selectedUserForPerms, setSelectedUserForPerms] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     useEffect(() => {
         fetchUsers();
@@ -99,6 +100,14 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
             setLoading(false);
         }
     };
+
+    // Auto-dismiss success messages
+    useEffect(() => {
+        if (successMessage) {
+            const timer = setTimeout(() => setSuccessMessage(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [successMessage]);
 
     const handleInvite = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -175,11 +184,14 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
 
         const currentPerms = user.permissions || [];
         let newPerms: Permission[];
+        let actionType: 'added' | 'removed';
 
         if (currentPerms.includes(permission)) {
             newPerms = currentPerms.filter(p => p !== permission);
+            actionType = 'removed';
         } else {
             newPerms = [...currentPerms, permission];
+            actionType = 'added';
         }
 
         try {
@@ -189,8 +201,14 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                 .eq('id', userId);
 
             if (error) throw error;
+
+            // Show success feedback
+            const permLabel = permission.split('.').pop();
+            setSuccessMessage(`Permission "${permLabel}" ${actionType} for ${user.full_name}`);
+
             fetchUsers();
         } catch (err: any) {
+            console.error('Error updating permissions:', err);
             alert('Error updating permissions: ' + err.message);
         }
     };
@@ -260,6 +278,27 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
 
     return (
         <div className="space-y-8 pb-20 md:pb-10 animate-fade-in">
+            {/* Success Toast Notification */}
+            {successMessage && (
+                <div className="fixed top-6 right-6 z-50 animate-fade-in">
+                    <div className="bg-emerald-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 min-w-[300px]">
+                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                            <i className="fa-solid fa-check text-xl"></i>
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-bold text-sm">{successMessage}</p>
+                            <p className="text-xs opacity-90 mt-0.5">Changes applied successfully</p>
+                        </div>
+                        <button
+                            onClick={() => setSuccessMessage(null)}
+                            className="w-8 h-8 rounded-lg hover:bg-white/20 transition-colors flex items-center justify-center"
+                        >
+                            <i className="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-medical-500 flex items-center justify-center shadow-lg shadow-medical-500/20">

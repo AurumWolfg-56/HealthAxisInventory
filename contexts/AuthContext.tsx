@@ -93,6 +93,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }, [user]);
 
+    // Listen to Profile Permission Changes (Real-time)
+    useEffect(() => {
+        if (!user?.id) return;
+
+        // Subscribe to permission changes for this specific user
+        const channel = supabase
+            .channel(`profile_changes_${user.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'profiles',
+                    filter: `id=eq.${user.id}`
+                },
+                async (payload) => {
+                    console.log('[AuthContext] Permission change detected, refreshing profile...', payload);
+                    // Re-fetch the profile to get updated permissions
+                    try {
+                        const { data: profile, error } = await supabase
+                            .from('profiles')
+                            .select('id, full_name, user_roles(role_id), permissions')
+                            .eq('id', user.id)
+                            .single();
+
+                        if (profile && !error) {
+                            const dbRole = profile.user_roles?.[0]?.role_id as UserRole;
+                            const dbPermissions = profile.permissions as Permission[];
+                            const dbUsername = profile.full_name;
+
+                            setUser(prev => ({
+                                ...prev!,
+                                role: dbRole || prev!.role,
+                                permissions: dbPermissions || prev!.permissions,
+                                username: dbUsername || prev!.username
+                            }));
+                            console.log('[AuthContext] Profile updated with new permissions');
+                        }
+                    } catch (e) {
+                        console.error('[AuthContext] Error refreshing profile after permission change:', e);
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [user?.id]);
+
     // Listen to Supabase Auth Changes
     useEffect(() => {
         const fetchProfile = async (sessionUser: any) => {
@@ -189,12 +239,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const userRole = user.role?.toUpperCase();
         const isOwnerOrManager = userRole === 'OWNER' || userRole === 'MANAGER';
 
+        // OWNER and MANAGER always have all permissions
         if (isOwnerOrManager) return true;
 
+        // Priority 1: User-specific permission overrides
         if (user.permissions && user.permissions.length > 0) {
             return user.permissions.includes(permission);
         }
 
+        // Priority 2: Role-based permissions
         const config = roleConfigs.find(rc => rc.role.toUpperCase() === userRole);
         return config ? config.permissions.includes(permission) : false;
     };
