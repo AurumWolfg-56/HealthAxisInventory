@@ -69,16 +69,12 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
         );
 
         try {
+            // Fixed query syntax: use asterisk for embedded resources
             const fetchPromise = supabase
                 .from('profiles')
-                .select('id, full_name, permissions, user_roles(role_id)');
+                .select('id, full_name, permissions, user_roles!inner(role_id)');
 
             const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
-
-            // Handle timeout or fetch result
-            if (!result || !result.data && !result.error && !result.count) {
-                // Try to discriminate result shape
-            }
 
             const { data: profiles, error: pError } = result;
 
