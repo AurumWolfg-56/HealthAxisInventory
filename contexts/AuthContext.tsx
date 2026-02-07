@@ -288,8 +288,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const signOut = async () => {
-        await supabase.auth.signOut();
-        setUser(null);
+        try {
+            // Clean up all Realtime channels before signing out
+            await supabase.removeAllChannels();
+
+            // Sign out from Supabase
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                console.error('[AuthContext] Error signing out:', error);
+                throw error;
+            }
+
+            // Clear local user state
+            setUser(null);
+            setRoleConfigs([]);
+
+            console.log('[AuthContext] Successfully signed out');
+        } catch (err) {
+            console.error('[AuthContext] Logout error:', err);
+            // Force clear user state even on error
+            setUser(null);
+            setRoleConfigs([]);
+        }
     };
 
     const signIn = async (email: string) => {
