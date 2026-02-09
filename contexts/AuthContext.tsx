@@ -169,20 +169,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     const dbPermissions = profile.permissions as Permission[];
                     const dbUsername = profile.full_name;
 
-                    setUser(prev => {
-                        const baseUser = prev || { id: sessionUser.id, email: sessionUser.email, username: 'User', role: UserRole.FRONT_DESK, permissions: [] };
-                        // Only update if changed
-                        if (baseUser.role !== dbRole || JSON.stringify(baseUser.permissions) !== JSON.stringify(dbPermissions)) {
-                            return {
-                                ...baseUser,
-                                id: sessionUser.id,
-                                email: sessionUser.email || baseUser.email,
-                                role: dbRole || baseUser.role,
-                                permissions: dbPermissions || baseUser.permissions,
-                                username: dbUsername || baseUser.username
-                            };
-                        }
-                        return baseUser; // No change
+                    // CRITICAL: Always use database values, never fall back to cached localStorage
+                    // This ensures stale permissions don't persist after refresh
+                    setUser({
+                        id: sessionUser.id,
+                        email: sessionUser.email,
+                        username: dbUsername || sessionUser.email?.split('@')[0] || 'User',
+                        role: dbRole || UserRole.FRONT_DESK,
+                        // IMPORTANT: Use dbPermissions even if null/undefined - convert to empty array
+                        permissions: dbPermissions || []
                     });
                 } else {
                     // Fallback if no profile exists (e.g. invite flow not fully complete in DB trigger)
