@@ -562,7 +562,7 @@ const App: React.FC = () => {
                         </div>
                     )}
 
-                    {currentRoute === AppRoute.DASHBOARD && <Dashboard inventory={inventory} logs={logs} dailyReports={dailyReports} pettyCashHistory={pettyCashHistory} orders={orders} users={usersDb} t={t} onNavigate={handleNavigate} />}
+                    {currentRoute === AppRoute.DASHBOARD && hasPermission('dashboard.view') && <Dashboard inventory={inventory} logs={logs} dailyReports={dailyReports} pettyCashHistory={pettyCashHistory} orders={orders} users={usersDb} t={t} onNavigate={handleNavigate} />}
                     {currentRoute === AppRoute.INVENTORY && hasPermission('inventory.view') && (
                         <Inventory
                             items={inventory}

@@ -40,7 +40,7 @@ export const Layout: React.FC<LayoutProps> = ({
     };
 
     const NAV_ITEMS = [
-        { route: AppRoute.DASHBOARD, icon: "fa-chart-pie", label: t('nav_dashboard') },
+        { route: AppRoute.DASHBOARD, icon: "fa-chart-pie", label: t('nav_dashboard'), perm: 'dashboard.view' },
         { route: AppRoute.INVENTORY, icon: "fa-boxes-stacked", label: t('nav_inventory'), perm: 'inventory.view' },
         { route: AppRoute.ORDERS, icon: "fa-cart-shopping", label: t('nav_orders'), perm: 'orders.view' },
         { route: AppRoute.PRICELIST, icon: "fa-tags", label: t('nav_prices'), perm: 'prices.view' },
