@@ -291,11 +291,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const signOut = async () => {
         try {
+            console.log('[AuthContext] Starting sign out...');
+
             // Clean up all Realtime channels before signing out
             await supabase.removeAllChannels();
 
-            // Sign out from Supabase
-            const { error } = await supabase.auth.signOut();
+            // Clear local storage BEFORE signing out to prevent race conditions
+            localStorage.removeItem(STORAGE_KEYS.USER);
+
+            // Sign out from Supabase with explicit scope
+            const { error } = await supabase.auth.signOut({ scope: 'local' });
             if (error) {
                 console.error('[AuthContext] Error signing out:', error);
                 throw error;
@@ -306,11 +311,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setRoleConfigs([]);
 
             console.log('[AuthContext] Successfully signed out');
+
+            // Force reload to ensure clean state
+            window.location.href = '/';
         } catch (err) {
             console.error('[AuthContext] Logout error:', err);
-            // Force clear user state even on error
+            // Force clear everything even on error
+            localStorage.removeItem(STORAGE_KEYS.USER);
             setUser(null);
             setRoleConfigs([]);
+            // Still reload on error
+            window.location.href = '/';
         }
     };
 
