@@ -976,7 +976,7 @@ const App: React.FC = () => {
                         />
                     )}
                     {currentRoute === AppRoute.PETTY_CASH && hasPermission('finance.view') && <PettyCashLedger user={user} t={t} />}
-                    {currentRoute === AppRoute.VOICE_MEMOS && <VoiceMemos user={user} t={t} />}
+                    {currentRoute === AppRoute.VOICE_MEMOS && hasPermission('voice.dictate') && <VoiceMemos user={user} t={t} />}
                     {currentRoute === AppRoute.FORMS && hasPermission('forms.generate') && (
                         <Forms
                             templates={templates}

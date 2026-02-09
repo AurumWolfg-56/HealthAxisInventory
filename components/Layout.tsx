@@ -48,7 +48,7 @@ export const Layout: React.FC<LayoutProps> = ({
         { route: AppRoute.BILLING_WIZARD, icon: "fa-file-invoice-dollar", label: t('nav_billing'), perm: 'billing.view' },
         { route: AppRoute.MEDICAL_CODES, icon: "fa-list-ol", label: "Medical Codes", perm: 'codes.view' },
         { route: AppRoute.FORMS, icon: "fa-file-signature", label: "Forms", perm: 'forms.generate' },
-        { route: AppRoute.VOICE_MEMOS, icon: "fa-microphone-lines", label: t('nav_voice') },
+        { route: AppRoute.VOICE_MEMOS, icon: "fa-microphone-lines", label: t('nav_voice'), perm: 'voice.dictate' },
         { header: "Admin" },
         { route: AppRoute.ADMIN, icon: "fa-shield-halved", label: t('nav_admin'), perm: 'admin.access' },
         { route: AppRoute.REPORTS, icon: "fa-clipboard-list", label: t('nav_reports'), perm: 'reports.view' },
