@@ -125,13 +125,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             const dbPermissions = profile.permissions as Permission[];
                             const dbUsername = profile.full_name;
 
+                            // CRITICAL: Always use database values, never cached permissions
                             setUser(prev => ({
                                 ...prev!,
                                 role: dbRole || prev!.role,
-                                permissions: dbPermissions || prev!.permissions,
+                                permissions: dbPermissions || [],  // Force empty array if null, never use cache
                                 username: dbUsername || prev!.username
                             }));
-                            console.log('[AuthContext] Profile updated with new permissions');
+                            console.log('[AuthContext] Profile updated with fresh DB permissions:', dbPermissions || []);
                         }
                     } catch (e) {
                         console.error('[AuthContext] Error refreshing profile after permission change:', e);
