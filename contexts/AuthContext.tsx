@@ -30,7 +30,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return stored ? JSON.parse(stored) : null;
     });
 
-    const [roleConfigs, setRoleConfigs] = useState<RoleConfig[]>(INITIAL_ROLE_CONFIGS);
+    // CRITICAL FIX: Initialize with empty array to prevent using hardcoded permissions on page refresh
+    // Permissions will only be available after loading from database
+    const [roleConfigs, setRoleConfigs] = useState<RoleConfig[]>([]);
 
     const [isLoading, setIsLoading] = useState(true);
 
