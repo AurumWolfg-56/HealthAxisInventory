@@ -40,11 +40,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Initial Load: Fetch from DB or Seed
     useEffect(() => {
         const loadRoles = async () => {
+            console.log('[AuthContext] loadRoles() started');
             try {
                 // Check DB for existing configs
+                console.log('[AuthContext] Fetching role_permissions from DB...');
                 const { data: dbPerms, error } = await supabase
                     .from('role_permissions')
                     .select('role_id, permission_id');
+
+                console.log('[AuthContext] DB query result:', { dbPerms, error });
 
                 if (error) {
                     console.error('Error loading role permissions:', error);
@@ -82,12 +86,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     if (seedError) {
                         console.error('Error seeding roles:', seedError);
                     } else {
+                        console.log('[AuthContext] Seeded initial role configs');
                         setRoleConfigs(INITIAL_ROLE_CONFIGS);
                         setRoleConfigsLoaded(true);
                     }
                 }
             } catch (e) {
                 console.error('Auth load error:', e);
+            } finally {
+                console.log('[AuthContext] loadRoles() completed');
             }
         };
 
