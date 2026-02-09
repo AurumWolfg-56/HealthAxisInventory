@@ -33,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // CRITICAL FIX: Initialize with empty array to prevent using hardcoded permissions on page refresh
     // Permissions will only be available after loading from database
     const [roleConfigs, setRoleConfigs] = useState<RoleConfig[]>([]);
+    const [roleConfigsLoaded, setRoleConfigsLoaded] = useState(false);
 
     const [isLoading, setIsLoading] = useState(true);
 
@@ -62,7 +63,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         role: role as UserRole,
                         permissions: grouped[role]
                     }));
+                    console.log('[AuthContext] Loaded role configs from DB:', loadedConfigs);
                     setRoleConfigs(loadedConfigs);
+                    setRoleConfigsLoaded(true);
                 } else {
                     // Seed if empty
                     console.log('Seeding initial role permissions...');
@@ -76,7 +79,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         .from('role_permissions')
                         .insert(seedData);
 
-                    if (seedError) console.error('Error seeding roles:', seedError);
+                    if (seedError) {
+                        console.error('Error seeding roles:', seedError);
+                    } else {
+                        setRoleConfigs(INITIAL_ROLE_CONFIGS);
+                        setRoleConfigsLoaded(true);
+                    }
                 }
             } catch (e) {
                 console.error('Auth load error:', e);
@@ -85,6 +93,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         loadRoles();
     }, []);
+
+    // CRITICAL: Coordinate isLoading based on BOTH user session AND roleConfigs being ready
+    // This prevents race conditions where UI renders before permissions are available
+    useEffect(() => {
+        console.log('[AuthContext] Loading state check - user:', !!user, 'roleConfigsLoaded:', roleConfigsLoaded);
+
+        // Only stop loading if:
+        // 1. RoleConfigs are loaded from DB, AND
+        // 2. Either we have a user OR we've confirmed there's no session
+        if (roleConfigsLoaded) {
+            setIsLoading(false);
+            console.log('[AuthContext] Both user and roleConfigs ready, setting isLoading = false');
+        }
+    }, [user, roleConfigsLoaded]);
 
     // Persist User (and handle explicit clear)
     useEffect(() => {
@@ -202,16 +224,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     permissions: []
                 });
             } finally {
-                setIsLoading(false);
+                // CRITICAL: Only stop loading if roleConfigs are also ready
+                // This prevents race condition where UI renders before permissions are available
+                console.log('[AuthContext] fetchProfile complete. roleConfigsLoaded:', roleConfigsLoaded);
+                // We'll handle isLoading in a separate useEffect that waits for BOTH
             }
         };
 
         const initSession = async () => {
+            console.log('[AuthContext] Initializing session...');
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
+                console.log('[AuthContext] Session found, fetching profile...');
                 await fetchProfile(session.user);
             } else {
-                setIsLoading(false);
+                console.log('[AuthContext] No session found');
+                // Only set loading false if roleConfigs are also loaded
+                // This prevents race condition on refresh
+                if (roleConfigsLoaded) {
+                    setIsLoading(false);
+                }
             }
         };
 
@@ -232,7 +264,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Permission Logic
     const hasPermission = (permission: Permission): boolean => {
-        if (!user) return false;
+        if (!user) {
+            console.log('[hasPermission] No user, returning false');
+            return false;
+        }
 
         const userRole = user.role?.toUpperCase();
         const isOwnerOrManager = userRole === 'OWNER' || userRole === 'MANAGER';
@@ -242,12 +277,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Priority 1: User-specific permission overrides
         if (user.permissions && user.permissions.length > 0) {
-            return user.permissions.includes(permission);
+            const hasIt = user.permissions.includes(permission);
+            console.log(`[hasPermission] User-specific check for ${permission}: ${hasIt}`, user.permissions);
+            return hasIt;
         }
 
         // Priority 2: Role-based permissions
+        // CRITICAL: Wait for roleConfigs to load before checking
+        if (!roleConfigsLoaded) {
+            console.warn(`[hasPermission] RoleConfigs not loaded yet, denying ${permission}`);
+            return false;
+        }
+
         const config = roleConfigs.find(rc => rc.role.toUpperCase() === userRole);
-        return config ? config.permissions.includes(permission) : false;
+        const hasIt = config ? config.permissions.includes(permission) : false;
+        console.log(`[hasPermission] Role-based check for ${permission} (${userRole}): ${hasIt}`, config?.permissions);
+        return hasIt;
     };
 
     const updateRoleConfig = async (role: UserRole, permission: Permission) => {
