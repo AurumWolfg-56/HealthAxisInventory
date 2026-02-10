@@ -112,7 +112,7 @@ const mapToDb = (item: Partial<InventoryItem>) => {
 
 const App: React.FC = () => {
     // --- AUTH CONTEXT ---
-    const { user, hasPermission, roleConfigs, updateRoleConfig, signOut, updateUser } = useAuth();
+    const { user, hasPermission, roleConfigs, updateRoleConfig, signOut, updateUser, isLoading } = useAuth();
 
     // --- STATE ---
     // const [user, setUser] = useState<User | null>(() => loadState(STORAGE_KEYS.USER, null)); // Moved to Context
@@ -447,6 +447,17 @@ const App: React.FC = () => {
             addToast(`File read failed: ${e.message}`, 'error');
         }
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-[#0a0f18] text-indigo-600">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-lg font-medium text-gray-600 dark:text-gray-300 animate-pulse">Loading HealthAxis...</p>
+                </div>
+            </div>
+        );
+    }
 
     if (!user || needsPasswordUpdate) return (
         <>
