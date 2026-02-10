@@ -44,18 +44,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
                 // Check DB for existing configs
                 console.log('[AuthContext] Fetching role_permissions from DB...');
-                const { data: dbPerms, error } = await supabase
-                    .from('role_permissions')
-                    .select('role_id, permission_id');
+
+                // Create a timeout promise
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Request timed out')), 5000)
+                );
+
+                // Race the DB query against the timeout
+                const { data: dbPerms, error } = await Promise.race([
+                    supabase.from('role_permissions').select('role_id, permission_id'),
+                    timeoutPromise
+                ]) as any;
 
                 console.log('[AuthContext] DB query result:', { dbPerms, error });
 
                 if (error) {
-                    console.error('Error loading role permissions from DB, falling back to initial configs:', error);
-                    // Fallback to local config so the app still works!
-                    setRoleConfigs(INITIAL_ROLE_CONFIGS);
-                    setRoleConfigsLoaded(true);
-                    return;
+                    throw error; // Throw to catch block for unified fallback handling
                 }
 
                 if (dbPerms && dbPerms.length > 0) {
@@ -82,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             seedData.push({ role_id: config.role, permission_id: perm });
                         }
                     }
+                    // We don't timeout the seed, if it hangs it's less critical as we fallback anyway
                     const { error: seedError } = await supabase
                         .from('role_permissions')
                         .insert(seedData);
@@ -98,7 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     }
                 }
             } catch (e) {
-                console.error('Auth load error, using fallback:', e);
+                console.error('Auth load error or timeout, using fallback:', e);
                 setRoleConfigs(INITIAL_ROLE_CONFIGS);
                 setRoleConfigsLoaded(true);
             } finally {
