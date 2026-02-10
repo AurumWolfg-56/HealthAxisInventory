@@ -8,6 +8,7 @@ import { useInventory } from './contexts/InventoryContext';
 import { useAppData } from './contexts/AppDataContext';
 import { Layout } from './components/Layout';
 import { DailyReport } from './types/dailyReport';
+import { DailyReportService } from './services/DailyReportService';
 import Dashboard from './components/Dashboard';
 import Inventory from './components/Inventory';
 import Reports from './components/Reports';
@@ -216,15 +217,26 @@ const App: React.FC = () => {
                     return;
                 }
 
-                if (profiles) {
-                    const mappedUsers: User[] = profiles.map((p: any) => ({
-                        id: p.id,
-                        username: p.full_name || 'Unknown',
-                        role: p.user_roles?.[0]?.role_id || UserRole.FRONT_DESK,
-                        email: '', // Optional or N/A
-                        permissions: p.permissions
-                    }));
+                console.log('[Debug] Raw Profiles from DB:', profiles);
 
+                if (profiles) {
+                    const mappedUsers: User[] = profiles.map((p: any) => {
+                        const role = p.user_roles?.[0]?.role_id || UserRole.FRONT_DESK;
+                        // Debug log for each user's raw role data
+                        console.log(`[Debug] User ${p.full_name} (${p.id}):`, {
+                            rawRoles: p.user_roles,
+                            resolvedRole: role
+                        });
+                        return {
+                            id: p.id,
+                            username: p.full_name || 'Unknown',
+                            role: role,
+                            email: '', // Optional or N/A
+                            permissions: p.permissions
+                        };
+                    });
+
+                    console.log('[Debug] Final Mapped Users:', mappedUsers);
                     setUsersDb(mappedUsers);
                     localStorage.setItem(STORAGE_KEYS.USERS_DB, JSON.stringify(mappedUsers));
                 }
@@ -1039,11 +1051,20 @@ const App: React.FC = () => {
                             reports={dailyReports}
                             user={user}
                             onEditReport={(r) => { setEditingReport(r); setCurrentRoute(AppRoute.DAILY_CLOSE); }}
-                            onDeleteReport={(id) => {
+                            onDeleteReport={async (id) => {
                                 if (confirm('Are you sure you want to delete this report?')) {
-                                    setDailyReports(prev => prev.filter(r => r.id !== id));
-                                    addToast('Report deleted successfully', 'success');
-                                    addLog('DAILY_CLOSE', `Deleted report: ${id}`);
+                                    try {
+                                        const success = await DailyReportService.deleteReport(id);
+                                        if (success) {
+                                            setDailyReports(prev => prev.filter(r => r.id !== id));
+                                            addToast('Report deleted successfully', 'success');
+                                            addLog('DAILY_CLOSE', `Deleted report: ${id}`);
+                                        } else {
+                                            addToast('Failed to delete report from database', 'error');
+                                        }
+                                    } catch (e) {
+                                        addToast('Error deleting report', 'error');
+                                    }
                                 }
                             }}
                             onViewReport={(r) => setViewingReport(r)}

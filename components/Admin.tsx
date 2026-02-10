@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserRole, RoleConfig, Permission } from '../types';
 import { supabase } from '../src/lib/supabase';
+import { DataRepair } from './DataRepair';
 
 interface AdminProps {
     roleConfigs: RoleConfig[];
@@ -46,7 +47,7 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
     const [loading, setLoading] = useState(true);
     const [inviting, setInviting] = useState(false);
     const [inviteData, setInviteData] = useState({ email: '', full_name: '', role: UserRole.MA });
-    const [activeTab, setActiveTab] = useState<'users' | 'permissions'>('users');
+    const [activeTab, setActiveTab] = useState<'users' | 'permissions' | 'maintenance'>('users');
     const [searchQuery, setSearchQuery] = useState('');
     const [editingUser, setEditingUser] = useState<DBUser | null>(null);
     const [permissionMode, setPermissionMode] = useState<'role' | 'user'>('role');
@@ -321,6 +322,12 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                     >
                         <i className="fa-solid fa-shield-halved mr-2"></i> Permissions
                     </button>
+                    <button
+                        onClick={() => setActiveTab('maintenance')}
+                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'maintenance' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm scale-[1.02]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    >
+                        <i className="fa-solid fa-wrench mr-2"></i> Maintenance
+                    </button>
                 </div>
             </header>
 
@@ -548,7 +555,7 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
 
                     </div>
                 </div>
-            ) : (
+            ) : activeTab === 'permissions' ? (
                 <div className="space-y-8 animate-fade-in-up">
                     <div className="flex items-center gap-4 bg-indigo-50 dark:bg-indigo-900/10 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-900/30">
                         <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm">
@@ -696,6 +703,10 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                             </p>
                         </div>
                     </div>
+                </div>
+            ) : (
+                <div className="animate-fade-in">
+                    <DataRepair />
                 </div>
             )}
         </div>

@@ -5,6 +5,8 @@ import { User, UserRole } from '../types';
 import { DailyReportState, DailyReportAction, DailyReport } from '../types/dailyReport';
 import CalculatorModal from './CalculatorModal';
 import SmartDictationInput from '../src/components/dictation/SmartDictationInput';
+import { DailyReportService } from '../services/DailyReportService';
+import { formatDateForFilename, formatDate, formatDateTime } from '../utils/dateUtils';
 
 interface DailyCloseWizardProps {
     user: User;
@@ -53,10 +55,11 @@ export const DailyReportDocument: React.FC<{
             </div>
 
             {/* Meta Bar */}
+            {/* Meta Bar */}
             <div className="bg-slate-100 border-b border-slate-200 px-12 py-3 flex justify-between text-[10px] uppercase font-bold tracking-wide text-slate-500" style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #e2e8f0' }}>
-                <div>Date: <span className="text-slate-900 ml-2">{new Date(report.timestamp).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
+                <div>Date: <span className="text-slate-900 ml-2">{formatDate(report.timestamp)}</span></div>
                 <div>Author: <span className="text-slate-900 ml-2">{report.author}</span></div>
-                <div>Generated: <span className="text-slate-900 ml-2">{new Date().toLocaleTimeString()}</span></div>
+                <div>Generated: <span className="text-slate-900 ml-2">{formatDateTime(new Date())}</span></div>
             </div>
 
             <div className="p-12">
@@ -395,6 +398,35 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
         }
     };
 
+    const handleSignAndGenerate = async () => {
+        if (!isStatsBalanced) {
+            dispatch({ type: 'VALIDATE_AND_SET_ERRORS', payload: [`Patient mismatch: New (${state.stats.newPts}) + Est (${state.stats.estPts}) = ${totalStatsPatients}. Must equal Total Patients (${totalIns}).`] });
+            return;
+        }
+
+        // 1. Generate PDF
+        generatePDF();
+
+        // 2. Construct Report Object
+        const report = getTempReport();
+
+        // 3. Save to Supabase
+        try {
+            if (user?.id) {
+                await DailyReportService.createReport(report, user.id);
+            }
+        } catch (e) {
+            console.error("Failed to save report to DB", e);
+            // Continue to complete locally so user doesn't lose progress in UI, 
+            // but ideally we show an error. For now, logging.
+        }
+
+        // 4. Complete (Allow a slight delay for PDF download to start)
+        setTimeout(() => {
+            onCloseComplete(report);
+        }, 1500);
+    };
+
     const generatePDF = () => {
         if (!reportRef.current || !(window as any).html2pdf) {
             alert("PDF generator not ready. Please wait.");
@@ -403,7 +435,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
 
         const opt = {
             margin: 0,
-            filename: `DailyClose_${new Date().toISOString().split('T')[0]}.pdf`,
+            filename: `DailyClose_${formatDateForFilename(new Date())}.pdf`,
             image: { type: 'jpeg', quality: 1.0 },
             html2canvas: {
                 scale: 2,
@@ -419,24 +451,6 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
         };
 
         (window as any).html2pdf().set(opt).from(reportRef.current).save();
-    };
-
-    const handleSignAndGenerate = () => {
-        if (!isStatsBalanced) {
-            dispatch({ type: 'VALIDATE_AND_SET_ERRORS', payload: [`Patient mismatch: New (${state.stats.newPts}) + Est (${state.stats.estPts}) = ${totalStatsPatients}. Must equal Total Patients (${totalIns}).`] });
-            return;
-        }
-
-        // 1. Generate PDF
-        generatePDF();
-
-        // 2. Construct Report Object
-        const report = getTempReport();
-
-        // 3. Complete (Allow a slight delay for PDF download to start)
-        setTimeout(() => {
-            onCloseComplete(report);
-        }, 1500);
     };
 
     const openCalculator = (category: 'methods' | 'types', key: string, currentValue: number) => {

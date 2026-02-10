@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { FormTemplate, BillingRule, PettyCashTransaction, ActivityLog } from '../types';
 import { DailyReport } from '../types/dailyReport';
+import { DailyReportService } from '../services/DailyReportService';
 import { billingRules as INITIAL_BILLING_RULES } from '../data/billingRules';
 
 // Storage Keys
@@ -70,7 +71,29 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     // Persistence Effects
     useEffect(() => localStorage.setItem(STORAGE_KEYS.TEMPLATES, JSON.stringify(templates)), [templates]);
-    useEffect(() => localStorage.setItem(STORAGE_KEYS.DAILY_REPORTS, JSON.stringify(dailyReports)), [dailyReports]);
+    // Persistence Effects
+    useEffect(() => localStorage.setItem(STORAGE_KEYS.TEMPLATES, JSON.stringify(templates)), [templates]);
+
+    // Daily Reports - Now handled by Supabase, but we can keep local storage as a cache or remove it.
+    // Ideally we fetch from Supabase on mount.
+    // Let's remove the localStorage.setItem for dailyReports as it might overwrite with stale data if not careful, 
+    // or we keep it for offline? 
+    // Given the requirement is "permanently saved", Supabase is the source of truth.
+    // We will initialize dailyReports from Supabase in a separate effect.
+
+    useEffect(() => {
+        const fetchReports = async () => {
+            try {
+                const reports = await DailyReportService.getReports();
+                setDailyReports(reports);
+            } catch (error) {
+                console.error("Failed to fetch daily reports", error);
+            }
+        };
+        fetchReports();
+    }, []);
+
+    useEffect(() => localStorage.setItem(STORAGE_KEYS.BILLING_RULES, JSON.stringify(billingRules)), [billingRules]);
     useEffect(() => localStorage.setItem(STORAGE_KEYS.BILLING_RULES, JSON.stringify(billingRules)), [billingRules]);
     useEffect(() => localStorage.setItem(STORAGE_KEYS.PETTY_CASH, JSON.stringify(pettyCashHistory)), [pettyCashHistory]);
     useEffect(() => localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(logs)), [logs]);

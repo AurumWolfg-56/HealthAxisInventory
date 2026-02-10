@@ -287,13 +287,13 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                                 onClick={() => { setFormAction('DEPOSIT'); setIsFormOpen(true); setEditId(null); setAmount(''); setReason(''); }}
                                 className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-3.5 rounded-2xl shadow-lg hover:shadow-emerald-500/40 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
                             >
-                                <i className="fa-solid fa-plus"></i> Deposit
+                                <i className="fa-solid fa-plus"></i> Cash In
                             </button>
                             <button
                                 onClick={() => { setFormAction('WITHDRAWAL'); setIsFormOpen(true); setEditId(null); setAmount(''); setReason(''); }}
                                 className="bg-white/10 hover:bg-white/20 text-white font-bold py-3.5 rounded-2xl border border-white/10 backdrop-blur-md transition-all flex items-center justify-center gap-2"
                             >
-                                <i className="fa-solid fa-receipt"></i> Expense
+                                <i className="fa-solid fa-receipt"></i> Cash Out
                             </button>
                         </div>
                     </div>
@@ -437,8 +437,8 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                                     <tr>
                                         <th className="p-6 pl-8">User / Date</th>
                                         <th className="p-6">Description</th>
-                                        <th className="p-6 text-right">Debit</th>
-                                        <th className="p-6 text-right">Credit</th>
+                                        <th className="p-6 text-right">Cash Out</th>
+                                        <th className="p-6 text-right">Cash In</th>
                                         <th className="p-6 text-right pr-8">Balance</th>
                                         {canManage && <th className="p-6 text-center">Actions</th>}
                                     </tr>
@@ -538,8 +538,8 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                                 <th className="py-2">Date</th>
                                 <th className="py-2">User</th>
                                 <th className="py-2">Description</th>
-                                <th className="py-2 text-right">Debit</th>
-                                <th className="py-2 text-right">Credit</th>
+                                <th className="py-2 text-right">Cash Out</th>
+                                <th className="py-2 text-right">Cash In</th>
                                 <th className="py-2 text-right">Balance</th>
                             </tr>
                         </thead>
