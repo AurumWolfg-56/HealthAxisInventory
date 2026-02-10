@@ -15,20 +15,7 @@ const STORAGE_KEYS = {
 };
 
 // Initial Data
-const INITIAL_TEMPLATES: FormTemplate[] = [
-    {
-        id: 't1',
-        title: 'Authorization for Release of Medical Records',
-        slug: 'auth-release-records',
-        version: '1.0',
-        language: 'English',
-        status: 'Active',
-        useLetterhead: true,
-        content: `Patient Information...`,
-        variables: ['{{patientName}}', '{{patientDOB}}', '{{procedure}}', '{{doctorName}}'],
-        updatedAt: new Date().toISOString()
-    }
-];
+const INITIAL_TEMPLATES: FormTemplate[] = [];
 
 
 
