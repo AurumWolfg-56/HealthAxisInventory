@@ -31,20 +31,19 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       
-      - name: Deploy to Hostinger via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: ./
-          local-dir: ./dist/
-          dangerous-clean-slate: true
-          port: 21
-          timeout: 60000 
-          # Hostinger users like 'user.domain' are typically jailed to their public_html
-          # using relative path './' is safer than absolute path to avoid 550 errors
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+      - name: Deploy to Hostinger via LFTP
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lftp
+          # LFTP command explanation:
+          # -u: username,password
+          # -e: execute command
+          # set ssl:verify-certificate no: prevent self-signed cert errors
+          # set ftp:ssl-allow yes: allow SSL (try explicit FTPS)
+          # mirror -R: reverse mirror (upload)
+          # --parallel=2: use 2 parallel connections for speed
+          # --verbose: show progress
+          # --exclude-glob: exclude git and node_modules
+          lftp -c "set ssl:verify-certificate no; 
+                   open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }}; 
+                   mirror -R --verbose --parallel=2 --exclude-glob .git* --exclude-glob node_modules ./dist/ /home/u250946921/domains/healthaxisinventory.com/public_html/"
