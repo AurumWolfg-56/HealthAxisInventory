@@ -391,10 +391,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(null);
             setRoleConfigs([]);
 
-            console.log('[AuthContext] Successfully signed out, reloading...');
+            console.log('[AuthContext] Successfully signed out, performing hard reload...');
 
-            // Use replace instead of href to prevent back button issues
-            window.location.replace('/');
+            // Force hard reload to clear any memory/state
+            window.location.href = '/';
         } catch (err) {
             console.error('[AuthContext] Logout error:', err);
             // Force clear everything even on error
@@ -402,7 +402,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(null);
             setRoleConfigs([]);
             // Force reload
-            window.location.replace('/');
+            window.location.href = '/';
         }
     };
 
