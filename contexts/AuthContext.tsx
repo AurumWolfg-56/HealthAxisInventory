@@ -371,37 +371,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const signOut = async () => {
+        console.log('[AuthContext] Starting sign out (Fire-and-Forget mode)...');
+
         try {
-            console.log('[AuthContext] Starting sign out...');
-
-            // Clean up all Realtime channels before signing out
-            await supabase.removeAllChannels();
-
-            // Clear local storage BEFORE signing out to prevent race conditions
-            localStorage.clear(); // Clear ALL localStorage to ensure clean state
-
-            // Sign out from Supabase with explicit scope
-            const { error } = await supabase.auth.signOut({ scope: 'local' });
-            if (error) {
-                console.error('[AuthContext] Error signing out:', error);
-                // Don't throw, continue with cleanup
-            }
-
-            // Clear local user state
-            setUser(null);
-            setRoleConfigs([]);
-
-            console.log('[AuthContext] Successfully signed out, performing hard reload...');
-
-            // Force hard reload to clear any memory/state
-            window.location.href = '/';
-        } catch (err) {
-            console.error('[AuthContext] Logout error:', err);
-            // Force clear everything even on error
+            // 1. Immediate Local Cleanup (The most important part)
             localStorage.clear();
             setUser(null);
             setRoleConfigs([]);
-            // Force reload
+
+            // 2. Fire Supabase cleanup asynchronously (don't wait for it)
+            // We don't care if this succeeds or fails, or hangs. We are leaving.
+            supabase.removeAllChannels().catch(e => console.warn('Channel cleanup warning:', e));
+            supabase.auth.signOut({ scope: 'local' }).catch(e => console.warn('SignOut warning:', e));
+
+            console.log('[AuthContext] Local state cleared, forcing reload now.');
+
+            // 3. Immediate Hard Reload
+            window.location.href = '/';
+        } catch (err) {
+            console.error('[AuthContext] Logout critical error:', err);
+            // Emergency fallback
+            localStorage.clear();
             window.location.href = '/';
         }
     };
