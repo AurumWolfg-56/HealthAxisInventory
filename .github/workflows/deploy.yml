@@ -45,5 +45,8 @@ jobs:
           # --verbose: show progress
           # --exclude-glob: exclude git and node_modules
           lftp -c "set ssl:verify-certificate no; 
+                   set net:timeout 20; 
+                   set net:max-retries 3; 
+                   set net:reconnect-interval-base 5; 
                    open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }}; 
-                   mirror -R --verbose --parallel=2 --exclude-glob .git* --exclude-glob node_modules ./dist/ /home/u250946921/domains/healthaxisinventory.com/public_html/"
+                   mirror -R --verbose --exclude-glob .git* --exclude-glob node_modules ./dist/ /home/u250946921/domains/healthaxisinventory.com/public_html/"
