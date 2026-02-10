@@ -32,8 +32,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // CRITICAL FIX: Initialize with empty array to prevent using hardcoded permissions on page refresh
     // Permissions will only be available after loading from database
-    const [roleConfigs, setRoleConfigs] = useState<RoleConfig[]>([]);
-    const [roleConfigsLoaded, setRoleConfigsLoaded] = useState(false);
+    // CRITICAL FIX: Initialize from LocalStorage to prevent waiting on DB every refresh
+    const [roleConfigs, setRoleConfigs] = useState<RoleConfig[]>(() => {
+        try {
+            const stored = localStorage.getItem(STORAGE_KEYS.ROLES);
+            return stored ? JSON.parse(stored) : [];
+        } catch (e) {
+            return [];
+        }
+    });
+    // If we loaded from storage, we are "loaded", otherwise false
+    const [roleConfigsLoaded, setRoleConfigsLoaded] = useState(() => {
+        return !!localStorage.getItem(STORAGE_KEYS.ROLES);
+    });
 
     const [isLoading, setIsLoading] = useState(true);
 
@@ -111,8 +122,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         };
 
+        if (roleConfigs.length > 0) {
+            console.log('[AuthContext] Loaded role configs from LocalStorage Cache (Instant Start)');
+        }
         loadRoles();
     }, []);
+
+    // Persist Role Configs
+    useEffect(() => {
+        if (roleConfigs.length > 0) {
+            localStorage.setItem(STORAGE_KEYS.ROLES, JSON.stringify(roleConfigs));
+        }
+    }, [roleConfigs]);
 
     // CRITICAL: Coordinate isLoading based on BOTH user session AND roleConfigs being ready
     // This prevents race conditions where UI renders before permissions are available
