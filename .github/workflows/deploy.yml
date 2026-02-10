@@ -37,9 +37,13 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ./
           local-dir: ./dist/
-          server-dir: /home/u250946921/domains/healthaxisinventory.com/public_html/
-          dangerous-clean-slate: true # Remove old files before uploading
+          dangerous-clean-slate: true
+          port: 21
+          timeout: 60000 
+          # Hostinger users like 'user.domain' are typically jailed to their public_html
+          # using relative path './' is safer than absolute path to avoid 550 errors
           exclude: |
             **/.git*
             **/.git*/**
