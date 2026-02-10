@@ -51,7 +51,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.log('[AuthContext] DB query result:', { dbPerms, error });
 
                 if (error) {
-                    console.error('Error loading role permissions:', error);
+                    console.error('Error loading role permissions from DB, falling back to initial configs:', error);
+                    // Fallback to local config so the app still works!
+                    setRoleConfigs(INITIAL_ROLE_CONFIGS);
+                    setRoleConfigsLoaded(true);
                     return;
                 }
 
@@ -84,7 +87,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         .insert(seedData);
 
                     if (seedError) {
-                        console.error('Error seeding roles:', seedError);
+                        console.error('Error seeding roles, using local fallback:', seedError);
+                        // Fallback also if seeding fails
+                        setRoleConfigs(INITIAL_ROLE_CONFIGS);
+                        setRoleConfigsLoaded(true);
                     } else {
                         console.log('[AuthContext] Seeded initial role configs');
                         setRoleConfigs(INITIAL_ROLE_CONFIGS);
@@ -92,7 +98,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     }
                 }
             } catch (e) {
-                console.error('Auth load error:', e);
+                console.error('Auth load error, using fallback:', e);
+                setRoleConfigs(INITIAL_ROLE_CONFIGS);
+                setRoleConfigsLoaded(true);
             } finally {
                 console.log('[AuthContext] loadRoles() completed');
             }
