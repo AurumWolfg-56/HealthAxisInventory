@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, UserRole, Permission, RoleConfig } from '../types';
+import { User, UserRole, Permission, RoleConfig, INITIAL_ROLE_CONFIGS } from '../types';
 import { supabase } from '../src/lib/supabase';
-import { INITIAL_ROLE_CONFIGS } from '../App';
 
 // Define the shape of our Auth Context
 interface AuthContextType {
