@@ -9,6 +9,7 @@ import { useAppData } from './contexts/AppDataContext';
 import { Layout } from './components/Layout';
 import { DailyReport } from './types/dailyReport';
 import { DailyReportService } from './services/DailyReportService';
+import { TemplateService } from './services/TemplateService';
 import Dashboard from './components/Dashboard';
 import Inventory from './components/Inventory';
 import Reports from './components/Reports';
@@ -1001,21 +1002,40 @@ const App: React.FC = () => {
                             users={usersDb}
                             user={user}
                             hasPermission={hasPermission}
-                            onSaveTemplate={(template) => {
-                                if (templates.find(t => t.id === template.id)) {
-                                    setTemplates(prev => prev.map(t => t.id === template.id ? template : t));
-                                    addToast('Template updated', 'success');
-                                    addLog('TEMPLATE_UPDATED', `Updated template: ${template.title}`);
-                                } else {
-                                    setTemplates(prev => [template, ...prev]);
-                                    addToast('Template created', 'success');
-                                    addLog('TEMPLATE_CREATED', `Created template: ${template.title}`);
+                            onSaveTemplate={async (template) => {
+                                try {
+                                    if (templates.find(t => t.id === template.id)) {
+                                        const updated = await TemplateService.updateTemplate(template);
+                                        if (updated) {
+                                            setTemplates(prev => prev.map(t => t.id === template.id ? updated : t));
+                                            addToast('Template updated', 'success');
+                                            addLog('TEMPLATE_UPDATED', `Updated template: ${template.title}`);
+                                        }
+                                    } else {
+                                        const newTemplate = await TemplateService.createTemplate(template);
+                                        if (newTemplate) {
+                                            setTemplates(prev => [newTemplate, ...prev]);
+                                            addToast('Template created', 'success');
+                                            addLog('TEMPLATE_CREATED', `Created template: ${template.title}`);
+                                        }
+                                    }
+                                } catch (e) {
+                                    addToast('Failed to save template', 'error');
                                 }
                             }}
-                            onDeleteTemplate={(id) => {
-                                setTemplates(prev => prev.filter(t => t.id !== id));
-                                addToast('Template deleted', 'info');
-                                addLog('TEMPLATE_DELETED', `Deleted template ID: ${id}`);
+                            onDeleteTemplate={async (id) => {
+                                if (confirm('Delete template?')) {
+                                    try {
+                                        const success = await TemplateService.deleteTemplate(id);
+                                        if (success) {
+                                            setTemplates(prev => prev.filter(t => t.id !== id));
+                                            addToast('Template deleted', 'info');
+                                            addLog('TEMPLATE_DELETED', `Deleted template ID: ${id}`);
+                                        }
+                                    } catch (e) {
+                                        addToast('Failed to delete template', 'error');
+                                    }
+                                }
                             }}
                             onLogAction={addLog}
                             t={t}

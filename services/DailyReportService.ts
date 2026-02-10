@@ -69,5 +69,52 @@ export const DailyReportService = {
             console.error('Error deleting daily report:', error);
             return false;
         }
+    },
+
+    async restoreLocalReports(): Promise<number> {
+        try {
+            const localData = localStorage.getItem('ha_daily_reports');
+            if (!localData) return 0;
+
+            const reports: DailyReport[] = JSON.parse(localData);
+            if (!Array.isArray(reports) || reports.length === 0) return 0;
+
+            let restoredCount = 0;
+
+            for (const report of reports) {
+                // Check if exists
+                const { data } = await supabase.from('daily_reports').select('id').eq('id', report.id).single();
+                if (!data) {
+                    // Insert if missing
+                    // Using author name as user_id might fail if RLS requires UUID.
+                    // Actually, createReport takes (report, userId).
+                    // The local report might not have the original userId attached in a way we can trust for RLS if it's strictly UUID.
+                    // However, for recovery, we might need to fetch the current user's ID or leniently insert.
+                    // Let's assume the user running this IS the author or we use their ID.
+                    // But wait, createReport signature is (report, userId).
+                    // We'll updated createReport to handle this or just raw insert here.
+
+                    const { error } = await supabase.from('daily_reports').insert({
+                        id: report.id,
+                        user_id: (await supabase.auth.getUser()).data.user?.id, // Claim ownership by key restorer
+                        timestamp: report.timestamp,
+                        revenue: report.totals.revenue,
+                        cash: report.financials.methods.cash,
+                        card: report.financials.methods.credit,
+                        patients: report.totals.patients,
+                        notes: report.notes,
+                        is_balanced: report.isBalanced,
+                        author: report.author,
+                        data: report // Store full JSON
+                    });
+
+                    if (!error) restoredCount++;
+                }
+            }
+            return restoredCount;
+        } catch (e) {
+            console.error("Restoration failed", e);
+            return 0;
+        }
     }
 };

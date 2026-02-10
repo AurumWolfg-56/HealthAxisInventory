@@ -3,6 +3,7 @@ import React from 'react';
 import { User, UserRole } from '../types';
 import { Language } from '../utils/translations';
 import { supabase } from '../src/lib/supabase';
+import { DailyReportService } from '../services/DailyReportService';
 
 interface SettingsProps {
     user: User;
@@ -145,6 +146,32 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, isDarkMode, tog
                     </div>
 
                     <div className="h-px bg-gray-100 dark:bg-gray-800 my-4"></div>
+
+                    {/* Data Recovery */}
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-900/20 mb-4">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                    <i className="fa-solid fa-cloud-arrow-up"></i>
+                                </div>
+                                <div>
+                                    <p className="font-bold text-gray-900 dark:text-white">Recover Local Reports</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Upload legacy reports from this device to the database.</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={async () => {
+                                    if (window.confirm("Upload legacy local reports to the database? This will skip reports that already exist.")) {
+                                        const count = await DailyReportService.restoreLocalReports();
+                                        alert(`Recovery complete. ${count} reports uploaded.`);
+                                    }
+                                }}
+                                className="px-6 py-3 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 rounded-xl text-sm font-bold hover:shadow-lg hover:text-blue-700 transition-all whitespace-nowrap"
+                            >
+                                <i className="fa-solid fa-upload mr-2"></i> Recover
+                            </button>
+                        </div>
+                    </div>
 
                     {/* Danger Zone */}
                     <div className="p-4 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/20">
