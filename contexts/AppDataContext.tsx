@@ -1,22 +1,17 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { FormTemplate, BillingRule, PettyCashTransaction, ActivityLog } from '../types';
 import { DailyReport } from '../types/dailyReport';
 import { DailyReportService } from '../services/DailyReportService';
 import { TemplateService } from '../services/TemplateService';
 import { billingRules as INITIAL_BILLING_RULES } from '../data/billingRules';
-import { useAuth } from './AuthContext';
+import { supabase } from '../src/lib/supabase';
 
 // Storage Keys
 const STORAGE_KEYS = {
-    TEMPLATES: 'ha_templates',
-    DAILY_REPORTS: 'ha_daily_reports',
     BILLING_RULES: 'ha_billing_rules',
     PETTY_CASH: 'ha_petty_cash',
     LOGS: 'ha_logs',
 };
-
-// Initial Data
-const INITIAL_TEMPLATES: FormTemplate[] = [];
 
 // Helper
 function loadState<T>(key: string, fallback: T): T {
@@ -46,51 +41,97 @@ interface AppDataContextType {
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
 export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { user, isLoading: authLoading } = useAuth();
-
-    const [templates, setTemplates] = useState<FormTemplate[]>(() => loadState(STORAGE_KEYS.TEMPLATES, INITIAL_TEMPLATES));
-    const [dailyReports, setDailyReports] = useState<DailyReport[]>(() => loadState(STORAGE_KEYS.DAILY_REPORTS, []));
+    // State
+    const [templates, setTemplates] = useState<FormTemplate[]>([]);
+    const [dailyReports, setDailyReports] = useState<DailyReport[]>([]);
     const [billingRules, setBillingRules] = useState<BillingRule[]>(() => loadState(STORAGE_KEYS.BILLING_RULES, INITIAL_BILLING_RULES));
     const [pettyCashHistory, setPettyCashHistory] = useState<PettyCashTransaction[]>(() => loadState(STORAGE_KEYS.PETTY_CASH, []));
     const [logs, setLogs] = useState<ActivityLog[]>(() => {
         const loadedLogs = loadState(STORAGE_KEYS.LOGS, []);
-        // Rehydrate dates
         return loadedLogs.map((log: any) => ({ ...log, timestamp: new Date(log.timestamp) }));
     });
 
+    // Auth tracking — same proven pattern as InventoryContext
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const isFetchingRef = useRef(false);
+    const hasLoadedRef = useRef(false);
+
+    // Listen for auth state changes directly from Supabase (not useAuth)
     useEffect(() => {
-        // CRITICAL: Wait for Auth to be ready before fetching data
-        // Otherwise RLS policies will block the request (resulting in empty arrays)
-        if (authLoading || !user) {
-            console.log('[AppDataContext] Waiting for auth...', { authLoading, user: !!user });
-            return;
-        }
+        let mounted = true;
 
-        const fetchReports = async () => {
-            console.log('[AppDataContext] Auth ready, fetching reports...');
-            try {
-                const reports = await DailyReportService.getReports();
-                console.log('[AppDataContext] Reports fetched:', reports.length);
-                setDailyReports(reports);
-            } catch (error) {
-                console.error("Failed to fetch daily reports", error);
+        // Check initial session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (mounted) {
+                console.log('[AppDataContext] Initial session check:', !!session);
+                setIsAuthenticated(!!session);
             }
-        };
-        const fetchTemplates = async () => {
-            try {
-                const templates = await TemplateService.getTemplates();
-                if (templates.length > 0) {
-                    setTemplates(templates);
+        });
+
+        // Subscribe to auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (!mounted) return;
+            const hasSession = !!session;
+            console.log('[AppDataContext] Auth state change:', event, hasSession);
+            setIsAuthenticated(prev => {
+                if (prev !== hasSession) {
+                    if (!hasSession) {
+                        hasLoadedRef.current = false;
+                    }
+                    return hasSession;
                 }
-            } catch (error) {
-                console.error("Failed to fetch templates", error);
-            }
+                return prev;
+            });
+        });
+
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
         };
+    }, []);
 
-        fetchReports();
-        fetchTemplates();
-    }, [user, authLoading]);
+    // Fetch data when authenticated (only once per session)
+    const fetchData = useCallback(async () => {
+        if (isFetchingRef.current) return;
+        if (!isAuthenticated) return;
 
+        isFetchingRef.current = true;
+        console.log('[AppDataContext] Fetching data (authenticated)...');
+
+        try {
+            // Fetch reports and templates in parallel
+            const [reports, fetchedTemplates] = await Promise.allSettled([
+                DailyReportService.getReports(),
+                TemplateService.getTemplates()
+            ]);
+
+            if (reports.status === 'fulfilled') {
+                console.log('[AppDataContext] Reports fetched:', reports.value.length);
+                setDailyReports(reports.value);
+            } else {
+                console.error('[AppDataContext] Failed to fetch reports:', reports.reason);
+            }
+
+            if (fetchedTemplates.status === 'fulfilled' && fetchedTemplates.value.length > 0) {
+                console.log('[AppDataContext] Templates fetched:', fetchedTemplates.value.length);
+                setTemplates(fetchedTemplates.value);
+            }
+
+            hasLoadedRef.current = true;
+        } catch (error) {
+            console.error('[AppDataContext] Error during data load:', error);
+        } finally {
+            isFetchingRef.current = false;
+        }
+    }, [isAuthenticated]);
+
+    useEffect(() => {
+        if (isAuthenticated && !hasLoadedRef.current && !isFetchingRef.current) {
+            fetchData();
+        }
+    }, [isAuthenticated, fetchData]);
+
+    // LocalStorage persistence for non-Supabase data
     useEffect(() => localStorage.setItem(STORAGE_KEYS.BILLING_RULES, JSON.stringify(billingRules)), [billingRules]);
     useEffect(() => localStorage.setItem(STORAGE_KEYS.PETTY_CASH, JSON.stringify(pettyCashHistory)), [pettyCashHistory]);
     useEffect(() => localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(logs)), [logs]);
@@ -101,7 +142,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             timestamp: new Date(),
             action,
             details,
-            user: user?.username || 'System'
+            user: 'System'
         };
         setLogs(prev => [newLog, ...prev]);
     };
