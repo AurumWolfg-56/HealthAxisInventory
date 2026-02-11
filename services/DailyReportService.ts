@@ -8,6 +8,7 @@ export const DailyReportService = {
             // Transform to DB format
             // We include specific columns that match the table schema based on restoreLocalReports usage
             const dbPayload = {
+                id: report.id, // Critical: DB requires ID and lacks default gen_random_uuid() or similar
                 user_id: userId,
                 timestamp: report.timestamp,
                 author: report.author,
