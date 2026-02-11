@@ -415,16 +415,15 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
             if (user?.id) {
                 await DailyReportService.createReport(report, user.id);
             }
-        } catch (e) {
-            console.error("Failed to save report to DB", e);
-            // Continue to complete locally so user doesn't lose progress in UI, 
-            // but ideally we show an error. For now, logging.
-        }
 
-        // 4. Complete (Allow a slight delay for PDF download to start)
-        setTimeout(() => {
-            onCloseComplete(report);
-        }, 1500);
+            // 4. Complete (Allow a slight delay for PDF download to start)
+            setTimeout(() => {
+                onCloseComplete(report);
+            }, 1500);
+        } catch (e: any) {
+            console.error("Failed to save report to DB", e);
+            dispatch({ type: 'VALIDATE_AND_SET_ERRORS', payload: [`CRITICAL: Failed to save report to database. ${e.message || 'Check connection'}. Data has NOT been saved to history.`] });
+        }
     };
 
     const generatePDF = () => {

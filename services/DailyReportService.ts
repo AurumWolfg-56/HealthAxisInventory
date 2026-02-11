@@ -5,19 +5,21 @@ import { DailyReport } from '../types/dailyReport';
 export const DailyReportService = {
     async createReport(report: DailyReport, userId: string): Promise<DailyReport | null> {
         try {
-            // Transform to DB format if necessary, or store as JSONB
-            // Assuming 'daily_reports' table exists with a 'data' jsonb column or similar structure
-            // If the table structure matches the object, we can insert directly.
-            // Let's assume a 'daily_reports' table with: id, user_id, timestamp, data (jsonb), totals (jsonb)
-
-            // Adjusting to a likely schema based on other services:
+            // Transform to DB format
+            // We include specific columns that match the table schema based on restoreLocalReports usage
             const dbPayload = {
                 user_id: userId,
                 timestamp: report.timestamp,
                 author: report.author,
                 data: report, // Store full object in jsonb for flexibility
                 revenue: report.totals.revenue,
-                patient_count: report.totals.patients
+                patient_count: report.totals.patients,
+                // Add missing fields required by schema/restore logic
+                cash: report.financials.methods.cash,
+                card: report.financials.methods.credit,
+                is_balanced: report.isBalanced,
+                notes: report.notes,
+                patients: report.totals.patients // Redundant but safer if schema uses 'patients' vs 'patient_count'
             };
 
             const { data, error } = await supabase
@@ -28,11 +30,10 @@ export const DailyReportService = {
 
             if (error) throw error;
 
-            // Return the report with the generated ID (if DB assigns one, though frontend generates one too)
             return { ...report, id: data.id };
         } catch (error) {
             console.error('Error creating daily report:', error);
-            return null;
+            throw error; // Throw error so UI knows it failed
         }
     },
 
