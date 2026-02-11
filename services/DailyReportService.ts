@@ -4,42 +4,63 @@ import { DailyReport } from '../types/dailyReport';
 
 export const DailyReportService = {
     async createReport(report: DailyReport, userId: string): Promise<DailyReport | null> {
-        console.log('[DailyReportService] Creating report...', { id: report.id, userId });
+        console.log('[DailyReportService] Creating report via direct fetch...', { id: report.id, userId });
         try {
-            // Transform to DB format
-            // We include specific columns that match the table schema based on restoreLocalReports usage
+            // Get session for the access token
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                throw new Error('No active session — cannot create report');
+            }
+
             const dbPayload = {
-                id: report.id, // Critical: DB requires ID and lacks default gen_random_uuid() or similar
+                id: report.id,
                 user_id: userId,
                 timestamp: report.timestamp,
                 author: report.author,
-                data: report, // Store full object in jsonb for flexibility
+                data: report,
                 revenue: report.totals.revenue,
                 patient_count: report.totals.patients,
-                // Add missing fields required by schema/restore logic
                 cash: report.financials.methods.cash,
                 card: report.financials.methods.credit,
                 is_balanced: report.isBalanced,
                 notes: report.notes,
-                patients: report.totals.patients // Redundant but safer if schema uses 'patients' vs 'patient_count'
+                patients: report.totals.patients
             };
 
-            const { data, error } = await supabase
-                .from('daily_reports')
-                .insert([dbPayload])
-                .select()
-                .single();
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+            const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+            const url = `${supabaseUrl}/rest/v1/daily_reports`;
 
-            if (error) {
-                console.error('[DailyReportService] Supabase INSERT error:', error);
-                throw error;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'apikey': supabaseKey,
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Prefer': 'return=representation'
+                },
+                body: JSON.stringify(dbPayload),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error('[DailyReportService] PostgREST INSERT error:', response.status, errorBody);
+                throw new Error(`PostgREST error ${response.status}: ${errorBody}`);
             }
 
-            console.log('[DailyReportService] Report created successfully:', data);
-            return { ...report, id: data.id };
+            const data = await response.json();
+            console.log('[DailyReportService] ✅ Report created successfully via direct fetch:', data?.[0]?.id || report.id);
+            return { ...report, id: data?.[0]?.id || report.id };
         } catch (error) {
-            console.error('[DailyReportService] Error creating daily report:', error);
-            throw error; // Throw error so UI knows it failed
+            console.error('[DailyReportService] ❌ Error creating daily report:', error);
+            throw error;
         }
     },
 
@@ -109,16 +130,47 @@ export const DailyReportService = {
     },
 
     async deleteReport(id: string): Promise<boolean> {
+        console.log('[DailyReportService] Deleting report via direct fetch...', id);
         try {
-            const { error } = await supabase
-                .from('daily_reports')
-                .delete()
-                .eq('id', id);
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                console.error('[DailyReportService] ❌ No active session — cannot delete report');
+                return false;
+            }
 
-            if (error) throw error;
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+            const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+            const url = `${supabaseUrl}/rest/v1/daily_reports?id=eq.${encodeURIComponent(id)}`;
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'apikey': supabaseKey,
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json'
+                },
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error('[DailyReportService] PostgREST DELETE error:', response.status, errorBody);
+                return false;
+            }
+
+            console.log('[DailyReportService] ✅ Report deleted successfully:', id);
             return true;
-        } catch (error) {
-            console.error('Error deleting daily report:', error);
+        } catch (error: any) {
+            if (error.name === 'AbortError') {
+                console.error('[DailyReportService] ❌ Delete aborted after 15s timeout');
+            } else {
+                console.error('[DailyReportService] ❌ Error deleting daily report:', error);
+            }
             return false;
         }
     },
