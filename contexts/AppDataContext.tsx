@@ -51,85 +51,108 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return loadedLogs.map((log: any) => ({ ...log, timestamp: new Date(log.timestamp) }));
     });
 
-    // Auth tracking — same proven pattern as InventoryContext
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const isFetchingRef = useRef(false);
     const hasLoadedRef = useRef(false);
+    const mountedRef = useRef(true);
 
-    // Listen for auth state changes directly from Supabase (not useAuth)
-    useEffect(() => {
-        let mounted = true;
-
-        // Check initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (mounted) {
-                console.log('[AppDataContext] Initial session check:', !!session);
-                setIsAuthenticated(!!session);
-            }
-        });
-
-        // Subscribe to auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            if (!mounted) return;
-            const hasSession = !!session;
-            console.log('[AppDataContext] Auth state change:', event, hasSession);
-            setIsAuthenticated(prev => {
-                if (prev !== hasSession) {
-                    if (!hasSession) {
-                        hasLoadedRef.current = false;
-                    }
-                    return hasSession;
-                }
-                return prev;
-            });
-        });
-
-        return () => {
-            mounted = false;
-            subscription.unsubscribe();
-        };
-    }, []);
-
-    // Fetch data when authenticated (only once per session)
-    const fetchData = useCallback(async () => {
-        if (isFetchingRef.current) return;
-        if (!isAuthenticated) return;
+    // Core data fetching function with timeout protection
+    const fetchAllData = useCallback(async () => {
+        if (isFetchingRef.current || hasLoadedRef.current) {
+            console.log('[AppDataContext] Skipping fetch (fetching:', isFetchingRef.current, 'loaded:', hasLoadedRef.current, ')');
+            return;
+        }
 
         isFetchingRef.current = true;
-        console.log('[AppDataContext] Fetching data (authenticated)...');
+        console.log('[AppDataContext] === Starting data fetch ===');
 
         try {
-            // Fetch reports and templates in parallel
-            const [reports, fetchedTemplates] = await Promise.allSettled([
-                DailyReportService.getReports(),
-                TemplateService.getTemplates()
-            ]);
+            // Fetch reports with a 15-second timeout to prevent hanging
+            const reportsPromise = DailyReportService.getReports();
+            const timeoutPromise = new Promise<DailyReport[]>((_, reject) =>
+                setTimeout(() => reject(new Error('Reports fetch timed out after 15s')), 15000)
+            );
 
-            if (reports.status === 'fulfilled') {
-                console.log('[AppDataContext] Reports fetched:', reports.value.length);
-                setDailyReports(reports.value);
-            } else {
-                console.error('[AppDataContext] Failed to fetch reports:', reports.reason);
+            try {
+                const reports = await Promise.race([reportsPromise, timeoutPromise]);
+                if (mountedRef.current) {
+                    console.log('[AppDataContext] ✅ Reports fetched successfully:', reports.length);
+                    setDailyReports(reports);
+                }
+            } catch (reportError) {
+                console.error('[AppDataContext] ❌ Reports fetch failed:', reportError);
             }
 
-            if (fetchedTemplates.status === 'fulfilled' && fetchedTemplates.value.length > 0) {
-                console.log('[AppDataContext] Templates fetched:', fetchedTemplates.value.length);
-                setTemplates(fetchedTemplates.value);
+            // Fetch templates (non-critical, no timeout needed)
+            try {
+                const fetchedTemplates = await TemplateService.getTemplates();
+                if (mountedRef.current && fetchedTemplates.length > 0) {
+                    console.log('[AppDataContext] ✅ Templates fetched:', fetchedTemplates.length);
+                    setTemplates(fetchedTemplates);
+                }
+            } catch (templateError) {
+                console.error('[AppDataContext] ❌ Templates fetch failed:', templateError);
             }
 
             hasLoadedRef.current = true;
-        } catch (error) {
-            console.error('[AppDataContext] Error during data load:', error);
+            console.log('[AppDataContext] === Data fetch complete ===');
         } finally {
             isFetchingRef.current = false;
         }
-    }, [isAuthenticated]);
+    }, []);
 
+    // Single unified auth listener
     useEffect(() => {
-        if (isAuthenticated && !hasLoadedRef.current && !isFetchingRef.current) {
-            fetchData();
-        }
-    }, [isAuthenticated, fetchData]);
+        mountedRef.current = true;
+
+        const handleAuth = async () => {
+            // Step 1: Check for existing session (handles page refresh)
+            console.log('[AppDataContext] Checking for existing session...');
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (session && mountedRef.current) {
+                console.log('[AppDataContext] ✅ Session found on init, fetching data...');
+                // Small delay to let other contexts finish their auth queries first
+                // This prevents Supabase connection contention
+                await new Promise(resolve => setTimeout(resolve, 500));
+                if (mountedRef.current) {
+                    await fetchAllData();
+                }
+            } else {
+                console.log('[AppDataContext] No session found on init');
+            }
+        };
+
+        handleAuth();
+
+        // Step 2: Listen for future auth changes (handles login/logout)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('[AppDataContext] Auth event:', event, '| hasSession:', !!session);
+
+            if (event === 'SIGNED_IN' && session && !hasLoadedRef.current) {
+                console.log('[AppDataContext] SIGNED_IN detected, fetching data...');
+                // Small delay to avoid contention with other contexts
+                await new Promise(resolve => setTimeout(resolve, 500));
+                if (mountedRef.current) {
+                    await fetchAllData();
+                }
+            }
+
+            if (event === 'SIGNED_OUT') {
+                console.log('[AppDataContext] SIGNED_OUT — clearing data');
+                hasLoadedRef.current = false;
+                isFetchingRef.current = false;
+                if (mountedRef.current) {
+                    setDailyReports([]);
+                    setTemplates([]);
+                }
+            }
+        });
+
+        return () => {
+            mountedRef.current = false;
+            subscription.unsubscribe();
+        };
+    }, [fetchAllData]);
 
     // LocalStorage persistence for non-Supabase data
     useEffect(() => localStorage.setItem(STORAGE_KEYS.BILLING_RULES, JSON.stringify(billingRules)), [billingRules]);

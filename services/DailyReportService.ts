@@ -46,19 +46,34 @@ export const DailyReportService = {
     async getReports(): Promise<DailyReport[]> {
         console.log('[DailyReportService] Fetching reports...');
         try {
-            const { data, error } = await supabase
+            // Verify we have a valid session before querying
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                console.warn('[DailyReportService] ⚠️ No active session, cannot fetch reports');
+                return [];
+            }
+            console.log('[DailyReportService] Session verified, querying daily_reports...');
+
+            // Add timeout to prevent hanging queries
+            const queryPromise = supabase
                 .from('daily_reports')
                 .select('*')
                 .order('timestamp', { ascending: false });
+
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Query timed out after 15s')), 15000)
+            );
+
+            const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
 
             if (error) {
                 console.error('[DailyReportService] Supabase SELECT error:', error);
                 throw error;
             }
 
-            console.log(`[DailyReportService] Fetched ${data?.length} reports`);
+            console.log(`[DailyReportService] ✅ Fetched ${data?.length} reports`);
 
-            return data.map((row: any) => {
+            return (data || []).map((row: any) => {
                 if (!row.data) console.warn('[DailyReportService] Report row missing data column:', row.id);
                 return {
                     ...row.data, // Spread the JSONB data
@@ -67,7 +82,7 @@ export const DailyReportService = {
                 };
             });
         } catch (error) {
-            console.error('[DailyReportService] Error fetching daily reports:', error);
+            console.error('[DailyReportService] ❌ Error fetching daily reports:', error);
             return [];
         }
     },
