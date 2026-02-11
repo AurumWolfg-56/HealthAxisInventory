@@ -50,4 +50,4 @@ jobs:
                    set net:reconnect-interval-base 5; 
                    set ftp:ssl-allow yes;
                    open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }}; 
-                   mirror -R --verbose --no-perms --exclude-glob .git* --exclude-glob node_modules ./dist/ /home/u250946921/domains/healthaxisinventory.com/public_html/"
+                   mirror -R --verbose --no-perms --only-newer --parallel=5 --delete --exclude-glob .git* --exclude-glob node_modules ./dist/ /home/u250946921/domains/healthaxisinventory.com/public_html/"
