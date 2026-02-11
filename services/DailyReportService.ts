@@ -43,14 +43,18 @@ export const DailyReportService = {
         }
     },
 
-    async getReports(): Promise<DailyReport[]> {
-        console.log('[DailyReportService] Fetching reports...');
+    async getReports(accessToken?: string): Promise<DailyReport[]> {
+        console.log('[DailyReportService] Fetching reports...', accessToken ? '(token provided)' : '(will get session)');
         try {
-            // Get session for the access token
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                console.warn('[DailyReportService] ⚠️ No active session, cannot fetch reports');
-                return [];
+            // Use provided token OR fall back to getSession()
+            let token = accessToken;
+            if (!token) {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    console.warn('[DailyReportService] ⚠️ No active session, cannot fetch reports');
+                    return [];
+                }
+                token = session.access_token;
             }
 
             // BYPASS Supabase JS client — use direct fetch to PostgREST API
@@ -68,7 +72,7 @@ export const DailyReportService = {
                 method: 'GET',
                 headers: {
                     'apikey': supabaseKey,
-                    'Authorization': `Bearer ${session.access_token}`,
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },

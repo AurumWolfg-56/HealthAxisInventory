@@ -55,20 +55,20 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const hasLoadedRef = useRef(false);
     const mountedRef = useRef(true);
 
-    // Core data fetching function with timeout protection
-    const fetchAllData = useCallback(async () => {
+    // Core data fetching function — accepts token to avoid duplicate getSession() calls
+    const fetchAllData = useCallback(async (accessToken?: string) => {
         if (isFetchingRef.current || hasLoadedRef.current) {
             console.log('[AppDataContext] Skipping fetch (fetching:', isFetchingRef.current, 'loaded:', hasLoadedRef.current, ')');
             return;
         }
 
         isFetchingRef.current = true;
-        console.log('[AppDataContext] === Starting data fetch ===');
+        console.log('[AppDataContext] === Starting data fetch ===', accessToken ? '(token passed)' : '(no token)');
 
         try {
-            // DailyReportService handles its own session check + 15s timeout internally
+            // Pass the access token directly — avoids duplicate getSession() deadlock
             try {
-                const reports = await DailyReportService.getReports();
+                const reports = await DailyReportService.getReports(accessToken);
                 if (mountedRef.current) {
                     console.log('[AppDataContext] ✅ Reports fetched successfully:', reports.length);
                     setDailyReports(reports);
@@ -105,8 +105,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const { data: { session } } = await supabase.auth.getSession();
 
             if (session && mountedRef.current) {
-                console.log('[AppDataContext] ✅ Session found on init, fetching data...');
-                await fetchAllData();
+                console.log('[AppDataContext] ✅ Session found on init, passing token directly...');
+                await fetchAllData(session.access_token);
             } else {
                 console.log('[AppDataContext] No session found on init');
             }
@@ -119,9 +119,9 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             console.log('[AppDataContext] Auth event:', event, '| hasSession:', !!session);
 
             if (event === 'SIGNED_IN' && session && !hasLoadedRef.current) {
-                console.log('[AppDataContext] SIGNED_IN detected, fetching data...');
+                console.log('[AppDataContext] SIGNED_IN detected, passing token directly...');
                 if (mountedRef.current) {
-                    await fetchAllData();
+                    await fetchAllData(session.access_token);
                 }
             }
 
