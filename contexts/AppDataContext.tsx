@@ -4,6 +4,7 @@ import { DailyReport } from '../types/dailyReport';
 import { DailyReportService } from '../services/DailyReportService';
 import { TemplateService } from '../services/TemplateService';
 import { billingRules as INITIAL_BILLING_RULES } from '../data/billingRules';
+import { useAuth } from './AuthContext';
 
 // Storage Keys
 const STORAGE_KEYS = {
@@ -16,8 +17,6 @@ const STORAGE_KEYS = {
 
 // Initial Data
 const INITIAL_TEMPLATES: FormTemplate[] = [];
-
-
 
 // Helper
 function loadState<T>(key: string, fallback: T): T {
@@ -47,6 +46,8 @@ interface AppDataContextType {
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
 export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { user, isLoading: authLoading } = useAuth();
+
     const [templates, setTemplates] = useState<FormTemplate[]>(() => loadState(STORAGE_KEYS.TEMPLATES, INITIAL_TEMPLATES));
     const [dailyReports, setDailyReports] = useState<DailyReport[]>(() => loadState(STORAGE_KEYS.DAILY_REPORTS, []));
     const [billingRules, setBillingRules] = useState<BillingRule[]>(() => loadState(STORAGE_KEYS.BILLING_RULES, INITIAL_BILLING_RULES));
@@ -57,21 +58,19 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return loadedLogs.map((log: any) => ({ ...log, timestamp: new Date(log.timestamp) }));
     });
 
-    // Persistence Effects
-    // Templates and Reports are now Supabase-first. LocalStorage is deprecated for them.
-    // useEffect(() => localStorage.setItem(STORAGE_KEYS.TEMPLATES, JSON.stringify(templates)), [templates]);
-
-    // Daily Reports - Now handled by Supabase, but we can keep local storage as a cache or remove it.
-    // Ideally we fetch from Supabase on mount.
-    // Let's remove the localStorage.setItem for dailyReports as it might overwrite with stale data if not careful, 
-    // or we keep it for offline? 
-    // Given the requirement is "permanently saved", Supabase is the source of truth.
-    // We will initialize dailyReports from Supabase in a separate effect.
-
     useEffect(() => {
+        // CRITICAL: Wait for Auth to be ready before fetching data
+        // Otherwise RLS policies will block the request (resulting in empty arrays)
+        if (authLoading || !user) {
+            console.log('[AppDataContext] Waiting for auth...', { authLoading, user: !!user });
+            return;
+        }
+
         const fetchReports = async () => {
+            console.log('[AppDataContext] Auth ready, fetching reports...');
             try {
                 const reports = await DailyReportService.getReports();
+                console.log('[AppDataContext] Reports fetched:', reports.length);
                 setDailyReports(reports);
             } catch (error) {
                 console.error("Failed to fetch daily reports", error);
@@ -90,9 +89,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         fetchReports();
         fetchTemplates();
-    }, []);
+    }, [user, authLoading]);
 
-    useEffect(() => localStorage.setItem(STORAGE_KEYS.BILLING_RULES, JSON.stringify(billingRules)), [billingRules]);
     useEffect(() => localStorage.setItem(STORAGE_KEYS.BILLING_RULES, JSON.stringify(billingRules)), [billingRules]);
     useEffect(() => localStorage.setItem(STORAGE_KEYS.PETTY_CASH, JSON.stringify(pettyCashHistory)), [pettyCashHistory]);
     useEffect(() => localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(logs)), [logs]);
@@ -103,11 +101,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             timestamp: new Date(),
             action,
             details,
-            user: 'current-user' // Updated by component usage if needed, or we consume AuthContext here.
-            // Note: Since AuthContext is separate, we might just store strict logs here. 
-            // Ideally addLog should take userId, but legacy signature was (action, details).
-            // We'll keep it simple for now and let components pass userId if they update logs directly, 
-            // or we update this signature. App.tsx used `user?.username || 'System'`.
+            user: user?.username || 'System'
         };
         setLogs(prev => [newLog, ...prev]);
     };
