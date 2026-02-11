@@ -6,7 +6,7 @@ export const TemplateService = {
         const { data, error } = await supabase
             .from('form_templates')
             .select('*')
-            .order('updatedAt', { ascending: false });
+            .order('updated_at', { ascending: false });
 
         if (error) {
             console.error("Error fetching templates:", error);

@@ -1,5 +1,5 @@
 // IMPORTANT: Increment this version whenever you deploy new code to force cache refresh
-const CACHE_VERSION = 'healthaxis-v3-20260209-1707';
+const CACHE_VERSION = 'healthaxis-v3-fixed-persistence';
 const ASSETS_TO_CACHE = [
     '/logo.png',
     '/manifest.json'

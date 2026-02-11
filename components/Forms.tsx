@@ -608,6 +608,20 @@ I, **{{patientName}}**, hereby authorize...
             )}
 
 
+
+            {/* HIDDEN PRINT CONTAINER FOR PDF GENERATION */}
+            <div style={{ position: 'absolute', left: '-9999px', top: 0, width: '215.9mm' }}>
+                {selectedTemplateId && (
+                    <PrintLayout
+                        template={getSelectedTemplate()}
+                        content={getProcessedContent()}
+                        details={getDetails()}
+                        refProp={printRef}
+                        isPreview={false}
+                    />
+                )}
+            </div>
+
         </div>
     );
 };
