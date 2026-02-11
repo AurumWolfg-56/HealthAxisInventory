@@ -4,6 +4,7 @@ import { DailyReport } from '../types/dailyReport';
 
 export const DailyReportService = {
     async createReport(report: DailyReport, userId: string): Promise<DailyReport | null> {
+        console.log('[DailyReportService] Creating report...', { id: report.id, userId });
         try {
             // Transform to DB format
             // We include specific columns that match the table schema based on restoreLocalReports usage
@@ -29,31 +30,44 @@ export const DailyReportService = {
                 .select()
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                console.error('[DailyReportService] Supabase INSERT error:', error);
+                throw error;
+            }
 
+            console.log('[DailyReportService] Report created successfully:', data);
             return { ...report, id: data.id };
         } catch (error) {
-            console.error('Error creating daily report:', error);
+            console.error('[DailyReportService] Error creating daily report:', error);
             throw error; // Throw error so UI knows it failed
         }
     },
 
     async getReports(): Promise<DailyReport[]> {
+        console.log('[DailyReportService] Fetching reports...');
         try {
             const { data, error } = await supabase
                 .from('daily_reports')
                 .select('*')
                 .order('timestamp', { ascending: false });
 
-            if (error) throw error;
+            if (error) {
+                console.error('[DailyReportService] Supabase SELECT error:', error);
+                throw error;
+            }
 
-            return data.map((row: any) => ({
-                ...row.data, // Spread the JSONB data
-                id: row.id, // Ensure DB ID is used
-                timestamp: row.timestamp // Ensure DB timestamp is used
-            }));
+            console.log(`[DailyReportService] Fetched ${data?.length} reports`);
+
+            return data.map((row: any) => {
+                if (!row.data) console.warn('[DailyReportService] Report row missing data column:', row.id);
+                return {
+                    ...row.data, // Spread the JSONB data
+                    id: row.id, // Ensure DB ID is used
+                    timestamp: row.timestamp // Ensure DB timestamp is used
+                };
+            });
         } catch (error) {
-            console.error('Error fetching daily reports:', error);
+            console.error('[DailyReportService] Error fetching daily reports:', error);
             return [];
         }
     },
