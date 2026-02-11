@@ -46,43 +46,60 @@ export const DailyReportService = {
     async getReports(): Promise<DailyReport[]> {
         console.log('[DailyReportService] Fetching reports...');
         try {
-            // Verify we have a valid session before querying
+            // Get session for the access token
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
                 console.warn('[DailyReportService] ⚠️ No active session, cannot fetch reports');
                 return [];
             }
-            console.log('[DailyReportService] Session verified, querying daily_reports...');
 
-            // Add timeout to prevent hanging queries
-            const queryPromise = supabase
-                .from('daily_reports')
-                .select('*')
-                .order('timestamp', { ascending: false });
+            // BYPASS Supabase JS client — use direct fetch to PostgREST API
+            // The JS client's .from().select() deadlocks when multiple contexts
+            // call getSession() and query simultaneously on page refresh.
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+            const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+            const url = `${supabaseUrl}/rest/v1/daily_reports?select=*&order=timestamp.desc`;
 
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Query timed out after 15s')), 15000)
-            );
+            console.log('[DailyReportService] Direct fetch to PostgREST...');
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-            const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'apikey': supabaseKey,
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                signal: controller.signal
+            });
 
-            if (error) {
-                console.error('[DailyReportService] Supabase SELECT error:', error);
-                throw error;
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error('[DailyReportService] PostgREST error:', response.status, errorBody);
+                throw new Error(`PostgREST error ${response.status}: ${errorBody}`);
             }
 
-            console.log(`[DailyReportService] ✅ Fetched ${data?.length} reports`);
+            const data = await response.json();
+            console.log(`[DailyReportService] ✅ Fetched ${data?.length} reports via direct fetch`);
 
             return (data || []).map((row: any) => {
                 if (!row.data) console.warn('[DailyReportService] Report row missing data column:', row.id);
                 return {
-                    ...row.data, // Spread the JSONB data
-                    id: row.id, // Ensure DB ID is used
-                    timestamp: row.timestamp // Ensure DB timestamp is used
+                    ...row.data,
+                    id: row.id,
+                    timestamp: row.timestamp
                 };
             });
-        } catch (error) {
-            console.error('[DailyReportService] ❌ Error fetching daily reports:', error);
+        } catch (error: any) {
+            if (error.name === 'AbortError') {
+                console.error('[DailyReportService] ❌ Query aborted after 15s timeout');
+            } else {
+                console.error('[DailyReportService] ❌ Error fetching daily reports:', error);
+            }
             return [];
         }
     },

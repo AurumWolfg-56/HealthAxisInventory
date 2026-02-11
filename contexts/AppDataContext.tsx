@@ -66,14 +66,9 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         console.log('[AppDataContext] === Starting data fetch ===');
 
         try {
-            // Fetch reports with a 15-second timeout to prevent hanging
-            const reportsPromise = DailyReportService.getReports();
-            const timeoutPromise = new Promise<DailyReport[]>((_, reject) =>
-                setTimeout(() => reject(new Error('Reports fetch timed out after 15s')), 15000)
-            );
-
+            // DailyReportService handles its own session check + 15s timeout internally
             try {
-                const reports = await Promise.race([reportsPromise, timeoutPromise]);
+                const reports = await DailyReportService.getReports();
                 if (mountedRef.current) {
                     console.log('[AppDataContext] ✅ Reports fetched successfully:', reports.length);
                     setDailyReports(reports);
@@ -111,12 +106,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
             if (session && mountedRef.current) {
                 console.log('[AppDataContext] ✅ Session found on init, fetching data...');
-                // Small delay to let other contexts finish their auth queries first
-                // This prevents Supabase connection contention
-                await new Promise(resolve => setTimeout(resolve, 500));
-                if (mountedRef.current) {
-                    await fetchAllData();
-                }
+                await fetchAllData();
             } else {
                 console.log('[AppDataContext] No session found on init');
             }
@@ -130,8 +120,6 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
             if (event === 'SIGNED_IN' && session && !hasLoadedRef.current) {
                 console.log('[AppDataContext] SIGNED_IN detected, fetching data...');
-                // Small delay to avoid contention with other contexts
-                await new Promise(resolve => setTimeout(resolve, 500));
                 if (mountedRef.current) {
                     await fetchAllData();
                 }
