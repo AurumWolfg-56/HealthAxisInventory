@@ -213,26 +213,37 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ reports, user, onEditRepo
 
         if (filterType === 'this_month') {
             start = new Date(now.getFullYear(), now.getMonth(), 1);
+            end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            end.setHours(23, 59, 59, 999);
         } else if (filterType === 'last_month') {
             start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
             end = new Date(now.getFullYear(), now.getMonth(), 0);
-            end.setHours(23, 59, 59);
+            end.setHours(23, 59, 59, 999);
         } else if (filterType === 'this_quarter') {
             const quarter = Math.floor((now.getMonth() + 3) / 3);
             start = new Date(now.getFullYear(), (quarter - 1) * 3, 1);
+            end = new Date(now.getFullYear(), quarter * 3, 0);
+            end.setHours(23, 59, 59, 999);
         } else if (filterType === 'this_year') {
             start = new Date(now.getFullYear(), 0, 1);
+            end = new Date(now.getFullYear(), 11, 31);
+            end.setHours(23, 59, 59, 999);
         } else if (filterType === 'custom' && startDate && endDate) {
             start = new Date(startDate);
             end = new Date(endDate);
-            end.setHours(23, 59, 59);
+            end.setHours(23, 59, 59, 999);
         }
+
+        console.log('[ReportHistory] Filtering reports:', reports.length, 'Type:', filterType);
 
         const filtered = reports.filter(r => {
             const rDate = new Date(r.timestamp);
-            return rDate >= start && rDate <= end;
+            const inRange = rDate >= start && rDate <= end;
+            if (!inRange) console.log('[ReportHistory] Filtered out:', r.id, r.timestamp, 'Range:', start.toISOString(), '-', end.toISOString());
+            return inRange;
         }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
+        console.log('[ReportHistory] Filtered count:', filtered.length);
         return { filteredReports: filtered, range: { start, end, label: filterType } };
     }, [reports, filterType, startDate, endDate]);
 
