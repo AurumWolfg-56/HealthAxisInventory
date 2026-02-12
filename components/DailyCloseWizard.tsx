@@ -501,21 +501,43 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                 </div>
             )}
 
-            {/* Header Wizard Progress */}
-            <div className="mb-8">
-                <h2 className="text-display text-slate-900 dark:text-white mb-2">
-                    {initialData ? 'Edit Daily Report' : 'Daily Reconciliation Wizard'}
-                </h2>
-                <div className="flex items-center gap-2">
-                    {[1, 2, 3].map(s => (
-                        <div key={s} className={`h-2 flex-1 rounded-full transition-all duration-500 ${state.step >= s ? 'bg-medical-500' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+            {/* Header & Wizard Progress */}
+            <div className="mb-10">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                            {initialData ? 'Edit Daily Report' : 'Daily Reconciliation'}
+                        </h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{formatDate(new Date())}</p>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/60">
+                        <i className="fa-solid fa-clipboard-check text-medical-500"></i>
+                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Step {state.step} of 3</span>
+                    </div>
+                </div>
+                <div className="flex items-center gap-0">
+                    {[
+                        { num: 1, label: 'Financials', icon: 'fa-dollar-sign' },
+                        { num: 2, label: 'Volume', icon: 'fa-users' },
+                        { num: 3, label: 'Sign Off', icon: 'fa-file-signature' }
+                    ].map((s, i) => (
+                        <React.Fragment key={s.num}>
+                            <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-500 shadow-sm
+                                    ${state.step > s.num ? 'bg-emerald-500 text-white scale-95' : state.step === s.num ? 'bg-medical-600 text-white ring-4 ring-medical-500/20 scale-110' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'}`}>
+                                    {state.step > s.num ? <i className="fa-solid fa-check text-xs"></i> : <i className={`fa-solid ${s.icon} text-xs`}></i>}
+                                </div>
+                                <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${state.step >= s.num ? 'text-medical-600 dark:text-medical-400' : 'text-slate-400'}`}>{s.label}</span>
+                            </div>
+                            {i < 2 && <div className={`flex-1 h-0.5 rounded-full mx-2 mb-5 transition-all duration-500 ${state.step > s.num ? 'bg-emerald-400' : 'bg-slate-200 dark:bg-slate-700'}`}></div>}
+                        </React.Fragment>
                     ))}
                 </div>
             </div>
 
             {/* Validation Banner */}
             {state.errors.length > 0 && (
-                <div className="mb-6 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r-xl shadow-sm animate-shake">
+                <div className="mb-6 bg-red-50 dark:bg-red-900/10 border border-red-200/60 dark:border-red-800/40 border-l-4 border-l-red-500 p-5 rounded-xl shadow-sm animate-shake">
                     <div className="flex items-center gap-3">
                         <i className="fa-solid fa-circle-exclamation text-red-500 text-xl"></i>
                         <div>
@@ -530,13 +552,15 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
 
             {/* STEP 1: FINANCIALS */}
             {state.step === 1 && (
-                <div className="glass-panel p-8 rounded-[2rem] shadow-glass space-y-8">
+                <div className="relative overflow-hidden bg-white dark:bg-slate-900/80 backdrop-blur-xl p-8 rounded-[2rem] border border-slate-200/60 dark:border-slate-700/50 shadow-xl space-y-8">
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600"></div>
                     <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                            <span className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center text-sm">1</span>
+                        <h3 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-3">
+                            <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white flex items-center justify-center text-sm shadow-lg shadow-emerald-500/20"><i className="fa-solid fa-dollar-sign"></i></span>
                             Financial Reconciliation
                         </h3>
-                        <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${isFinBalanced ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                        <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 ${isFinBalanced ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/20 text-red-600 border border-red-200 dark:border-red-800'}`}>
+                            <i className={`fa-solid ${isFinBalanced ? 'fa-check-circle' : 'fa-exclamation-triangle'} text-[10px]`}></i>
                             {isFinBalanced ? 'Balanced' : `Off by $${finDiff.toFixed(2)}`}
                         </div>
                     </div>
@@ -611,13 +635,15 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
 
             {/* STEP 2: VOLUME */}
             {state.step === 2 && (
-                <div className="glass-panel p-8 rounded-[2rem] shadow-glass space-y-8">
+                <div className="relative overflow-hidden bg-white dark:bg-slate-900/80 backdrop-blur-xl p-8 rounded-[2rem] border border-slate-200/60 dark:border-slate-700/50 shadow-xl space-y-8">
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-indigo-500 to-blue-600"></div>
                     <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                            <span className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center text-sm">2</span>
+                        <h3 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-3">
+                            <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 text-white flex items-center justify-center text-sm shadow-lg shadow-blue-500/20"><i className="fa-solid fa-users"></i></span>
                             Patient Volume
                         </h3>
-                        <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${isVolBalanced ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                        <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 ${isVolBalanced ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/20 text-red-600 border border-red-200 dark:border-red-800'}`}>
+                            <i className={`fa-solid ${isVolBalanced ? 'fa-check-circle' : 'fa-exclamation-triangle'} text-[10px]`}></i>
                             {isVolBalanced ? 'Matched' : `Mismatch (${volDiff})`}
                         </div>
                     </div>
@@ -760,13 +786,15 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
 
             {/* STEP 3: STATS & SIGN */}
             {state.step === 3 && (
-                <div className="glass-panel p-8 rounded-[2rem] shadow-glass space-y-8">
+                <div className="relative overflow-hidden bg-white dark:bg-slate-900/80 backdrop-blur-xl p-8 rounded-[2rem] border border-slate-200/60 dark:border-slate-700/50 shadow-xl space-y-8">
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-400 via-violet-500 to-purple-600"></div>
                     <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                            <span className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center text-sm">3</span>
+                        <h3 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-3">
+                            <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-violet-600 text-white flex items-center justify-center text-sm shadow-lg shadow-purple-500/20"><i className="fa-solid fa-file-signature"></i></span>
                             Final Statistics & Sign
                         </h3>
-                        <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${isStatsBalanced ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                        <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 ${isStatsBalanced ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/20 text-red-600 border border-red-200 dark:border-red-800'}`}>
+                            <i className={`fa-solid ${isStatsBalanced ? 'fa-check-circle' : 'fa-exclamation-triangle'} text-[10px]`}></i>
                             {isStatsBalanced ? 'Matched' : `Mismatch (${statsDiff})`}
                         </div>
                     </div>
@@ -809,44 +837,44 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
             )}
 
             {/* Footer Controls */}
-            <div className="flex gap-4 mt-8">
+            <div className="flex gap-3 mt-10 p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/40">
                 <button
                     onClick={onCancel}
-                    className="px-8 h-14 rounded-2xl border-2 border-gray-200 dark:border-gray-700 font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="px-6 h-12 rounded-xl border border-slate-300 dark:border-slate-600 font-bold text-sm text-slate-500 hover:bg-white dark:hover:bg-slate-700 hover:border-slate-400 transition-all"
                 >
-                    Cancel
+                    <i className="fa-solid fa-xmark mr-2 text-xs"></i>Cancel
                 </button>
 
-                <div className="flex-1 flex gap-4 justify-end">
+                <div className="flex-1 flex gap-3 justify-end">
                     {state.step > 1 && (
                         <button
                             onClick={() => dispatch({ type: 'PREV_STEP' })}
-                            className="px-8 h-14 rounded-2xl bg-gray-100 dark:bg-gray-800 font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                            className="px-6 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 font-bold text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all flex items-center gap-2"
                         >
-                            Back
+                            <i className="fa-solid fa-arrow-left text-xs"></i> Back
                         </button>
                     )}
 
                     {state.step < 3 ? (
                         <button
                             onClick={handleNext}
-                            className="flex-1 max-w-xs h-14 rounded-2xl bg-medical-600 text-white font-bold shadow-lg hover:bg-medical-500 transition-all flex items-center justify-center gap-2"
+                            className="flex-1 max-w-xs h-12 rounded-xl bg-gradient-to-r from-medical-600 to-medical-500 text-white font-bold text-sm shadow-lg shadow-medical-500/25 hover:shadow-medical-500/40 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
                         >
-                            Next Step <i className="fa-solid fa-arrow-right"></i>
+                            Next Step <i className="fa-solid fa-arrow-right text-xs"></i>
                         </button>
                     ) : (
                         <>
                             <button
                                 onClick={() => setShowPreview(true)}
-                                className="px-6 h-14 rounded-2xl bg-indigo-100 text-indigo-700 font-bold hover:bg-indigo-200 transition-colors"
+                                className="px-5 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold text-sm border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-all flex items-center gap-2"
                             >
-                                <i className="fa-solid fa-eye mr-2"></i> Preview Report
+                                <i className="fa-solid fa-eye text-xs"></i> Preview
                             </button>
                             <button
                                 onClick={handleSignAndGenerate}
-                                className="flex-1 max-w-xs h-14 rounded-2xl bg-gradient-to-r from-gray-900 to-gray-800 dark:from-white dark:to-gray-200 text-white dark:text-gray-900 font-bold shadow-xl flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
+                                className="flex-1 max-w-xs h-12 rounded-xl bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-200 text-white dark:text-slate-900 font-bold text-sm shadow-xl shadow-slate-900/20 flex items-center justify-center gap-2 hover:scale-[1.02] transition-all"
                             >
-                                <i className="fa-solid fa-file-signature"></i> {initialData ? 'Update & Print' : 'Sign & Generate'}
+                                <i className="fa-solid fa-file-signature text-xs"></i> {initialData ? 'Update & Print' : 'Sign & Generate'}
                             </button>
                         </>
                     )}
