@@ -10,7 +10,7 @@ interface FormsProps {
     users: User[]; // Need list of users to find Doctors
     user: User; // Current user
     hasPermission: (permission: Permission) => boolean;
-    onSaveTemplate: (template: FormTemplate) => void;
+    onSaveTemplate: (template: FormTemplate) => Promise<void>;
     onDeleteTemplate: (id: string) => void;
     onLogAction: (action: any, details: string) => void;
     t: (key: string) => string;
@@ -201,25 +201,47 @@ I, **{{patientName}}**, hereby authorize...
         }
     };
 
-    const saveTemplate = () => {
+    const [isSaving, setIsSaving] = useState(false);
+
+    // UUID Polyfill for older browsers/contexts
+    const generateUUID = () => {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    };
+
+    const saveTemplate = async () => {
         if (!formData.title || !formData.content) return;
 
-        const slug = formData.slug || formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+        try {
+            setIsSaving(true);
+            const slug = formData.slug || formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
-        const newTemplate: FormTemplate = {
-            id: editId === 'new' ? crypto.randomUUID() : editId!,
-            title: formData.title,
-            slug: slug,
-            version: formData.version || '1.0',
-            language: formData.language || 'English',
-            status: formData.status || 'Draft',
-            useLetterhead: formData.useLetterhead ?? true,
-            content: formData.content,
-            variables: VARIABLES,
-            updatedAt: new Date().toISOString()
-        };
-        onSaveTemplate(newTemplate);
-        setEditId(null);
+            const newTemplate: FormTemplate = {
+                id: editId === 'new' ? generateUUID() : editId!,
+                title: formData.title,
+                slug: slug,
+                version: formData.version || '1.0',
+                language: formData.language || 'English',
+                status: formData.status || 'Draft',
+                useLetterhead: formData.useLetterhead ?? true,
+                content: formData.content,
+                variables: VARIABLES,
+                updatedAt: new Date().toISOString()
+            };
+
+            await onSaveTemplate(newTemplate);
+            setEditId(null);
+        } catch (error) {
+            console.error("Failed to save template:", error);
+            // Toast is handled in App.tsx, but we keep the modal open so user doesn't lose data
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const insertVariable = (v: string) => {
@@ -432,9 +454,11 @@ I, **{{patientName}}**, hereby authorize...
                         </button>
                         <button
                             onClick={saveTemplate}
-                            className="px-6 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-bold transition-colors shadow-lg shadow-blue-500/20"
+                            disabled={isSaving}
+                            className="px-6 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold transition-colors shadow-lg shadow-blue-500/20 flex items-center gap-2"
                         >
-                            Update Template
+                            {isSaving && <i className="fa-solid fa-circle-notch fa-spin"></i>}
+                            {isSaving ? 'Saving...' : 'Update Template'}
                         </button>
                     </div>
                 </div>

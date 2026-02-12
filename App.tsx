@@ -1021,6 +1021,7 @@ const App: React.FC = () => {
                                     }
                                 } catch (e: any) {
                                     addToast(`Failed to save template: ${e.message}`, 'error');
+                                    throw e;
                                 }
                             }}
                             onDeleteTemplate={async (id) => {
