@@ -204,9 +204,14 @@ I, **{{patientName}}**, hereby authorize...
     const [isSaving, setIsSaving] = useState(false);
 
     // UUID Polyfill for older browsers/contexts
+    // Safe wrapper to handle "not available" errors in insecure contexts
     const generateUUID = () => {
-        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-            return crypto.randomUUID();
+        try {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+        } catch (e) {
+            console.warn('crypto.randomUUID failed (likely insecure context), falling back to polyfill', e);
         }
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
             const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -219,24 +224,10 @@ I, **{{patientName}}**, hereby authorize...
 
         try {
             setIsSaving(true);
-            // DEBUG: Trace execution
-            alert('Debug: Starting save...');
-
             const slug = formData.slug || formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
-            let newId = editId;
-            if (editId === 'new') {
-                try {
-                    newId = generateUUID();
-                    alert(`Debug: Generated ID: ${newId}`);
-                } catch (uuidError: any) {
-                    alert(`Debug: UUID Generation Failed: ${uuidError.message}`);
-                    throw uuidError;
-                }
-            }
-
             const newTemplate: FormTemplate = {
-                id: newId!,
+                id: editId === 'new' ? generateUUID() : editId!,
                 title: formData.title,
                 slug: slug,
                 version: formData.version || '1.0',
@@ -248,14 +239,10 @@ I, **{{patientName}}**, hereby authorize...
                 updatedAt: new Date().toISOString()
             };
 
-            alert('Debug: Calling Service...');
             await onSaveTemplate(newTemplate);
-            alert('Debug: Service returned success');
-
             setEditId(null);
         } catch (error: any) {
             console.error("Failed to save template:", error);
-            alert(`Debug: Save Failed: ${error.message || error}`);
         } finally {
             setIsSaving(false);
         }
