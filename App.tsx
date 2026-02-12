@@ -1020,6 +1020,7 @@ const App: React.FC = () => {
                                         }
                                     }
                                 } catch (e: any) {
+                                    console.error('Template Save Error:', e);
                                     addToast(`Failed to save template: ${e.message}`, 'error');
                                     throw e;
                                 }

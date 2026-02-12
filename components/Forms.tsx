@@ -219,10 +219,24 @@ I, **{{patientName}}**, hereby authorize...
 
         try {
             setIsSaving(true);
+            // DEBUG: Trace execution
+            alert('Debug: Starting save...');
+
             const slug = formData.slug || formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
+            let newId = editId;
+            if (editId === 'new') {
+                try {
+                    newId = generateUUID();
+                    alert(`Debug: Generated ID: ${newId}`);
+                } catch (uuidError: any) {
+                    alert(`Debug: UUID Generation Failed: ${uuidError.message}`);
+                    throw uuidError;
+                }
+            }
+
             const newTemplate: FormTemplate = {
-                id: editId === 'new' ? generateUUID() : editId!,
+                id: newId!,
                 title: formData.title,
                 slug: slug,
                 version: formData.version || '1.0',
@@ -234,11 +248,14 @@ I, **{{patientName}}**, hereby authorize...
                 updatedAt: new Date().toISOString()
             };
 
+            alert('Debug: Calling Service...');
             await onSaveTemplate(newTemplate);
+            alert('Debug: Service returned success');
+
             setEditId(null);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to save template:", error);
-            // Toast is handled in App.tsx, but we keep the modal open so user doesn't lose data
+            alert(`Debug: Save Failed: ${error.message || error}`);
         } finally {
             setIsSaving(false);
         }
