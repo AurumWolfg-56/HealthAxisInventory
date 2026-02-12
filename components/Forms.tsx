@@ -207,7 +207,7 @@ I, **{{patientName}}**, hereby authorize...
         const slug = formData.slug || formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
         const newTemplate: FormTemplate = {
-            id: editId === 'new' ? Date.now().toString() : editId!,
+            id: editId === 'new' ? crypto.randomUUID() : editId!,
             title: formData.title,
             slug: slug,
             version: formData.version || '1.0',

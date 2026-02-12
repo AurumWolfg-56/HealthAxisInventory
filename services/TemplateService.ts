@@ -53,7 +53,7 @@ export const TemplateService = {
 
         if (error) {
             console.error("Error creating template:", error);
-            return null;
+            throw error;
         }
 
         return {
