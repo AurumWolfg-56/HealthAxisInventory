@@ -64,20 +64,11 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
         setLoading(true);
         setError(null);
 
-        // Safety timeout to prevent infinite spinner
-        const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Request timed out')), 10000)
-        );
-
         try {
-            // Fixed query syntax: use asterisk for embedded resources
-            const fetchPromise = supabase
+            // Use left join (no !inner) so profiles without roles still appear
+            const { data: profiles, error: pError } = await supabase
                 .from('profiles')
-                .select('id, full_name, permissions, user_roles!inner(role_id)');
-
-            const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
-
-            const { data: profiles, error: pError } = result;
+                .select('id, full_name, permissions, user_roles(role_id)');
 
             if (pError) throw pError;
 
