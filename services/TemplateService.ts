@@ -34,6 +34,19 @@ export const TemplateService = {
     },
 
     async createTemplate(template: FormTemplate): Promise<FormTemplate | null> {
+        console.log("Creating template payload:", {
+            id: template.id,
+            title: template.title,
+            slug: template.slug,
+            version: template.version,
+            language: template.language,
+            status: template.status,
+            use_letterhead: template.useLetterhead,
+            content: template.content,
+            variables: template.variables,
+            updated_at: new Date().toISOString()
+        });
+
         const { data, error } = await supabase
             .from('form_templates')
             .insert({
