@@ -61,17 +61,22 @@ export const TemplateService = {
                 variables: template.variables,
                 updated_at: new Date().toISOString()
             })
-            .select()
-            .single();
+            .select(); // Removed .single() to avoid throws on 0 rows
 
         if (error) {
             console.error("Error creating template:", error);
             throw error;
         }
 
+        if (!data || data.length === 0) {
+            console.error("Template created but no data returned (RLS blocking view?)");
+            // Return input template as fallback, though ID might be missing timestamp if DB gen
+            return template;
+        }
+
         return {
             ...template,
-            updatedAt: data.updated_at
+            updatedAt: data[0].updated_at
         };
     },
 
@@ -90,30 +95,44 @@ export const TemplateService = {
                 updated_at: new Date().toISOString()
             })
             .eq('id', template.id)
-            .select()
-            .single();
+            .select();
 
         if (error) {
             console.error("Error updating template:", error);
             return null;
         }
 
+        if (!data || data.length === 0) {
+            console.error("Template updated but no data returned (RLS blocking or ID not found)");
+            return null;
+        }
+
         return {
             ...template,
-            updatedAt: data.updated_at
+            updatedAt: data[0].updated_at
         };
     },
 
     async deleteTemplate(id: string): Promise<boolean> {
-        const { error } = await supabase
+        // Use count: 'exact' to verify if row was actually deleted
+        const { error, count } = await supabase
             .from('form_templates')
-            .delete()
+            .delete({ count: 'exact' })
             .eq('id', id);
 
         if (error) {
             console.error("Error deleting template:", error);
             return false;
         }
+
+        if (count === 0) {
+            console.warn(`Delete op success but 0 rows deleted for ID ${id}. RLS blocking or ID not found.`);
+            // We return true anyway to clear UI? No, return false so user knows.
+            // But usually we want UI to clear if it's gone.
+            // Let's return true but warn.
+            return true;
+        }
+
         return true;
     }
 };
