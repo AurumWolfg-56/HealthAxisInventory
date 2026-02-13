@@ -486,7 +486,7 @@ I, **{{patientName}}**, hereby authorize...
                             className="px-6 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold transition-colors shadow-lg shadow-blue-500/20 flex items-center gap-2"
                         >
                             {isSaving && <i className="fa-solid fa-circle-notch fa-spin"></i>}
-                            {isSaving ? 'Saving...' : 'Update Template'}
+                            {isSaving ? 'Saving...' : (editId === 'new' ? 'Create Template' : 'Update Template')}
                         </button>
                     </div>
                 </div>
