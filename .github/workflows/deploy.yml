@@ -33,8 +33,7 @@ jobs:
       
       - name: Deploy to Hostinger via LFTP
         run: |
-          sudo apt-get update
-          sudo apt-get install -y lftp
+          sudo apt-get install -y --no-install-recommends lftp || (sudo apt-get update && sudo apt-get install -y --no-install-recommends lftp)
           # LFTP command explanation:
           # -u: username,password
           # -e: execute command
