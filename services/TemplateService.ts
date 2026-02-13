@@ -34,7 +34,9 @@ export const TemplateService = {
     },
 
     async createTemplate(template: FormTemplate): Promise<FormTemplate | null> {
-        console.log("Creating template payload:", {
+        console.log("[TemplateService] createTemplate START", template.id, template.title);
+
+        const payload = {
             id: template.id,
             title: template.title,
             slug: template.slug,
@@ -45,39 +47,38 @@ export const TemplateService = {
             content: template.content,
             variables: template.variables,
             updated_at: new Date().toISOString()
-        });
-
-        const { data, error } = await supabase
-            .from('form_templates')
-            .insert({
-                id: template.id,
-                title: template.title,
-                slug: template.slug,
-                version: template.version,
-                language: template.language,
-                status: template.status,
-                use_letterhead: template.useLetterhead,
-                content: template.content,
-                variables: template.variables,
-                updated_at: new Date().toISOString()
-            })
-            .select(); // Removed .single() to avoid throws on 0 rows
-
-        if (error) {
-            console.error("Error creating template:", error);
-            throw error;
-        }
-
-        if (!data || data.length === 0) {
-            console.error("Template created but no data returned (RLS blocking view?)");
-            // Return input template as fallback, though ID might be missing timestamp if DB gen
-            return template;
-        }
-
-        return {
-            ...template,
-            updatedAt: data[0].updated_at
         };
+
+        console.log("[TemplateService] Supabase INSERT payload:", JSON.stringify(payload).substring(0, 200));
+
+        try {
+            console.log("[TemplateService] Calling supabase.from('form_templates').insert()...");
+            const { data, error } = await supabase
+                .from('form_templates')
+                .insert(payload)
+                .select();
+
+            console.log("[TemplateService] Supabase response received. error:", error, "data length:", data?.length);
+
+            if (error) {
+                console.error("[TemplateService] INSERT error:", error.message, error.code, error.details);
+                throw error;
+            }
+
+            if (!data || data.length === 0) {
+                console.warn("[TemplateService] INSERT succeeded but no data returned (RLS blocking view?)");
+                return template;
+            }
+
+            console.log("[TemplateService] createTemplate SUCCESS. ID:", data[0].id);
+            return {
+                ...template,
+                updatedAt: data[0].updated_at
+            };
+        } catch (err: any) {
+            console.error("[TemplateService] createTemplate CAUGHT ERROR:", err.message || err);
+            throw err;
+        }
     },
 
     async updateTemplate(template: FormTemplate): Promise<FormTemplate | null> {
