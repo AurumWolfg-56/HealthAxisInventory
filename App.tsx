@@ -8,6 +8,7 @@ import { useInventory } from './contexts/InventoryContext';
 import { useAppData } from './contexts/AppDataContext';
 import { Layout } from './components/Layout';
 import { DailyReport } from './types/dailyReport';
+import { generateUUID } from './utils/uuid';
 import { DailyReportService } from './services/DailyReportService';
 import { TemplateService } from './services/TemplateService';
 import Dashboard from './components/Dashboard';
@@ -784,13 +785,14 @@ const App: React.FC = () => {
                                                     itemsProcessed.push(`${newItem.name} (New)`);
                                                 } else if (error) {
                                                     console.error('Error creating item from order:', error);
-                                                    // Fallback local only if validation fails
-                                                    newInventory.push({ ...newItemConfig, id: crypto.randomUUID() });
+                                                    addToast(`Failed to save ${newItemConfig.name}: ${error.message}`, 'error');
+                                                    // Do NOT fallback to local-only, as this causes data loss on refresh
                                                 }
                                             } else {
-                                                // Local only fallback
-                                                newInventory.push({ ...newItemConfig, id: crypto.randomUUID() });
-                                                itemsProcessed.push(`${newItemConfig.name} (New)`);
+                                                // Local only fallback (only if user invalid, which shouldn't happen in auth'd app)
+                                                console.warn('No user ID found, skipping DB insert for item');
+                                                // newInventory.push({ ...newItemConfig, id: generateUUID() });
+                                                addToast(`Failed to save ${newItemConfig.name}: User not authenticated`, 'error');
                                             }
                                         }
                                     }
@@ -822,12 +824,16 @@ const App: React.FC = () => {
                                     addLog('DELETED_ORDER', `Deleted order ID: ${orderId}`);
 
                                     if (user?.id) {
-                                        await supabase.from('audit_log').insert({
-                                            user_id: user.id,
-                                            action: 'DELETED_ORDER',
-                                            resource: 'orders',
-                                            resource_id: orderId
-                                        });
+                                        try {
+                                            await supabase.from('audit_log').insert({
+                                                user_id: user.id,
+                                                action: 'DELETED_ORDER',
+                                                resource: 'orders',
+                                                resource_id: orderId
+                                            });
+                                        } catch (logErr) {
+                                            console.warn('Audit log insert failed (non-critical):', logErr);
+                                        }
                                     }
                                     addToast('Order deleted successfully', 'info');
                                 } catch (e: any) {

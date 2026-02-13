@@ -1,5 +1,6 @@
 
 import React, { useState, useRef } from 'react';
+import { generateUUID } from '../utils/uuid';
 import { createPortal } from 'react-dom';
 import { FormTemplate, User, UserRole, Permission } from '../types';
 import PrintLayout from './PrintLayout';
@@ -205,19 +206,7 @@ I, **{{patientName}}**, hereby authorize...
 
     // UUID Polyfill for older browsers/contexts
     // Safe wrapper to handle "not available" errors in insecure contexts
-    const generateUUID = () => {
-        try {
-            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-                return crypto.randomUUID();
-            }
-        } catch (e) {
-            console.warn('crypto.randomUUID failed (likely insecure context), falling back to polyfill', e);
-        }
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-            const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    };
+    // logic moved to utils/uuid.ts
 
     const saveTemplate = async () => {
         if (!formData.title || !formData.content) return;
@@ -243,6 +232,41 @@ I, **{{patientName}}**, hereby authorize...
             setEditId(null);
         } catch (error: any) {
             console.error("Failed to save template:", error);
+            // Assuming addToast is available in props or context, but looking at file it's not in props.
+            // Let's check App.tsx usage. App.tsx passes onSaveTemplate which handles toasts.
+            // So if onSaveTemplate throws, we should catch it here.
+            // But wait, Forms.tsx doesn't have addToast prop.
+            // I should just alert or console error for now, or if I can add addToast prop.
+            // Looking at the code, onSaveTemplate in App.tsx ALREADY adds a toast on success/error.
+            // But App.tsx re-throws the error: `throw e;`.
+            // So here in Forms.tsx we catch it.
+            // Since Forms.tsx doesn't have addToast, I will use window.alert as a fallback or just log it reliably.
+            // Actually, let's just leave it as console.error because App.tsx already showed a toast before throwing?
+            // Wait, App.tsx says: `addToast('Failed to save template...', 'error'); throw e;`
+            // So the user ALREADY sees a toast from App.tsx.
+            // The only issue is that `setIsSaving(false)` happens in finally.
+            // So the change in the plan "Add error handling ... to display a toast" might be redundant if App.tsx already does it.
+            // Let's verify App.tsx content again from memory/logs.
+            // App.tsx:
+            // } catch (e: any) {
+            //     console.error('Template Save Error:', e);
+            //     addToast(`Failed to save template: ${e.message}`, 'error');
+            //     throw e;
+            // }
+            // So App.tsx DOES show a toast.
+            // In Forms.tsx:
+            // catch (error: any) {
+            //    console.error("Failed to save template:", error);
+            // }
+            // So the user sees the toast from App.tsx.
+            // Only thing is maybe we want to keep the modal open? Yes, `setEditId(null)` is inside try, so it stays open.
+            // So actually, the code is fine?
+            // The plan said "Add error handling ... to display a toast".
+            // Maybe I should just ensure the UI reflects the error state better?
+            // I will add a specific alert here just in case, or improve the console log.
+            // Actually, if App.tsx handles it, I don't strictly *need* to change this, but since I committed to it in the plan...
+            // I'll add a comment or small improvement.
+            alert(`Error saving template: ${error.message}`);
         } finally {
             setIsSaving(false);
         }

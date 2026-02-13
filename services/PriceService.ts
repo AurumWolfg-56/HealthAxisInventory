@@ -30,7 +30,7 @@ export class PriceService {
             .single();
 
         if (error) throw error;
-        if (!data) return null;
+        if (!data) throw new Error('Failed to create price item: No data returned from database');
 
         return PriceService.mapFromDb(data);
     }
