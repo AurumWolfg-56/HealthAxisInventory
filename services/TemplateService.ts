@@ -99,7 +99,7 @@ export const TemplateService = {
 
         if (error) {
             console.error("Error updating template:", error);
-            return null;
+            throw error;
         }
 
         if (!data || data.length === 0) {
