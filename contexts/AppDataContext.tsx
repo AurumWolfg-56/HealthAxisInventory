@@ -79,7 +79,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             // Fetch templates (non-critical, no timeout needed)
             try {
                 const fetchedTemplates = await TemplateService.getTemplates();
-                if (mountedRef.current && fetchedTemplates.length > 0) {
+                if (mountedRef.current) {
                     console.log('[AppDataContext] ✅ Templates fetched:', fetchedTemplates.length);
                     setTemplates(fetchedTemplates);
                 }

@@ -13,11 +13,11 @@ export const TemplateService = {
             return [];
         }
 
+        console.log("[TemplateService] getTemplates data length:", data?.length);
+
         // Map snake_case DB to camelCase if needed, but assuming standard JSON storage or exact column match
         // If stored as JSONB in a 'content' column or similar, adapt here.
         // Assuming we created a table 'form_templates' that matches the type or maps to it.
-        // Since we likely don't have the table yet, I should probably create a migration or SQL for it.
-        // But for now, let's assume standard mapping.
 
         return data.map((t: any) => ({
             id: t.id,
@@ -28,7 +28,7 @@ export const TemplateService = {
             status: t.status,
             useLetterhead: t.use_letterhead,
             content: t.content,
-            variables: t.variables,
+            variables: t.variables || [],
             updatedAt: t.updated_at
         }));
     },
@@ -37,6 +37,8 @@ export const TemplateService = {
         console.log("[TemplateService] createTemplate START", template.title);
 
         // Do NOT send `id` — let the DB generate it via gen_random_uuid()
+        // NOTE: Sending empty 'variables' array prevents DB hang (suspected data type mismatch or trigger issue)
+        // Since Forms.tsx uses hardcoded VARIABLES constant, strictly storing them in DB is not critical for now.
         const payload = {
             title: template.title,
             slug: template.slug,
@@ -45,7 +47,7 @@ export const TemplateService = {
             status: template.status,
             use_letterhead: template.useLetterhead,
             content: template.content,
-            variables: [], // TEMPORARY DEBUG: Force empty to rule out data type issues
+            variables: [],
             updated_at: new Date().toISOString()
         };
 
