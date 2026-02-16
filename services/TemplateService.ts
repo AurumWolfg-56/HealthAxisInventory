@@ -45,7 +45,7 @@ export const TemplateService = {
             status: template.status,
             use_letterhead: template.useLetterhead,
             content: template.content,
-            variables: template.variables,
+            variables: [], // TEMPORARY DEBUG: Force empty to rule out data type issues
             updated_at: new Date().toISOString()
         };
 
