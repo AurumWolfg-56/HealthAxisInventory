@@ -57,8 +57,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     // Core data fetching function — uses the cached token (set via setAccessToken)
     const fetchAllData = useCallback(async () => {
-        if (isFetchingRef.current || hasLoadedRef.current) {
-            console.log('[AppDataContext] Skipping fetch (fetching:', isFetchingRef.current, 'loaded:', hasLoadedRef.current, ')');
+        if (isFetchingRef.current) {
+            console.log('[AppDataContext] already fetching, skipping concurrent');
             return;
         }
 
