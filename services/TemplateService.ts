@@ -34,10 +34,10 @@ export const TemplateService = {
     },
 
     async createTemplate(template: FormTemplate): Promise<FormTemplate | null> {
-        console.log("[TemplateService] createTemplate START", template.id, template.title);
+        console.log("[TemplateService] createTemplate START", template.title);
 
+        // Do NOT send `id` — let the DB generate it via gen_random_uuid()
         const payload = {
-            id: template.id,
             title: template.title,
             slug: template.slug,
             version: template.version,
@@ -49,14 +49,23 @@ export const TemplateService = {
             updated_at: new Date().toISOString()
         };
 
-        console.log("[TemplateService] Supabase INSERT payload:", JSON.stringify(payload).substring(0, 200));
+        console.log("[TemplateService] Supabase INSERT payload:", JSON.stringify(payload).substring(0, 300));
 
         try {
             console.log("[TemplateService] Calling supabase.from('form_templates').insert()...");
-            const { data, error } = await supabase
+
+            // Wrap with timeout to prevent indefinite hang
+            const TIMEOUT_MS = 15000;
+            const supabasePromise = supabase
                 .from('form_templates')
                 .insert(payload)
                 .select();
+
+            const timeoutPromise = new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('Template save timed out after 15s. Please check your connection and try again.')), TIMEOUT_MS)
+            );
+
+            const { data, error } = await Promise.race([supabasePromise, timeoutPromise]);
 
             console.log("[TemplateService] Supabase response received. error:", error, "data length:", data?.length);
 
@@ -66,13 +75,23 @@ export const TemplateService = {
             }
 
             if (!data || data.length === 0) {
-                console.warn("[TemplateService] INSERT succeeded but no data returned (RLS blocking view?)");
-                return template;
+                console.warn("[TemplateService] INSERT returned no data — RLS may be blocking the operation.");
+                throw new Error('Template was not saved. You may not have permission to create templates.');
             }
 
             console.log("[TemplateService] createTemplate SUCCESS. ID:", data[0].id);
+
+            // Map DB response back to FormTemplate using the DB-generated id
             return {
-                ...template,
+                id: data[0].id,
+                title: data[0].title,
+                slug: data[0].slug,
+                version: data[0].version,
+                language: data[0].language,
+                status: data[0].status,
+                useLetterhead: data[0].use_letterhead,
+                content: data[0].content,
+                variables: data[0].variables,
                 updatedAt: data[0].updated_at
             };
         } catch (err: any) {

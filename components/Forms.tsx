@@ -1,6 +1,5 @@
 
 import React, { useState, useRef } from 'react';
-import { generateUUID } from '../utils/uuid';
 import { createPortal } from 'react-dom';
 import { FormTemplate, User, UserRole, Permission } from '../types';
 import PrintLayout from './PrintLayout';
@@ -216,7 +215,7 @@ I, **{{patientName}}**, hereby authorize...
             const slug = formData.slug || formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
             const newTemplate: FormTemplate = {
-                id: editId === 'new' ? generateUUID() : editId!,
+                id: editId === 'new' ? '' : editId!,
                 title: formData.title,
                 slug: slug,
                 version: formData.version || '1.0',
