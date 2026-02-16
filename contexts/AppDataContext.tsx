@@ -36,6 +36,8 @@ interface AppDataContextType {
     logs: ActivityLog[];
     setLogs: React.Dispatch<React.SetStateAction<ActivityLog[]>>;
     addLog: (action: ActivityLog['action'], details: string) => void;
+    refreshData: () => Promise<void>;
+    isLoading: boolean;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -51,6 +53,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return loadedLogs.map((log: any) => ({ ...log, timestamp: new Date(log.timestamp) }));
     });
 
+    const [isLoading, setIsLoading] = useState(false);
+
     const isFetchingRef = useRef(false);
     const hasLoadedRef = useRef(false);
     const mountedRef = useRef(true);
@@ -61,6 +65,10 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             console.log('[AppDataContext] already fetching, skipping concurrent');
             return;
         }
+
+        isFetchingRef.current = true;
+        setIsLoading(true); // UI Feedback
+        console.log('[AppDataContext] === Starting data fetch ===');
 
         isFetchingRef.current = true;
         console.log('[AppDataContext] === Starting data fetch ===');
@@ -91,6 +99,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             console.log('[AppDataContext] === Data fetch complete ===');
         } finally {
             isFetchingRef.current = false;
+            if (mountedRef.current) setIsLoading(false);
         }
     }, []);
 
@@ -118,7 +127,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             console.log('[AppDataContext] Auth event:', event, '| hasSession:', !!session);
 
-            if (event === 'SIGNED_IN' && session && !hasLoadedRef.current) {
+            if (event === 'SIGNED_IN' && session) { // Removed hasLoaded check to ensure refresh
                 console.log('[AppDataContext] SIGNED_IN detected, caching token...');
                 DailyReportService.setAccessToken(session.access_token);
                 if (mountedRef.current) {
@@ -166,7 +175,9 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         billingRules, setBillingRules,
         pettyCashHistory, setPettyCashHistory,
         logs, setLogs,
-        addLog
+        addLog,
+        refreshData: fetchAllData,
+        isLoading
     };
 
     return (
