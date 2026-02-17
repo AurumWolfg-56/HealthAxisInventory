@@ -1,25 +1,47 @@
-import { supabase } from '../src/lib/supabase';
 import { FormTemplate } from '../types';
 
+// Shared token cache pattern (copied from DailyReportService for reliability)
+let _cachedToken: string | null = null;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+function getHeaders(): Record<string, string> {
+    if (!_cachedToken) {
+        console.warn('[TemplateService] ⚠️ No cached token! setAccessToken() should be called.');
+    }
+    return {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${_cachedToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Prefer': 'return=representation' // Critical for INSERT/UPDATE to return data
+    };
+}
+
 export const TemplateService = {
+    setAccessToken(token: string) {
+        _cachedToken = token;
+        console.log('[TemplateService] 🔑 Access token cached');
+    },
+
     async getTemplates(): Promise<FormTemplate[]> {
-        // Standard fetch with reasonable timeout to prevent hangs
-        const TIMEOUT_MS = 20000;
-
-        const fetchPromise = supabase
-            .from('form_templates')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('Template fetch timed out (20s)')), TIMEOUT_MS)
-        );
+        console.log('[TemplateService] Fetching templates (REST)...');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
         try {
-            const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/form_templates?select=*&order=created_at.desc`, {
+                method: 'GET',
+                headers: getHeaders(),
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
 
-            if (error) throw error;
+            if (!response.ok) {
+                throw new Error(`REST Error ${response.status}: ${await response.text()}`);
+            }
 
+            const data = await response.json();
             return (data || []).map((t: any) => ({
                 id: t.id,
                 title: t.title,
@@ -29,19 +51,19 @@ export const TemplateService = {
                 status: t.status,
                 useLetterhead: t.use_letterhead,
                 content: t.content,
-                // Handle JSONB variables safely
+                // JSONB variables are returned as JSON object/array automatically by PostgREST
                 variables: Array.isArray(t.variables) ? t.variables : [],
                 updatedAt: t.updated_at
             }));
         } catch (error) {
-            console.error('[TemplateService] Error:', error);
-            // Return empty array instead of throwing to prevent app crash, but log error
+            console.error('[TemplateService] Fetch failed:', error);
+            // Return empty array to prevent app crash
             return [];
         }
     },
 
     async createTemplate(template: FormTemplate): Promise<FormTemplate | null> {
-        console.log("[TemplateService] Creating:", template.title);
+        console.log("[TemplateService] Creating (REST):", template.title);
 
         const payload = {
             title: template.title,
@@ -51,19 +73,28 @@ export const TemplateService = {
             status: template.status,
             use_letterhead: template.useLetterhead,
             content: template.content,
-            // Now safe to send actual variables thanks to JSONB
             variables: template.variables || [],
             updated_at: new Date().toISOString()
         };
 
-        try {
-            const { data, error } = await supabase
-                .from('form_templates')
-                .insert(payload)
-                .select();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-            if (error) throw error;
-            if (!data || data.length === 0) throw new Error('No data returned from INSERT');
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/form_templates`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(payload),
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`Create Failed ${response.status}: ${await response.text()}`);
+            }
+
+            const data = await response.json();
+            if (!data || data.length === 0) throw new Error('No data returned');
 
             return {
                 id: data[0].id,
@@ -78,7 +109,7 @@ export const TemplateService = {
                 updatedAt: data[0].updated_at
             };
         } catch (err) {
-            console.error("[TemplateService] Create Error:", err);
+            console.error('[TemplateService] Create failed:', err);
             throw err;
         }
     },
@@ -96,36 +127,35 @@ export const TemplateService = {
             updated_at: new Date().toISOString()
         };
 
-        const { data, error } = await supabase
-            .from('form_templates')
-            .update(payload)
-            .eq('id', template.id)
-            .select();
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/form_templates?id=eq.${template.id}`, {
+                method: 'PATCH',
+                headers: getHeaders(),
+                body: JSON.stringify(payload)
+            });
 
-        if (error) {
-            console.error("[TemplateService] Update Error:", error);
-            throw error;
+            if (!response.ok) throw new Error(`Update Failed ${response.status}`);
+            const data = await response.json();
+
+            if (!data || data.length === 0) return null;
+
+            return { ...template, updatedAt: data[0].updated_at };
+        } catch (err) {
+            console.error('[TemplateService] Update failed:', err);
+            throw err;
         }
-
-        if (!data || data.length === 0) return null;
-
-        return {
-            ...template,
-            updatedAt: data[0].updated_at
-        };
     },
 
     async deleteTemplate(id: string): Promise<boolean> {
-        const { error } = await supabase
-            .from('form_templates')
-            .delete()
-            .eq('id', id);
-
-        if (error) {
-            console.error("[TemplateService] Delete Error:", error);
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/form_templates?id=eq.${id}`, {
+                method: 'DELETE',
+                headers: getHeaders()
+            });
+            return response.ok;
+        } catch (err) {
+            console.error('[TemplateService] Delete failed:', err);
             return false;
         }
-        return true;
     }
 };
-

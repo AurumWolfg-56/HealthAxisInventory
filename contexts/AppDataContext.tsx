@@ -122,6 +122,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             if (session && mountedRef.current) {
                 console.log('[AppDataContext] ✅ Session found on init, caching token...');
                 DailyReportService.setAccessToken(session.access_token);
+                TemplateService.setAccessToken(session.access_token);
                 await fetchAllData();
             } else {
                 console.log('[AppDataContext] No session found on init');
@@ -137,6 +138,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             if (event === 'SIGNED_IN' && session) { // Removed hasLoaded check to ensure refresh
                 console.log('[AppDataContext] SIGNED_IN detected, caching token...');
                 DailyReportService.setAccessToken(session.access_token);
+                TemplateService.setAccessToken(session.access_token);
                 if (mountedRef.current) {
                     await fetchAllData();
                 }
