@@ -43,6 +43,7 @@ jobs:
           # --parallel=2: use 2 parallel connections for speed
           # --verbose: show progress
           # --exclude-glob: exclude git and node_modules
+          lftp -c "set ssl:verify-certificate no;
                    set net:timeout 180; 
                    set net:max-retries 5; 
                    set net:reconnect-interval-base 5; 
