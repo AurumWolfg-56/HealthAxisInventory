@@ -342,8 +342,33 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                     step: 1
                 }
             });
+        } else {
+            // Check for saved draft
+            try {
+                const draft = localStorage.getItem('ha_daily_report_draft');
+                if (draft) {
+                    const parsed = JSON.parse(draft);
+                    // Only restore if it looks like valid state
+                    if (parsed.financials && parsed.operational) {
+                        console.log('Restoring daily report draft...');
+                        dispatch({ type: 'LOAD_DATA', payload: parsed });
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to load draft', e);
+            }
         }
     }, [initialData]);
+
+    // Auto-Save Draft (Debounced)
+    useEffect(() => {
+        if (!initialData) { // Don't overwrite draft with edit mode data
+            const timer = setTimeout(() => {
+                localStorage.setItem('ha_daily_report_draft', JSON.stringify(state));
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [state, initialData]);
 
     const activeProviders = usersDb.filter(u => u.role === UserRole.DOCTOR || u.role === UserRole.OWNER);
     const selectedProviderIds = Object.keys(state.operational.providerVisits);
@@ -417,6 +442,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
             }
 
             // 4. Complete (Allow a slight delay for PDF download to start)
+            localStorage.removeItem('ha_daily_report_draft'); // Clear draft on success
             setTimeout(() => {
                 onCloseComplete(report);
             }, 1500);

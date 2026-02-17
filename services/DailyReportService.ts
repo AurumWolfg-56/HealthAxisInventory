@@ -76,8 +76,14 @@ export const DailyReportService = {
             }
 
             const data = await response.json();
-            console.log('[DailyReportService] ✅ Report created:', data?.[0]?.id || report.id);
-            return { ...report, id: data?.[0]?.id || report.id };
+            const newReport = { ...report, id: data?.[0]?.id || report.id };
+
+            console.log('[DailyReportService] ✅ Report created:', newReport.id);
+
+            // Backup to local storage for safety/history
+            this.saveLocalReport(newReport);
+
+            return newReport;
         } catch (error: any) {
             if (error.name === 'AbortError') {
                 console.error('[DailyReportService] ❌ Create aborted after 15s timeout');
@@ -189,6 +195,7 @@ export const DailyReportService = {
                             user_id: userIdOverride || null,
                             timestamp: report.timestamp,
                             revenue: report.totals?.revenue || 0,
+                            patient_count: report.totals?.patients || 0, // FIXED: was patients, DB expects patient_count
                             cash: report.financials?.methods?.cash || 0,
                             card: report.financials?.methods?.credit || 0,
                             patients: report.totals?.patients || 0,
@@ -205,6 +212,30 @@ export const DailyReportService = {
         } catch (e) {
             console.error("Restoration failed", e);
             return 0;
+        }
+    },
+
+    saveLocalReport(report: DailyReport) {
+        try {
+            const raw = localStorage.getItem('ha_daily_reports');
+            let current: DailyReport[] = raw ? JSON.parse(raw) : [];
+
+            // Ensure array
+            if (!Array.isArray(current)) current = [];
+
+            // Remove if exists (update)
+            current = current.filter(r => r.id !== report.id);
+
+            // Add to top
+            current.unshift(report);
+
+            // Limit to 50 items
+            if (current.length > 50) current = current.slice(0, 50);
+
+            localStorage.setItem('ha_daily_reports', JSON.stringify(current));
+            console.log('[DailyReportService] 💾 Saved report to local backup');
+        } catch (e) {
+            console.error('[DailyReportService] Failed to save local backup', e);
         }
     }
 };
