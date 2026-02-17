@@ -3,10 +3,22 @@ import { FormTemplate } from '../types';
 
 export const TemplateService = {
     async getTemplates(): Promise<FormTemplate[]> {
-        const { data, error } = await supabase
+        console.log('[TemplateService] Fetching all templates...');
+
+        // Timeout Promise
+        const timeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Template fetch timed out after 10s')), 10000)
+        );
+
+        // Data Promise
+        const fetchPromise = supabase
             .from('form_templates')
             .select('*')
             .order('updated_at', { ascending: false });
+
+        // Race them
+        const result = await Promise.race([fetchPromise, timeout]) as any;
+        const { data, error } = result;
 
         if (error) {
             console.error("Error fetching templates:", error);
