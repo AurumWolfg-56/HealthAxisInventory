@@ -74,29 +74,36 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         console.log('[AppDataContext] === Starting data fetch ===');
 
         try {
-            try {
-                const reports = await DailyReportService.getReports();
+            // Run fetches in parallel using Promise.allSettled so one failure doesn't block the other result
+            const [reportsResult, templatesResult] = await Promise.allSettled([
+                DailyReportService.getReports(),
+                TemplateService.getTemplates()
+            ]);
+
+            // Handle Reports
+            if (reportsResult.status === 'fulfilled') {
                 if (mountedRef.current) {
-                    console.log('[AppDataContext] ✅ Reports fetched successfully:', reports.length);
-                    setDailyReports(reports);
+                    console.log('[AppDataContext] ✅ Reports fetched:', reportsResult.value.length);
+                    setDailyReports(reportsResult.value);
                 }
-            } catch (reportError) {
-                console.error('[AppDataContext] ❌ Reports fetch failed:', reportError);
+            } else {
+                console.error('[AppDataContext] ❌ Reports fetch failed:', reportsResult.reason);
             }
 
-            // Fetch templates (non-critical, no timeout needed)
-            try {
-                const fetchedTemplates = await TemplateService.getTemplates();
+            // Handle Templates
+            if (templatesResult.status === 'fulfilled') {
                 if (mountedRef.current) {
-                    console.log('[AppDataContext] ✅ Templates fetched:', fetchedTemplates.length);
-                    setTemplates(fetchedTemplates);
+                    console.log('[AppDataContext] ✅ Templates fetched:', templatesResult.value.length);
+                    setTemplates(templatesResult.value);
                 }
-            } catch (templateError) {
-                console.error('[AppDataContext] ❌ Templates fetch failed:', templateError);
+            } else {
+                console.error('[AppDataContext] ❌ Templates fetch failed:', templatesResult.reason);
             }
 
             hasLoadedRef.current = true;
             console.log('[AppDataContext] === Data fetch complete ===');
+        } catch (err) {
+            console.error('[AppDataContext] Critical fetch error:', err);
         } finally {
             isFetchingRef.current = false;
             if (mountedRef.current) setIsLoading(false);
