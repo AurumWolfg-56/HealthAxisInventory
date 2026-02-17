@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { FormTemplate, User, UserRole, Permission } from '../types';
 import PrintLayout from './PrintLayout';
 import SmartDictationInput from '../src/components/dictation/SmartDictationInput';
-import { useAppData } from '../contexts/AppDataContext'; // Import hook
+
 
 interface FormsProps {
     templates: FormTemplate[];
@@ -20,10 +20,7 @@ interface FormsProps {
 const VARIABLES = ['{{patientName}}', '{{patientDOB}}', '{{doctorName}}', '{{procedure}}', '{{date}}', '{{time}}'];
 
 const Forms: React.FC<FormsProps> = ({ templates, users, user, hasPermission, onSaveTemplate, onDeleteTemplate, onLogAction, t }) => {
-    const { refreshData, isLoading, templates: ctxTemplates } = useAppData(); // Connect to context for debug
-    const actualTemplates = templates || ctxTemplates; // Fallback to context if props are empty? Props should be passed from Layout/App but let's see.
-    // Actually, Forms is likely receiving templates as props from AppDataContext via App.tsx?
-    // Let's rely on props `templates` but show debug info using context state.
+
 
     const [activeTab, setActiveTab] = useState<'generate' | 'manage'>('generate');
 
@@ -503,26 +500,7 @@ I, **{{patientName}}**, hereby authorize...
     // --- RENDER: MAIN LIST ---
     return (
         <div className="space-y-8 pb-20 md:pb-10 animate-fade-in-up">
-            {/* DEBUG BANNER - TEMPORARY */}
-            <div className="bg-yellow-100 dark:bg-yellow-900/30 border-l-4 border-yellow-500 p-4 rounded shadow-md mb-6">
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h4 className="font-bold text-yellow-800 dark:text-yellow-200 uppercase text-xs tracking-wider mb-1">🔍 Diagnostics Panel</h4>
-                        <p className="text-xs text-yellow-700 dark:text-yellow-300 font-mono">
-                            Templates Loaded: <strong>{templates.length}</strong> |
-                            Loading: <strong>{isLoading ? 'YES' : 'NO'}</strong> |
-                            User: <strong>{user?.username || 'Guest'}</strong>
-                        </p>
-                    </div>
-                    <button
-                        onClick={() => refreshData()}
-                        disabled={isLoading}
-                        className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-xs font-bold uppercase disabled:opacity-50"
-                    >
-                        {isLoading ? 'Fetching...' : 'Force Reload'}
-                    </button>
-                </div>
-            </div>
+
 
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
