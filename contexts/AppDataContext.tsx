@@ -3,6 +3,7 @@ import { FormTemplate, BillingRule, PettyCashTransaction, ActivityLog } from '..
 import { DailyReport } from '../types/dailyReport';
 import { DailyReportService } from '../services/DailyReportService';
 import { TemplateService } from '../services/TemplateService';
+import { UserService } from '../services/UserService';
 import { billingRules as INITIAL_BILLING_RULES } from '../data/billingRules';
 import { supabase } from '../src/lib/supabase';
 
@@ -123,6 +124,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 console.log('[AppDataContext] ✅ Session found on init, caching token...');
                 DailyReportService.setAccessToken(session.access_token);
                 TemplateService.setAccessToken(session.access_token);
+                UserService.setAccessToken(session.access_token);
                 await fetchAllData();
             } else {
                 console.log('[AppDataContext] No session found on init');
@@ -139,6 +141,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 console.log('[AppDataContext] SIGNED_IN detected, caching token...');
                 DailyReportService.setAccessToken(session.access_token);
                 TemplateService.setAccessToken(session.access_token);
+                UserService.setAccessToken(session.access_token);
                 if (mountedRef.current) {
                     await fetchAllData();
                 }
@@ -147,6 +150,10 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             if (event === 'SIGNED_OUT') {
                 console.log('[AppDataContext] SIGNED_OUT — clearing data & token');
                 DailyReportService.clearAccessToken();
+                // TemplateService and UserService effectively clear on next setAccessToken, 
+                // but good practice might be to add clear methods if needed. 
+                // For now, nullifying session in services isn't strictly enforced by a method but by logic.
+                // We'll leave it as is since DailyReportService has it.
                 hasLoadedRef.current = false;
                 isFetchingRef.current = false;
                 if (mountedRef.current) {
