@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserRole, RoleConfig, Permission } from '../types';
-import { supabase } from '../src/lib/supabase';
+import { UserService, DBUser } from '../services/UserService'; // Use Service
 import { DataRepair } from './DataRepair';
 
 interface AdminProps {
@@ -9,14 +9,6 @@ interface AdminProps {
     onUpdateRoleConfig: (role: UserRole, permission: Permission) => void;
     currentUser: any;
     t: (key: string) => string;
-}
-
-interface DBUser {
-    id: string;
-    full_name: string;
-    email: string;
-    role: UserRole;
-    permissions?: Permission[];
 }
 
 const ALL_PERMISSIONS: { id: Permission; label: string; category: string }[] = [
@@ -65,22 +57,9 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
         setError(null);
 
         try {
-            // Use left join (no !inner) so profiles without roles still appear
-            const { data: profiles, error: pError } = await supabase
-                .from('profiles')
-                .select('id, full_name, permissions, user_roles(role_id)');
-
-            if (pError) throw pError;
-
-            const formattedUsers: DBUser[] = (profiles || []).map((p: any) => ({
-                id: p.id,
-                full_name: p.full_name || 'Anonymous User',
-                email: 'N/A',
-                role: p.user_roles?.[0]?.role_id || UserRole.FRONT_DESK,
-                permissions: p.permissions || undefined
-            }));
-
-            setUsers(formattedUsers);
+            // Replaced supabase.from('profiles')... with UserService.getUsers()
+            const fetchedUsers = await UserService.getUsers();
+            setUsers(fetchedUsers);
         } catch (err: any) {
             console.error('Error fetching users:', err);
             setError(err.message || 'Failed to load personnel list');
@@ -101,36 +80,8 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
         e.preventDefault();
         setInviting(true);
         try {
-            const { data, error } = await supabase.functions.invoke('admin-api', {
-                body: {
-                    action: 'invite_user',
-                    payload: {
-                        email: inviteData.email,
-                        full_name: inviteData.full_name,
-                        role_id: inviteData.role,
-                        redirectTo: window.location.origin
-                    }
-                }
-            });
-
-            if (error) {
-                console.error('Admin API Error:', error);
-                let errorMessage = error.message;
-                // Robust parsing of context/body
-                try {
-                    if (error.context && typeof error.context.json === 'function') {
-                        const body = await error.context.json();
-                        if (body && body.error) errorMessage = body.error;
-                    }
-                } catch (e) {
-                    // Ignore parsing errors
-                }
-                throw new Error(errorMessage);
-            }
-
-            if (data && data.error) {
-                throw new Error(data.error);
-            }
+            // Replaced supabase.functions.invoke with UserService.inviteUser
+            await UserService.inviteUser(inviteData.email, inviteData.full_name, inviteData.role);
 
             alert('User invited successfully!');
             setInviteData({ email: '', full_name: '', role: UserRole.MA });
@@ -144,19 +95,8 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
 
     const handleUpdateUser = async (userId: string, updates: { full_name: string; role: UserRole }) => {
         try {
-            const { error: pError } = await supabase
-                .from('profiles')
-                .update({ full_name: updates.full_name })
-                .eq('id', userId);
-
-            if (pError) throw pError;
-
-            const { error: rError } = await supabase
-                .from('user_roles')
-                .update({ role_id: updates.role })
-                .eq('user_id', userId);
-
-            if (rError) throw rError;
+            // Replaced supabase.from('profiles').update... with UserService.updateUser
+            await UserService.updateUser(userId, updates);
 
             setEditingUser(null);
             fetchUsers();
@@ -183,12 +123,8 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
         }
 
         try {
-            const { error } = await supabase
-                .from('profiles')
-                .update({ permissions: newPerms.length > 0 ? newPerms : null })
-                .eq('id', userId);
-
-            if (error) throw error;
+            // Replaced supabase.from('profiles').update({permissions...}) with UserService.updatePermissions
+            await UserService.updatePermissions(userId, newPerms.length > 0 ? newPerms : null);
 
             // Show success feedback
             const permLabel = permission.split('.').pop();
@@ -204,30 +140,8 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
     const handleDeleteUser = async (userId: string) => {
         if (!confirm('Are you sure you want to delete this user? This action is irreversible.')) return;
         try {
-            const { data, error } = await supabase.functions.invoke('admin-api', {
-                body: {
-                    action: 'delete_user',
-                    payload: { user_id: userId }
-                }
-            });
-
-            if (error) {
-                let errorMessage = error.message;
-                try {
-                    if (error.context && typeof error.context.json === 'function') {
-                        const body = await error.context.json();
-                        if (body && body.error) errorMessage = body.error;
-                    }
-                } catch (e) {
-                    console.log('Error parsing response body', e);
-                }
-                throw new Error(errorMessage);
-            }
-
-            if (data && data.success === false) {
-                const debugInfo = data.debug ? JSON.stringify(data.debug) : '';
-                throw new Error(data.error || 'Unknown server error. ' + debugInfo);
-            }
+            // Replaced supabase.functions.invoke with UserService.deleteUser
+            await UserService.deleteUser(userId);
 
             fetchUsers();
             alert('User deleted successfully.');
