@@ -43,10 +43,10 @@ jobs:
           # --parallel=2: use 2 parallel connections for speed
           # --verbose: show progress
           # --exclude-glob: exclude git and node_modules
-          lftp -c "set ssl:verify-certificate no; 
-                   set net:timeout 120; 
-                   set net:max-retries 3; 
+                   set net:timeout 180; 
+                   set net:max-retries 5; 
                    set net:reconnect-interval-base 5; 
+                   set net:connection-limit 1;
                    set ftp:ssl-allow yes;
                    open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }}; 
-                   mirror -R --verbose --no-perms --only-newer --parallel=2 --delete --exclude-glob .git* --exclude-glob node_modules ./dist/ /home/u250946921/domains/healthaxisinventory.com/public_html/"
+                   mirror -R --verbose --no-perms --only-newer --parallel=1 --delete --exclude-glob .git* --exclude-glob node_modules ./dist/ /home/u250946921/domains/healthaxisinventory.com/public_html/"
