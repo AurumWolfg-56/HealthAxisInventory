@@ -44,6 +44,7 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
         poNumber: '',
         vendor: '',
         orderDate: new Date().toISOString().split('T')[0],
+        subtotal: 0,
         shippingCost: 0,
         totalTax: 0
     });
@@ -70,6 +71,7 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
             poNumber: '',
             vendor: '',
             orderDate: new Date().toISOString().split('T')[0],
+            subtotal: 0,
             shippingCost: 0,
             totalTax: 0
         });
@@ -173,10 +175,14 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
             });
 
             setExtractedItems(processed);
+            const calculatedSubtotal = processed.reduce((sum, item) => sum + item.total, 0);
+
             setOrderDetails({
                 poNumber: result.poNumber || '',
                 vendor: result.vendor || '',
                 orderDate: result.orderDate || new Date().toISOString().split('T')[0],
+                // Use scanned subtotal if available and non-zero, otherwise fallback to calculated sum
+                subtotal: result.subtotal || calculatedSubtotal,
                 shippingCost: result.shippingCost || 0,
                 totalTax: result.totalTax || 0
             });
@@ -213,7 +219,8 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
     };
 
     const calculateTotals = () => {
-        const subtotal = extractedItems.reduce((sum, item) => sum + item.total, 0);
+        // Use the manual subtotal from state instead of recalculating from items
+        const subtotal = orderDetails.subtotal;
         const grandTotal = subtotal + orderDetails.shippingCost + orderDetails.totalTax;
         return { subtotal, grandTotal };
     };
@@ -558,9 +565,19 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
 
                             {/* Totals */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-4">
-                                <div className="p-5 rounded-[2rem] bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 shadow-inner">
+                                <div className="p-5 rounded-[2rem] bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 shadow-inner group">
                                     <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Subtotal</div>
-                                    <div className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">${subtotal.toFixed(2)}</div>
+                                    <div className="relative">
+                                        <span className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-900 dark:text-white font-extrabold text-2xl">$</span>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value={orderDetails.subtotal}
+                                            onChange={(e) => setOrderDetails(prev => ({ ...prev, subtotal: parseFloat(e.target.value) || 0 }))}
+                                            className="w-full h-10 pl-6 pr-2 rounded-xl border-none bg-transparent text-2xl text-slate-900 dark:text-white font-extrabold focus:ring-0 p-0 tracking-tight"
+                                        />
+                                    </div>
                                 </div>
                                 <div className="space-y-2 group">
                                     <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Taxation</label>
