@@ -41,9 +41,22 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
 
   const handleAsyncAction = async (id: string, action: () => Promise<void>) => {
     setLoadingItemIds(prev => new Set(prev).add(id));
+    const timeoutId = setTimeout(() => {
+      setLoadingItemIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      // Optionally show toast here if we could import it, but cleaner to let logic handle it.
+      console.error(`[Inventory] Action for ${id} timed out.`);
+    }, 10000); // 10s timeout safeguard
+
     try {
       await action();
+    } catch (e) {
+      console.error(e);
     } finally {
+      clearTimeout(timeoutId);
       setLoadingItemIds(prev => {
         const next = new Set(prev);
         next.delete(id);

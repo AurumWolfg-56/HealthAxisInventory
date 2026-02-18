@@ -103,30 +103,27 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     useEffect(() => {
         let mounted = true;
 
+        const handleSession = (session: any) => {
+            if (session?.access_token) {
+                InventoryService.setAccessToken(session.access_token);
+                OrderService.setAccessToken(session.access_token);
+                PriceService.setAccessToken(session.access_token);
+                MedicalCodeService.setAccessToken(session.access_token);
+                if (mounted) setIsAuthenticated(true);
+            } else {
+                if (mounted) setIsAuthenticated(false);
+            }
+        };
+
         // Check initial session
         supabase.auth.getSession().then(({ data: { session } }) => {
-            if (mounted) {
-                setIsAuthenticated(!!session);
-            }
+            if (mounted) handleSession(session);
         });
 
         // Subscribe to auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (!mounted) return;
-
-            const hasSession = !!session;
-
-            // Only update if auth state actually changed
-            setIsAuthenticated(prev => {
-                if (prev !== hasSession) {
-                    // Reset loaded flag when logging out
-                    if (!hasSession) {
-                        hasLoadedRef.current = false;
-                    }
-                    return hasSession;
-                }
-                return prev;
-            });
+            handleSession(session);
         });
 
         return () => {

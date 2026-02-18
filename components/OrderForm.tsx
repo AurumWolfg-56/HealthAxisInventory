@@ -92,25 +92,43 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
 
     const webcamRef = useRef<Webcam>(null);
 
+    const [isSubtotalManual, setIsSubtotalManual] = useState(false);
+
     // Initialize data
     useEffect(() => {
         if (initialData) {
             setFormData(prev => ({ ...prev, ...initialData }));
+
+            // Check if subtotal was manually edited (differs from sum of items)
+            if (initialData.items && initialData.subtotal) {
+                const sum = initialData.items.reduce((s, i) => s + (i.total || 0), 0);
+                if (Math.abs(sum - initialData.subtotal) > 0.05) { // Small epsilon
+                    setIsSubtotalManual(true);
+                }
+            }
         }
     }, [initialData]);
 
     // Math: Calculate Totals
     useEffect(() => {
-        const subtotal = formData.items?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
-        const tax = formData.totalTax || 0;
-        const grand = subtotal + tax + (formData.shippingCost || 0);
+        const itemSum = formData.items?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
 
-        setFormData(prev => ({
-            ...prev,
-            subtotal: parseFloat(subtotal.toFixed(2)),
-            grandTotal: parseFloat(grand.toFixed(2))
-        }));
-    }, [formData.items, formData.totalTax, formData.shippingCost]);
+        let effectiveSubtotal = formData.subtotal || 0;
+        if (!isSubtotalManual) {
+            effectiveSubtotal = parseFloat(itemSum.toFixed(2));
+        }
+
+        const tax = formData.totalTax || 0;
+        const grand = effectiveSubtotal + tax + (formData.shippingCost || 0);
+
+        if (effectiveSubtotal !== formData.subtotal || grand !== formData.grandTotal) {
+            setFormData(prev => ({
+                ...prev,
+                subtotal: effectiveSubtotal,
+                grandTotal: parseFloat(grand.toFixed(2))
+            }));
+        }
+    }, [formData.items, formData.totalTax, formData.shippingCost, isSubtotalManual]);
 
     const handleAddItem = () => {
         const newItem: OrderItem = {
@@ -585,9 +603,31 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                     <div className="absolute top-0 right-0 w-40 h-40 bg-medical-500/20 rounded-full blur-[60px]"></div>
 
                     <div className="relative z-10 space-y-5">
-                        <div className="flex justify-between text-sm text-gray-400 font-medium">
-                            <span>{t('lbl_subtotal')}</span>
-                            <span className="font-mono text-white tracking-wide">${formData.subtotal?.toFixed(2)}</span>
+                        <div className="flex justify-between items-center text-sm text-gray-400 font-medium group relative">
+                            <span className="flex items-center gap-2">
+                                {t('lbl_subtotal')}
+                                {isSubtotalManual && (
+                                    <button
+                                        onClick={() => setIsSubtotalManual(false)}
+                                        className="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500 hover:text-white transition-colors"
+                                        title="Reset to auto-calculated sum"
+                                    >
+                                        Manual (Reset)
+                                    </button>
+                                )}
+                            </span>
+                            <div className="flex items-center gap-1 bg-white/10 rounded-lg px-3 py-1.5 backdrop-blur-sm transition-colors focus-within:bg-white/20">
+                                <span className="text-xs text-gray-300">$</span>
+                                <input
+                                    type="number"
+                                    value={formData.subtotal}
+                                    onChange={e => {
+                                        setIsSubtotalManual(true);
+                                        setFormData({ ...formData, subtotal: parseFloat(e.target.value) || 0 });
+                                    }}
+                                    className="w-24 bg-transparent text-right font-mono text-white outline-none font-bold tracking-wide"
+                                />
+                            </div>
                         </div>
                         <div className="flex justify-between items-center text-sm text-gray-400 font-medium">
                             <span>{t('lbl_ship_cost')}</span>

@@ -41,6 +41,7 @@ import { InventoryService } from './services/InventoryService';
 import { OrderService } from './services/OrderService';
 import { PriceService } from './services/PriceService';
 import { MedicalCodeService } from './services/MedicalCodeService';
+import { UserService } from './services/UserService';
 import { migrateLocalToCloud } from './utils/migrateLocalToCloud';
 
 const STORAGE_KEYS = {
@@ -88,25 +89,7 @@ const loadState = <T,>(key: string, fallback: T): T => {
     }
 };
 
-const mapToDb = (item: Partial<InventoryItem>) => {
-    const mapping: Record<string, string> = {
-        name: 'name',
-        category: 'category',
-        stock: 'stock',
-        unit: 'unit',
-        averageCost: 'average_cost',
-        minStock: 'min_stock',
-        maxStock: 'max_stock',
-        expiryDate: 'expiry_date',
-        batchNumber: 'batch_number',
-        location: 'location'
-    };
-    const dbObj: any = {};
-    Object.entries(item).forEach(([key, value]) => {
-        if (mapping[key]) dbObj[mapping[key]] = value;
-    });
-    return dbObj;
-};
+
 
 const App: React.FC = () => {
     // --- AUTH CONTEXT ---
@@ -209,39 +192,10 @@ const App: React.FC = () => {
         const fetchUsersDb = async () => {
             if (!user?.id) return;
             try {
-                // We fetch profiles and their roles
-                const { data: profiles, error } = await supabase
-                    .from('profiles')
-                    .select('id, full_name, user_roles(role_id), permissions');
-
-                if (error) {
-                    console.error('Error fetching users db:', error);
-                    return;
-                }
-
-                console.log('[Debug] Raw Profiles from DB:', profiles);
-
-                if (profiles) {
-                    const mappedUsers: User[] = profiles.map((p: any) => {
-                        const role = p.user_roles?.[0]?.role_id || UserRole.FRONT_DESK;
-                        // Debug log for each user's raw role data
-                        console.log(`[Debug] User ${p.full_name} (${p.id}):`, {
-                            rawRoles: p.user_roles,
-                            resolvedRole: role
-                        });
-                        return {
-                            id: p.id,
-                            username: p.full_name || 'Unknown',
-                            role: role,
-                            email: '', // Optional or N/A
-                            permissions: p.permissions
-                        };
-                    });
-
-                    console.log('[Debug] Final Mapped Users:', mappedUsers);
-                    setUsersDb(mappedUsers);
-                    localStorage.setItem(STORAGE_KEYS.USERS_DB, JSON.stringify(mappedUsers));
-                }
+                const fetchedUsers = await UserService.getUsers();
+                console.log('[Debug] Users fetched:', fetchedUsers);
+                setUsersDb(fetchedUsers);
+                localStorage.setItem(STORAGE_KEYS.USERS_DB, JSON.stringify(fetchedUsers));
             } catch (err) {
                 console.error('Exception fetching users db:', err);
             }
@@ -351,21 +305,7 @@ const App: React.FC = () => {
         }
     };
 
-    const mapToDb = (item: any) => {
-        const mapping: any = {};
-        if (item.name !== undefined) mapping.name = item.name;
-        if (item.category !== undefined) mapping.category = item.category;
-        if (item.stock !== undefined) mapping.stock = item.stock;
-        if (item.unit !== undefined) mapping.unit = item.unit;
-        if (item.averageCost !== undefined) mapping.average_cost = item.averageCost;
-        if (item.minStock !== undefined) mapping.min_stock = item.minStock;
-        if (item.maxStock !== undefined) mapping.max_stock = item.maxStock;
-        if (item.expiryDate !== undefined) mapping.expiry_date = item.expiryDate || null;
-        if (item.batchNumber !== undefined) mapping.batch_number = item.batchNumber;
-        if (item.location !== undefined) mapping.location = item.location;
-        if (item.lastChecked !== undefined) mapping.last_checked = item.lastChecked;
-        return mapping;
-    };
+
 
     const handleImport = async (file: File) => {
         try {
@@ -495,18 +435,18 @@ const App: React.FC = () => {
                 onClose={() => setShowScanner(false)}
                 onAddItem={async (itemData) => {
                     try {
-                        const dbData = mapToDb(itemData);
-                        const { data, error } = await supabase.from('items').insert([dbData]).select();
-                        if (error) throw error;
-                        if (data && data[0]) {
-                            const newItem: InventoryItem = {
-                                ...itemData as InventoryItem,
-                                id: data[0].id,
-                            };
+                        const newItem = await InventoryService.createItem(itemData);
+                        if (newItem) {
                             setInventory(prev => [newItem, ...prev]);
+                            addToast('Item added via AI Scanner', 'success');
+
+                            if (user?.id) {
+                                await InventoryService.logAction(user.id, 'ADDED', newItem.id, `AI Scanner added: ${newItem.name}`);
+                                addLog('ADDED', `AI Scanner added: ${newItem.name}`);
+                            }
+                        } else {
+                            throw new Error("Failed to create item");
                         }
-                        addToast('Item added via AI Scanner', 'success');
-                        addLog('ADDED', `AI Scanner added: ${itemData.name}`);
                     } catch (e: any) {
                         addToast(`Scan save failed: ${e.message}`, 'error');
                     }
@@ -518,29 +458,20 @@ const App: React.FC = () => {
                 onClose={() => setIsModalOpen(false)}
                 onSave={async (itemData) => {
                     try {
-                        const dbData = mapToDb(itemData);
                         if (itemData.id) {
-                            const { error } = await supabase.from('items').update(dbData).eq('id', itemData.id);
-                            if (error) throw error;
+                            await InventoryService.updateItem(itemData.id, itemData);
                             setInventory(prev => prev.map(i => i.id === itemData.id ? { ...i, ...itemData } : i as InventoryItem));
                             addToast('Item updated', 'success');
+                            if (user?.id) await InventoryService.logAction(user.id, 'UPDATED', itemData.id, `Updated ${itemData.name}`);
                         } else {
-                            const { data, error } = await supabase.from('items').insert([dbData]).select();
-                            if (error) throw error;
-                            if (data && data[0]) {
-                                const newItem: InventoryItem = {
-                                    ...itemData as InventoryItem,
-                                    id: data[0].id,
-                                    averageCost: itemData.averageCost || 0,
-                                    minStock: itemData.minStock || 10,
-                                    maxStock: itemData.maxStock || 100,
-                                    batchNumber: itemData.batchNumber || '',
-                                    expiryDate: itemData.expiryDate || '',
-                                    location: itemData.location || ''
-                                };
+                            const newItem = await InventoryService.createItem(itemData);
+                            if (newItem) {
                                 setInventory(prev => [newItem, ...prev]);
+                                addToast('Item added', 'success');
+                                if (user?.id) await InventoryService.logAction(user.id, 'ADDED', newItem.id, `Added ${newItem.name}`);
+                            } else {
+                                throw new Error("Failed to create item");
                             }
-                            addToast('Item added', 'success');
                         }
                         setIsModalOpen(false);
                     } catch (e: any) {
@@ -592,11 +523,12 @@ const App: React.FC = () => {
                             onEditItem={(i) => { setModalItem(i); setIsModalOpen(true); }}
                             onUpdateItem={async (id, updates) => {
                                 try {
-                                    const dbUpdates = mapToDb(updates);
-                                    const { error } = await supabase.from('items').update(dbUpdates).eq('id', id);
-                                    if (error) throw error;
+                                    await InventoryService.updateItem(id, updates);
                                     setInventory(prev => prev.map(inv => inv.id === id ? { ...inv, ...updates } : inv));
                                     addToast('Item updated successfully', 'success');
+
+                                    // Optional: Log update
+                                    if (user?.id) await InventoryService.logAction(user.id, 'UPDATED', id, `Updated item details`, updates);
                                 } catch (e: any) {
                                     addToast(`Update failed: ${e.message}`, 'error');
                                 }
@@ -608,15 +540,10 @@ const App: React.FC = () => {
                                     const username = user?.username || 'System';
                                     const userId = user?.id;
 
-                                    // Update items table
-                                    const { error: updateError } = await supabase.from('items')
-                                        .update({
-                                            last_checked: timestamp,
-                                            last_checked_by: username
-                                        })
-                                        .eq('id', id);
-
-                                    if (updateError) throw updateError;
+                                    await InventoryService.updateItem(id, {
+                                        lastChecked: timestamp,
+                                        lastCheckedBy: username
+                                    });
 
                                     // Update local state
                                     setInventory(prev => prev.map(inv => inv.id === id ? {
@@ -628,13 +555,7 @@ const App: React.FC = () => {
                                     // Log the audit action
                                     if (userId) {
                                         const item = inventory.find(i => i.id === id);
-                                        await supabase.from('audit_log').insert({
-                                            user_id: userId,
-                                            action: 'AUDITED',
-                                            resource: 'inventory',
-                                            resource_id: id,
-                                            new_value: { stock: item?.stock, verified_at: timestamp }
-                                        });
+                                        await InventoryService.logAction(userId, 'AUDITED', id, { stock: item?.stock, verified_at: timestamp });
 
                                         // Sync with local activity log
                                         addLog('AUDITED', `Verified audit for ${item?.name || 'Item ID: ' + id}`);
@@ -672,13 +593,14 @@ const App: React.FC = () => {
                                         // Log activity
                                         addLog('ORDER_CREATED', `Created PO #${newOrder.poNumber} for ${newOrder.vendor}`);
                                         if (user.id) {
-                                            await supabase.from('audit_log').insert({
-                                                user_id: user.id,
-                                                action: 'ORDER_CREATED',
-                                                resource: 'orders',
-                                                resource_id: newOrder.id,
-                                                new_value: { vendor: newOrder.vendor, total: newOrder.grandTotal }
-                                            });
+                                            await InventoryService.logAction(
+                                                user.id,
+                                                'ORDER_CREATED',
+                                                newOrder.id,
+                                                "Order Created",
+                                                { vendor: newOrder.vendor, total: newOrder.grandTotal },
+                                                'orders'
+                                            );
                                         }
                                     }
                                 } catch (e: any) {
@@ -729,24 +651,18 @@ const App: React.FC = () => {
 
                                             // Update in Supabase
                                             if (user?.id) {
-                                                await supabase.from('items').update({
+                                                await InventoryService.updateItem(existingItem.id, {
                                                     stock: newStock,
-                                                    average_cost: newAverageCost,
-                                                    last_checked: new Date().toISOString(),
-                                                    last_checked_by: user.username
-                                                }).eq('id', existingItem.id);
+                                                    averageCost: newAverageCost,
+                                                    lastChecked: new Date().toISOString(),
+                                                    lastCheckedBy: user.username
+                                                });
 
                                                 // Log Audit
-                                                await supabase.from('audit_log').insert({
-                                                    user_id: user.id,
-                                                    action: 'RESTOCKED',
-                                                    resource: 'inventory',
-                                                    resource_id: existingItem.id,
-                                                    new_value: {
-                                                        stock: newStock,
-                                                        added: orderItem.quantity,
-                                                        source_order: order.id
-                                                    }
+                                                await InventoryService.logAction(user.id, 'RESTOCKED', existingItem.id, {
+                                                    stock: newStock,
+                                                    added: orderItem.quantity,
+                                                    source_order: order.id
                                                 });
                                             }
                                         } else {
@@ -768,30 +684,21 @@ const App: React.FC = () => {
 
                                             // Insert into Supabase to get ID
                                             if (user?.id) {
-                                                // Prepare DB object (snake_case)
-                                                const dbItem = {
-                                                    ...mapToDb(newItemConfig),
-                                                    user_id: user.id
-                                                };
-
-                                                const { data, error } = await supabase.from('items').insert([dbItem]).select();
-
-                                                if (data && data[0]) {
-                                                    const newItem: InventoryItem = {
-                                                        ...newItemConfig,
-                                                        id: data[0].id
-                                                    };
-                                                    newInventory.push(newItem);
-                                                    itemsProcessed.push(`${newItem.name} (New)`);
-                                                } else if (error) {
+                                                try {
+                                                    const newItem = await InventoryService.createItem(newItemConfig);
+                                                    if (newItem) {
+                                                        newInventory.push(newItem);
+                                                        itemsProcessed.push(`${newItem.name} (New)`);
+                                                    } else {
+                                                        throw new Error("Created item is null");
+                                                    }
+                                                } catch (error: any) {
                                                     console.error('Error creating item from order:', error);
                                                     addToast(`Failed to save ${newItemConfig.name}: ${error.message}`, 'error');
-                                                    // Do NOT fallback to local-only, as this causes data loss on refresh
                                                 }
                                             } else {
                                                 // Local only fallback (only if user invalid, which shouldn't happen in auth'd app)
                                                 console.warn('No user ID found, skipping DB insert for item');
-                                                // newInventory.push({ ...newItemConfig, id: generateUUID() });
                                                 addToast(`Failed to save ${newItemConfig.name}: User not authenticated`, 'error');
                                             }
                                         }
@@ -825,12 +732,7 @@ const App: React.FC = () => {
 
                                     if (user?.id) {
                                         try {
-                                            await supabase.from('audit_log').insert({
-                                                user_id: user.id,
-                                                action: 'DELETED_ORDER',
-                                                resource: 'orders',
-                                                resource_id: orderId
-                                            });
+                                            await InventoryService.logAction(user.id, 'DELETED_ORDER', orderId, {}, null, 'orders');
                                         } catch (logErr) {
                                             console.warn('Audit log insert failed (non-critical):', logErr);
                                         }
@@ -845,18 +747,15 @@ const App: React.FC = () => {
                             }}
                             onAddToInventory={async (itemData) => {
                                 try {
-                                    const dbData = mapToDb(itemData);
-                                    const { data, error } = await supabase.from('items').insert([dbData]).select();
-                                    if (error) throw error;
-                                    if (data && data[0]) {
-                                        const newItem: InventoryItem = {
-                                            ...itemData as InventoryItem,
-                                            id: data[0].id,
-                                        };
+                                    const newItem = await InventoryService.createItem(itemData);
+                                    if (newItem) {
                                         setInventory(prev => [newItem, ...prev]);
+                                        addToast(`Added ${itemData.name} to inventory`, 'success');
+                                        if (user?.id) await InventoryService.logAction(user.id, 'ADDED', newItem.id, `Order Scanner added: ${newItem.name}`);
+                                        addLog('ADDED', `Order Scanner added: ${itemData.name}`);
+                                    } else {
+                                        throw new Error("Failed to create item");
                                     }
-                                    addToast(`Added ${itemData.name} to inventory`, 'success');
-                                    addLog('ADDED', `Order Scanner added: ${itemData.name}`);
                                 } catch (e: any) {
                                     addToast(`Failed to add item: ${e.message}`, 'error');
                                 }

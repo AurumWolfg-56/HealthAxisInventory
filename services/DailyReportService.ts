@@ -177,7 +177,7 @@ export const DailyReportService = {
             const reports: DailyReport[] = JSON.parse(localData);
             if (!Array.isArray(reports) || reports.length === 0) return 0;
 
-            let restoredCount = 0;
+            let restoredCount = 0; console.log(`[DailyReportService] Attempting to restore ${reports.length} local reports...`);
 
             for (const report of reports) {
                 // Check if exists via direct fetch
@@ -187,30 +187,33 @@ export const DailyReportService = {
 
                 if (!existing || existing.length === 0) {
                     const insertUrl = `${SUPABASE_URL}/rest/v1/daily_reports`;
+
+                    const dbPayload = {
+                        id: report.id,
+                        user_id: userIdOverride || null,
+                        timestamp: report.timestamp,
+                        author: report.author,
+                        data: report, // JSONB structure
+                        revenue: report.totals.revenue,
+                        patient_count: report.totals.patients,
+                        cash: report.financials.methods.cash,
+                        card: report.financials.methods.credit,
+                        is_balanced: report.isBalanced,
+                        notes: report.notes
+                    };
+
                     const resp = await fetch(insertUrl, {
                         method: 'POST',
                         headers: getHeaders(),
-                        body: JSON.stringify({
-                            id: report.id,
-                            user_id: userIdOverride || null,
-                            timestamp: report.timestamp,
-                            revenue: report.totals?.revenue || 0,
-                            patient_count: report.totals?.patients || 0, // FIXED: was patients, DB expects patient_count
-                            cash: report.financials?.methods?.cash || 0,
-                            card: report.financials?.methods?.credit || 0,
-                            patients: report.totals?.patients || 0,
-                            notes: report.notes || '',
-                            is_balanced: report.isBalanced || false,
-                            author: report.author || '',
-                            data: report
-                        })
+                        body: JSON.stringify(dbPayload)
                     });
                     if (resp.ok) restoredCount++;
+                    else console.warn(`[DailyReportService] Failed to restore ${report.id}:`, await resp.text());
                 }
             }
             return restoredCount;
         } catch (e) {
-            console.error("Restoration failed", e);
+            console.error("[DailyReportService] Restoration failed", e);
             return 0;
         }
     },

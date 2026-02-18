@@ -2,62 +2,114 @@ import { supabase } from '../src/lib/supabase';
 import { PriceItem, DBPrice } from '../types';
 
 export class PriceService {
+    private static accessToken: string | null = null;
+    private static apiUrl = import.meta.env.VITE_SUPABASE_URL + '/rest/v1';
+    private static apiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    static setAccessToken(token: string) {
+        this.accessToken = token;
+    }
+
+    private static getHeaders() {
+        if (!this.accessToken) {
+            console.warn('[PriceService] ⚠️ No access token! Operations may fail.');
+        }
+        return {
+            'apikey': this.apiKey,
+            'Authorization': `Bearer ${this.accessToken || this.apiKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+        };
+    }
 
     static async fetchAll(): Promise<PriceItem[]> {
-        const { data, error } = await supabase
-            .from('prices')
-            .select('*')
-            .order('service_name', { ascending: true });
+        try {
+            if (!this.accessToken) return [];
 
-        if (error) throw error;
-        if (!data) return [];
+            const response = await fetch(`${this.apiUrl}/prices?select=*&order=service_name.asc`, {
+                headers: this.getHeaders()
+            });
 
-        return data.map(PriceService.mapFromDb);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+
+            if (!data) return [];
+            return data.map(PriceService.mapFromDb);
+        } catch (error) {
+            console.error('[PriceService] Fetch failed:', error);
+            return [];
+        }
     }
 
     static async createPrice(price: Omit<PriceItem, 'id'>): Promise<PriceItem | null> {
-        const dbPrice: Omit<DBPrice, 'id' | 'created_at'> = {
-            service_name: price.serviceName,
-            price: price.price,
-            category: price.category,
-            code: price.code || null
-        };
+        try {
+            const dbPrice: Omit<DBPrice, 'id' | 'created_at'> = {
+                service_name: price.serviceName,
+                price: price.price,
+                category: price.category,
+                code: price.code || null
+            };
 
-        const { data, error } = await supabase
-            .from('prices')
-            .insert([dbPrice])
-            .select()
-            .single();
+            const response = await fetch(`${this.apiUrl}/prices`, {
+                method: 'POST',
+                headers: this.getHeaders(),
+                body: JSON.stringify(dbPrice)
+            });
 
-        if (error) throw error;
-        if (!data) throw new Error('Failed to create price item: No data returned from database');
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Failed to create price (${response.status}): ${text}`);
+            }
 
-        return PriceService.mapFromDb(data);
+            const data = await response.json();
+            return PriceService.mapFromDb(data[0]);
+
+        } catch (error) {
+            console.error('[PriceService] Create failed:', error);
+            throw error;
+        }
     }
 
     static async updatePrice(price: PriceItem): Promise<void> {
-        const dbPrice: Partial<DBPrice> = {
-            service_name: price.serviceName,
-            price: price.price,
-            category: price.category,
-            code: price.code || null
-        };
+        try {
+            const dbPrice: Partial<DBPrice> = {
+                service_name: price.serviceName,
+                price: price.price,
+                category: price.category,
+                code: price.code || null
+            };
 
-        const { error } = await supabase
-            .from('prices')
-            .update(dbPrice)
-            .eq('id', price.id);
+            const response = await fetch(`${this.apiUrl}/prices?id=eq.${price.id}`, {
+                method: 'PATCH',
+                headers: this.getHeaders(),
+                body: JSON.stringify(dbPrice)
+            });
 
-        if (error) throw error;
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Failed to update price (${response.status}): ${text}`);
+            }
+        } catch (error) {
+            console.error('[PriceService] Update failed:', error);
+            throw error;
+        }
     }
 
     static async deletePrice(id: string): Promise<void> {
-        const { error } = await supabase
-            .from('prices')
-            .delete()
-            .eq('id', id);
+        try {
+            const response = await fetch(`${this.apiUrl}/prices?id=eq.${id}`, {
+                method: 'DELETE',
+                headers: this.getHeaders()
+            });
 
-        if (error) throw error;
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Failed to delete price (${response.status}): ${text}`);
+            }
+        } catch (error) {
+            console.error('[PriceService] Delete failed:', error);
+            throw error;
+        }
     }
 
     private static mapFromDb(db: DBPrice): PriceItem {

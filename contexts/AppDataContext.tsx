@@ -4,6 +4,8 @@ import { DailyReport } from '../types/dailyReport';
 import { DailyReportService } from '../services/DailyReportService';
 import { TemplateService } from '../services/TemplateService';
 import { UserService } from '../services/UserService';
+import { InventoryService } from '../services/InventoryService';
+import { OrderService } from '../services/OrderService';
 import { billingRules as INITIAL_BILLING_RULES } from '../data/billingRules';
 import { supabase } from '../src/lib/supabase';
 
@@ -125,6 +127,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 DailyReportService.setAccessToken(session.access_token);
                 TemplateService.setAccessToken(session.access_token);
                 UserService.setAccessToken(session.access_token);
+                InventoryService.setAccessToken(session.access_token);
+                OrderService.setAccessToken(session.access_token);
                 await fetchAllData();
             } else {
                 console.log('[AppDataContext] No session found on init');
@@ -142,6 +146,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 DailyReportService.setAccessToken(session.access_token);
                 TemplateService.setAccessToken(session.access_token);
                 UserService.setAccessToken(session.access_token);
+                InventoryService.setAccessToken(session.access_token);
+                OrderService.setAccessToken(session.access_token);
                 if (mountedRef.current) {
                     await fetchAllData();
                 }
