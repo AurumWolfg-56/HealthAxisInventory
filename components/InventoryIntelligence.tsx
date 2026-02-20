@@ -12,8 +12,6 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
     const [metrics, setMetrics] = useState<ItemMetrics[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'actionable' | 'all' | 'anomalies'>('actionable');
-
-    // State to track manual overrides before generating order
     const [overrides, setOverrides] = useState<Record<string, { qty: number; reason: string }>>({});
 
     useEffect(() => {
@@ -42,26 +40,46 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
         }));
     };
 
-    const getStatusColor = (status: ItemMetrics['status']) => {
+    const getStatusConfig = (status: ItemMetrics['status']) => {
         switch (status) {
-            case 'CRITICAL': return 'bg-red-100 text-red-800 border-red-200';
-            case 'ORDER_SOON': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-            case 'HEALTHY': return 'bg-green-100 text-green-800 border-green-200';
-            case 'OVERSTOCK': return 'bg-purple-100 text-purple-800 border-purple-200';
-            case 'DORMANT': return 'bg-gray-100 text-gray-800 border-gray-200';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'CRITICAL': return {
+                badge: 'bg-red-500/15 text-red-400 border border-red-500/20',
+                dot: 'bg-red-400',
+                icon: 'fa-circle-exclamation'
+            };
+            case 'ORDER_SOON': return {
+                badge: 'bg-amber-500/15 text-amber-400 border border-amber-500/20',
+                dot: 'bg-amber-400',
+                icon: 'fa-clock'
+            };
+            case 'HEALTHY': return {
+                badge: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20',
+                dot: 'bg-emerald-400',
+                icon: 'fa-circle-check'
+            };
+            case 'OVERSTOCK': return {
+                badge: 'bg-purple-500/15 text-purple-400 border border-purple-500/20',
+                dot: 'bg-purple-400',
+                icon: 'fa-arrow-up'
+            };
+            default: return {  // DORMANT
+                badge: 'bg-slate-500/15 text-slate-400 border border-slate-500/20',
+                dot: 'bg-slate-400',
+                icon: 'fa-moon'
+            };
         }
     };
 
-    const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+    const formatCurrency = (val: number) =>
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
 
-    // Strict Filter Logic - No Magic Numbers in UI
     const criticalItems = metrics.filter(m => m.status === 'CRITICAL');
     const warningItems = metrics.filter(m => m.status === 'ORDER_SOON');
     const anomalyItems = metrics.filter(m => m.anomaliesDetected > 0 || m.isVolatile);
 
-    // Financial Health
-    const totalInventoryValue = metrics.reduce((sum, m) => sum + (m.currentStock * (inventory.find(i => i.id === m.itemId)?.averageCost || 0)), 0);
+    const totalInventoryValue = metrics.reduce(
+        (sum, m) => sum + (m.currentStock * (inventory.find(i => i.id === m.itemId)?.averageCost || 0)), 0
+    );
     const overstockValue = metrics
         .filter(m => m.status === 'OVERSTOCK')
         .reduce((sum, m) => sum + (m.currentStock * (inventory.find(i => i.id === m.itemId)?.averageCost || 0)), 0);
@@ -73,18 +91,13 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
 
         for (const m of itemsToProcess) {
             const override = overrides[m.itemId];
-
             const finalQty = override !== undefined ? override.qty : m.recommendedQuantity;
-
-            // Only order if > 0
             if (finalQty > 0) {
                 toOrder.push({ itemId: m.itemId, quantity: finalQty });
-
-                // Check for override logging
                 if (override && override.qty !== m.recommendedQuantity) {
                     if (!override.reason || override.reason.trim().length < 3) {
                         alert(`Please provide a reason for overriding ${m.itemName} (min 3 chars)`);
-                        return; // Stop processing
+                        return;
                     }
                     overridesToLog.push({
                         itemId: m.itemId,
@@ -97,7 +110,6 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
         }
 
         if (toOrder.length > 0) {
-            // Log overrides
             for (const log of overridesToLog) {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) {
@@ -110,7 +122,6 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                     });
                 }
             }
-
             onAddToOrder(toOrder);
         } else {
             alert("No items selected for reorder.");
@@ -118,195 +129,258 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
     };
 
     if (loading) return (
-        <div className="flex justify-center items-center p-12">
-            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mr-3"></div>
-            <span className="text-gray-500 font-medium">Analyzing Inventory Intelligence...</span>
+        <div className="page-container">
+            <div className="flex flex-col items-center justify-center gap-4 py-24">
+                <div className="relative w-16 h-16">
+                    <div className="absolute inset-0 rounded-full border-4 border-medical-500/20"></div>
+                    <div className="absolute inset-0 rounded-full border-4 border-medical-500 border-t-transparent animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <i className="fa-solid fa-brain text-medical-500 text-xl"></i>
+                    </div>
+                </div>
+                <div className="text-center">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">Analyzing Inventory</p>
+                    <p className="text-xs text-slate-400 mt-1">Running intelligence engine...</p>
+                </div>
+            </div>
         </div>
     );
 
-    const renderRows = (items: ItemMetrics[]) => {
-        if (items.length === 0) return (
-            <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-gray-500 border-b border-gray-100">
-                    <div className="flex flex-col items-center">
-                        <i className="fa-solid fa-check-circle text-green-400 text-4xl mb-3"></i>
-                        <p className="text-lg font-medium">No items found in this view.</p>
-                        <p className="text-sm">Everything looks good!</p>
-                    </div>
-                </td>
-            </tr>
-        );
-
-        return items.map((m) => {
-            const override = overrides[m.itemId];
-            const currentQty = override ? override.qty : m.recommendedQuantity;
-            const isOverridden = override && override.qty !== m.recommendedQuantity;
-
-            // Highlight suggested reorders
-            const isReorder = m.recommendedQuantity > 0;
-
-            return (
-                <tr key={m.itemId} className={`hover:bg-gray-50 transition-colors ${isReorder ? 'bg-blue-50/10' : ''}`}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{m.itemName}</div>
-                        <div className="text-xs text-gray-500">Current Stock: {m.currentStock}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded-full border ${getStatusColor(m.status)}`}>
-                            {m.status.replace('_', ' ')}
-                        </span>
-                        {m.leadTime && <div className="text-[10px] text-gray-400 mt-1">Lead Time: {m.leadTime}d</div>}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {m.daysRemaining === Infinity ? '∞' : Math.round(m.daysRemaining)} days
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col">
-                            <div className="flex items-center">
-                                <span className={`text-xs font-bold ${m.confidence === 'HIGH' ? 'text-green-600' : m.confidence === 'MEDIUM' ? 'text-yellow-600' : 'text-gray-400'}`}>
-                                    {m.confidence}
-                                </span>
-                                {m.confidence === 'LOW' && <i className="fa-solid fa-circle-info ml-1 text-gray-400 text-[10px]" title="Collecting more data..."></i>}
-                            </div>
-                            {m.stabilityIndex > 0 && <span className="text-[10px] text-gray-400">Var: {Math.round(m.stabilityIndex)}%</span>}
-                        </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 group">
-                        <div className="flex items-center space-x-2">
-                            <input
-                                type="number"
-                                min="0"
-                                className={`w-20 p-1.5 text-center border rounded-md font-bold transition-all focus:ring-2 focus:ring-blue-500 outline-none
-                                    ${isOverridden ? 'border-orange-300 bg-orange-50 text-orange-700' : 'border-gray-200 text-gray-700'}
-                                    ${currentQty > 0 ? 'bg-white' : 'bg-gray-50/50 text-gray-400'}
-                                `}
-                                value={currentQty}
-                                onChange={(e) => handleQtyChange(m.itemId, parseInt(e.target.value) || 0)}
-                            />
-                            <div className="flex flex-col text-[10px] text-gray-400 leading-tight">
-                                <span>Rec: {m.recommendedQuantity}</span>
-                                {isOverridden && <span className="text-orange-500 font-bold">Manual</span>}
-                            </div>
-                        </div>
-
-                        {/* Inline Justification Input - Visible if overridden */}
-                        <div className={`overflow-hidden transition-all duration-300 ${isOverridden ? 'max-h-20 mt-2 opacity-100' : 'max-h-0 opacity-0'}`}>
-                            <input
-                                type="text"
-                                placeholder="Why change quantity?"
-                                className="w-full text-xs p-2 border border-orange-200 rounded-md text-gray-600 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-400 bg-white"
-                                value={override?.reason || ''}
-                                onChange={(e) => handleReasonChange(m.itemId, e.target.value)}
-                            />
-                        </div>
-                    </td>
-                    {activeTab === 'anomalies' && (
-                        <td className="px-6 py-4 whitespace-nowrap text-xs text-red-500">
-                            {m.isVolatile && <div className="flex items-center gap-1"><i className="fa-solid fa-bolt"></i> High Volatility</div>}
-                            {m.anomaliesDetected > 0 && <div className="flex items-center gap-1"><i className="fa-solid fa-triangle-exclamation"></i> {m.anomaliesDetected} Anomalies Excluded</div>}
-                        </td>
-                    )}
-                </tr>
-            );
-        });
-    };
+    const displayedItems = activeTab === 'actionable'
+        ? [...criticalItems, ...warningItems]
+        : activeTab === 'anomalies'
+            ? anomalyItems
+            : metrics;
 
     return (
-        <div className="space-y-8 animate-fade-in-up">
+        <div className="page-container space-y-6 pb-24 md:pb-8">
 
-            {/* Header / Financial Health */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition-shadow">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                    <div className="relative z-10">
-                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Inventory Value</h3>
-                        <p className="text-3xl font-black text-slate-800 tracking-tight">{formatCurrency(totalInventoryValue)}</p>
-                        <p className="text-xs text-slate-400 mt-2 font-medium">As of today</p>
-                    </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition-shadow">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-purple-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                    <div className="relative z-10">
-                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Capital Risk</h3>
-                        <p className="text-3xl font-black text-purple-600 tracking-tight">{formatCurrency(overstockValue)}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                            <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 text-[10px] font-bold uppercase">Overstocked</span>
-                            <p className="text-xs text-slate-400">Potential wasted capital</p>
+            {/* ── Header ── */}
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-medical-500/15 flex items-center justify-center">
+                            <i className="fa-solid fa-brain text-medical-500 text-base"></i>
                         </div>
-                    </div>
+                        Inventory Intelligence
+                    </h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 ml-12">
+                        AI-powered reorder predictions · {metrics.length} items tracked
+                    </p>
                 </div>
-
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition-shadow">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-red-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                    <div className="relative z-10">
-                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Actionable Items</h3>
-                        <div className="flex items-baseline gap-1">
-                            <p className="text-3xl font-black text-slate-800 tracking-tight">{criticalItems.length + warningItems.length}</p>
-                            <span className="text-sm font-bold text-slate-400">Total</span>
-                        </div>
-                        <div className="flex space-x-3 mt-3">
-                            <span className="flex items-center gap-1.5 text-xs font-bold text-white bg-red-500 px-2 py-1 rounded-md shadow-sm">
-                                <i className="fa-solid fa-triangle-exclamation"></i> {criticalItems.length} Critical
-                            </span>
-                            <span className="flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-100 px-2 py-1 rounded-md">
-                                <i className="fa-solid fa-clock"></i> {warningItems.length} Order Soon
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Smart Actions Bar */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white/50 p-4 rounded-2xl border border-white/60 shadow-sm backdrop-blur-sm">
-                <div className="flex p-1 bg-slate-100/80 rounded-xl">
-                    <button
-                        onClick={() => setActiveTab('actionable')}
-                        className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'actionable' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                        Actionable
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('anomalies')}
-                        className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'anomalies' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                        Anomalies
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('all')}
-                        className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                        All Items
-                    </button>
-                </div>
-
                 <button
                     onClick={handleGeneratePurchaseList}
-                    className="w-full md:w-auto bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 group shadow-emerald-500/20 shadow-md"
+                    className="btn-primary flex items-center gap-2 self-start md:self-auto"
                 >
-                    <i className="fa-solid fa-cart-shopping group-hover:animate-bounce"></i>
+                    <i className="fa-solid fa-cart-shopping text-sm"></i>
                     Generate Purchase List
                 </button>
+            </header>
+
+            {/* ── KPI Cards ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Total Value */}
+                <div className="glass-panel p-5 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                        <span className="text-label">Total Inventory Value</span>
+                        <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                            <i className="fa-solid fa-warehouse text-blue-500 text-xs"></i>
+                        </div>
+                    </div>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(totalInventoryValue)}</p>
+                    <p className="text-caption">As of today</p>
+                </div>
+
+                {/* Capital Risk */}
+                <div className="glass-panel p-5 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                        <span className="text-label">Capital at Risk</span>
+                        <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                            <i className="fa-solid fa-triangle-exclamation text-purple-500 text-xs"></i>
+                        </div>
+                    </div>
+                    <p className="text-2xl font-bold text-purple-500">{formatCurrency(overstockValue)}</p>
+                    <div className="flex items-center gap-2">
+                        <span className="badge badge-neutral text-[10px]">Overstocked</span>
+                        <p className="text-caption">Potential wasted capital</p>
+                    </div>
+                </div>
+
+                {/* Actionable */}
+                <div className="glass-panel p-5 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                        <span className="text-label">Needs Attention</span>
+                        <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                            <i className="fa-solid fa-bell text-red-500 text-xs"></i>
+                        </div>
+                    </div>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{criticalItems.length + warningItems.length}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="badge badge-danger">
+                            <i className="fa-solid fa-fire text-[9px]"></i>
+                            {criticalItems.length} Critical
+                        </span>
+                        <span className="badge badge-warning">
+                            <i className="fa-solid fa-clock text-[9px]"></i>
+                            {warningItems.length} Soon
+                        </span>
+                    </div>
+                </div>
             </div>
 
-            {/* Data Table */}
-            <div className="bg-white shadow-xl shadow-slate-200/50 rounded-2xl overflow-hidden border border-slate-100">
+            {/* ── Tabs + Table ── */}
+            <div className="glass-panel overflow-hidden">
+                {/* Tab Bar */}
+                <div className="flex items-center gap-1 p-4 border-b border-slate-100 dark:border-slate-800">
+                    {[
+                        { key: 'actionable', label: 'Actionable', count: criticalItems.length + warningItems.length, icon: 'fa-bolt' },
+                        { key: 'anomalies', label: 'Anomalies', count: anomalyItems.length, icon: 'fa-triangle-exclamation' },
+                        { key: 'all', label: 'All Items', count: metrics.length, icon: 'fa-list' },
+                    ].map(tab => (
+                        <button
+                            key={tab.key}
+                            onClick={() => setActiveTab(tab.key as any)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === tab.key
+                                    ? 'bg-medical-500 text-white shadow-sm'
+                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'
+                                }`}
+                        >
+                            <i className={`fa-solid ${tab.icon} text-xs`}></i>
+                            {tab.label}
+                            <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${activeTab === tab.key ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                                }`}>
+                                {tab.count}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+
+                {/* Table */}
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-100">
-                        <thead className="bg-slate-50/80">
-                            <tr>
-                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Item Details</th>
-                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Health Status</th>
-                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Coverage</th>
-                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Confidence</th>
-                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider w-40">Reorder Qty</th>
-                                {activeTab === 'anomalies' && <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Detected Issues</th>}
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-slate-100">
-                            {renderRows(activeTab === 'actionable' ? [...criticalItems, ...warningItems] : activeTab === 'anomalies' ? anomalyItems : metrics)}
-                        </tbody>
-                    </table>
+                    {displayedItems.length === 0 ? (
+                        <div className="flex flex-col items-center py-16 gap-3">
+                            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
+                                <i className="fa-solid fa-circle-check text-emerald-500 text-xl"></i>
+                            </div>
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white">All good here!</p>
+                            <p className="text-caption">No items require attention in this view.</p>
+                        </div>
+                    ) : (
+                        <table className="min-w-full">
+                            <thead>
+                                <tr className="bg-slate-50/80 dark:bg-slate-800/40">
+                                    <th className="table-header rounded-tl-none">Item</th>
+                                    <th className="table-header">Status</th>
+                                    <th className="table-header">Coverage</th>
+                                    <th className="table-header">Confidence</th>
+                                    <th className="table-header w-44">Reorder Qty</th>
+                                    {activeTab === 'anomalies' && <th className="table-header">Detected Issues</th>}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {displayedItems.map((m) => {
+                                    const override = overrides[m.itemId];
+                                    const currentQty = override ? override.qty : m.recommendedQuantity;
+                                    const isOverridden = override && override.qty !== m.recommendedQuantity;
+                                    const statusCfg = getStatusConfig(m.status);
+
+                                    return (
+                                        <tr key={m.itemId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+                                            {/* Item */}
+                                            <td className="table-cell">
+                                                <div className="font-medium text-slate-900 dark:text-white text-sm">{m.itemName}</div>
+                                                <div className="text-caption mt-0.5">Stock: {m.currentStock} units</div>
+                                            </td>
+
+                                            {/* Status */}
+                                            <td className="table-cell">
+                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${statusCfg.badge}`}>
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`}></span>
+                                                    {m.status.replace('_', ' ')}
+                                                </span>
+                                                {m.leadTime > 0 && (
+                                                    <div className="text-caption mt-1">Lead: {m.leadTime}d</div>
+                                                )}
+                                            </td>
+
+                                            {/* Coverage */}
+                                            <td className="table-cell text-sm text-slate-600 dark:text-slate-300 font-medium">
+                                                {m.daysRemaining === Infinity ? (
+                                                    <span className="text-slate-400">∞ days</span>
+                                                ) : (
+                                                    <span>{Math.round(m.daysRemaining)} days</span>
+                                                )}
+                                            </td>
+
+                                            {/* Confidence */}
+                                            <td className="table-cell">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className={`text-xs font-bold ${m.confidence === 'HIGH' ? 'text-emerald-500' :
+                                                            m.confidence === 'MEDIUM' ? 'text-amber-500' :
+                                                                'text-slate-400'
+                                                        }`}>
+                                                        {m.confidence}
+                                                    </span>
+                                                    {m.stabilityIndex > 0 && (
+                                                        <span className="text-caption">Var: {Math.round(m.stabilityIndex)}%</span>
+                                                    )}
+                                                </div>
+                                            </td>
+
+                                            {/* Reorder Qty */}
+                                            <td className="table-cell">
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        className={`w-20 h-8 px-2 text-center text-sm font-bold rounded-lg border outline-none transition-all focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500
+                                                            ${isOverridden
+                                                                ? 'border-amber-400/50 bg-amber-500/10 text-amber-500'
+                                                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200'
+                                                            }`}
+                                                        value={currentQty}
+                                                        onChange={(e) => handleQtyChange(m.itemId, parseInt(e.target.value) || 0)}
+                                                    />
+                                                    <div className="flex flex-col text-[10px] leading-tight">
+                                                        <span className="text-slate-400">Rec: {m.recommendedQuantity}</span>
+                                                        {isOverridden && <span className="text-amber-500 font-bold">Manual</span>}
+                                                    </div>
+                                                </div>
+                                                {isOverridden && (
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Reason for change..."
+                                                        className="mt-2 w-full h-7 px-2 text-xs rounded-lg border border-amber-400/30 bg-amber-500/5 text-slate-600 dark:text-slate-300 placeholder-slate-400 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/20"
+                                                        value={override?.reason || ''}
+                                                        onChange={(e) => handleReasonChange(m.itemId, e.target.value)}
+                                                    />
+                                                )}
+                                            </td>
+
+                                            {/* Anomalies column */}
+                                            {activeTab === 'anomalies' && (
+                                                <td className="table-cell">
+                                                    <div className="flex flex-col gap-1">
+                                                        {m.isVolatile && (
+                                                            <span className="badge badge-warning">
+                                                                <i className="fa-solid fa-bolt text-[9px]"></i> Volatile
+                                                            </span>
+                                                        )}
+                                                        {m.anomaliesDetected > 0 && (
+                                                            <span className="badge badge-danger">
+                                                                <i className="fa-solid fa-triangle-exclamation text-[9px]"></i>
+                                                                {m.anomaliesDetected} Excluded
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            )}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             </div>
         </div>
