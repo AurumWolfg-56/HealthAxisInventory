@@ -8,8 +8,8 @@ export enum UserRole {
 }
 
 export const INITIAL_ROLE_CONFIGS: RoleConfig[] = [
-  { role: UserRole.OWNER, permissions: ['inventory.view', 'inventory.edit', 'inventory.audit', 'orders.view', 'orders.create', 'orders.receive', 'orders.delete', 'reports.view', 'reports.create', 'prices.view', 'prices.manage', 'forms.manage', 'forms.generate', 'billing.view', 'codes.view', 'codes.manage', 'finance.view', 'finance.manage', 'admin.access'] },
-  { role: UserRole.MANAGER, permissions: ['inventory.view', 'inventory.edit', 'inventory.audit', 'orders.view', 'orders.create', 'orders.receive', 'orders.delete', 'reports.view', 'reports.create', 'prices.view', 'prices.manage', 'forms.manage', 'forms.generate', 'billing.view', 'codes.view', 'codes.manage', 'finance.view', 'finance.manage', 'admin.access'] },
+  { role: UserRole.OWNER, permissions: ['inventory.view', 'inventory.edit', 'inventory.audit', 'orders.view', 'orders.create', 'orders.receive', 'orders.delete', 'reports.view', 'reports.create', 'prices.view', 'prices.manage', 'forms.manage', 'forms.generate', 'billing.view', 'codes.view', 'codes.manage', 'finance.view', 'finance.manage', 'admin.access', 'intelligence.view'] },
+  { role: UserRole.MANAGER, permissions: ['inventory.view', 'inventory.edit', 'inventory.audit', 'orders.view', 'orders.create', 'orders.receive', 'orders.delete', 'reports.view', 'reports.create', 'prices.view', 'prices.manage', 'forms.manage', 'forms.generate', 'billing.view', 'codes.view', 'codes.manage', 'finance.view', 'finance.manage', 'admin.access', 'intelligence.view'] },
   { role: UserRole.DOCTOR, permissions: ['inventory.view', 'inventory.edit', 'orders.view', 'orders.create', 'reports.view', 'reports.create', 'prices.view', 'forms.generate', 'billing.view', 'codes.view'] },
   { role: UserRole.MA, permissions: ['inventory.view', 'inventory.audit', 'orders.view', 'forms.generate', 'codes.view'] },
   { role: UserRole.FRONT_DESK, permissions: ['prices.view', 'prices.manage', 'inventory.view', 'forms.generate', 'reports.view', 'reports.create', 'billing.view', 'codes.view', 'finance.view', 'finance.manage'] }
@@ -34,7 +34,8 @@ export type Permission =
   | 'codes.view'
   | 'codes.manage' // New
   | 'finance.view' // New
-  | 'finance.manage'; // New
+  | 'finance.manage' // New
+  | 'intelligence.view'; // New
 
 export interface RoleConfig {
   role: UserRole;
@@ -64,6 +65,43 @@ export interface InventoryItem {
   lastChecked?: string;
   lastCheckedBy?: string;
   sku?: string;
+  leadTime?: number; // Days to replenish
+}
+
+export interface ItemMetrics {
+  itemId: string;
+  itemName: string;
+  currentStock: number;
+  dailyUsageRate: number;
+  predictedCycleDuration: number;
+  daysRemaining: number;
+  recommendedReorderDate: Date | null;
+  recommendedQuantity: number;
+  status: 'HEALTHY' | 'ORDER_SOON' | 'CRITICAL' | 'OVERSTOCK' | 'DORMANT';
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  stabilityIndex: number; // CV% computed on prediction window only
+  anomaliesDetected: number;
+  isVolatile: boolean;
+  leadTime: number;
+  savingsOpportunity_usageBased?: number;
+  // ── Debug / Audit (populated by engine) ─────────────────────────────────
+  debug_rawCycleCount?: number;      // Total cycles built from order history
+  debug_validCycleCount?: number;    // After anomaly filtering
+  debug_cycleCount?: number;         // Alias: same as debug_validCycleCount
+  debug_totalCycleCount?: number;    // Alias: same as debug_rawCycleCount
+  debug_cyclesUsed?: string[];       // ISO end-dates of prediction window
+  debug_anomalies?: { reason: string; date: string }[];
+  // Capital protection — float values exposed for exact pre-rounding comparison
+  debug_rawRecommendationFloat?: number;
+  debug_capitalCapFloat?: number;
+  debug_rawRecommendation?: number;  // Math.ceil of float
+  debug_capitalCap?: number;         // Math.ceil of float
+  debug_capApplied?: boolean;
+  debug_bufferDays?: number;
+  // Reorder audit
+  debug_safetyStock?: number;
+  debug_reorderPoint?: number;
+  debug_daysUntilReorder?: number;
 }
 
 export interface PriceItem {
@@ -116,6 +154,7 @@ export interface Order {
   vendor: string;
   orderDate: string;
   expectedDate: string;
+  receivedAt?: string; // New: Actual receipt date for intelligence
   status: OrderStatus;
   items: OrderItem[];
   subtotal: number;
@@ -175,6 +214,7 @@ export enum AppRoute {
   BILLING_WIZARD = 'BILLING_WIZARD',
   MEDICAL_CODES = 'MEDICAL_CODES',
   PETTY_CASH = 'PETTY_CASH',
+  INTELLIGENCE = 'INTELLIGENCE', // New
   VOICE_MEMOS = 'VOICE_MEMOS' // New
 }
 
@@ -249,6 +289,7 @@ export interface DBOrder {
   vendor: string; // Storing vendor name directly for now, or UUID if normalized
   order_date: string;
   expected_arrival_date: string | null;
+  received_at: string | null; // New
   status: OrderStatus;
   subtotal: number;
   tax_total: number;
@@ -295,4 +336,24 @@ export interface DBCodeGroup {
   description: string;
   code_ids: string[]; // UUID[]
   created_at?: string;
+}
+
+export interface IntelligenceOverride {
+  id: string;
+  itemId: string;
+  userId: string;
+  recommendedQty: number;
+  orderedQty: number;
+  justification: string;
+  createdAt: string;
+}
+
+export interface DBIntelligenceOverride {
+  id: string;
+  item_id: string;
+  user_id: string | null;
+  recommended_qty: number;
+  ordered_qty: number;
+  justification: string | null;
+  created_at: string;
 }
