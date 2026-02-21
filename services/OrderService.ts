@@ -76,6 +76,7 @@ export class OrderService {
                 vendor: order.vendor,
                 order_date: order.orderDate,
                 expected_arrival_date: order.expectedDate || null,
+                received_at: null,
                 status: order.status,
                 subtotal: order.subtotal,
                 tax_total: order.totalTax,
@@ -165,6 +166,52 @@ export class OrderService {
         } catch (error) {
             console.error('[OrderService] Update status failed:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Marks an order as RECEIVED and records the exact received_at timestamp.
+     * This is CRITICAL for the Intelligence Engine to build purchase cycles.
+     */
+    static async receiveOrder(orderId: string): Promise<void> {
+        try {
+            console.log(`[OrderService] Receiving order ${orderId}...`);
+            const response = await fetch(`${this.apiUrl}/orders?id=eq.${orderId}`, {
+                method: 'PATCH',
+                headers: this.getHeaders(),
+                body: JSON.stringify({
+                    status: 'RECEIVED',
+                    received_at: new Date().toISOString()
+                })
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Failed to receive order (${response.status}): ${text}`);
+            }
+        } catch (error) {
+            console.error('[OrderService] Receive order failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Back-fills the item_id on an order_items row after a new inventory item is created.
+     * This ensures future order fetches can link the line back to the inventory item.
+     */
+    static async updateOrderItemLink(orderItemId: string, inventoryItemId: string): Promise<void> {
+        try {
+            const response = await fetch(`${this.apiUrl}/order_items?id=eq.${orderItemId}`, {
+                method: 'PATCH',
+                headers: this.getHeaders(),
+                body: JSON.stringify({ item_id: inventoryItemId })
+            });
+            if (!response.ok) {
+                const text = await response.text();
+                console.warn(`[OrderService] Failed to back-fill item_id (${response.status}): ${text}`);
+            }
+        } catch (error) {
+            console.warn('[OrderService] updateOrderItemLink failed (non-critical):', error);
         }
     }
 
