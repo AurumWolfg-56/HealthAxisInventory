@@ -120,6 +120,43 @@ export const InventoryService = {
     },
 
     /**
+     * Searches for an item by exact name in the database.
+     * Used as a fallback when local state may be stale (e.g., item exists in DB but not in component state).
+     */
+    async findByName(name: string): Promise<InventoryItem | null> {
+        try {
+            const encoded = encodeURIComponent(name);
+            const response = await fetch(
+                `${SUPABASE_URL}/rest/v1/items?name=eq.${encoded}&limit=1`,
+                { method: 'GET', headers: getHeaders() }
+            );
+            if (!response.ok) return null;
+            const data = await response.json();
+            if (!data || data.length === 0) return null;
+            const item = data[0];
+            return {
+                id: item.id,
+                name: item.name,
+                category: item.category || 'General',
+                stock: Number(item.stock || 0),
+                unit: item.unit,
+                averageCost: Number(item.average_cost || 0),
+                minStock: Number(item.min_stock || 0),
+                maxStock: Number(item.max_stock || 0),
+                expiryDate: item.expiry_date || '',
+                batchNumber: item.batch_number || '',
+                location: item.location || 'Unassigned',
+                lastChecked: item.last_checked,
+                lastCheckedBy: item.last_checked_by,
+                sku: item.sku || ''
+            };
+        } catch (e) {
+            console.warn('[InventoryService] findByName failed:', e);
+            return null;
+        }
+    },
+
+    /**
      * Updates an existing inventory item.
      */
     async updateItem(id: string, updates: Partial<InventoryItem>): Promise<boolean> {

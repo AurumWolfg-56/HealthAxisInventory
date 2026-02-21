@@ -683,11 +683,26 @@ const App: React.FC = () => {
                                     // An error on one item shows a toast but does NOT block the others.
                                     for (const orderItem of order.items) {
                                         try {
-                                            // Prefer linked ID lookup, fall back to name match
-                                            const existingItem = inventory.find(inv =>
+                                            // 1. Look for the item in local state (fast path)
+                                            let existingItem = inventory.find(inv =>
                                                 (orderItem.inventoryItemId && inv.id === orderItem.inventoryItemId) ||
                                                 inv.name.trim().toLowerCase() === orderItem.name.trim().toLowerCase()
                                             );
+
+                                            // 2. If not in local state, check the DB directly — this handles
+                                            // the case where a previous receipt attempt inserted the item into DB
+                                            // but local state was never updated (avoids unique constraint errors)
+                                            if (!existingItem) {
+                                                const dbItem = await InventoryService.findByName(orderItem.name.trim());
+                                                if (dbItem) {
+                                                    existingItem = dbItem;
+                                                    // Sync local state with the DB item so UI is consistent
+                                                    setInventory(prev => {
+                                                        const alreadyPresent = prev.some(i => i.id === dbItem.id);
+                                                        return alreadyPresent ? prev : [...prev, dbItem];
+                                                    });
+                                                }
+                                            }
 
                                             if (existingItem) {
                                                 // ── Existing item ──────────────────────────────────────
