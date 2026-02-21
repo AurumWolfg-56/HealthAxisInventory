@@ -71,12 +71,11 @@ export class OrderService {
         try {
             console.log('[OrderService] Creating order...');
             // 1. Insert Order
-            const dbOrder: Omit<DBOrder, 'id' | 'created_at'> = {
+            const dbOrder: Omit<DBOrder, 'id' | 'created_at' | 'received_at'> = {
                 po_number: order.poNumber,
                 vendor: order.vendor,
                 order_date: order.orderDate,
                 expected_arrival_date: order.expectedDate || null,
-                received_at: null,
                 status: order.status,
                 subtotal: order.subtotal,
                 tax_total: order.totalTax,
