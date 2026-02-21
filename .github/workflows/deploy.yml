@@ -50,4 +50,6 @@ jobs:
                    set net:connection-limit 1;
                    set ftp:ssl-allow yes;
                    open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }}; 
-                   mirror -R --verbose --no-perms --only-newer --parallel=1 --delete --exclude-glob .git* --exclude-glob node_modules ./dist/ /home/u250946921/domains/healthaxisinventory.com/public_html/"
+                   mkdir -p /home/u250946921/domains/healthaxisinventory.com/public_html/assets;
+                   mkdir -p /home/u250946921/domains/healthaxisinventory.com/public_html/logos;
+                   mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ /home/u250946921/domains/healthaxisinventory.com/public_html/"
