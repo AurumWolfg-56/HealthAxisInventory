@@ -55,22 +55,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // Check DB for existing configs
                 console.log('[AuthContext] Fetching role_permissions from DB...');
 
-                // Create a timeout promise
-                const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Request timed out')), 5000)
-                );
+                const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-                // Race the DB query against the timeout
-                const { data: dbPerms, error } = await Promise.race([
-                    supabase.from('role_permissions').select('role_id, permission_id'),
-                    timeoutPromise
-                ]) as any;
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-                console.log('[AuthContext] DB query result:', { dbPerms, error });
+                const response = await fetch(`${supabaseUrl}/rest/v1/role_permissions?select=role_id,permission_id`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    signal: controller.signal
+                });
 
-                if (error) {
-                    throw error; // Throw to catch block for unified fallback handling
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch role_permissions: ${response.status} ${response.statusText}`);
                 }
+
+                const dbPerms = await response.json();
+                console.log('[AuthContext] DB query result:', { dbPerms });
 
                 if (dbPerms && dbPerms.length > 0) {
                     // Group flat list into RoleConfig structure
@@ -97,12 +105,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         }
                     }
                     // We don't timeout the seed, if it hangs it's less critical as we fallback anyway
-                    const { error: seedError } = await supabase
-                        .from('role_permissions')
-                        .insert(seedData);
+                    const seedResponse = await fetch(`${supabaseUrl}/rest/v1/role_permissions`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': supabaseKey,
+                            'Authorization': `Bearer ${supabaseKey}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=minimal'
+                        },
+                        body: JSON.stringify(seedData)
+                    });
 
-                    if (seedError) {
-                        console.error('Error seeding roles, using local fallback:', seedError);
+                    if (!seedResponse.ok) {
+                        console.error('Error seeding roles, using local fallback:', await seedResponse.text());
                         // Fallback also if seeding fails
                         setRoleConfigs(INITIAL_ROLE_CONFIGS);
                         setRoleConfigsLoaded(true);
