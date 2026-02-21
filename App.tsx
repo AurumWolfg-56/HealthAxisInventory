@@ -192,7 +192,7 @@ const App: React.FC = () => {
     // Fetch real users from DB for dropdowns - ensures we have the latest list (especially newly added doctors/owners)
     useEffect(() => {
         const fetchUsersDb = async () => {
-            if (!user?.id) return;
+            if (!user?.id || isLoading) return; // Wait until AppDataContext finishes auth/token setup
             try {
                 const fetchedUsers = await UserService.getUsers();
                 console.log('[Debug] Users fetched:', fetchedUsers);
@@ -204,7 +204,7 @@ const App: React.FC = () => {
         };
 
         fetchUsersDb();
-    }, [user?.id]);
+    }, [user?.id, isLoading]);
 
     // Removed: useEffect(() => { localStorage.setItem(STORAGE_KEYS.ROLES, JSON.stringify(roleConfigs)); }, [roleConfigs]);
 
