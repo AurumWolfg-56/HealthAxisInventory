@@ -675,119 +675,110 @@ const App: React.FC = () => {
                                 try {
                                     if (!user?.id) throw new Error("User not authenticated");
 
-                                    // ── Phase 1: All DB writes ────────────────────────────────────────
-                                    // We do ALL database operations first. If any fail we abort and the
-                                    // UI state is never touched — no inconsistency possible.
-
-                                    const inventoryUpdates: (() => void)[] = []; // local state mutators
                                     const now = new Date().toISOString();
+                                    let itemsProcessed = 0;
 
+                                    // ── Process each order item independently ─────────────────────────
+                                    // Each item is DB-written then immediately committed to local state.
+                                    // An error on one item shows a toast but does NOT block the others.
                                     for (const orderItem of order.items) {
-                                        // Find existing item by linked ID first, then fall back to name match
-                                        const existingItem = inventory.find(inv =>
-                                            (orderItem.inventoryItemId && inv.id === orderItem.inventoryItemId) ||
-                                            inv.name.trim().toLowerCase() === orderItem.name.trim().toLowerCase()
-                                        );
-
-                                        if (existingItem) {
-                                            // ── Existing item: update stock + weighted average cost ──────
-                                            const newStock = existingItem.stock + orderItem.quantity;
-
-                                            // Guard: weighted avg cost — safe even if newStock is somehow 0
-                                            const currentTotalValue = existingItem.stock * (existingItem.averageCost || 0);
-                                            const newOrderValue = orderItem.quantity * (orderItem.unitCost || 0);
-                                            const newAverageCost = newStock > 0
-                                                ? (currentTotalValue + newOrderValue) / newStock
-                                                : existingItem.averageCost;
-
-                                            // DB: update item
-                                            await InventoryService.updateItem(existingItem.id, {
-                                                stock: newStock,
-                                                averageCost: newAverageCost,
-                                                lastChecked: now,
-                                                lastCheckedBy: user.username
-                                            });
-
-                                            // DB: audit log (RESTOCKED — used by the Intelligence Engine)
-                                            await InventoryService.logAction(
-                                                user.id, 'RESTOCKED', existingItem.id,
-                                                JSON.stringify({
-                                                    new_stock: newStock,
-                                                    added: orderItem.quantity,
-                                                    source_order: order.id
-                                                })
+                                        try {
+                                            // Prefer linked ID lookup, fall back to name match
+                                            const existingItem = inventory.find(inv =>
+                                                (orderItem.inventoryItemId && inv.id === orderItem.inventoryItemId) ||
+                                                inv.name.trim().toLowerCase() === orderItem.name.trim().toLowerCase()
                                             );
 
-                                            // Queue local state update
-                                            inventoryUpdates.push(() => {
+                                            if (existingItem) {
+                                                // ── Existing item ──────────────────────────────────────
+                                                const newStock = existingItem.stock + orderItem.quantity;
+                                                const currentTotalValue = existingItem.stock * (existingItem.averageCost || 0);
+                                                const newOrderValue = orderItem.quantity * (orderItem.unitCost || 0);
+                                                const newAverageCost = newStock > 0
+                                                    ? (currentTotalValue + newOrderValue) / newStock
+                                                    : existingItem.averageCost;
+
+                                                // DB write
+                                                await InventoryService.updateItem(existingItem.id, {
+                                                    stock: newStock,
+                                                    averageCost: newAverageCost,
+                                                    lastChecked: now,
+                                                    lastCheckedBy: user.username
+                                                });
+
+                                                // Audit log (used by Intelligence Engine for cycle detection)
+                                                await InventoryService.logAction(
+                                                    user.id, 'RESTOCKED', existingItem.id,
+                                                    JSON.stringify({ new_stock: newStock, added: orderItem.quantity, source_order: order.id })
+                                                );
+
+                                                // Immediately commit to local state
                                                 setInventory(prev => prev.map(inv =>
                                                     inv.id === existingItem.id
                                                         ? { ...inv, stock: newStock, averageCost: newAverageCost, lastChecked: now, lastCheckedBy: user.username }
                                                         : inv
                                                 ));
-                                            });
+                                                itemsProcessed++;
 
-                                        } else {
-                                            // ── New item: create in DB, back-fill order_items.item_id ──
-                                            const newItemConfig: Omit<InventoryItem, 'id'> = {
-                                                name: orderItem.name,
-                                                category: orderItem.category || 'Uncategorized',
-                                                stock: orderItem.quantity,
-                                                unit: orderItem.unitType || 'unit_each',
-                                                averageCost: orderItem.unitCost || 0,
-                                                minStock: 10,
-                                                maxStock: 100,
-                                                expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-                                                batchNumber: `ORDER-${order.poNumber}`,
-                                                location: 'Main Storage',
-                                                lastChecked: now,
-                                                lastCheckedBy: user.username
-                                            };
+                                            } else {
+                                                // ── New item ───────────────────────────────────────────
+                                                const newItemConfig: Omit<InventoryItem, 'id'> = {
+                                                    name: orderItem.name,
+                                                    category: orderItem.category || 'Uncategorized',
+                                                    stock: orderItem.quantity,
+                                                    unit: orderItem.unitType || 'unit_each',
+                                                    averageCost: orderItem.unitCost || 0,
+                                                    minStock: 10,
+                                                    maxStock: 100,
+                                                    expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+                                                    batchNumber: `ORDER-${order.poNumber}`,
+                                                    location: 'Main Storage',
+                                                    lastChecked: now,
+                                                    lastCheckedBy: user.username
+                                                };
 
-                                            const newItem = await InventoryService.createItem(newItemConfig);
-                                            if (!newItem) throw new Error(`Failed to create item: ${newItemConfig.name}`);
+                                                const newItem = await InventoryService.createItem(newItemConfig);
+                                                if (!newItem) throw new Error(`DB returned null for new item: ${newItemConfig.name}`);
 
-                                            // DB: audit log for newly created item (same RESTOCKED action
-                                            // so the Intelligence Engine can build a cycle boundary here)
-                                            await InventoryService.logAction(
-                                                user.id, 'RESTOCKED', newItem.id,
-                                                JSON.stringify({
-                                                    new_stock: orderItem.quantity,
-                                                    added: orderItem.quantity,
-                                                    source_order: order.id
-                                                })
-                                            );
+                                                // Audit log for new item (Intelligence Engine needs this)
+                                                await InventoryService.logAction(
+                                                    user.id, 'RESTOCKED', newItem.id,
+                                                    JSON.stringify({ new_stock: orderItem.quantity, added: orderItem.quantity, source_order: order.id })
+                                                );
 
-                                            // DB: back-fill order_items.item_id so future fetches can link
-                                            // this order line back to the inventory item
-                                            await OrderService.updateOrderItemLink(orderItem.id, newItem.id);
+                                                // Back-fill order_items.item_id so future fetches can link the row
+                                                await OrderService.updateOrderItemLink(orderItem.id, newItem.id);
 
-                                            // Queue local state update
-                                            inventoryUpdates.push(() => {
+                                                // Immediately commit to local state
                                                 setInventory(prev => [...prev, newItem]);
-                                            });
+                                                itemsProcessed++;
+                                            }
+                                        } catch (itemErr: any) {
+                                            console.error(`[ReceiveOrder] Failed to process item "${orderItem.name}":`, itemErr);
+                                            addToast(`Could not update "${orderItem.name}": ${itemErr.message}`, 'error');
                                         }
                                     }
 
-                                    // ── Phase 2: Mark order as RECEIVED with received_at timestamp ──
-                                    // Uses the new dedicated method that writes BOTH fields at once.
-                                    // This is required for the Intelligence Engine to detect cycle boundaries.
-                                    await OrderService.receiveOrder(order.id);
-
-                                    // ── Phase 3: Commit all local state changes atomically ───────────
-                                    // Only reached if every DB operation above succeeded.
-                                    for (const applyUpdate of inventoryUpdates) {
-                                        applyUpdate();
+                                    // ── Mark order RECEIVED (non-blocking for inventory) ──────────────
+                                    // If this fails (e.g. transient DB issue), inventory is already updated
+                                    // correctly — we just show a warning instead of rolling everything back.
+                                    try {
+                                        await OrderService.receiveOrder(order.id);
+                                        setOrders(prev => prev.map(o =>
+                                            o.id === order.id ? { ...o, status: 'RECEIVED' as const } : o
+                                        ));
+                                    } catch (statusErr: any) {
+                                        console.warn('[ReceiveOrder] Could not update order status:', statusErr);
+                                        addToast(`Order status update failed, but inventory was updated. Please refresh.`, 'info');
                                     }
-                                    setOrders(prev => prev.map(o =>
-                                        o.id === order.id ? { ...o, status: 'RECEIVED' as const } : o
-                                    ));
 
-                                    addToast(`Order ${order.poNumber} received. ${inventoryUpdates.length} item(s) updated.`, 'success');
-                                    addLog('ORDER_RECEIVED', `Received ${order.poNumber}. ${inventoryUpdates.length} item(s) updated.`);
+                                    if (itemsProcessed > 0) {
+                                        addToast(`Order ${order.poNumber} received. ${itemsProcessed} item(s) updated in inventory.`, 'success');
+                                        addLog('ORDER_RECEIVED', `Received ${order.poNumber}. ${itemsProcessed} item(s) updated.`);
+                                    }
 
                                 } catch (e: any) {
-                                    console.error('[ReceiveOrder] Failed:', e);
+                                    console.error('[ReceiveOrder] Unexpected failure:', e);
                                     addToast(`Error receiving order: ${e.message}`, 'error');
                                 }
                             }}
