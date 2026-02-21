@@ -186,7 +186,7 @@ export const DailyReportDocument: React.FC<{
                                 </div>
                                 <div className="h-px bg-slate-200 my-2"></div>
                                 <div className="text-[10px] font-bold text-slate-400 uppercase mb-2">Provider Breakdown</div>
-                                {Object.entries(report.operational.providerVisits).map(([id, val]) => {
+                                {Object.entries(report.operational.providerVisits || {}).map(([id, val]) => {
                                     const provider = usersDb?.find(u => u.id === id);
                                     return (
                                         <div key={id} className="flex justify-between text-xs mb-1">
@@ -291,9 +291,9 @@ function reducer(state: DailyReportState, action: DailyReportAction): DailyRepor
         case 'SET_OP_NURSE':
             return { ...state, operational: { ...state.operational, nurseVisits: action.payload } };
         case 'SET_OP_PROVIDER':
-            return { ...state, operational: { ...state.operational, providerVisits: { ...state.operational.providerVisits, [action.payload.id]: action.payload.value } } };
+            return { ...state, operational: { ...state.operational, providerVisits: { ...(state.operational?.providerVisits || {}), [action.payload.id]: action.payload.value } } };
         case 'REMOVE_OP_PROVIDER':
-            const newProviderVisits = { ...state.operational.providerVisits };
+            const newProviderVisits = { ...(state.operational?.providerVisits || {}) };
             delete newProviderVisits[action.payload];
             return { ...state, operational: { ...state.operational, providerVisits: newProviderVisits } };
         case 'SET_STAT':
@@ -370,19 +370,19 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
         }
     }, [state, initialData]);
 
-    const activeProviders = usersDb.filter(u => u.role === UserRole.DOCTOR || u.role === UserRole.OWNER);
-    const selectedProviderIds = Object.keys(state.operational.providerVisits);
+    const activeProviders = (usersDb || []).filter(u => u.role === UserRole.DOCTOR || u.role === UserRole.OWNER);
+    const selectedProviderIds = Object.keys(state.operational?.providerVisits || {});
     const availableProviders = activeProviders.filter(p => !selectedProviderIds.includes(p.id));
 
     // Derived Calculations
-    const totalMethods = (Object.values(state.financials.methods) as number[]).reduce((a, b) => a + b, 0);
-    const totalTypes = (Object.values(state.financials.types) as number[]).reduce((a, b) => a + b, 0);
+    const totalMethods = (Object.values(state.financials?.methods || {}) as number[]).reduce((a, b) => a + b, 0);
+    const totalTypes = (Object.values(state.financials?.types || {}) as number[]).reduce((a, b) => a + b, 0);
     const finDiff = totalMethods - totalTypes;
     const isFinBalanced = Math.abs(finDiff) < 0.01;
 
-    const totalIns = (Object.values(state.insurances) as number[]).reduce((a, b) => a + b, 0);
-    const totalProviders = (Object.values(state.operational.providerVisits) as number[]).reduce((a, b) => a + b, 0);
-    const totalOps = state.operational.nurseVisits + totalProviders;
+    const totalIns = (Object.values(state.insurances || {}) as number[]).reduce((a, b) => a + b, 0);
+    const totalProviders = (Object.values(state.operational?.providerVisits || {}) as number[]).reduce((a, b) => a + b, 0);
+    const totalOps = (state.operational?.nurseVisits || 0) + totalProviders;
     const volDiff = totalIns - totalOps;
     const isVolBalanced = totalIns === totalOps && totalIns > 0;
 
@@ -734,7 +734,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                                             <input
                                                 type="number"
                                                 min="0"
-                                                value={state.operational.providerVisits[id] || ''}
+                                                value={state.operational?.providerVisits?.[id] || ''}
                                                 onChange={e => dispatch({ type: 'SET_OP_PROVIDER', payload: { id, value: parseInt(e.target.value) || 0 } })}
                                                 className="w-20 bg-transparent text-right font-mono font-bold text-lg text-gray-900 dark:text-white outline-none"
                                                 placeholder="0"
