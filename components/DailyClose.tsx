@@ -228,7 +228,7 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
                                 <p className="text-xs font-bold text-gray-400 uppercase">Provider Visits</p>
                                 {activeProviders.map(prov => (
                                     <div key={prov.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{prov.username}</span>
+                                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{prov.full_name || prov.username || 'Unknown'}</span>
                                         <input
                                             type="number"
                                             min="0"
@@ -355,7 +355,7 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
                         <h4 className="font-bold text-xs uppercase mb-2">Operational Split</h4>
                         <div className="text-sm">Nurse Visits: {nurseVisits}</div>
                         {activeProviders.map(p => (
-                            <div key={p.id} className="text-sm">{p.username}: {providerVisits[p.id] || 0}</div>
+                            <div key={p.id} className="text-sm">{p.full_name || p.username}: {providerVisits[p.id] || 0}</div>
                         ))}
                     </div>
                 </div>

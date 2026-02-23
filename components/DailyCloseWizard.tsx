@@ -190,7 +190,7 @@ export const DailyReportDocument: React.FC<{
                                     const provider = usersDb?.find(u => u.id === id);
                                     return (
                                         <div key={id} className="flex justify-between text-xs mb-1">
-                                            <span className="text-slate-600">{provider?.username || 'Unknown'}</span>
+                                            <span className="text-slate-600">{provider?.full_name || provider?.username || 'Unknown'}</span>
                                             <span className="font-medium text-slate-900">{val as number}</span>
                                         </div>
                                     );
@@ -729,7 +729,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                                                 >
                                                     <i className="fa-solid fa-xmark text-xs"></i>
                                                 </button>
-                                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{provider.username}</span>
+                                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{provider.full_name || provider.username}</span>
                                             </div>
                                             <input
                                                 type="number"
@@ -780,10 +780,10 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                                                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm
                                                                         ${p.role === UserRole.OWNER ? 'bg-red-50 text-red-600 dark:bg-red-900/20' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20'}
                                                                     `}>
-                                                                        {p.username.charAt(0).toUpperCase()}
+                                                                        {(p.full_name || p.username || '?').charAt(0).toUpperCase()}
                                                                     </div>
                                                                     <div>
-                                                                        <div className="font-bold text-slate-900 dark:text-white text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{p.username}</div>
+                                                                        <div className="font-bold text-slate-900 dark:text-white text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{p.full_name || p.username}</div>
                                                                         <div className="text-[10px] uppercase font-black tracking-wider text-slate-400">{p.role === UserRole.OWNER ? 'Clinic Owner' : 'Provider'}</div>
                                                                     </div>
                                                                 </div>
