@@ -758,7 +758,7 @@ const App: React.FC = () => {
                                                 // Audit log for new item (Intelligence Engine needs this)
                                                 await InventoryService.logAction(
                                                     user.id, 'RESTOCKED', newItem.id,
-                                                    JSON.stringify({ new_stock: orderItem.quantity, added: orderItem.quantity, source_order: order.id })
+                                                    { new_stock: orderItem.quantity, added: orderItem.quantity, source_order: order.id }
                                                 );
 
                                                 // Back-fill order_items.item_id so future fetches can link the row
@@ -829,7 +829,7 @@ const App: React.FC = () => {
                                     if (newItem) {
                                         setInventory(prev => [newItem, ...prev]);
                                         addToast(`Added ${itemData.name} to inventory`, 'success');
-                                        if (user?.id) await InventoryService.logAction(user.id, 'ADDED', newItem.id, `Order Scanner added: ${newItem.name}`);
+                                        if (user?.id) await InventoryService.logAction(user.id, 'ADDED', newItem.id, { notes: `Order Scanner added: ${newItem.name}` });
                                         addLog('ADDED', `Order Scanner added: ${itemData.name}`);
                                         return newItem;
                                     } else {

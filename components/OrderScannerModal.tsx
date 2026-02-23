@@ -235,6 +235,9 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
             const itemsToAdd = extractedItems.filter(item => item.isNew && item.addToInventory);
 
             // Map over itemsToAdd sequentially to ensure DB consistency
+            // Track newly generated inventory IDs to link them into the order explicitly
+            const newInventoryIds = new Map<string, string>();
+
             for (const item of itemsToAdd) {
                 const newItem = await onAddToInventory({
                     name: item.name,
@@ -249,15 +252,15 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                     location: 'Storage'
                 });
 
-                if (newItem) {
-                    item.matchedInventoryId = newItem.id;
+                if (newItem && newItem.id) {
+                    newInventoryIds.set(item.id, newItem.id);
                 }
             }
 
-            // 2. Create the order using updated matchedInventoryId
+            // 2. Create the order using updated matchedInventoryId map
             const orderItems: OrderItem[] = extractedItems.map(item => ({
                 id: item.id,
-                inventoryItemId: item.matchedInventoryId,
+                inventoryItemId: item.matchedInventoryId || newInventoryIds.get(item.id) || undefined,
                 name: item.name,
                 quantity: item.quantity,
                 unitCost: item.unitCost,

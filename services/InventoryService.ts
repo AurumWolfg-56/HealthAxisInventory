@@ -253,14 +253,14 @@ export const InventoryService = {
     /**
      * Log an action to audit_log
      */
-    async logAction(userId: string, action: string, resourceId: string, details: any, newValue?: any, resource: string = 'inventory') {
+    async logAction(userId: string, action: string, resourceId: string, metadata: any = {}, newValue?: any, resource: string = 'inventory') {
         try {
             const logEntry = {
                 user_id: userId,
                 action: action,
                 resource: resource,
                 resource_id: resourceId,
-                details: typeof details === 'string' ? details : JSON.stringify(details),
+                metadata: typeof metadata === 'string' ? { notes: metadata } : metadata,
                 new_value: newValue || null,
                 timestamp: new Date().toISOString()
             };
