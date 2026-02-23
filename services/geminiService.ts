@@ -2,6 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 // Initialize Gemini with Vite environment variable
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || '' });
+const openAiKey = import.meta.env.VITE_OPENAI_API_KEY || '';
 
 // Predefined categories for intelligent matching
 export const INVENTORY_CATEGORIES = [
@@ -335,8 +336,62 @@ Be precise with numbers. Extract ALL line items visible. If values are unclear, 
     if (!text) return null;
     return JSON.parse(text) as ParsedOrderData;
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Invoice Error:", error);
+
+    // Fallback to OpenAI if Gemini hits a rate limit or quota issue
+    const errorMessage = error?.message?.toLowerCase() || '';
+    if (errorMessage.includes('429') || errorMessage.includes('resource exhausted') || errorMessage.includes('quota') || errorMessage.includes('limit')) {
+      console.log('Initiating fallback to OpenAI gpt-4o-mini...');
+      try {
+        if (!openAiKey) {
+          throw new Error('OpenAI API key not configured for fallback.');
+        }
+
+        const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openAiKey}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            response_format: { type: 'json_object' },
+            messages: [
+              {
+                role: 'system',
+                content: 'You output JSON that precisely matches the requested schema without any markdown formatting.'
+              },
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: prompt + '\n\nOutput only valid JSON.' },
+                  { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Data}`, detail: 'high' } }
+                ]
+              }
+            ],
+            temperature: 0.1
+          })
+        });
+
+        if (!openAiResponse.ok) {
+          const errText = await openAiResponse.text();
+          throw new Error(`OpenAI Fallback failed! Status: ${openAiResponse.status}. Details: ${errText}`);
+        }
+
+        const openAiData = await openAiResponse.json();
+        const content = openAiData.choices?.[0]?.message?.content;
+
+        if (!content) return null;
+
+        return JSON.parse(content) as ParsedOrderData;
+
+      } catch (fallbackError) {
+        console.error("OpenAI Fallback also failed:", fallbackError);
+        throw fallbackError;
+      }
+    }
+
     throw error;
   }
 };
