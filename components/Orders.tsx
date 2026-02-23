@@ -14,7 +14,7 @@ interface OrdersProps {
     onReceiveOrder: (order: Order) => void;
     isLoadingOrders?: boolean;
     onDeleteOrder: (orderId: string) => void;
-    onAddToInventory: (item: Omit<InventoryItem, 'id'>) => void;
+    onAddToInventory: (item: Omit<InventoryItem, 'id'>) => Promise<InventoryItem | void | null> | void;
     t: (key: string) => string;
 }
 

@@ -718,7 +718,7 @@ const App: React.FC = () => {
                                                     stock: newStock,
                                                     averageCost: newAverageCost,
                                                     lastChecked: now,
-                                                    lastCheckedBy: user.username
+                                                    lastCheckedBy: (user as any).full_name || user.username || 'System'
                                                 });
 
                                                 // Audit log (used by Intelligence Engine for cycle detection)
@@ -730,7 +730,7 @@ const App: React.FC = () => {
                                                 // Immediately commit to local state
                                                 setInventory(prev => prev.map(inv =>
                                                     inv.id === existingItem.id
-                                                        ? { ...inv, stock: newStock, averageCost: newAverageCost, lastChecked: now, lastCheckedBy: user.username }
+                                                        ? { ...inv, stock: newStock, averageCost: newAverageCost, lastChecked: now, lastCheckedBy: ((user as any).full_name || user.username || 'System') }
                                                         : inv
                                                 ));
                                                 itemsProcessed++;
@@ -749,7 +749,7 @@ const App: React.FC = () => {
                                                     batchNumber: `ORDER-${order.poNumber}`,
                                                     location: 'Main Storage',
                                                     lastChecked: now,
-                                                    lastCheckedBy: user.username
+                                                    lastCheckedBy: (user as any).full_name || user.username || 'System'
                                                 };
 
                                                 const newItem = await InventoryService.createItem(newItemConfig);
@@ -831,11 +831,13 @@ const App: React.FC = () => {
                                         addToast(`Added ${itemData.name} to inventory`, 'success');
                                         if (user?.id) await InventoryService.logAction(user.id, 'ADDED', newItem.id, `Order Scanner added: ${newItem.name}`);
                                         addLog('ADDED', `Order Scanner added: ${itemData.name}`);
+                                        return newItem;
                                     } else {
                                         throw new Error("Failed to create item");
                                     }
                                 } catch (e: any) {
                                     addToast(`Failed to add item: ${e.message}`, 'error');
+                                    throw e;
                                 }
                             }}
                             t={t}

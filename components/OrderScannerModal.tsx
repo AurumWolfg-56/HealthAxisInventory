@@ -49,6 +49,7 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
         totalTax: 0
     });
     const [errorMessage, setErrorMessage] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -225,53 +226,69 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
         return { subtotal, grandTotal };
     };
 
-    const handleCreateOrder = () => {
+    const handleCreateOrder = async () => {
         const { subtotal, grandTotal } = calculateTotals();
+        setIsProcessing(true); // Disable buttons while creating
 
-        // First, add new items to inventory if selected
-        extractedItems.filter(item => item.isNew && item.addToInventory).forEach(item => {
-            onAddToInventory({
+        try {
+            // 1. Process new items to add to inventory
+            const itemsToAdd = extractedItems.filter(item => item.isNew && item.addToInventory);
+
+            // Map over itemsToAdd sequentially to ensure DB consistency
+            for (const item of itemsToAdd) {
+                const newItem = await onAddToInventory({
+                    name: item.name,
+                    category: 'Consumables',
+                    stock: 0, // Will be updated when order is received
+                    unit: 'each',
+                    averageCost: item.unitCost,
+                    minStock: 5,
+                    maxStock: 50,
+                    expiryDate: '',
+                    batchNumber: item.sku || '',
+                    location: 'Storage'
+                });
+
+                if (newItem) {
+                    item.matchedInventoryId = newItem.id;
+                }
+            }
+
+            // 2. Create the order using updated matchedInventoryId
+            const orderItems: OrderItem[] = extractedItems.map(item => ({
+                id: item.id,
+                inventoryItemId: item.matchedInventoryId,
                 name: item.name,
-                category: 'Consumables',
-                stock: 0, // Will be updated when order is received
-                unit: 'each',
-                averageCost: item.unitCost,
-                minStock: 5,
-                maxStock: 50,
-                expiryDate: '',
-                batchNumber: item.sku,
-                location: 'Storage'
-            });
-        });
+                quantity: item.quantity,
+                unitCost: item.unitCost,
+                unitType: 'unit_each',
+                total: item.total
+            }));
 
-        // Create the order
-        const orderItems: OrderItem[] = extractedItems.map(item => ({
-            id: item.id,
-            inventoryItemId: item.matchedInventoryId,
-            name: item.name,
-            quantity: item.quantity,
-            unitCost: item.unitCost,
-            unitType: 'unit_each',
-            total: item.total
-        }));
+            const order: Partial<Order> = {
+                poNumber: orderDetails.poNumber || `PO-${Date.now()}`,
+                vendor: orderDetails.vendor,
+                orderDate: orderDetails.orderDate,
+                expectedDate: '',
+                status: 'PENDING',
+                items: orderItems,
+                subtotal,
+                shippingCost: orderDetails.shippingCost,
+                totalTax: orderDetails.totalTax,
+                grandTotal,
+                attachmentUrl: capturedImage || undefined,
+                notes: `AI-scanned order with ${extractedItems.length} items`
+            };
 
-        const order: Partial<Order> = {
-            poNumber: orderDetails.poNumber || `PO-${Date.now()}`,
-            vendor: orderDetails.vendor,
-            orderDate: orderDetails.orderDate,
-            expectedDate: '',
-            status: 'PENDING',
-            items: orderItems,
-            subtotal,
-            shippingCost: orderDetails.shippingCost,
-            totalTax: orderDetails.totalTax,
-            grandTotal,
-            attachmentUrl: capturedImage || undefined,
-            notes: `AI-scanned order with ${extractedItems.length} items`
-        };
-
-        onCreateOrder(order);
-        onClose();
+            await onCreateOrder(order);
+            onClose();
+        } catch (error) {
+            console.error('Failed to create order along with new items:', error);
+            setErrorMessage('Failed to create order due to an inventory creation error.');
+            setState('error');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const handleClose = () => {
@@ -641,11 +658,20 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                         </button>
                         <button
                             onClick={handleCreateOrder}
-                            disabled={extractedItems.length === 0}
+                            disabled={extractedItems.length === 0 || isProcessing}
                             className="flex-1 h-16 rounded-[1.25rem] bg-gradient-to-r from-medical-600 to-teal-600 text-white font-extrabold shadow-2xl shadow-medical-500/30 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-4 text-lg tracking-tight"
                         >
-                            <i className="fa-solid fa-file-circle-check text-xl"></i>
-                            Finalize Order Entry
+                            {isProcessing ? (
+                                <>
+                                    <i className="fa-solid fa-spinner fa-spin text-xl"></i>
+                                    Finalizing...
+                                </>
+                            ) : (
+                                <>
+                                    <i className="fa-solid fa-file-circle-check text-xl"></i>
+                                    Finalize Order Entry
+                                </>
+                            )}
                         </button>
                     </div>
                 )}
