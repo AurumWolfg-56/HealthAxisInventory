@@ -724,7 +724,7 @@ const App: React.FC = () => {
                                                 // Audit log (used by Intelligence Engine for cycle detection)
                                                 await InventoryService.logAction(
                                                     user.id, 'RESTOCKED', existingItem.id,
-                                                    JSON.stringify({ new_stock: newStock, added: orderItem.quantity, source_order: order.id })
+                                                    { new_stock: newStock, added: orderItem.quantity, source_order: order.id }
                                                 );
 
                                                 // Immediately commit to local state
