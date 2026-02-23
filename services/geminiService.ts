@@ -356,11 +356,48 @@ Be precise with numbers. Extract ALL line items visible. If values are unclear, 
           },
           body: JSON.stringify({
             model: 'gpt-4o-mini',
-            response_format: { type: 'json_object' },
+            response_format: {
+              type: 'json_schema',
+              json_schema: {
+                name: 'invoice_extraction',
+                strict: true,
+                schema: {
+                  type: 'object',
+                  properties: {
+                    poNumber: { type: 'string' },
+                    vendor: { type: 'string' },
+                    orderDate: { type: 'string' },
+                    subtotal: { type: 'number' },
+                    totalTax: { type: 'number' },
+                    shippingCost: { type: 'number' },
+                    grandTotal: { type: 'number' },
+                    confidence: { type: 'number' },
+                    items: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          name: { type: 'string' },
+                          category: { type: 'string' },
+                          sku: { type: 'string' },
+                          quantity: { type: 'number' },
+                          unitCost: { type: 'number' },
+                          packSize: { type: 'string' }
+                        },
+                        required: ["name", "category", "sku", "quantity", "unitCost", "packSize"],
+                        additionalProperties: false
+                      }
+                    }
+                  },
+                  required: ["poNumber", "vendor", "orderDate", "subtotal", "totalTax", "shippingCost", "grandTotal", "confidence", "items"],
+                  additionalProperties: false
+                }
+              }
+            },
             messages: [
               {
                 role: 'system',
-                content: 'You output JSON that precisely matches the requested schema without any markdown formatting.'
+                content: 'You extract medical invoice data directly into the provided strict JSON schema.'
               },
               {
                 role: 'user',
