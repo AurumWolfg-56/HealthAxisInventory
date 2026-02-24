@@ -51,4 +51,4 @@ jobs:
                    set ftp:ssl-allow yes;
                    set xfer:use-temp-file no;
                    open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }}; 
-                   mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./"
+                   mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ /domains/healthaxisinventory.com/public_html/"
