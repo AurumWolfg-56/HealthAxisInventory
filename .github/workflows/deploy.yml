@@ -31,25 +31,15 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       
-      - name: Deploy to Hostinger via LFTP
-        run: |
-          sudo apt-get install -y --no-install-recommends lftp || (sudo apt-get update && sudo apt-get install -y --no-install-recommends lftp)
-          # LFTP command explanation:
-          # -u: username,password
-          # -e: execute command
-          # set ssl:verify-certificate no: prevent self-signed cert errors
-          # set ftp:ssl-allow yes: allow SSL (try explicit FTPS)
-          # mirror -R: reverse mirror (upload)
-          # --parallel=2: use 2 parallel connections for speed
-          # --verbose: show progress
-          # --exclude-glob: exclude git and node_modules
-          lftp -c "set ssl:verify-certificate no;
-                   set net:timeout 180; 
-                   set net:max-retries 5; 
-                   set net:reconnect-interval-base 5; 
-                   set net:connection-limit 1;
-                   set ftp:ssl-allow yes;
-                   set xfer:use-temp-file no;
-                   set xfer:clobber true;
-                   open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }}; 
-                   mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./"
+      - name: 📂 Sync files to Hostinger FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: ./
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
