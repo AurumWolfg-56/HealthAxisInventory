@@ -149,15 +149,39 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
         // Aggregate by Month-Year
         const map = new Map();
         revenueTrendData.forEach(d => {
-            const dateObj = new Date(d.date); // This parsing might be tricky with "MMM D" format in all locales
-            // Workaround: Use index or just sample. 
-            // Better: Re-map from filteredReports with aggregation logic
-            return;
+            const dateObj = new Date(d.date);
+            const key = `${dateObj.getFullYear()}-${dateObj.getMonth()}`;
+            if (!map.has(key)) map.set(key, d);
+        });
+        return Array.from(map.values());
+    }, [revenueTrendData]);
+
+    const incomeExpenseByMonth = useMemo(() => {
+        const monthlyData: Record<string, { income: number, expense: number, monthSort: string }> = {};
+
+        // Process Reports (Income)
+        filteredReports.forEach(r => {
+            const date = new Date(r.timestamp);
+            const monthKey = date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+            const sortKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            if (!monthlyData[monthKey]) monthlyData[monthKey] = { income: 0, expense: 0, monthSort: sortKey };
+            monthlyData[monthKey].income += (r.totals?.revenue || 0);
         });
 
-        // Simple fallback: if year view, just show as is, Recharts handles density okay-ish, or just limit ticks
-        return revenueTrendData;
-    }, [revenueTrendData]);
+        // Process Orders (Expense)
+        validOrders.forEach(o => {
+            const date = new Date(o.orderDate);
+            const monthKey = date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+            const sortKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            if (!monthlyData[monthKey]) monthlyData[monthKey] = { income: 0, expense: 0, monthSort: sortKey };
+            monthlyData[monthKey].expense += (o.grandTotal || 0);
+        });
+
+        return Object.entries(monthlyData)
+            .map(([month, data]) => ({ month, ...data }))
+            .sort((a, b) => a.monthSort.localeCompare(b.monthSort));
+
+    }, [filteredReports, validOrders]);
 
     const methodData = [
         { name: 'Cash', value: collectionsByMethod.cash },
@@ -232,12 +256,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                     icon="fa-sack-dollar"
                     color="emerald"
                 />
-                <StatCard
-                    label="Net Income"
-                    value={`$${netIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                    icon="fa-scale-balanced"
-                    color={netIncome >= 0 ? "indigo" : "red"}
-                />
+                {/* Net Income Removed */}
                 <StatCard
                     label="Total Spend"
                     value={`$${totalSpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
@@ -276,16 +295,47 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                 />
             </div>
 
-            {/* Main Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Charts Row 1 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                {/* Income vs Expenses Chart */}
+                <div className="glass-panel p-6">
+                    <h3 className="section-title mb-6">
+                        <span className="section-title-bar"></span>
+                        Income vs Expenses (Monthly)
+                    </h3>
+                    <div className="h-[350px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={incomeExpenseByMonth} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorInc" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.3} />
+                                    </linearGradient>
+                                    <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.3} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} dy={10} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} tickFormatter={(val) => `$${val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val}`} />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99, 102, 241, 0.05)', radius: [8, 8, 0, 0] }} />
+                                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                <Bar dataKey="income" name="Income" fill="url(#colorInc)" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                                <Bar dataKey="expense" name="Expense" fill="url(#colorExp)" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
 
                 {/* Revenue Area Chart */}
-                <div className="lg:col-span-2 glass-panel p-6">
+                <div className="glass-panel p-6">
                     <h3 className="section-title mb-6">
                         <span className="section-title-bar"></span>
                         Revenue & Patient Trend
                     </h3>
-                    <div className="min-h-[350px] w-full">
+                    <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <ComposedChart data={optimizedRevenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
@@ -310,6 +360,10 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                         </ResponsiveContainer>
                     </div>
                 </div>
+            </div>
+
+            {/* Main Charts Row 2 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
 
                 {/* Payment Methods Breakdown */}
                 <div className="glass-panel p-6">
@@ -317,15 +371,15 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                         <span className="section-title-bar"></span>
                         Collections (Methods)
                     </h3>
-                    <div className="min-h-[350px] w-full flex flex-col items-center justify-center">
+                    <div className="h-[250px] w-full flex flex-col items-center justify-center">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
                                     data={methodData}
                                     cx="50%"
                                     cy="45%"
-                                    innerRadius={70}
-                                    outerRadius={100}
+                                    innerRadius={60}
+                                    outerRadius={90}
                                     paddingAngle={8}
                                     dataKey="value"
                                     cornerRadius={8}
@@ -336,22 +390,30 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                                     ))}
                                 </Pie>
                                 <Tooltip content={<CustomTooltip />} />
-                                <Legend verticalAlign="bottom" height={36} iconType="circle" />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
+                    {/* Collection Breakdown Table */}
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-sm max-w-sm mx-auto">
+                        {methodData.map((m, i) => (
+                            <div key={m.name} className="flex flex-col p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 hover:border-indigo-500/30 transition-colors">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
+                                    <span className="text-slate-500 dark:text-slate-400 font-medium text-xs uppercase tracking-wider">{m.name}</span>
+                                </div>
+                                <span className="font-bold text-slate-800 dark:text-slate-200">${m.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
 
-            {/* Secondary Charts Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Patients by Payer */}
+                {/* Patients by Insurance */}
                 <div className="glass-panel p-6">
                     <h3 className="section-title mb-6">
                         <span className="section-title-bar"></span>
                         Patients by Insurance
                     </h3>
-                    <div className="min-h-[300px] w-full">
+                    <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart layout="vertical" data={insuranceData} margin={{ left: 20, right: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.2} />
@@ -374,7 +436,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                         <span className="section-title-bar"></span>
                         Visits by Provider
                     </h3>
-                    <div className="min-h-[300px] w-full">
+                    <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={providerPatientData} margin={{ top: 20 }}>
                                 <defs>
@@ -454,7 +516,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                         <span className="section-title-bar"></span>
                         Inventory Spend by Provider
                     </h3>
-                    <div className="min-h-[400px] w-full">
+                    <div className="h-[400px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart layout="vertical" data={providerSpendData} margin={{ left: 40, right: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.2} />
