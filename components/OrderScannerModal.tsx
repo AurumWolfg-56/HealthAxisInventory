@@ -171,7 +171,7 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                     total: (item.quantity || 1) * (item.unitCost || 0),
                     matchedInventoryId: match?.id,
                     isNew: !match,
-                    addToInventory: false
+                    addToInventory: !match
                 };
             });
 
