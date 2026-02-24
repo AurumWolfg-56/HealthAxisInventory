@@ -43,12 +43,21 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
     setLoading(true);
     setError(null);
     try {
+      // 1. Update the password
       const { error: pwError } = await supabase.auth.updateUser({ password });
       if (pwError) throw pwError;
 
+      // 2. Clear the hash so it doesn't trigger again
+      if (window.location.hash) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+
+      // 3. Update profile if username was provided (currently not rendered in UI, but keeping logic)
       if (username) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -58,26 +67,32 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
             .eq('id', user.id);
 
           if (profileError) {
-            setError(`Password set, but username failed: ${profileError.message}`);
-            setLoading(false);
-            return;
+            console.warn(`Username update failed: ${profileError.message}`);
           }
         }
       }
 
-      alert('Account setup complete! Please log in with your new credentials.');
-      if (window.location.hash) {
-        window.history.replaceState(null, '', window.location.pathname);
-      }
+      // 4. Force a clean sign out to clear any confused state from the invite token
       await supabase.auth.signOut();
+
+      // 5. Alert and reset UI
+      alert('Contraseña guardada exitosamente. Por favor, inicia sesión con tu nueva contraseña.');
+
       if (onPasswordSet) onPasswordSet();
       setAuthMode('signin');
       setPassword('');
       setUsername('');
+      setEmail('');
     } catch (err: any) {
-      setError(err.message);
+      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+        setError('Conexión interrumpida, pero la contraseña podría haberse guardado. Intenta recargar e iniciar sesión.');
+      } else {
+        setError(err.message);
+      }
     } finally {
-      setLoading(false);
+      if (document.body) { // Check if still mounted (rough check)
+        setLoading(false);
+      }
     }
   };
 
