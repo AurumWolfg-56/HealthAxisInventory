@@ -56,6 +56,22 @@ const Dashboard: React.FC<DashboardProps> = ({ inventory, dailyReports, pettyCas
                 </div>
             </header>
 
+            {/* Quick Actions Moved to Top */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8 mb-8">
+                {quickActions.map(action => (
+                    <button
+                        key={action.route}
+                        onClick={() => onNavigate(action.route)}
+                        className="flex flex-col items-center gap-4 p-5 rounded-3xl bg-white dark:bg-[#151b23] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 transition-all duration-300 group"
+                    >
+                        <div className={`w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center group-hover:scale-110 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-500/10 transition-all duration-300`}>
+                            <i className={`fa-solid ${action.icon} text-2xl ${action.color} group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors`}></i>
+                        </div>
+                        <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{action.label}</span>
+                    </button>
+                ))}
+            </div>
+
             {/* Main Analytics Content */}
             <DashboardAnalytics
                 dailyReports={dailyReports}
@@ -65,29 +81,6 @@ const Dashboard: React.FC<DashboardProps> = ({ inventory, dailyReports, pettyCas
                 t={t}
                 onNavigate={onNavigate}
             />
-
-            {/* Quick Actions (Keep as Footer or Secondary) */}
-            <div className="glass-panel p-6">
-                <div className="section-title mb-5">
-                    <span className="section-title-bar"></span>
-                    <span className="text-slate-900 dark:text-white">Quick Actions</span>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {quickActions.map(action => (
-                        <button
-                            key={action.route}
-                            onClick={() => onNavigate(action.route)}
-                            className="flex flex-col items-center gap-3 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors group"
-                        >
-                            <div className={`w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                                <i className={`fa-solid ${action.icon} ${action.color}`}></i>
-                            </div>
-                            <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">{action.label}</span>
-                        </button>
-                    ))}
-                </div>
-            </div>
 
         </div>
     );

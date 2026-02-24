@@ -65,7 +65,8 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
     // KPI Totals
     const totalRevenue = filteredReports.reduce((acc, r) => acc + (r.totals?.revenue || 0), 0);
     const totalPatients = filteredReports.reduce((acc, r) => acc + (r.totals?.patients || 0), 0);
-    const totalSpend = filteredOrders.reduce((acc, o) => acc + (o.grandTotal || 0), 0);
+    const validOrders = filteredOrders.filter(o => o.status !== 'CANCELLED');
+    const totalSpend = validOrders.reduce((acc, o) => acc + (o.grandTotal || 0), 0);
     const netIncome = totalRevenue - totalSpend;
 
     // Clinical Stats
@@ -106,7 +107,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
     }, {} as Record<string, number>);
 
     // Provider Stats (Spend - Orders)
-    const spendByProvider = filteredOrders.reduce((acc, o) => {
+    const spendByProvider = validOrders.reduce((acc, o) => {
         const creator = users.find(u => u.id === o.createdBy)?.username || 'Unknown';
         acc[creator] = (acc[creator] || 0) + o.grandTotal;
         return acc;
@@ -185,7 +186,31 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
     })).sort((a: { value: number }, b: { value: number }) => b.value - a.value);
 
 
-    // --- 4. Render ---
+    const CustomTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-white/95 dark:bg-[#151b23]/95 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800">
+                    <p className="font-bold text-slate-800 dark:text-white mb-3 text-sm">{label}</p>
+                    <div className="space-y-2">
+                        {payload.map((entry: any, index: number) => (
+                            <div key={index} className="flex items-center justify-between gap-6 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: entry.color }}></div>
+                                    <span className="text-slate-600 dark:text-slate-400 font-medium">{entry.name}</span>
+                                </div>
+                                <span className="font-bold text-slate-900 dark:text-white">
+                                    {entry.name === 'Revenue' || entry.name === 'Total Spend' || entry.name.includes('Spend') || entry.name === 'Value'
+                                        ? `$${Number(entry.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                        : entry.value.toLocaleString()}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
 
     return (
         <div className="space-y-6 animate-fade-in-up">
@@ -203,20 +228,19 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     label="Total Revenue"
-                    value={`$${totalRevenue.toLocaleString()}`}
+                    value={`$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                     icon="fa-sack-dollar"
                     color="emerald"
-                // trend={{ value: 12, isPositive: true, label: "vs last period" }} // Mock trend for now
                 />
                 <StatCard
                     label="Net Income"
-                    value={`$${netIncome.toLocaleString()}`}
+                    value={`$${netIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                     icon="fa-scale-balanced"
-                    color="indigo"
+                    color={netIncome >= 0 ? "indigo" : "red"}
                 />
                 <StatCard
                     label="Total Spend"
-                    value={`$${totalSpend.toLocaleString()}`}
+                    value={`$${totalSpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                     icon="fa-money-bill-transfer"
                     color="red"
                 />
@@ -261,26 +285,27 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                         <span className="section-title-bar"></span>
                         Revenue & Patient Trend
                     </h3>
-                    <div className="h-80 w-full">
+                    <div className="min-h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <ComposedChart data={optimizedRevenueData}>
+                            <ComposedChart data={optimizedRevenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.5} />
                                         <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                     </linearGradient>
+                                    <linearGradient id="colorPat" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                    </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.5} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.4} />
                                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} dy={10} minTickGap={30} />
-                                <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} tickFormatter={(val) => `$${val / 1000}k`} />
+                                <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} tickFormatter={(val) => `$${val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val}`} />
                                 <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} />
-                                <Tooltip
-                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    cursor={{ stroke: '#94A3B8', strokeWidth: 1, strokeDasharray: '4 4' }}
-                                />
-                                <Legend />
-                                <Area yAxisId="left" type="monotone" dataKey="revenue" name="Revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
-                                <Line yAxisId="right" type="monotone" dataKey="patients" name="Patients" stroke="#3b82f6" strokeWidth={3} dot={false} />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+                                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                <Area yAxisId="left" type="monotone" dataKey="revenue" name="Revenue" stroke="#10b981" strokeWidth={4} fillOpacity={1} fill="url(#colorRev)" activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981' }} />
+                                <Line yAxisId="right" type="monotone" dataKey="patients" name="Patients" stroke="#3b82f6" strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0, fill: '#3b82f6' }} />
                             </ComposedChart>
                         </ResponsiveContainer>
                     </div>
@@ -290,26 +315,28 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                 <div className="glass-panel p-6">
                     <h3 className="section-title mb-6">
                         <span className="section-title-bar"></span>
-                        Collections by Method
+                        Collections (Methods)
                     </h3>
-                    <div className="h-80 w-full">
+                    <div className="min-h-[350px] w-full flex flex-col items-center justify-center">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
                                     data={methodData}
                                     cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
+                                    cy="45%"
+                                    innerRadius={70}
+                                    outerRadius={100}
+                                    paddingAngle={8}
                                     dataKey="value"
+                                    cornerRadius={8}
+                                    stroke="none"
                                 >
                                     {methodData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip />
-                                <Legend verticalAlign="bottom" height={36} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Legend verticalAlign="bottom" height={36} iconType="circle" />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
@@ -318,21 +345,20 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
 
             {/* Secondary Charts Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                {/* Patients by Payer (Insurance) */}
+                {/* Patients by Payer */}
                 <div className="glass-panel p-6">
                     <h3 className="section-title mb-6">
                         <span className="section-title-bar"></span>
                         Patients by Insurance
                     </h3>
-                    <div className="h-64 w-full">
+                    <div className="min-h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart layout="vertical" data={insuranceData} margin={{ left: 20 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
+                            <BarChart layout="vertical" data={insuranceData} margin={{ left: 20, right: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.2} />
                                 <XAxis type="number" hide />
-                                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12 }} />
-                                <Tooltip cursor={{ fill: 'transparent' }} />
-                                <Bar dataKey="value" name="Patients" radius={[0, 4, 4, 0]}>
+                                <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 13, fontWeight: 500, fill: '#64748B' }} axisLine={false} tickLine={false} />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99, 102, 241, 0.05)', radius: 8 }} />
+                                <Bar dataKey="value" name="Patients" radius={[0, 8, 8, 0]} maxBarSize={40}>
                                     {insuranceData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
@@ -346,16 +372,22 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                 <div className="glass-panel p-6">
                     <h3 className="section-title mb-6">
                         <span className="section-title-bar"></span>
-                        Patients by Provider
+                        Visits by Provider
                     </h3>
-                    <div className="h-64 w-full">
+                    <div className="min-h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={providerPatientData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                                <YAxis />
-                                <Tooltip cursor={{ fill: 'transparent' }} />
-                                <Bar dataKey="value" name="Patients" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                            <BarChart data={providerPatientData} margin={{ top: 20 }}>
+                                <defs>
+                                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#8b5cf6" stopOpacity={1} />
+                                        <stop offset="100%" stopColor="#6366f1" stopOpacity={0.8} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                                <XAxis dataKey="name" tick={{ fontSize: 13, fontWeight: 500, fill: '#64748B' }} axisLine={false} tickLine={false} dy={10} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B' }} />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99, 102, 241, 0.05)', radius: [8, 8, 0, 0] }} />
+                                <Bar dataKey="value" name="Patients" fill="url(#barGradient)" radius={[8, 8, 0, 0]} maxBarSize={50} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -372,43 +404,45 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                         Inventory Health
                     </h3>
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-900/10 rounded-xl">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-800 text-red-600 dark:text-red-200 flex items-center justify-center">
-                                    <i className="fa-solid fa-triangle-exclamation"></i>
+                        <div className="flex justify-between items-center p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-2xl transition-all hover:scale-[1.02]">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center shadow-inner">
+                                    <i className="fa-solid fa-triangle-exclamation text-xl"></i>
                                 </div>
-                                <span className="font-medium text-slate-700 dark:text-slate-200">Below Minimum</span>
+                                <span className="font-semibold text-slate-700 dark:text-slate-200">Below Minimum</span>
                             </div>
-                            <span className="text-xl font-bold text-slate-900 dark:text-white">{lowStockCount}</span>
+                            <span className="text-2xl font-bold text-slate-900 dark:text-white">{lowStockCount}</span>
                         </div>
 
-                        <div className="flex justify-between items-center p-3 bg-amber-50 dark:bg-amber-900/10 rounded-xl">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-800 text-amber-600 dark:text-amber-200 flex items-center justify-center">
-                                    <i className="fa-solid fa-clock"></i>
+                        <div className="flex justify-between items-center p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-2xl transition-all hover:scale-[1.02]">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-inner">
+                                    <i className="fa-solid fa-clock text-xl"></i>
                                 </div>
-                                <span className="font-medium text-slate-700 dark:text-slate-200">Expiring (30d)</span>
+                                <span className="font-semibold text-slate-700 dark:text-slate-200">Expiring (30d)</span>
                             </div>
-                            <span className="text-xl font-bold text-slate-900 dark:text-white">{expiringCount}</span>
+                            <span className="text-2xl font-bold text-slate-900 dark:text-white">{expiringCount}</span>
                         </div>
 
-                        <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center">
-                                    <i className="fa-solid fa-ban"></i>
+                        <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl transition-all hover:scale-[1.02]">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 flex items-center justify-center shadow-inner">
+                                    <i className="fa-solid fa-ban text-xl"></i>
                                 </div>
-                                <span className="font-medium text-slate-700 dark:text-slate-200">Expired</span>
+                                <span className="font-semibold text-slate-700 dark:text-slate-200">Expired</span>
                             </div>
-                            <span className="text-xl font-bold text-slate-900 dark:text-white">{expiredCount}</span>
+                            <span className="text-2xl font-bold text-slate-900 dark:text-white">{expiredCount}</span>
                         </div>
                     </div>
 
-                    <h4 className="text-sm font-semibold text-slate-500 mt-6 mb-2 uppercase tracking-wider">Most Expensive Items</h4>
+                    <h4 className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-8 mb-4 uppercase tracking-wider flex items-center gap-2">
+                        <i className="fa-solid fa-gem text-indigo-400"></i> Top Valued Items
+                    </h4>
                     <div className="space-y-3">
                         {topExpensiveItems.map(item => (
-                            <div key={item.id} className="flex justify-between text-sm">
-                                <span className="text-slate-700 dark:text-slate-300 truncate max-w-[70%]">{item.name}</span>
-                                <span className="font-mono font-medium">${item.averageCost.toFixed(2)}</span>
+                            <div key={item.id} className="flex justify-between items-center text-sm p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-800">
+                                <span className="text-slate-700 dark:text-slate-200 font-medium truncate max-w-[70%]">{item.name}</span>
+                                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">${item.averageCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                         ))}
                     </div>
@@ -420,14 +454,14 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                         <span className="section-title-bar"></span>
                         Inventory Spend by Provider
                     </h3>
-                    <div className="h-64 w-full">
+                    <div className="min-h-[400px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart layout="vertical" data={providerSpendData} margin={{ left: 40 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
-                                <XAxis type="number" tickFormatter={(val) => `$${val}`} />
-                                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12 }} />
-                                <Tooltip formatter={(val: number) => `$${val.toFixed(2)}`} cursor={{ fill: 'transparent' }} />
-                                <Bar dataKey="value" name="Total Spend" radius={[0, 4, 4, 0]}>
+                            <BarChart layout="vertical" data={providerSpendData} margin={{ left: 40, right: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.2} />
+                                <XAxis type="number" tickFormatter={(val) => `$${val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val}`} axisLine={false} tickLine={false} />
+                                <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 13, fontWeight: 500, fill: '#64748B' }} axisLine={false} tickLine={false} />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99, 102, 241, 0.05)', radius: 8 }} />
+                                <Bar dataKey="value" name="Total Spend" radius={[0, 8, 8, 0]} maxBarSize={45}>
                                     {providerSpendData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
                                     ))}
@@ -441,7 +475,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
 
             {/* Pending Orders List - could be added if needed, but we have a dedicated page */}
 
-        </div>
+        </div >
     );
 };
 

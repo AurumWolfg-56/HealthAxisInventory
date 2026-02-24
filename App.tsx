@@ -497,36 +497,7 @@ const App: React.FC = () => {
 
                 <div key={currentRoute} className="max-w-[1600px] mx-auto print:max-w-none animate-fade-in-up">
 
-                    {/* MIGRATION TOOL - TEMP UI FOR PHASE 2 */}
-                    {currentRoute === AppRoute.DASHBOARD && !isMigrationDismissed && (user?.role === UserRole.OWNER || user?.role === UserRole.MANAGER) && (
-                        <div className="mb-8 p-6 rounded-3xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-xl flex items-center justify-between relative overflow-hidden group">
-                            <button
-                                onClick={() => {
-                                    setIsMigrationDismissed(true);
-                                    localStorage.setItem('ha_migration_dismissed', 'true');
-                                }}
-                                className="absolute top-4 right-4 z-20 text-white/70 hover:text-white transition-colors"
-                                title="Dismiss"
-                            >
-                                <i className="fa-solid fa-xmark text-xl"></i>
-                            </button>
-                            <div className="relative z-10">
-                                <h3 className="text-xl font-bold mb-1"><i className="fa-solid fa-cloud-arrow-up mr-2"></i> System Migration</h3>
-                                <p className="text-indigo-100/90 text-sm max-w-lg">
-                                    We are moving to a localized Database. If you have local data, click below to sync it safely to the cloud.
-                                </p>
-                            </div>
-                            <button
-                                onClick={handleMigrate}
-                                className="relative z-10 px-6 py-3 bg-white text-indigo-600 rounded-xl font-bold shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-                            >
-                                <i className="fa-solid fa-bolt"></i> Sync Data to Cloud
-                            </button>
-                            {/* Decorative Circles */}
-                            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white/10 blur-3xl"></div>
-                            <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-indigo-900/20 blur-3xl"></div>
-                        </div>
-                    )}
+
 
                     {currentRoute === AppRoute.DASHBOARD && hasPermission('dashboard.view') && <Dashboard inventory={inventory} logs={logs} dailyReports={dailyReports} pettyCashHistory={pettyCashHistory} orders={orders} users={usersDb} t={t} onNavigate={handleNavigate} />}
                     {currentRoute === AppRoute.INVENTORY && hasPermission('inventory.view') && (
