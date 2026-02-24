@@ -141,8 +141,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             console.log('[AppDataContext] Auth event:', event, '| hasSession:', !!session);
 
-            if (event === 'SIGNED_IN' && session) { // Removed hasLoaded check to ensure refresh
-                console.log('[AppDataContext] SIGNED_IN detected, caching token...');
+            if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) { // Removed hasLoaded check to ensure refresh
+                console.log('[AppDataContext] Session detected, caching token...');
                 DailyReportService.setAccessToken(session.access_token);
                 TemplateService.setAccessToken(session.access_token);
                 UserService.setAccessToken(session.access_token);

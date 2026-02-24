@@ -44,7 +44,7 @@ export const UserService = {
             const url = `${SUPABASE_URL}/rest/v1/profiles?select=id,full_name,permissions,user_roles(role_id)`;
 
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
 
             const response = await fetch(url, {
                 method: 'GET',
@@ -80,7 +80,7 @@ export const UserService = {
         try {
             const url = `${SUPABASE_URL}/functions/v1/admin-api`;
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s for edge function
+            const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s for edge function
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -125,7 +125,7 @@ export const UserService = {
         try {
             const url = `${SUPABASE_URL}/functions/v1/admin-api`;
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 20000);
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
 
             const response = await fetch(url, {
                 method: 'POST',

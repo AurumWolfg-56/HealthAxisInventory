@@ -58,7 +58,7 @@ export const DailyReportService = {
 
             const url = `${SUPABASE_URL}/rest/v1/daily_reports`;
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -86,7 +86,7 @@ export const DailyReportService = {
             return newReport;
         } catch (error: any) {
             if (error.name === 'AbortError') {
-                console.error('[DailyReportService] ❌ Create aborted after 15s timeout');
+                console.error('[DailyReportService] ❌ Create aborted after 45s timeout');
             } else {
                 console.error('[DailyReportService] ❌ Error creating report:', error);
             }
@@ -99,7 +99,7 @@ export const DailyReportService = {
         try {
             const url = `${SUPABASE_URL}/rest/v1/daily_reports?select=*&order=timestamp.desc`;
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
 
             const response = await fetch(url, {
                 method: 'GET',
@@ -128,7 +128,7 @@ export const DailyReportService = {
             });
         } catch (error: any) {
             if (error.name === 'AbortError') {
-                console.error('[DailyReportService] ❌ Fetch aborted after 15s timeout');
+                console.error('[DailyReportService] ❌ Fetch aborted after 45s timeout');
             } else {
                 console.error('[DailyReportService] ❌ Error fetching reports:', error);
             }
@@ -141,7 +141,7 @@ export const DailyReportService = {
         try {
             const url = `${SUPABASE_URL}/rest/v1/daily_reports?id=eq.${encodeURIComponent(id)}`;
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
 
             const response = await fetch(url, {
                 method: 'DELETE',
@@ -161,7 +161,7 @@ export const DailyReportService = {
             return true;
         } catch (error: any) {
             if (error.name === 'AbortError') {
-                console.error('[DailyReportService] ❌ Delete aborted after 15s timeout');
+                console.error('[DailyReportService] ❌ Delete aborted after 45s timeout');
             } else {
                 console.error('[DailyReportService] ❌ Error deleting report:', error);
             }

@@ -27,7 +27,7 @@ export const TemplateService = {
     async getTemplates(): Promise<FormTemplate[]> {
         console.log('[TemplateService] Fetching templates (REST)...');
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const timeoutId = setTimeout(() => controller.abort(), 45000);
 
         try {
             const response = await fetch(`${SUPABASE_URL}/rest/v1/form_templates?select=*&order=created_at.desc`, {
@@ -78,7 +78,7 @@ export const TemplateService = {
         };
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const timeoutId = setTimeout(() => controller.abort(), 45000);
 
         try {
             const response = await fetch(`${SUPABASE_URL}/rest/v1/form_templates`, {
