@@ -640,11 +640,11 @@ I, **{{patientName}}**, hereby authorize...
                                 </div>
                             </div>
 
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{t.title}</h3>
-                            <p className="text-xs text-gray-400 font-mono mb-4">{t.slug} • v{t.version}</p>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 truncate">{t.title}</h3>
+                            <p className="text-xs text-gray-400 font-mono mb-4 truncate">{t.slug} • v{t.version}</p>
 
                             <div className="flex gap-2">
-                                <button onClick={() => handleEdit(t)} className="flex-1 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-blue-500 hover:text-white transition-colors flex items-center justify-center font-bold text-xs text-gray-600 dark:text-gray-400">
+                                <button onClick={() => handleEdit(t)} className="flex-1 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-blue-500 hover:text-white transition-colors flex items-center justify-center font-bold text-xs text-gray-600 dark:text-gray-400 truncate px-2">
                                     Edit
                                 </button>
                                 <button onClick={() => { if (window.confirm('Delete template?')) onDeleteTemplate(t.id) }} className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center text-gray-400">

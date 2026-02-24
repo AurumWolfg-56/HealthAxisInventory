@@ -129,19 +129,67 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
     };
 
     if (loading) return (
-        <div className="page-container">
-            <div className="flex flex-col items-center justify-center gap-4 py-24">
-                <div className="relative w-16 h-16">
-                    <div className="absolute inset-0 rounded-full border-4 border-medical-500/20"></div>
-                    <div className="absolute inset-0 rounded-full border-4 border-medical-500 border-t-transparent animate-spin"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <i className="fa-solid fa-brain text-medical-500 text-xl"></i>
+        <div className="page-container space-y-6 pb-24 md:pb-8">
+            {/* Skeleton Header */}
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-slate-200 dark:bg-slate-800 animate-pulse"></div>
+                    <div>
+                        <div className="h-6 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse mb-2"></div>
+                        <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse"></div>
                     </div>
                 </div>
-                <div className="text-center">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">Analyzing Inventory</p>
-                    <p className="text-xs text-slate-400 mt-1">Running intelligence engine...</p>
+                <div className="h-10 w-44 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse self-start md:self-auto"></div>
+            </header>
+
+            {/* Skeleton KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="glass-panel p-5 flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                            <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+                            <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800 animate-pulse"></div>
+                        </div>
+                        <div className="h-8 w-32 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse"></div>
+                        <div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Skeleton Tabs + Table */}
+            <div className="glass-panel overflow-hidden">
+                <div className="flex items-center gap-2 p-4 border-b border-slate-100 dark:border-slate-800">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="h-9 w-28 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse"></div>
+                    ))}
                 </div>
+                <div className="p-4 space-y-4">
+                    {/* Header row */}
+                    <div className="flex gap-4 border-b border-slate-100 dark:border-slate-800 pb-2">
+                        <div className="h-4 w-1/4 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+                        <div className="h-4 w-1/4 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+                        <div className="h-4 w-1/4 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+                        <div className="h-4 w-1/4 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+                    </div>
+                    {/* Data rows */}
+                    {[...Array(5)].map((_, i) => (
+                        <div key={i} className="flex gap-4 items-center">
+                            <div className="h-12 w-full bg-slate-100 dark:bg-slate-800/50 rounded-xl animate-pulse"></div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Centered Floating Spinner for Context */}
+            <div className="fixed bottom-8 right-8 z-50 flex items-center gap-3 bg-white dark:bg-slate-800 p-4 rounded-full shadow-2xl border border-slate-100 dark:border-slate-700 animate-fade-in-up">
+                <div className="relative w-8 h-8">
+                    <div className="absolute inset-0 rounded-full border-2 border-medical-500/20"></div>
+                    <div className="absolute inset-0 rounded-full border-2 border-medical-500 border-t-transparent animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <i className="fa-solid fa-brain text-medical-500 text-[10px]"></i>
+                    </div>
+                </div>
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-300 pr-2">Analyzing Data...</span>
             </div>
         </div>
     );
@@ -241,8 +289,8 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                             key={tab.key}
                             onClick={() => setActiveTab(tab.key as any)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === tab.key
-                                    ? 'bg-medical-500 text-white shadow-sm'
-                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'
+                                ? 'bg-medical-500 text-white shadow-sm'
+                                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'
                                 }`}
                         >
                             <i className={`fa-solid ${tab.icon} text-xs`}></i>
@@ -316,8 +364,8 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                                             <td className="table-cell">
                                                 <div className="flex flex-col gap-1">
                                                     <span className={`text-xs font-bold ${m.confidence === 'HIGH' ? 'text-emerald-500' :
-                                                            m.confidence === 'MEDIUM' ? 'text-amber-500' :
-                                                                'text-slate-400'
+                                                        m.confidence === 'MEDIUM' ? 'text-amber-500' :
+                                                            'text-slate-400'
                                                         }`}>
                                                         {m.confidence}
                                                     </span>

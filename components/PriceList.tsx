@@ -326,7 +326,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                                     {item.category}
                                                 </span>
                                             </td>
-                                            <td className="p-6 text-right">
+                                            <td className="p-6 text-right whitespace-nowrap">
                                                 <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
                                                     ${item.price.toFixed(2)}
                                                 </div>
@@ -378,7 +378,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                             )}
                                         </div>
                                     </div>
-                                    <div className="text-right flex-shrink-0">
+                                    <div className="text-right flex-shrink-0 whitespace-nowrap pl-2">
                                         <div className="text-xl font-black text-emerald-600 dark:text-emerald-400">
                                             ${item.price.toFixed(2)}
                                         </div>

@@ -130,6 +130,9 @@ const App: React.FC = () => {
     const [toasts, setToasts] = useState<ToastMessage[]>([]);
     const [isDarkMode, setIsDarkMode] = useState(() => loadState(STORAGE_KEYS.THEME, true));
     const [language, setLanguage] = useState<Language>(() => loadState(STORAGE_KEYS.LANG, 'en'));
+    const [isMigrationDismissed, setIsMigrationDismissed] = useState(() => {
+        try { return localStorage.getItem('ha_migration_dismissed') === 'true'; } catch { return false; }
+    });
 
     // UI Logic
     const [showScanner, setShowScanner] = useState(false);
@@ -495,8 +498,18 @@ const App: React.FC = () => {
                 <div key={currentRoute} className="max-w-[1600px] mx-auto print:max-w-none animate-fade-in-up">
 
                     {/* MIGRATION TOOL - TEMP UI FOR PHASE 2 */}
-                    {currentRoute === AppRoute.DASHBOARD && (user?.role === UserRole.OWNER || user?.role === UserRole.MANAGER) && (
+                    {currentRoute === AppRoute.DASHBOARD && !isMigrationDismissed && (user?.role === UserRole.OWNER || user?.role === UserRole.MANAGER) && (
                         <div className="mb-8 p-6 rounded-3xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-xl flex items-center justify-between relative overflow-hidden group">
+                            <button
+                                onClick={() => {
+                                    setIsMigrationDismissed(true);
+                                    localStorage.setItem('ha_migration_dismissed', 'true');
+                                }}
+                                className="absolute top-4 right-4 z-20 text-white/70 hover:text-white transition-colors"
+                                title="Dismiss"
+                            >
+                                <i className="fa-solid fa-xmark text-xl"></i>
+                            </button>
                             <div className="relative z-10">
                                 <h3 className="text-xl font-bold mb-1"><i className="fa-solid fa-cloud-arrow-up mr-2"></i> System Migration</h3>
                                 <p className="text-indigo-100/90 text-sm max-w-lg">

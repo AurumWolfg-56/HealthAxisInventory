@@ -31,6 +31,47 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<InventoryItem>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
+
+  // Clear selection when exiting audit mode
+  useEffect(() => {
+    if (!isAuditMode) setSelectedItemIds(new Set());
+  }, [isAuditMode]);
+
+  const toggleSelection = (id: string) => {
+    setSelectedItemIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    // We use sortedItems so it respects filters
+    if (selectedItemIds.size === sortedItems.length && sortedItems.length > 0) {
+      setSelectedItemIds(new Set());
+    } else {
+      setSelectedItemIds(new Set(sortedItems.map(i => i.id)));
+    }
+  };
+
+  const handleBulkVerify = async () => {
+    const ids = Array.from(selectedItemIds);
+    setLoadingItemIds(prev => new Set([...prev, ...ids]));
+    try {
+      await Promise.all(ids.map(id => onAuditItem(id)));
+      setSelectedItemIds(new Set());
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingItemIds(prev => {
+        const next = new Set(prev);
+        ids.forEach(id => next.delete(id));
+        return next;
+      });
+    }
+  };
 
   // Duplicate Tracking
   const [duplicateCount, setDuplicateCount] = useState(0);
@@ -225,6 +266,30 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
         </div>
       </header >
 
+      {/* Audit Mode Banner */}
+      {isAuditMode && (
+        <div className="bg-medical-600/10 border border-medical-500/30 rounded-3xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 mt-[-1rem] mb-6 animate-fade-in shadow-inner">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-medical-500 text-white flex items-center justify-center animate-pulse shadow-lg shadow-medical-500/30">
+              <i className="fa-solid fa-clipboard-check text-xl"></i>
+            </div>
+            <div>
+              <h3 className="font-black text-medical-800 dark:text-medical-200 text-lg leading-tight uppercase tracking-widest">Audit Mode Active</h3>
+              <p className="text-xs font-bold text-medical-600/70 dark:text-medical-400/70 tracking-tight">Select multiple items to verify them at once.</p>
+            </div>
+          </div>
+          {selectedItemIds.size > 0 && (
+            <button
+              onClick={handleBulkVerify}
+              disabled={loadingItemIds.size > 0}
+              className="px-6 py-3 bg-medical-600 hover:bg-medical-700 text-white rounded-xl font-black shadow-lg shadow-medical-500/30 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+            >
+              <i className="fa-solid fa-check-double"></i> Verify {selectedItemIds.size} Items
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Search & Filter - Luxury Design */}
       < div className="sticky top-4 z-40 mx-[-1rem] px-4 md:mx-0 md:px-0" >
         <div className="glass-panel p-3 rounded-[2.5rem] luxury-shadow flex flex-col md:flex-row gap-3 border-white/50 dark:border-slate-800/80">
@@ -278,6 +343,16 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
         <table className="w-full text-left border-separate border-spacing-0">
           <thead className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
             <tr>
+              {isAuditMode && (
+                <th className="px-6 py-6 w-12 text-center" title="Select All">
+                  <input
+                    type="checkbox"
+                    checked={selectedItemIds.size > 0 && selectedItemIds.size === sortedItems.length}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-slate-300 text-medical-600 focus:ring-medical-500 cursor-pointer"
+                  />
+                </th>
+              )}
               <th className="px-8 py-6">{t('th_details')}</th>
               <th className="px-8 py-6">{t('th_category')}</th>
               <th className="px-8 py-6">{t('th_batch')}</th>
@@ -290,9 +365,19 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
             {sortedItems.map((item, idx) => (
               <tr
                 key={item.id}
-                className={`group hover:bg-white/70 dark:hover:bg-slate-800/40 transition-all duration-300 ${editingRowId === item.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''}`}
+                className={`group hover:bg-white/70 dark:hover:bg-slate-800/40 transition-all duration-300 ${editingRowId === item.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''} ${selectedItemIds.has(item.id) ? 'bg-medical-50/30 dark:bg-medical-900/10' : ''}`}
                 style={{ animationDelay: `${idx * 30}ms` }}
               >
+                {isAuditMode && (
+                  <td className="px-6 py-6 text-center" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedItemIds.has(item.id)}
+                      onChange={() => toggleSelection(item.id)}
+                      className="w-4 h-4 rounded border-slate-300 text-medical-600 focus:ring-medical-500 cursor-pointer"
+                    />
+                  </td>
+                )}
                 <td className="px-8 py-6 cursor-pointer" onClick={() => {
                   if (editingRowId !== item.id) {
                     setEditingRowId(item.id);
@@ -511,6 +596,16 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
             >
               <div className="flex justify-between items-start">
                 <div className="flex gap-5">
+                  {isAuditMode && (
+                    <div className="pt-4" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedItemIds.has(item.id)}
+                        onChange={() => toggleSelection(item.id)}
+                        className="w-5 h-5 rounded border-slate-300 text-medical-600 focus:ring-medical-500 cursor-pointer"
+                      />
+                    </div>
+                  )}
                   <div className={`w-16 h-16 rounded-[2rem] flex flex-col items-center justify-center shrink-0 border-2 relative ${getStatusColor(item)}`}>
                     <div className={`w-3 h-3 rounded-full absolute -top-1 -right-1 border-2 border-white dark:border-slate-900 ${getStockStatus(item) === 'critical' ? 'bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]' : getStockStatus(item) === 'warning' ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'}`}></div>
                     <span className="text-2xl font-black leading-none tracking-tighter">{item.stock}</span>
