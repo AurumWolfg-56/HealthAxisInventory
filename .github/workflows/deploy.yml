@@ -50,5 +50,6 @@ jobs:
                    set net:connection-limit 1;
                    set ftp:ssl-allow yes;
                    set xfer:use-temp-file no;
+                   set xfer:clobber true;
                    open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }}; 
                    mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./"
