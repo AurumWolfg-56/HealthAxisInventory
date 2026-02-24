@@ -133,16 +133,21 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
         e.target.value = '';
     };
 
-    const matchInventoryItem = (itemName: string): InventoryItem | undefined => {
-        const lowerName = itemName.toLowerCase();
+    const matchInventoryItem = (extractedItemName: string, extractedItemSku: string | undefined): InventoryItem | undefined => {
+        // Only match if the names are strictly identical or if SKU matches
+        // to prevent merging distinct items like "Gloves" and "Nitrile Gloves M".
         return existingInventory.find(inv => {
-            const invLower = inv.name.toLowerCase();
-            // Check for exact match or partial match
-            return invLower === lowerName ||
-                invLower.includes(lowerName) ||
-                lowerName.includes(invLower) ||
-                // Check for significant word overlap
-                lowerName.split(' ').filter(w => w.length > 3).some(word => invLower.includes(word));
+            const invName = inv.name.trim().toLowerCase();
+            const extractedName = extractedItemName.trim().toLowerCase();
+            // Strict exact name match
+            if (invName === extractedName) return true;
+
+            // Or if SKU matches perfectly
+            if (extractedItemSku && inv.sku && extractedItemSku.trim().toLowerCase() === inv.sku.trim().toLowerCase()) {
+                return true;
+            }
+
+            return false;
         });
     };
 
@@ -159,7 +164,7 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
 
             // Process items and match with inventory
             const processed: ExtractedItem[] = result.items.map((item, idx) => {
-                const match = matchInventoryItem(item.name);
+                const match = matchInventoryItem(item.name, item.sku);
                 return {
                     id: `extracted-${Date.now()}-${idx}`,
                     name: item.name,
