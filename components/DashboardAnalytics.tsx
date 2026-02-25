@@ -93,23 +93,25 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
         return acc;
     }, {} as Record<string, number>);
 
-    // Provider Stats (Patients)
-    const patientsByProvider = filteredReports.reduce((acc, r) => {
-        if (!r.operational?.providerVisits) return acc;
-        Object.entries(r.operational.providerVisits).forEach(([providerId, count]) => {
-            // Try to find provider name
-            // Depending on how providerVisits is stored (ID vs Name), adjust here. 
-            // Assuming ID based on types, but DailyCloseWizard implies we might be storing IDs.
-            // Let's rely on the key for now.
-            acc[providerId] = (acc[providerId] || 0) + count;
-        });
-        return acc;
-    }, {} as Record<string, number>);
+    // Provider Stats (Patients) - Pre-seed with actual clinical users
+    const patientsByProvider = users
+        .filter(u => ['DOCTOR', 'OWNER'].includes(u.role))
+        .reduce((acc, user) => {
+            acc[user.id] = 0;
+            return acc;
+        }, {} as Record<string, number>);
 
-    // Provider Stats (Spend - Orders)
-    const spendByProvider = validOrders.reduce((acc, o) => {
-        const creator = users.find(u => u.id === o.createdBy)?.username || 'Unknown';
-        acc[creator] = (acc[creator] || 0) + o.grandTotal;
+    filteredReports.forEach(r => {
+        if (!r.operational?.providerVisits) return;
+        Object.entries(r.operational.providerVisits).forEach(([providerId, count]) => {
+            patientsByProvider[providerId] = (patientsByProvider[providerId] || 0) + count;
+        });
+    });
+
+    // Asset Value by Category (Replacement for Spend by Provider)
+    const valueByCategory = inventory.reduce((acc, item) => {
+        const cat = item.category || 'Uncategorized';
+        acc[cat] = (acc[cat] || 0) + (item.stock * (item.averageCost || 0));
         return acc;
     }, {} as Record<string, number>);
 
@@ -202,12 +204,13 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
             name: user ? user.username : key,
             value: value as number
         };
-    }).filter((d: { value: number }) => d.value > 0);
+    }).sort((a: { value: number }, b: { value: number }) => b.value - a.value);
 
-    const providerSpendData = Object.entries(spendByProvider).map(([key, value]) => ({
-        name: key,
-        value: value as number
-    })).sort((a: { value: number }, b: { value: number }) => b.value - a.value);
+    const categoryValueData = Object.entries(valueByCategory)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .filter(d => d.value > 0)
+        .slice(0, 8); // Top 8 categories
 
 
     const CustomTooltip = ({ active, payload, label }: any) => {
@@ -510,21 +513,21 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                     </div>
                 </div>
 
-                {/* Spend by Provider Chart */}
+                {/* Asset Value by Category Chart */}
                 <div className="glass-panel p-6 lg:col-span-2">
                     <h3 className="section-title mb-6">
                         <span className="section-title-bar"></span>
-                        Inventory Spend by Provider
+                        Asset Value by Category
                     </h3>
                     <div className="h-[400px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart layout="vertical" data={providerSpendData} margin={{ left: 40, right: 20 }}>
+                            <BarChart layout="vertical" data={categoryValueData} margin={{ left: 40, right: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.2} />
                                 <XAxis type="number" tickFormatter={(val) => `$${val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val}`} axisLine={false} tickLine={false} />
                                 <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 13, fontWeight: 500, fill: '#64748B' }} axisLine={false} tickLine={false} />
                                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99, 102, 241, 0.05)', radius: 8 }} />
-                                <Bar dataKey="value" name="Total Spend" radius={[0, 8, 8, 0]} maxBarSize={45}>
-                                    {providerSpendData.map((entry, index) => (
+                                <Bar dataKey="value" name="Asset Value" radius={[0, 8, 8, 0]} maxBarSize={45}>
+                                    {categoryValueData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
                                     ))}
                                 </Bar>
