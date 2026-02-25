@@ -110,6 +110,7 @@ export interface PriceItem {
   price: number;
   category: string;
   code?: string;
+  type?: 'individual' | 'combo';
 }
 
 export interface MedicalCode {
@@ -318,6 +319,7 @@ export interface DBPrice {
   price: number;
   category: string;
   code: string | null;
+  type: string;
   created_at?: string;
 }
 

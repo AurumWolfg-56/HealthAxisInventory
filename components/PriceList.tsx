@@ -18,6 +18,7 @@ interface PriceListProps {
 const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAddPrice, onUpdatePrice, onDeletePrice, onImportPrices, isLoadingPrices, t }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
+    const [priceTab, setPriceTab] = useState<'individual' | 'combo'>('individual');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<PriceItem | null>(null);
     const [formData, setFormData] = useState<Partial<PriceItem>>({});
@@ -26,30 +27,46 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
 
     const canManage = hasPermission('prices.manage');
 
-    // Extract unique categories from data
+    // Filter by tab type first
+    const tabPrices = useMemo(() => {
+        return prices.filter(p => (p.type || 'individual') === priceTab);
+    }, [prices, priceTab]);
+
+    // Extract unique categories from filtered data
     const categories = useMemo(() => {
-        const cats = new Set(prices.map(p => p.category || 'General'));
+        const cats = new Set(tabPrices.map(p => p.category || 'General'));
         return ['All', ...Array.from(cats).sort()];
-    }, [prices]);
+    }, [tabPrices]);
+
+    // Reset category filter when switching tabs
+    const handleTabChange = (tab: 'individual' | 'combo') => {
+        setPriceTab(tab);
+        setSelectedCategory('All');
+        setSearchTerm('');
+    };
 
     // Filter Logic
     const filteredPrices = useMemo(() => {
         const term = searchTerm.toLowerCase();
-        return prices.filter(item => {
+        return tabPrices.filter(item => {
             const matchesSearch =
                 item.serviceName.toLowerCase().includes(term) ||
                 (item.code && item.code.toLowerCase().includes(term));
             const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
             return matchesSearch && matchesCategory;
         });
-    }, [prices, searchTerm, selectedCategory]);
+    }, [tabPrices, searchTerm, selectedCategory]);
 
-    // Stats
+    // Stats based on current tab
     const stats = useMemo(() => ({
-        total: prices.length,
-        categories: new Set(prices.map(p => p.category)).size,
-        avgPrice: prices.length > 0 ? prices.reduce((sum, p) => sum + p.price, 0) / prices.length : 0
-    }), [prices]);
+        total: tabPrices.length,
+        categories: new Set(tabPrices.map(p => p.category)).size,
+        avgPrice: tabPrices.length > 0 ? tabPrices.reduce((sum, p) => sum + p.price, 0) / tabPrices.length : 0
+    }), [tabPrices]);
+
+    // Total counts for tab badges
+    const individualCount = useMemo(() => prices.filter(p => (p.type || 'individual') === 'individual').length, [prices]);
+    const comboCount = useMemo(() => prices.filter(p => (p.type || 'individual') === 'combo').length, [prices]);
 
     const localIsLoading = isLoading || isLoadingPrices;
 
@@ -95,7 +112,8 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                     serviceName: rawName,
                     price: parseFloat(String(rawPrice).replace(/[^0-9.]/g, '')) || 0,
                     category: category,
-                    code: code
+                    code: code,
+                    type: priceTab  // Tag with current tab type
                 };
             }).filter(p => p.serviceName && p.price >= 0);
 
@@ -115,7 +133,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
 
     const handleAddNew = () => {
         setEditingItem(null);
-        setFormData({ serviceName: '', price: 0, category: 'General', code: '' });
+        setFormData({ serviceName: '', price: 0, category: 'General', code: '', type: priceTab });
         setIsModalOpen(true);
     };
 
@@ -238,6 +256,36 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                     </div>
                 )}
             </header>
+
+            {/* Individual / Combos Tabs */}
+            <div className="glass-panel p-1.5 rounded-2xl flex w-full md:w-fit overflow-x-auto shadow-sm">
+                <button
+                    onClick={() => handleTabChange('individual')}
+                    className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${priceTab === 'individual'
+                        ? 'bg-white dark:bg-slate-800 shadow-sm text-emerald-600'
+                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                        }`}
+                >
+                    <i className="fa-solid fa-tag"></i>
+                    Individual Services
+                    {individualCount > 0 && (
+                        <span className="ml-1 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full text-xs font-bold">{individualCount}</span>
+                    )}
+                </button>
+                <button
+                    onClick={() => handleTabChange('combo')}
+                    className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${priceTab === 'combo'
+                        ? 'bg-white dark:bg-slate-800 shadow-sm text-violet-600'
+                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                        }`}
+                >
+                    <i className="fa-solid fa-boxes-stacked"></i>
+                    Packages & Combos
+                    {comboCount > 0 && (
+                        <span className="ml-1 px-2 py-0.5 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-full text-xs font-bold">{comboCount}</span>
+                    )}
+                </button>
+            </div>
 
             {/* Search & Filter Bar */}
             <div className="sticky top-4 z-40 mx-[-1rem] px-4 md:mx-0 md:px-0">

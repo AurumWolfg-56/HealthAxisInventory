@@ -47,7 +47,8 @@ export class PriceService {
                 service_name: price.serviceName,
                 price: price.price,
                 category: price.category,
-                code: price.code || null
+                code: price.code || null,
+                type: price.type || 'individual'
             };
 
             const response = await fetch(`${this.apiUrl}/prices`, {
@@ -76,7 +77,8 @@ export class PriceService {
                 service_name: price.serviceName,
                 price: price.price,
                 category: price.category,
-                code: price.code || null
+                code: price.code || null,
+                type: price.type || 'individual'
             };
 
             const response = await fetch(`${this.apiUrl}/prices?id=eq.${price.id}`, {
@@ -128,7 +130,8 @@ export class PriceService {
                 service_name: (p.serviceName || '').trim(),
                 price: Number(p.price || 0),
                 category: (p.category || 'General').trim(),
-                code: p.code?.trim() || null
+                code: p.code?.trim() || null,
+                type: p.type || 'individual'
             }));
 
             try {
@@ -163,7 +166,8 @@ export class PriceService {
             serviceName: db.service_name,
             price: db.price,
             category: db.category,
-            code: db.code || undefined
+            code: db.code || undefined,
+            type: (db.type as 'individual' | 'combo') || 'individual'
         };
     }
 }
