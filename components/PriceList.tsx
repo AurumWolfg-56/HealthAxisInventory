@@ -76,7 +76,8 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (prices.length > 0 && !window.confirm('This will replace all existing prices. Continue?')) {
+        const targetName = priceTab === 'combo' ? 'Packages & Combos' : 'Individual Services';
+        if (!window.confirm(`Importing into ${targetName}.\n\nNew items from the CSV will be added to your current list. Existing items will not be deleted.\n\nContinue?`)) {
             e.target.value = '';
             return;
         }
@@ -238,21 +239,25 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isLoading}
-                            className="h-14 px-6 glass-panel text-slate-900 dark:text-white rounded-2xl font-bold shadow-lg flex items-center gap-3 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                            className={`h-14 px-6 glass-panel text-slate-900 dark:text-white rounded-2xl font-bold shadow-lg flex items-center gap-3 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 ${priceTab === 'combo' ? 'border-violet-200 dark:border-violet-800' : 'border-emerald-200 dark:border-emerald-800'}`}
                         >
                             {isLoading ? (
                                 <i className="fa-solid fa-spinner animate-spin text-lg"></i>
                             ) : (
-                                <i className="fa-solid fa-cloud-arrow-up text-lg text-emerald-600"></i>
+                                <i className={`fa-solid fa-cloud-arrow-up text-lg ${priceTab === 'combo' ? 'text-violet-600' : 'text-emerald-600'}`}></i>
                             )}
-                            <span className="hidden sm:inline">Import CSV</span>
+                            <span className="hidden sm:inline">
+                                {priceTab === 'combo' ? 'Import Combos (CSV)' : 'Import Services (CSV)'}
+                            </span>
                         </button>
                         <button
                             onClick={handleAddNew}
-                            className="h-14 px-8 bg-emerald-600 text-white rounded-2xl font-black shadow-2xl shadow-emerald-500/40 flex items-center gap-3 transition-all hover:scale-105 active:scale-95 group"
+                            className={`h-14 px-8 text-white rounded-2xl font-black shadow-2xl flex items-center gap-3 transition-all hover:scale-105 active:scale-95 group ${priceTab === 'combo' ? 'bg-violet-600 shadow-violet-500/40' : 'bg-emerald-600 shadow-emerald-500/40'}`}
                         >
                             <i className="fa-solid fa-plus text-xl group-hover:rotate-90 transition-transform"></i>
-                            <span className="tracking-tight">Add Service</span>
+                            <span className="tracking-tight">
+                                {priceTab === 'combo' ? 'Add Combo' : 'Add Service'}
+                            </span>
                         </button>
                     </div>
                 )}
@@ -365,8 +370,8 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                                                 }
                                                             }}
                                                             className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-125 active:scale-90 flex-shrink-0 ${item.isFeatured
-                                                                    ? 'text-amber-400 hover:text-amber-500'
-                                                                    : 'text-slate-300 dark:text-slate-600 hover:text-amber-400'
+                                                                ? 'text-amber-400 hover:text-amber-500'
+                                                                : 'text-slate-300 dark:text-slate-600 hover:text-amber-400'
                                                                 }`}
                                                             title={item.isFeatured ? 'Remove from Dashboard' : 'Pin to Dashboard'}
                                                         >
@@ -439,8 +444,8 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                                 }
                                             }}
                                             className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0 ${item.isFeatured
-                                                    ? 'text-amber-400'
-                                                    : 'text-slate-300 dark:text-slate-600'
+                                                ? 'text-amber-400'
+                                                : 'text-slate-300 dark:text-slate-600'
                                                 }`}
                                         >
                                             <i className={`fa-${item.isFeatured ? 'solid' : 'regular'} fa-star`}></i>
