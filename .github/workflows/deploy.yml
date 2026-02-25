@@ -31,22 +31,20 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       
-      - name: Prepare Deployment Artifacts
+      - name: Deploy to Hostinger via LFTP (Alpine)
         run: |
-          mkdir -p deploy_payload
-          cp server.js deploy_payload/
-          cp package.json deploy_payload/
-          cp -r dist deploy_payload/
-
-      - name: 📂 Sync files to Hostinger FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./deploy_payload/
-          server-dir: ./
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest sh -c "
+            apk add --no-cache lftp &&
+            lftp -c \"
+              set ssl:verify-certificate no;
+              set net:timeout 15;
+              set net:max-retries 3;
+              set net:reconnect-interval-base 5;
+              set net:connection-limit 1;
+              set ftp:ssl-allow yes;
+              set xfer:use-temp-file no;
+              set xfer:clobber true;
+              open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
+              mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./
+            \"
+          "

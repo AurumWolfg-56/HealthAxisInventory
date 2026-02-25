@@ -1,0 +1,133 @@
+commit 1279472715d226b894facce61533bbc14a945dac
+Author: Raul Jimenez <iarejyero@gmail.com>
+Date:   Tue Feb 24 17:46:12 2026 -0600
+
+    fix: package server files correctly for FTP deployment to resolve 403 error
+
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index c106b5c..97cd561 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -31,13 +31,20 @@ jobs:
+           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+       
++      - name: Prepare Deployment Artifacts
++        run: |
++          mkdir -p deploy_payload
++          cp server.js deploy_payload/
++          cp package.json deploy_payload/
++          cp -r dist deploy_payload/
++
+       - name: 📂 Sync files to Hostinger FTP
+         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+         with:
+           server: ${{ secrets.FTP_HOST }}
+           username: ${{ secrets.FTP_USER }}
+           password: ${{ secrets.FTP_PASSWORD }}
+-          local-dir: ./dist/
++          local-dir: ./deploy_payload/
+           server-dir: ./
+           exclude: |
+             **/.git*
+
+commit 29236dd8bc6b262aad48b6cf3eba00a6785e232a
+Author: Raul Jimenez <iarejyero@gmail.com>
+Date:   Tue Feb 24 16:37:45 2026 -0600
+
+    chore: update deployment workflow to use FTP-Deploy-Action to fix hanging lftp
+
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index 713d0ee..c106b5c 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -31,25 +31,15 @@ jobs:
+           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+       
+-      - name: Deploy to Hostinger via LFTP
+-        run: |
+-          sudo apt-get install -y --no-install-recommends lftp || (sudo apt-get update && sudo apt-get install -y --no-install-recommends lftp)
+-          # LFTP command explanation:
+-          # -u: username,password
+-          # -e: execute command
+-          # set ssl:verify-certificate no: prevent self-signed cert errors
+-          # set ftp:ssl-allow yes: allow SSL (try explicit FTPS)
+-          # mirror -R: reverse mirror (upload)
+-          # --parallel=2: use 2 parallel connections for speed
+-          # --verbose: show progress
+-          # --exclude-glob: exclude git and node_modules
+-          lftp -c "set ssl:verify-certificate no;
+-                   set net:timeout 180; 
+-                   set net:max-retries 5; 
+-                   set net:reconnect-interval-base 5; 
+-                   set net:connection-limit 1;
+-                   set ftp:ssl-allow yes;
+-                   set xfer:use-temp-file no;
+-                   set xfer:clobber true;
+-                   open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }}; 
+-                   mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./"
++      - name: 📂 Sync files to Hostinger FTP
++        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
++        with:
++          server: ${{ secrets.FTP_HOST }}
++          username: ${{ secrets.FTP_USER }}
++          password: ${{ secrets.FTP_PASSWORD }}
++          local-dir: ./dist/
++          server-dir: ./
++          exclude: |
++            **/.git*
++            **/.git*/**
++            **/node_modules/**
+
+commit c21348a93a24563a62cac19eb0a1887e819997e3
+Author: Raul Jimenez <iarejyero@gmail.com>
+Date:   Tue Feb 24 13:37:31 2026 -0600
+
+    ci: fix lftp 550 error by enabling xfer:clobber true
+
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index 5eaffaf..713d0ee 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -50,5 +50,6 @@ jobs:
+                    set net:connection-limit 1;
+                    set ftp:ssl-allow yes;
+                    set xfer:use-temp-file no;
++                   set xfer:clobber true;
+                    open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }}; 
+                    mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./"
+
+commit de47104dd40f9d023f619870d047085260cbf650
+Author: Raul Jimenez <iarejyero@gmail.com>
+Date:   Tue Feb 24 12:16:30 2026 -0600
+
+    fix: revert deploy path to ./ since FTP user is already at public_html
+
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index d0ab38f..5eaffaf 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -51,4 +51,4 @@ jobs:
+                    set ftp:ssl-allow yes;
+                    set xfer:use-temp-file no;
+                    open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }}; 
+-                   mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ public_html/"
++                   mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./"
+
+commit c6f9699adf060a3775f6e8380b70d55ca4463568
+Author: Raul Jimenez <iarejyero@gmail.com>
+Date:   Tue Feb 24 12:07:18 2026 -0600
+
+    fix: deploy to public_html instead of root to solve 403 error
+
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index 5eaffaf..d0ab38f 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -51,4 +51,4 @@ jobs:
+                    set ftp:ssl-allow yes;
+                    set xfer:use-temp-file no;
+                    open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }}; 
+-                   mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./"
++                   mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ public_html/"
