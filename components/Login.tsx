@@ -48,16 +48,13 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
     setLoading(true);
     setError(null);
     try {
-      // 1. Update the password
       const { error: pwError } = await supabase.auth.updateUser({ password });
       if (pwError) throw pwError;
 
-      // 2. Clear the hash so it doesn't trigger again
       if (window.location.hash) {
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }
 
-      // 3. Update profile if username was provided (currently not rendered in UI, but keeping logic)
       if (username) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -72,10 +69,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
         }
       }
 
-      // 4. Force a clean sign out to clear any confused state from the invite token
       await supabase.auth.signOut();
-
-      // 5. Alert and reset UI
       alert('Contraseña guardada exitosamente. Por favor, inicia sesión con tu nueva contraseña.');
 
       if (onPasswordSet) onPasswordSet();
@@ -90,7 +84,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
         setError(err.message);
       }
     } finally {
-      if (document.body) { // Check if still mounted (rough check)
+      if (document.body) {
         setLoading(false);
       }
     }
@@ -132,8 +126,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
           redirectTo: window.location.origin,
         });
         if (error) throw error;
-        alert('Password reset link sent!');
-        setAuthMode('signin');
+        setSuccess('Se ha enviado un enlace de recuperación a tu correo electrónico.');
+        setTimeout(() => {
+          setAuthMode('signin');
+          setSuccess(null);
+        }, 4000);
       }
     } catch (err: any) {
       setError(err.message);
@@ -161,37 +158,59 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
       <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-teal-500/10 dark:bg-teal-500/5 blur-[120px] rounded-full animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
 
       <div className="w-full max-w-lg animate-fade-in-up">
-        <div className="mb-12 text-center">
-          <div className="inline-block p-4 rounded-[2.5rem] bg-white dark:bg-slate-900 luxury-shadow mb-6 transform hover:scale-105 transition-transform duration-500">
+        {/* Logo + Brand — Logo on top, name below */}
+        <div className="mb-10 text-center flex flex-col items-center">
+          <div className="p-5 rounded-[2.5rem] bg-white dark:bg-slate-900 luxury-shadow mb-6 transform hover:scale-105 transition-transform duration-500">
             <Logo className="w-20 h-20" />
           </div>
-          <h1 className="text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-3 leading-none">
-            Axis<span className="text-medical-600">Inventory</span>
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-none">
+            Health<span className="text-medical-600">Axis</span>
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-[0.2em] text-[10px]">
-            {t('login_subtitle')}
+          <p className="text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-[0.25em] text-[9px] mt-2">
+            Inventory Management System
           </p>
         </div>
 
-        <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl p-10 rounded-[3rem] border border-white/50 dark:border-slate-800 luxury-shadow relative overflow-hidden group">
+        <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl p-8 sm:p-10 rounded-[3rem] border border-white/50 dark:border-slate-800 luxury-shadow relative overflow-hidden group">
           {/* Glossy overlay */}
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none"></div>
 
           {error && (
-            <div className="mb-8 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-extrabold flex items-center gap-3 animate-shake">
+            <div className="mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-extrabold flex items-center gap-3 animate-shake">
               <i className="fa-solid fa-triangle-exclamation"></i>
               {error}
             </div>
           )}
 
           {success && (
-            <div className="mb-8 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 text-sm font-extrabold flex items-center gap-3">
+            <div className="mb-6 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 text-sm font-extrabold flex items-center gap-3">
               <i className="fa-solid fa-circle-check"></i>
               {success}
             </div>
           )}
 
-          <form onSubmit={handleEmailAuth} className="space-y-6 relative z-10">
+          {/* Mode Header */}
+          {authMode === 'forgot' && (
+            <div className="mb-6 text-center">
+              <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
+                <i className="fa-solid fa-key text-2xl text-amber-500"></i>
+              </div>
+              <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Recuperar Contraseña</h2>
+              <p className="text-xs text-slate-400 mt-1">Ingresa tu email y te enviaremos un enlace de recuperación</p>
+            </div>
+          )}
+
+          {authMode === 'update-password' && (
+            <div className="mb-6 text-center">
+              <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-medical-50 dark:bg-medical-900/20 flex items-center justify-center">
+                <i className="fa-solid fa-shield-halved text-2xl text-medical-500"></i>
+              </div>
+              <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Establecer Nueva Contraseña</h2>
+              <p className="text-xs text-slate-400 mt-1">Elige una contraseña segura para tu cuenta</p>
+            </div>
+          )}
+
+          <form onSubmit={handleEmailAuth} className="space-y-5 relative z-10">
             {authMode !== 'update-password' && (
               <div className="space-y-2 group">
                 <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">{t('lbl_email')}</label>
@@ -209,46 +228,78 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
               </div>
             )}
 
-            <div className="space-y-2 group">
-              <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">{authMode === 'update-password' ? t('lbl_new_password') : t('lbl_password')}</label>
-              <div className="relative">
-                <i className="fa-solid fa-lock absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-medical-500 transition-colors"></i>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full h-14 pl-12 pr-12 rounded-2xl border-none bg-slate-100/50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-extrabold placeholder:text-slate-400 focus:ring-4 ring-medical-500/10 transition-all outline-none"
-                />
+            {authMode !== 'forgot' && (
+              <div className="space-y-2 group">
+                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">{authMode === 'update-password' ? t('lbl_new_password') : t('lbl_password')}</label>
+                <div className="relative">
+                  <i className="fa-solid fa-lock absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-medical-500 transition-colors"></i>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full h-14 pl-12 pr-12 rounded-2xl border-none bg-slate-100/50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-extrabold placeholder:text-slate-400 focus:ring-4 ring-medical-500/10 transition-all outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-medical-600 transition-colors"
+                  >
+                    <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Forgot Password Link */}
+            {authMode === 'signin' && (
+              <div className="flex justify-end -mt-2">
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-medical-600 transition-colors"
+                  onClick={() => { setAuthMode('forgot'); setError(null); setSuccess(null); }}
+                  className="text-[11px] font-bold text-medical-500 hover:text-medical-400 transition-colors tracking-wide"
                 >
-                  <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                  <i className="fa-solid fa-key mr-1 text-[9px]"></i>
+                  ¿Olvidaste tu contraseña?
                 </button>
               </div>
-            </div>
+            )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-16 bg-gradient-to-r from-medical-600 to-teal-600 text-white font-extrabold rounded-2xl shadow-2xl shadow-medical-500/25 hover:shadow-medical-500/40 hover:scale-[1.02] active:scale-95 transition-all text-lg flex items-center justify-center gap-3 mt-4 disabled:opacity-75 tracking-tight"
+              className="w-full h-16 bg-gradient-to-r from-medical-600 to-teal-600 text-white font-extrabold rounded-2xl shadow-2xl shadow-medical-500/25 hover:shadow-medical-500/40 hover:scale-[1.02] active:scale-95 transition-all text-lg flex items-center justify-center gap-3 mt-2 disabled:opacity-75 tracking-tight"
             >
               {loading ? (
                 <i className="fa-solid fa-circle-notch fa-spin text-xl"></i>
               ) : (
                 <>
-                  <span>{authMode === 'signin' ? t('btn_login') : t('btn_save_password')}</span>
-                  <i className="fa-solid fa-arrow-right text-sm"></i>
+                  <span>
+                    {authMode === 'signin' ? t('btn_login')
+                      : authMode === 'forgot' ? 'Enviar Enlace'
+                        : t('btn_save_password')}
+                  </span>
+                  <i className={`fa-solid ${authMode === 'forgot' ? 'fa-paper-plane' : 'fa-arrow-right'} text-sm`}></i>
                 </>
               )}
             </button>
+
+            {/* Back to Sign In */}
+            {(authMode === 'forgot' || authMode === 'update-password') && (
+              <button
+                type="button"
+                onClick={() => { setAuthMode('signin'); setError(null); setSuccess(null); }}
+                className="w-full text-center text-sm font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors flex items-center justify-center gap-2 mt-2"
+              >
+                <i className="fa-solid fa-arrow-left text-xs"></i>
+                Volver al Inicio de Sesión
+              </button>
+            )}
           </form>
         </div>
 
-        <div className="mt-12 text-center text-[11px] font-extrabold text-slate-400 uppercase tracking-[0.3em]">
+        <div className="mt-10 text-center text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.3em]">
           &copy; {new Date().getFullYear()} HealthAxis Global • Precision Operations
         </div>
       </div>
