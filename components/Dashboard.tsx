@@ -24,25 +24,11 @@ const Dashboard: React.FC<DashboardProps> = ({ inventory, dailyReports, pettyCas
         return "Good evening";
     };
 
-    // Featured prices
-    const featuredPrices = prices.filter(p => p.isFeatured && (p.type || 'individual') === 'individual');
-
-    // Quick Actions
     const quickActions = [
         { icon: 'fa-boxes-stacked', label: 'Inventory', route: AppRoute.INVENTORY, color: 'text-blue-500' },
         { icon: 'fa-truck', label: 'Orders', route: AppRoute.ORDERS, color: 'text-amber-500' },
         { icon: 'fa-file-invoice-dollar', label: 'Billing', route: AppRoute.BILLING_WIZARD, color: 'text-emerald-500' },
         { icon: 'fa-chart-pie', label: 'Reports', route: AppRoute.REPORTS, color: 'text-purple-500' },
-    ];
-
-    // Color palette for price cards
-    const cardColors = [
-        { bg: 'from-emerald-500 to-teal-600', shadow: 'shadow-emerald-500/30', light: 'bg-emerald-400/20' },
-        { bg: 'from-blue-500 to-indigo-600', shadow: 'shadow-blue-500/30', light: 'bg-blue-400/20' },
-        { bg: 'from-violet-500 to-purple-600', shadow: 'shadow-violet-500/30', light: 'bg-violet-400/20' },
-        { bg: 'from-amber-500 to-orange-600', shadow: 'shadow-amber-500/30', light: 'bg-amber-400/20' },
-        { bg: 'from-rose-500 to-pink-600', shadow: 'shadow-rose-500/30', light: 'bg-rose-400/20' },
-        { bg: 'from-cyan-500 to-sky-600', shadow: 'shadow-cyan-500/30', light: 'bg-cyan-400/20' },
     ];
 
     return (
@@ -84,66 +70,6 @@ const Dashboard: React.FC<DashboardProps> = ({ inventory, dailyReports, pettyCas
                     </button>
                 ))}
             </div>
-
-            {/* Featured Prices */}
-            {featuredPrices.length > 0 && (
-                <section className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                                <i className="fa-solid fa-star text-amber-500 text-lg"></i>
-                            </div>
-                            <div>
-                                <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Quick Reference Prices</h2>
-                                <p className="text-xs text-slate-400 font-bold">{featuredPrices.length} pinned services</p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => onNavigate(AppRoute.PRICELIST)}
-                            className="text-xs font-bold text-medical-500 hover:text-medical-400 transition-colors flex items-center gap-1"
-                        >
-                            Manage <i className="fa-solid fa-arrow-right text-[10px]"></i>
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {featuredPrices.map((item, idx) => {
-                            const color = cardColors[idx % cardColors.length];
-                            return (
-                                <div
-                                    key={item.id}
-                                    className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${color.bg} p-5 shadow-xl ${color.shadow} hover:scale-[1.03] hover:shadow-2xl transition-all duration-300 cursor-default group`}
-                                >
-                                    {/* Decorative circle */}
-                                    <div className={`absolute -top-6 -right-6 w-24 h-24 rounded-full ${color.light} blur-sm group-hover:scale-150 transition-transform duration-500`}></div>
-                                    <div className={`absolute -bottom-4 -left-4 w-16 h-16 rounded-full ${color.light} blur-sm`}></div>
-
-                                    <div className="relative z-10">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest mb-1">{item.category}</p>
-                                                <h3 className="text-white font-bold text-sm leading-tight line-clamp-2">{item.serviceName}</h3>
-                                            </div>
-                                            <div className="flex-shrink-0 text-right">
-                                                <div className="text-white font-black text-2xl tabular-nums leading-none">
-                                                    ${item.price.toFixed(2)}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {item.code && (
-                                            <div className="mt-3">
-                                                <span className="inline-flex px-2 py-0.5 rounded-md bg-white/15 text-white/80 text-[10px] font-mono font-bold backdrop-blur-sm">
-                                                    CPT: {item.code}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </section>
-            )}
 
             {/* Main Analytics Content */}
             <DashboardAnalytics
