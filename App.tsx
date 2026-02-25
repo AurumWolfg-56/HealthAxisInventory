@@ -498,7 +498,7 @@ const App: React.FC = () => {
 
 
 
-                    {currentRoute === AppRoute.DASHBOARD && hasPermission('dashboard.view') && <Dashboard inventory={inventory} logs={logs} dailyReports={dailyReports} pettyCashHistory={pettyCashHistory} orders={orders} users={usersDb} t={t} onNavigate={handleNavigate} />}
+                    {currentRoute === AppRoute.DASHBOARD && hasPermission('dashboard.view') && <Dashboard inventory={inventory} logs={logs} dailyReports={dailyReports} pettyCashHistory={pettyCashHistory} orders={orders} users={usersDb} prices={prices} t={t} onNavigate={handleNavigate} />}
                     {currentRoute === AppRoute.INVENTORY && hasPermission('inventory.view') && (
                         <Inventory
                             items={inventory}
@@ -876,6 +876,15 @@ const App: React.FC = () => {
                                     }
                                 } catch (e) {
                                     addToast('Failed to import prices', 'error');
+                                }
+                            }}
+                            onToggleFeatured={async (id, isFeatured) => {
+                                try {
+                                    await PriceService.toggleFeatured(id, isFeatured);
+                                    setPrices(prev => prev.map(p => p.id === id ? { ...p, isFeatured } : p));
+                                    addToast(isFeatured ? 'Price pinned to dashboard' : 'Price unpinned from dashboard', 'success');
+                                } catch (e) {
+                                    addToast('Failed to toggle featured status', 'error');
                                 }
                             }}
                             t={t}

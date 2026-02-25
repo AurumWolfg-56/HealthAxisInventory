@@ -111,6 +111,7 @@ export interface PriceItem {
   category: string;
   code?: string;
   type?: 'individual' | 'combo';
+  isFeatured?: boolean;
 }
 
 export interface MedicalCode {
@@ -320,6 +321,7 @@ export interface DBPrice {
   category: string;
   code: string | null;
   type: string;
+  is_featured: boolean;
   created_at?: string;
 }
 

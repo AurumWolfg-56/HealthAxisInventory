@@ -11,11 +11,12 @@ interface PriceListProps {
     onUpdatePrice?: (price: PriceItem) => Promise<void>;
     onDeletePrice?: (id: string) => Promise<void>;
     onImportPrices?: (prices: Omit<PriceItem, 'id'>[]) => Promise<void>;
+    onToggleFeatured?: (id: string, isFeatured: boolean) => Promise<void>;
     isLoadingPrices?: boolean;
     t: (key: string) => string;
 }
 
-const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAddPrice, onUpdatePrice, onDeletePrice, onImportPrices, isLoadingPrices, t }) => {
+const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAddPrice, onUpdatePrice, onDeletePrice, onImportPrices, onToggleFeatured, isLoadingPrices, t }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
     const [priceTab, setPriceTab] = useState<'individual' | 'combo'>('individual');
@@ -354,6 +355,24 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                         >
                                             <td className="p-6">
                                                 <div className="flex items-center gap-4">
+                                                    {/* Star toggle for individual tab */}
+                                                    {priceTab === 'individual' && canManage && (
+                                                        <button
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                if (onToggleFeatured) {
+                                                                    await onToggleFeatured(item.id, !item.isFeatured);
+                                                                }
+                                                            }}
+                                                            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-125 active:scale-90 flex-shrink-0 ${item.isFeatured
+                                                                    ? 'text-amber-400 hover:text-amber-500'
+                                                                    : 'text-slate-300 dark:text-slate-600 hover:text-amber-400'
+                                                                }`}
+                                                            title={item.isFeatured ? 'Remove from Dashboard' : 'Pin to Dashboard'}
+                                                        >
+                                                            <i className={`fa-${item.isFeatured ? 'solid' : 'regular'} fa-star text-lg`}></i>
+                                                        </button>
+                                                    )}
                                                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black text-lg shadow-sm">
                                                         {item.serviceName.charAt(0).toUpperCase()}
                                                     </div>
@@ -409,8 +428,24 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                 <div
                                     key={item.id}
                                     className="p-5 flex items-center gap-4 active:bg-slate-50 dark:active:bg-slate-800 transition-colors"
-                                    onClick={() => canManage && handleEdit(item)}
                                 >
+                                    {/* Star toggle for mobile */}
+                                    {priceTab === 'individual' && canManage && (
+                                        <button
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                if (onToggleFeatured) {
+                                                    await onToggleFeatured(item.id, !item.isFeatured);
+                                                }
+                                            }}
+                                            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0 ${item.isFeatured
+                                                    ? 'text-amber-400'
+                                                    : 'text-slate-300 dark:text-slate-600'
+                                                }`}
+                                        >
+                                            <i className={`fa-${item.isFeatured ? 'solid' : 'regular'} fa-star`}></i>
+                                        </button>
+                                    )}
                                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black text-xl shadow-sm flex-shrink-0">
                                         {item.serviceName.charAt(0).toUpperCase()}
                                     </div>

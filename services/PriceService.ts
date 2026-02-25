@@ -48,7 +48,8 @@ export class PriceService {
                 price: price.price,
                 category: price.category,
                 code: price.code || null,
-                type: price.type || 'individual'
+                type: price.type || 'individual',
+                is_featured: price.isFeatured || false
             };
 
             const response = await fetch(`${this.apiUrl}/prices`, {
@@ -78,7 +79,8 @@ export class PriceService {
                 price: price.price,
                 category: price.category,
                 code: price.code || null,
-                type: price.type || 'individual'
+                type: price.type || 'individual',
+                is_featured: price.isFeatured ?? false
             };
 
             const response = await fetch(`${this.apiUrl}/prices?id=eq.${price.id}`, {
@@ -110,6 +112,24 @@ export class PriceService {
             }
         } catch (error) {
             console.error('[PriceService] Delete failed:', error);
+            throw error;
+        }
+    }
+
+    static async toggleFeatured(id: string, isFeatured: boolean): Promise<void> {
+        try {
+            const response = await fetch(`${this.apiUrl}/prices?id=eq.${id}`, {
+                method: 'PATCH',
+                headers: this.getHeaders(),
+                body: JSON.stringify({ is_featured: isFeatured })
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Failed to toggle featured (${response.status}): ${text}`);
+            }
+        } catch (error) {
+            console.error('[PriceService] Toggle featured failed:', error);
             throw error;
         }
     }
@@ -167,7 +187,8 @@ export class PriceService {
             price: db.price,
             category: db.category,
             code: db.code || undefined,
-            type: (db.type as 'individual' | 'combo') || 'individual'
+            type: (db.type as 'individual' | 'combo') || 'individual',
+            isFeatured: db.is_featured || false
         };
     }
 }
