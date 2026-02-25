@@ -30,8 +30,6 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
   const [isAuditMode, setIsAuditMode] = useState(false);
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<InventoryItem>>({});
-  const [mobileEditingId, setMobileEditingId] = useState<string | null>(null);
-  const [mobileEditForm, setMobileEditForm] = useState<Partial<InventoryItem>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
 
@@ -342,275 +340,272 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
 
       {/* Desktop Table - Luxury Overhaul */}
       < div className="hidden md:block glass-panel rounded-[2rem] luxury-shadow overflow-hidden border-white/40 dark:border-slate-800/50" >
-        <table className="w-full text-left border-separate border-spacing-0">
-          <thead className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
-            <tr>
-              {isAuditMode && (
-                <th className="px-6 py-6 w-12 text-center" title="Select All">
-                  <input
-                    type="checkbox"
-                    checked={selectedItemIds.size > 0 && selectedItemIds.size === sortedItems.length}
-                    onChange={toggleSelectAll}
-                    className="w-4 h-4 rounded border-slate-300 text-medical-600 focus:ring-medical-500 cursor-pointer"
-                  />
-                </th>
-              )}
-              <th className="px-8 py-6">{t('th_details')}</th>
-              <th className="px-8 py-6">{t('th_category')}</th>
-              <th className="px-8 py-6">{t('th_batch')}</th>
-              <th className="px-8 py-6 text-center">{t('th_expiry')}</th>
-              <th className="px-8 py-6 text-center">{t('th_stock')}</th>
-              <th className="px-8 py-6 text-right">{isAuditMode ? t('th_status') : t('th_controls')}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-            {sortedItems.map((item, idx) => (
-              <tr
-                key={item.id}
-                className={`group hover:bg-white/70 dark:hover:bg-slate-800/40 transition-all duration-300 ${editingRowId === item.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''} ${selectedItemIds.has(item.id) ? 'bg-medical-50/30 dark:bg-medical-900/10' : ''}`}
-                style={{ animationDelay: `${idx * 30}ms` }}
-              >
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-separate border-spacing-0 min-w-[800px]">
+            <thead className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+              <tr>
                 {isAuditMode && (
-                  <td className="px-6 py-6 text-center" onClick={(e) => e.stopPropagation()}>
+                  <th className="px-6 py-6 w-12 text-center" title="Select All">
                     <input
                       type="checkbox"
-                      checked={selectedItemIds.has(item.id)}
-                      onChange={() => toggleSelection(item.id)}
+                      checked={selectedItemIds.size > 0 && selectedItemIds.size === sortedItems.length}
+                      onChange={toggleSelectAll}
                       className="w-4 h-4 rounded border-slate-300 text-medical-600 focus:ring-medical-500 cursor-pointer"
                     />
-                  </td>
+                  </th>
                 )}
-                <td className="px-8 py-6 cursor-pointer" onClick={() => {
-                  if (editingRowId !== item.id) {
-                    setEditingRowId(item.id);
-                    setEditForm({ ...item });
-                  }
-                }}>
-                  {editingRowId === item.id ? (
-                    <div className="space-y-2 max-w-[200px]">
+                <th className="px-8 py-6">{t('th_details')}</th>
+                <th className="px-8 py-6">{t('th_category')}</th>
+                <th className="px-8 py-6">{t('th_batch')}</th>
+                <th className="px-8 py-6 text-center">{t('th_expiry')}</th>
+                <th className="px-8 py-6 text-center">{t('th_stock')}</th>
+                <th className="px-8 py-6 text-right">{isAuditMode ? t('th_status') : t('th_controls')}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+              {sortedItems.map((item, idx) => (
+                <tr
+                  key={item.id}
+                  className={`group hover:bg-white/70 dark:hover:bg-slate-800/40 transition-all duration-300 ${editingRowId === item.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''} ${selectedItemIds.has(item.id) ? 'bg-medical-50/30 dark:bg-medical-900/10' : ''}`}
+                  style={{ animationDelay: `${idx * 30}ms` }}
+                >
+                  {isAuditMode && (
+                    <td className="px-6 py-6 text-center" onClick={(e) => e.stopPropagation()}>
                       <input
-                        type="text"
-                        value={editForm.name || ''}
-                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                        className="w-full px-4 py-2 rounded-xl border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-sm font-bold shadow-inner focus:ring-2 focus:ring-medical-500 transition-all"
-                        autoFocus
-                        onClick={(e) => e.stopPropagation()}
+                        type="checkbox"
+                        checked={selectedItemIds.has(item.id)}
+                        onChange={() => toggleSelection(item.id)}
+                        className="w-4 h-4 rounded border-slate-300 text-medical-600 focus:ring-medical-500 cursor-pointer"
                       />
-                      <select
-                        value={editForm.location || ''}
-                        onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-extrabold focus:ring-2 focus:ring-medical-500 appearance-none"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
-                      </select>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-4">
-                      <div className={`w-2 h-12 rounded-full ${getStockStatus(item) === 'critical' ? 'bg-red-500' : getStockStatus(item) === 'warning' ? 'bg-amber-500' : 'bg-emerald-500'} opacity-20 group-hover:opacity-100 transition-opacity`}></div>
-                      <div>
-                        <div className="font-extrabold text-slate-900 dark:text-white text-lg tracking-tight group-hover:text-medical-600 transition-colors">{item.name}</div>
-                        <div className="text-[10px] font-extrabold text-slate-400 mt-1 uppercase tracking-widest flex items-center gap-1.5 pt-1">
-                          <i className="fa-solid fa-location-dot text-medical-500/60"></i> {item.location}
-                        </div>
-                      </div>
-                    </div>
+                    </td>
                   )}
-                </td>
-                <td className="px-8 py-6">
-                  {editingRowId === item.id ? (
-                    <select
-                      value={editForm.category || ''}
-                      onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                      className="w-full px-4 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-xs font-bold focus:ring-2 focus:ring-indigo-500 appearance-none"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                    </select>
-                  ) : (
-                    <span className="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-slate-700/50">
-                      {item.category}
-                    </span>
-                  )}
-                </td>
-                <td className="px-8 py-6">
-                  {editingRowId === item.id ? (
-                    <input
-                      type="text"
-                      value={editForm.batchNumber || ''}
-                      onChange={(e) => setEditForm({ ...editForm, batchNumber: e.target.value })}
-                      className="w-full px-4 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-xs font-mono font-bold focus:ring-2 focus:ring-indigo-500"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <span className="text-xs font-bold text-slate-400 font-mono tracking-tighter bg-slate-50 dark:bg-slate-900/50 px-3 py-1 rounded-lg border border-slate-100 dark:border-slate-800">
-                      {item.batchNumber}
-                    </span>
-                  )}
-                </td>
-                <td className="px-8 py-6 text-center">
-                  {editingRowId === item.id ? (
-                    <input
-                      type="date"
-                      value={editForm.expiryDate ? new Date(editForm.expiryDate).toISOString().split('T')[0] : ''}
-                      onChange={(e) => setEditForm({ ...editForm, expiryDate: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-[10px] font-bold focus:ring-2 focus:ring-indigo-500"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : item.expiryDate ? (
-                    <div className="flex flex-col items-center gap-1">
-                      <span className={`text-[10px] font-black px-3 py-1.5 rounded-xl tracking-tighter uppercase ${new Date(item.expiryDate) < new Date() ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
-                        {new Date(item.expiryDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
-                      {new Date(item.expiryDate) < new Date() && <span className="text-[8px] font-black text-red-500 uppercase tracking-widest animate-pulse">Expired</span>}
-                    </div>
-                  ) : <span className="text-slate-300">-</span>}
-                </td>
-                <td className="px-8 py-6 text-center">
-                  {editingRowId === item.id ? (
-                    <input
-                      type="number"
-                      value={editForm.stock || 0}
-                      onChange={(e) => setEditForm({ ...editForm, stock: parseInt(e.target.value) || 0 })}
-                      className="w-24 px-4 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-center text-lg font-black focus:ring-2 focus:ring-indigo-500 shadow-inner"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 group/stock">
-                      <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-[1.5rem] border shadow-sm transition-all group-hover/stock:scale-110 ${getStatusColor(item)}`}>
-                        <span className="font-black text-2xl leading-none tracking-tighter">{item.stock}</span>
-                        <span className="text-[10px] uppercase font-black tracking-widest opacity-60">{t(item.unit || 'unit_each')}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2.5 h-2.5 rounded-full ${getStockStatus(item) === 'critical' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.6)] animate-pulse' : getStockStatus(item) === 'warning' ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'}`}></div>
-                        <span className={`text-[10px] font-black uppercase tracking-tighter ${getStockStatus(item) === 'critical' ? 'text-red-600' : getStockStatus(item) === 'warning' ? 'text-amber-600' : 'text-emerald-600'}`}>
-                          {getStockStatus(item) === 'critical' ? 'Critical' : getStockStatus(item) === 'warning' ? 'Low' : 'Healthy'}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </td>
-                <td className="px-8 py-6 text-right">
-                  <div className="flex flex-col items-end gap-4">
+                  <td className="px-8 py-6 cursor-pointer" onClick={() => {
+                    if (editingRowId !== item.id) {
+                      setEditingRowId(item.id);
+                      setEditForm({ ...item });
+                    }
+                  }}>
                     {editingRowId === item.id ? (
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={async () => {
-                            onUpdateItem(item.id, editForm);
-                            if (isAuditMode) {
-                              await onAuditItem(item.id);
-                            }
-                            setEditingRowId(null);
-                          }}
-                          className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 shadow-xl shadow-emerald-500/30 transition-all hover:scale-110 active:scale-95"
-                          title={isAuditMode ? 'Save & Verify' : 'Save'}
+                      <div className="space-y-2 max-w-[200px]">
+                        <input
+                          type="text"
+                          value={editForm.name || ''}
+                          onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                          className="w-full px-4 py-2 rounded-xl border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-sm font-bold shadow-inner focus:ring-2 focus:ring-medical-500 transition-all"
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <select
+                          value={editForm.location || ''}
+                          onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                          className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-extrabold focus:ring-2 focus:ring-medical-500 appearance-none"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <i className="fa-solid fa-check text-lg"></i>
-                        </button>
-                        <button
-                          onClick={() => setEditingRowId(null)}
-                          className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center hover:bg-slate-200 transition-all active:scale-95"
-                        >
-                          <i className="fa-solid fa-xmark text-lg"></i>
-                        </button>
-                        {isAuditMode && <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest whitespace-nowrap">Save & Verify</span>}
+                          {LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                        </select>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-end gap-3">
-                        {isAuditMode && (
-                          <div className="flex items-center gap-2">
-                            {/* Edit button in audit mode */}
-                            <button
-                              onClick={() => {
-                                if (editingRowId === item.id) {
-                                  setEditingRowId(null);
-                                } else {
-                                  setEditingRowId(item.id);
-                                  setEditForm({ ...item });
-                                }
-                              }}
-                              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all text-sm active:scale-90 ${editingRowId === item.id ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30' : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white'}`}
-                              title="Edit Item"
-                            >
-                              <i className={`fa-solid ${editingRowId === item.id ? 'fa-pen-ruler' : 'fa-pen-to-square'}`}></i>
-                            </button>
-
-                            {/* Verify status / button */}
-                            {item.lastChecked && isCheckedToday(item.lastChecked) && item.stock > item.minStock ? (
-                              <div className="flex flex-col items-end gap-2 group/audit">
-                                <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm animate-fade-in">
-                                  <i className="fa-solid fa-check-double text-emerald-500 text-xs"></i>
-                                  <div className="text-right">
-                                    <div className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest leading-none">Verified</div>
-                                    <div className="text-[8px] font-bold text-slate-400 uppercase tracking-tight mt-0.5 whitespace-nowrap">
-                                      {item.lastCheckedBy} @ {new Date(item.lastChecked).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </div>
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => onAuditItem(item.id)}
-                                  className="text-[9px] font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest flex items-center gap-1.5 px-2 active:scale-95"
-                                >
-                                  <i className="fa-solid fa-rotate-right text-[8px]"></i>
-                                  {t('btn_reverify')}
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => handleAsyncAction(item.id, async () => onAuditItem(item.id))}
-                                disabled={loadingItemIds.has(item.id)}
-                                className={`h-11 px-6 text-white rounded-xl text-[11px] font-black shadow-lg active:scale-95 transition-all flex items-center gap-3 relative overflow-hidden group/auditbtn ${getStockStatus(item) === 'critical' ? 'bg-red-600 hover:bg-red-700 shadow-red-500/30' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'} ${loadingItemIds.has(item.id) ? 'opacity-75 cursor-wait' : ''}`}
-                              >
-                                {loadingItemIds.has(item.id) ? (
-                                  <i className="fa-solid fa-circle-notch fa-spin text-base"></i>
-                                ) : (
-                                  <>
-                                    <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover/auditbtn:translate-x-[100%] transition-transform duration-1000"></div>
-                                    <i className={`fa-solid ${getStockStatus(item) === 'critical' ? 'fa-triangle-exclamation animate-bounce' : 'fa-clipboard-check'} text-base`}></i>
-                                  </>
-                                )}
-                                <span className="tracking-widest uppercase">{loadingItemIds.has(item.id) ? 'Saving...' : (getStockStatus(item) === 'critical' ? 'Verify Now' : (t('btn_verify_now') || 'Verify Now'))}</span>
-                              </button>
-                            )}
+                      <div className="flex items-center gap-4">
+                        <div className={`w-2 h-12 rounded-full ${getStockStatus(item) === 'critical' ? 'bg-red-500' : getStockStatus(item) === 'warning' ? 'bg-amber-500' : 'bg-emerald-500'} opacity-20 group-hover:opacity-100 transition-opacity`}></div>
+                        <div>
+                          <div className="font-extrabold text-slate-900 dark:text-white text-lg tracking-tight group-hover:text-medical-600 transition-colors">{item.name}</div>
+                          <div className="text-[10px] font-extrabold text-slate-400 mt-1 uppercase tracking-widest flex items-center gap-1.5 pt-1">
+                            <i className="fa-solid fa-location-dot text-medical-500/60"></i> {item.location}
                           </div>
-                        )}
-
-                        <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/50 p-1.5 rounded-[1.5rem] border border-slate-100 dark:border-slate-800">
-                          <button
-                            onClick={() => handleAsyncAction(item.id, async () => onUpdateItem(item.id, { stock: Math.max(0, item.stock - 1) }))}
-                            disabled={loadingItemIds.has(item.id)}
-                            className="w-10 h-10 rounded-xl hover:bg-red-500 hover:text-white flex items-center justify-center transition-all text-sm active:scale-90 disabled:opacity-50"
-                          >
-                            <i className="fa-solid fa-minus"></i>
-                          </button>
-                          <button
-                            onClick={() => handleAsyncAction(item.id, async () => onUpdateItem(item.id, { stock: item.stock + 1 }))}
-                            disabled={loadingItemIds.has(item.id)}
-                            className="w-10 h-10 rounded-xl hover:bg-emerald-500 hover:text-white flex items-center justify-center transition-all text-sm active:scale-90 disabled:opacity-50"
-                          >
-                            <i className="fa-solid fa-plus"></i>
-                          </button>
-                          {hasPermission('inventory.edit') && (
-                            <button
-                              onClick={() => onEditItem(item)}
-                              className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white flex items-center justify-center transition-all text-sm active:scale-90 ml-1"
-                            >
-                              <i className="fa-solid fa-pen-to-square"></i>
-                            </button>
-                          )}
                         </div>
                       </div>
                     )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                  <td className="px-8 py-6">
+                    {editingRowId === item.id ? (
+                      <select
+                        value={editForm.category || ''}
+                        onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                        className="w-full px-4 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-xs font-bold focus:ring-2 focus:ring-indigo-500 appearance-none"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                      </select>
+                    ) : (
+                      <span className="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-slate-700/50">
+                        {item.category}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-8 py-6">
+                    {editingRowId === item.id ? (
+                      <input
+                        type="text"
+                        value={editForm.batchNumber || ''}
+                        onChange={(e) => setEditForm({ ...editForm, batchNumber: e.target.value })}
+                        className="w-full px-4 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-xs font-mono font-bold focus:ring-2 focus:ring-indigo-500"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <span className="text-xs font-bold text-slate-400 font-mono tracking-tighter bg-slate-50 dark:bg-slate-900/50 px-3 py-1 rounded-lg border border-slate-100 dark:border-slate-800">
+                        {item.batchNumber}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-8 py-6 text-center">
+                    {editingRowId === item.id ? (
+                      <input
+                        type="date"
+                        value={editForm.expiryDate ? new Date(editForm.expiryDate).toISOString().split('T')[0] : ''}
+                        onChange={(e) => setEditForm({ ...editForm, expiryDate: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-[10px] font-bold focus:ring-2 focus:ring-indigo-500"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : item.expiryDate ? (
+                      <div className="flex flex-col items-center gap-1">
+                        <span className={`text-[10px] font-black px-3 py-1.5 rounded-xl tracking-tighter uppercase ${new Date(item.expiryDate) < new Date() ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
+                          {new Date(item.expiryDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                        {new Date(item.expiryDate) < new Date() && <span className="text-[8px] font-black text-red-500 uppercase tracking-widest animate-pulse">Expired</span>}
+                      </div>
+                    ) : <span className="text-slate-300">-</span>}
+                  </td>
+                  <td className="px-8 py-6 text-center">
+                    {editingRowId === item.id ? (
+                      <input
+                        type="number"
+                        value={editForm.stock || 0}
+                        onChange={(e) => setEditForm({ ...editForm, stock: parseInt(e.target.value) || 0 })}
+                        className="w-24 px-4 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-center text-lg font-black focus:ring-2 focus:ring-indigo-500 shadow-inner"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 group/stock">
+                        <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-[1.5rem] border shadow-sm transition-all group-hover/stock:scale-110 ${getStatusColor(item)}`}>
+                          <span className="font-black text-2xl leading-none tracking-tighter">{item.stock}</span>
+                          <span className="text-[10px] uppercase font-black tracking-widest opacity-60">{t(item.unit || 'unit_each')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2.5 h-2.5 rounded-full ${getStockStatus(item) === 'critical' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.6)] animate-pulse' : getStockStatus(item) === 'warning' ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'}`}></div>
+                          <span className={`text-[10px] font-black uppercase tracking-tighter ${getStockStatus(item) === 'critical' ? 'text-red-600' : getStockStatus(item) === 'warning' ? 'text-amber-600' : 'text-emerald-600'}`}>
+                            {getStockStatus(item) === 'critical' ? 'Critical' : getStockStatus(item) === 'warning' ? 'Low' : 'Healthy'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-8 py-6 text-right">
+                    <div className="flex flex-col items-end gap-4">
+                      {editingRowId === item.id ? (
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={async () => {
+                              onUpdateItem(item.id, editForm);
+                              if (isAuditMode) {
+                                await onAuditItem(item.id);
+                              }
+                              setEditingRowId(null);
+                            }}
+                            className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 shadow-xl shadow-emerald-500/30 transition-all hover:scale-110 active:scale-95"
+                            title={isAuditMode ? 'Save & Verify' : 'Save'}
+                          >
+                            <i className="fa-solid fa-check text-lg"></i>
+                          </button>
+                          <button
+                            onClick={() => setEditingRowId(null)}
+                            className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center hover:bg-slate-200 transition-all active:scale-95"
+                          >
+                            <i className="fa-solid fa-xmark text-lg"></i>
+                          </button>
+                          {isAuditMode && <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest whitespace-nowrap">Save & Verify</span>}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-end gap-3">
+                          {isAuditMode && (
+                            <div className="flex items-center gap-2">
+                              {/* Modal edit button in audit mode */}
+                              {hasPermission('inventory.edit') && (
+                                <button
+                                  onClick={() => onEditItem(item)}
+                                  className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white flex items-center justify-center transition-all text-sm active:scale-90"
+                                  title="Edit Item"
+                                >
+                                  <i className="fa-solid fa-pen-to-square"></i>
+                                </button>
+                              )}
+
+                              {/* Verify status / button */}
+                              {item.lastChecked && isCheckedToday(item.lastChecked) && item.stock > item.minStock ? (
+                                <div className="flex flex-col items-end gap-2 group/audit">
+                                  <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm animate-fade-in">
+                                    <i className="fa-solid fa-check-double text-emerald-500 text-xs"></i>
+                                    <div className="text-right">
+                                      <div className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest leading-none">Verified</div>
+                                      <div className="text-[8px] font-bold text-slate-400 uppercase tracking-tight mt-0.5 whitespace-nowrap">
+                                        {item.lastCheckedBy} @ {new Date(item.lastChecked).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => onAuditItem(item.id)}
+                                    className="text-[9px] font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest flex items-center gap-1.5 px-2 active:scale-95"
+                                  >
+                                    <i className="fa-solid fa-rotate-right text-[8px]"></i>
+                                    {t('btn_reverify')}
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => handleAsyncAction(item.id, async () => onAuditItem(item.id))}
+                                  disabled={loadingItemIds.has(item.id)}
+                                  className={`h-11 px-5 text-white rounded-xl text-[11px] font-black shadow-lg active:scale-95 transition-all flex items-center gap-2 relative overflow-hidden group/auditbtn ${getStockStatus(item) === 'critical' ? 'bg-red-600 hover:bg-red-700 shadow-red-500/30' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'} ${loadingItemIds.has(item.id) ? 'opacity-75 cursor-wait' : ''}`}
+                                >
+                                  {loadingItemIds.has(item.id) ? (
+                                    <i className="fa-solid fa-circle-notch fa-spin text-base"></i>
+                                  ) : (
+                                    <>
+                                      <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover/auditbtn:translate-x-[100%] transition-transform duration-1000"></div>
+                                      <i className={`fa-solid ${getStockStatus(item) === 'critical' ? 'fa-triangle-exclamation animate-bounce' : 'fa-clipboard-check'} text-base`}></i>
+                                    </>
+                                  )}
+                                  <span className="tracking-widest uppercase">{loadingItemIds.has(item.id) ? 'Saving...' : (getStockStatus(item) === 'critical' ? 'Verify' : (t('btn_verify_now') || 'Verify'))}</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/50 p-1.5 rounded-[1.5rem] border border-slate-100 dark:border-slate-800">
+                            <button
+                              onClick={() => handleAsyncAction(item.id, async () => onUpdateItem(item.id, { stock: Math.max(0, item.stock - 1) }))}
+                              disabled={loadingItemIds.has(item.id)}
+                              className="w-10 h-10 rounded-xl hover:bg-red-500 hover:text-white flex items-center justify-center transition-all text-sm active:scale-90 disabled:opacity-50"
+                            >
+                              <i className="fa-solid fa-minus"></i>
+                            </button>
+                            <button
+                              onClick={() => handleAsyncAction(item.id, async () => onUpdateItem(item.id, { stock: item.stock + 1 }))}
+                              disabled={loadingItemIds.has(item.id)}
+                              className="w-10 h-10 rounded-xl hover:bg-emerald-500 hover:text-white flex items-center justify-center transition-all text-sm active:scale-90 disabled:opacity-50"
+                            >
+                              <i className="fa-solid fa-plus"></i>
+                            </button>
+                            {hasPermission('inventory.edit') && (
+                              <button
+                                onClick={() => onEditItem(item)}
+                                className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white flex items-center justify-center transition-all text-sm active:scale-90 ml-1"
+                              >
+                                <i className="fa-solid fa-pen-to-square"></i>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div >
 
-      {/* Mobile Grid - Luxury Overhaul */}
-      < div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-6 pb-24" >
+      {/* Mobile Grid */}
+      < div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 pb-24" >
         {
           filteredItems.map((item, idx) => (
             <div
@@ -647,27 +642,12 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                     </div>
                   </div>
                 </div>
-                {hasPermission('inventory.edit') && !isAuditMode && (
+                {hasPermission('inventory.edit') && (
                   <button
                     onClick={() => onEditItem(item)}
                     className="w-10 h-10 glass-panel rounded-xl flex items-center justify-center text-slate-400 hover:text-indigo-500 transition-all active:scale-95"
                   >
-                    <i className="fa-solid fa-ellipsis-vertical"></i>
-                  </button>
-                )}
-                {isAuditMode && (
-                  <button
-                    onClick={() => {
-                      if (mobileEditingId === item.id) {
-                        setMobileEditingId(null);
-                      } else {
-                        setMobileEditingId(item.id);
-                        setMobileEditForm({ ...item });
-                      }
-                    }}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-95 ${mobileEditingId === item.id ? 'bg-amber-500 text-white shadow-lg' : 'glass-panel text-indigo-500 hover:text-indigo-600'}`}
-                  >
-                    <i className={`fa-solid ${mobileEditingId === item.id ? 'fa-pen-ruler' : 'fa-pen-to-square'}`}></i>
+                    <i className={`fa-solid ${isAuditMode ? 'fa-pen-to-square' : 'fa-ellipsis-vertical'}`}></i>
                   </button>
                 )}
               </div>
@@ -687,83 +667,6 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                 </div>
               </div>
 
-              {/* Mobile Audit Quick-Edit Section */}
-              {isAuditMode && mobileEditingId === item.id && (
-                <div className="bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-200/50 dark:border-indigo-800/30 rounded-2xl p-4 space-y-3 animate-fade-in">
-                  <div className="flex items-center gap-2 mb-2">
-                    <i className="fa-solid fa-pen-to-square text-indigo-500 text-sm"></i>
-                    <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Quick Edit</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Stock</label>
-                      <input
-                        type="number"
-                        value={mobileEditForm.stock ?? 0}
-                        onChange={(e) => setMobileEditForm({ ...mobileEditForm, stock: parseInt(e.target.value) || 0 })}
-                        className="w-full px-3 py-3 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-center text-xl font-black focus:ring-2 focus:ring-indigo-500 shadow-inner"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Batch #</label>
-                      <input
-                        type="text"
-                        value={mobileEditForm.batchNumber || ''}
-                        onChange={(e) => setMobileEditForm({ ...mobileEditForm, batchNumber: e.target.value })}
-                        className="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold font-mono focus:ring-2 focus:ring-indigo-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Expiry</label>
-                      <input
-                        type="date"
-                        value={mobileEditForm.expiryDate ? new Date(mobileEditForm.expiryDate).toISOString().split('T')[0] : ''}
-                        onChange={(e) => setMobileEditForm({ ...mobileEditForm, expiryDate: e.target.value })}
-                        className="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-bold focus:ring-2 focus:ring-indigo-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Location</label>
-                      <select
-                        value={mobileEditForm.location || ''}
-                        onChange={(e) => setMobileEditForm({ ...mobileEditForm, location: e.target.value })}
-                        className="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-bold focus:ring-2 focus:ring-indigo-500 appearance-none"
-                      >
-                        {LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Category</label>
-                    <select
-                      value={mobileEditForm.category || ''}
-                      onChange={(e) => setMobileEditForm({ ...mobileEditForm, category: e.target.value })}
-                      className="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold focus:ring-2 focus:ring-indigo-500 appearance-none"
-                    >
-                      {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                    </select>
-                  </div>
-                  <div className="flex gap-3 pt-1">
-                    <button
-                      onClick={async () => {
-                        onUpdateItem(item.id, mobileEditForm);
-                        await onAuditItem(item.id);
-                        setMobileEditingId(null);
-                      }}
-                      className="flex-1 h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-3 transition-all active:scale-95"
-                    >
-                      <i className="fa-solid fa-check-double text-lg"></i>
-                      Save & Verify
-                    </button>
-                    <button
-                      onClick={() => setMobileEditingId(null)}
-                      className="w-14 h-14 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-2xl flex items-center justify-center transition-all active:scale-95"
-                    >
-                      <i className="fa-solid fa-xmark text-lg"></i>
-                    </button>
-                  </div>
-                </div>
-              )}
 
               <div className="flex items-center gap-3">
                 <button
