@@ -112,6 +112,51 @@ export class PriceService {
         }
     }
 
+    /**
+     * Bulk import prices in a single request (or batched chunks).
+     * Much faster than inserting one-by-one for large imports.
+     */
+    static async importPrices(prices: Omit<PriceItem, 'id'>[]): Promise<PriceItem[]> {
+        if (!prices.length) return [];
+
+        const BATCH_SIZE = 200; // Supabase handles this well
+        const allResults: PriceItem[] = [];
+
+        for (let i = 0; i < prices.length; i += BATCH_SIZE) {
+            const batch = prices.slice(i, i + BATCH_SIZE);
+            const dbPrices = batch.map(p => ({
+                service_name: (p.serviceName || '').trim(),
+                price: Number(p.price || 0),
+                category: (p.category || 'General').trim(),
+                code: p.code?.trim() || null
+            }));
+
+            try {
+                const response = await fetch(`${this.apiUrl}/prices`, {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(dbPrices)
+                });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    console.error(`[PriceService] Batch ${i / BATCH_SIZE + 1} failed:`, text);
+                    continue;
+                }
+
+                const data = await response.json();
+                if (data) {
+                    allResults.push(...data.map(PriceService.mapFromDb));
+                }
+            } catch (err) {
+                console.error(`[PriceService] Batch ${i / BATCH_SIZE + 1} error:`, err);
+            }
+        }
+
+        console.log(`[PriceService] Bulk import complete: ${allResults.length}/${prices.length} items`);
+        return allResults;
+    }
+
     private static mapFromDb(db: DBPrice): PriceItem {
         return {
             id: db.id,

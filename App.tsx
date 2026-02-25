@@ -865,20 +865,17 @@ const App: React.FC = () => {
                                 }
                             }}
                             onImportPrices={async (newPrices) => {
-                                // Bulk add
                                 try {
-                                    let addedCount = 0;
-                                    for (const price of newPrices) {
-                                        const added = await PriceService.createPrice(price);
-                                        if (added) {
-                                            setPrices(prev => [added, ...prev]);
-                                            addedCount++;
-                                        }
+                                    const results = await PriceService.importPrices(newPrices);
+                                    if (results.length > 0) {
+                                        setPrices(prev => [...results, ...prev]);
+                                        addToast(`Imported ${results.length} prices`, 'success');
+                                        addLog('PRICE_IMPORT', `Imported ${results.length} items`);
+                                    } else {
+                                        addToast('No prices were imported', 'error');
                                     }
-                                    addToast(`Imported ${addedCount} prices`, 'success');
-                                    addLog('PRICE_IMPORT', `Imported ${addedCount} items`);
                                 } catch (e) {
-                                    addToast('Failed to import some prices', 'error');
+                                    addToast('Failed to import prices', 'error');
                                 }
                             }}
                             t={t}
