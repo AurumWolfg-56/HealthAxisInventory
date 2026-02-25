@@ -30,6 +30,8 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
   const [isAuditMode, setIsAuditMode] = useState(false);
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<InventoryItem>>({});
+  const [mobileEditingId, setMobileEditingId] = useState<string | null>(null);
+  const [mobileEditForm, setMobileEditForm] = useState<Partial<InventoryItem>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
 
@@ -493,11 +495,15 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                     {editingRowId === item.id ? (
                       <div className="flex items-center gap-3">
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             onUpdateItem(item.id, editForm);
+                            if (isAuditMode) {
+                              await onAuditItem(item.id);
+                            }
                             setEditingRowId(null);
                           }}
                           className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 shadow-xl shadow-emerald-500/30 transition-all hover:scale-110 active:scale-95"
+                          title={isAuditMode ? 'Save & Verify' : 'Save'}
                         >
                           <i className="fa-solid fa-check text-lg"></i>
                         </button>
@@ -507,11 +513,29 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                         >
                           <i className="fa-solid fa-xmark text-lg"></i>
                         </button>
+                        {isAuditMode && <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest whitespace-nowrap">Save & Verify</span>}
                       </div>
                     ) : (
                       <div className="flex items-center justify-end gap-3">
                         {isAuditMode && (
-                          <div className="mr-4">
+                          <div className="flex items-center gap-2">
+                            {/* Edit button in audit mode */}
+                            <button
+                              onClick={() => {
+                                if (editingRowId === item.id) {
+                                  setEditingRowId(null);
+                                } else {
+                                  setEditingRowId(item.id);
+                                  setEditForm({ ...item });
+                                }
+                              }}
+                              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all text-sm active:scale-90 ${editingRowId === item.id ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30' : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white'}`}
+                              title="Edit Item"
+                            >
+                              <i className={`fa-solid ${editingRowId === item.id ? 'fa-pen-ruler' : 'fa-pen-to-square'}`}></i>
+                            </button>
+
+                            {/* Verify status / button */}
                             {item.lastChecked && isCheckedToday(item.lastChecked) && item.stock > item.minStock ? (
                               <div className="flex flex-col items-end gap-2 group/audit">
                                 <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm animate-fade-in">
@@ -623,12 +647,27 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                     </div>
                   </div>
                 </div>
-                {hasPermission('inventory.edit') && (
+                {hasPermission('inventory.edit') && !isAuditMode && (
                   <button
                     onClick={() => onEditItem(item)}
                     className="w-10 h-10 glass-panel rounded-xl flex items-center justify-center text-slate-400 hover:text-indigo-500 transition-all active:scale-95"
                   >
                     <i className="fa-solid fa-ellipsis-vertical"></i>
+                  </button>
+                )}
+                {isAuditMode && (
+                  <button
+                    onClick={() => {
+                      if (mobileEditingId === item.id) {
+                        setMobileEditingId(null);
+                      } else {
+                        setMobileEditingId(item.id);
+                        setMobileEditForm({ ...item });
+                      }
+                    }}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-95 ${mobileEditingId === item.id ? 'bg-amber-500 text-white shadow-lg' : 'glass-panel text-indigo-500 hover:text-indigo-600'}`}
+                  >
+                    <i className={`fa-solid ${mobileEditingId === item.id ? 'fa-pen-ruler' : 'fa-pen-to-square'}`}></i>
                   </button>
                 )}
               </div>
@@ -647,6 +686,84 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                   </span>
                 </div>
               </div>
+
+              {/* Mobile Audit Quick-Edit Section */}
+              {isAuditMode && mobileEditingId === item.id && (
+                <div className="bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-200/50 dark:border-indigo-800/30 rounded-2xl p-4 space-y-3 animate-fade-in">
+                  <div className="flex items-center gap-2 mb-2">
+                    <i className="fa-solid fa-pen-to-square text-indigo-500 text-sm"></i>
+                    <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Quick Edit</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Stock</label>
+                      <input
+                        type="number"
+                        value={mobileEditForm.stock ?? 0}
+                        onChange={(e) => setMobileEditForm({ ...mobileEditForm, stock: parseInt(e.target.value) || 0 })}
+                        className="w-full px-3 py-3 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-center text-xl font-black focus:ring-2 focus:ring-indigo-500 shadow-inner"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Batch #</label>
+                      <input
+                        type="text"
+                        value={mobileEditForm.batchNumber || ''}
+                        onChange={(e) => setMobileEditForm({ ...mobileEditForm, batchNumber: e.target.value })}
+                        className="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold font-mono focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Expiry</label>
+                      <input
+                        type="date"
+                        value={mobileEditForm.expiryDate ? new Date(mobileEditForm.expiryDate).toISOString().split('T')[0] : ''}
+                        onChange={(e) => setMobileEditForm({ ...mobileEditForm, expiryDate: e.target.value })}
+                        className="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-bold focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Location</label>
+                      <select
+                        value={mobileEditForm.location || ''}
+                        onChange={(e) => setMobileEditForm({ ...mobileEditForm, location: e.target.value })}
+                        className="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-bold focus:ring-2 focus:ring-indigo-500 appearance-none"
+                      >
+                        {LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Category</label>
+                    <select
+                      value={mobileEditForm.category || ''}
+                      onChange={(e) => setMobileEditForm({ ...mobileEditForm, category: e.target.value })}
+                      className="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold focus:ring-2 focus:ring-indigo-500 appearance-none"
+                    >
+                      {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex gap-3 pt-1">
+                    <button
+                      onClick={async () => {
+                        onUpdateItem(item.id, mobileEditForm);
+                        await onAuditItem(item.id);
+                        setMobileEditingId(null);
+                      }}
+                      className="flex-1 h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-3 transition-all active:scale-95"
+                    >
+                      <i className="fa-solid fa-check-double text-lg"></i>
+                      Save & Verify
+                    </button>
+                    <button
+                      onClick={() => setMobileEditingId(null)}
+                      className="w-14 h-14 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-2xl flex items-center justify-center transition-all active:scale-95"
+                    >
+                      <i className="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center gap-3">
                 <button
