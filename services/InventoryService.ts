@@ -171,7 +171,7 @@ export const InventoryService = {
         if (updates.expiryDate !== undefined) dbUpdates.expiry_date = updates.expiryDate || null;
         if (updates.batchNumber !== undefined) dbUpdates.batch_number = updates.batchNumber;
         if (updates.location !== undefined) dbUpdates.location = updates.location;
-        if (updates.sku !== undefined) dbUpdates.sku = updates.sku;
+        if (updates.sku !== undefined) dbUpdates.sku = updates.sku?.trim() || null;
 
         // Audit fields
         if (updates.lastChecked !== undefined) dbUpdates.last_checked = updates.lastChecked;
