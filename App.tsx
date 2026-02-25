@@ -32,7 +32,6 @@ import { InventoryIntelligenceDashboard } from './components/InventoryIntelligen
 import { InventoryIntelligenceVerification } from './components/InventoryIntelligenceVerification';
 import Login from './components/Login';
 import Toast from './components/Toast';
-import VoiceAssistant from './components/VoiceAssistant';
 import Logo from './components/Logo';
 import * as XLSX from 'xlsx';
 import { translations, Language } from './utils/translations';
@@ -434,7 +433,6 @@ const App: React.FC = () => {
         <div className={`min-h-screen transition-colors duration-500 font-sans selection:bg-medical-500/20 selection:text-medical-600 bg-medical-50 dark:bg-[#0a0f18]`}>
 
             <Toast toasts={toasts} removeToast={removeToast} />
-            <VoiceAssistant onCommand={() => { }} onError={(msg) => addToast(msg, 'error')} />
             <ItemScannerModal
                 isOpen={showScanner}
                 onClose={() => setShowScanner(false)}
