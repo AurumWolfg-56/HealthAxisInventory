@@ -38,7 +38,7 @@ interface AppDataContextType {
     setPettyCashHistory: React.Dispatch<React.SetStateAction<PettyCashTransaction[]>>;
     logs: ActivityLog[];
     setLogs: React.Dispatch<React.SetStateAction<ActivityLog[]>>;
-    addLog: (action: ActivityLog['action'], details: string) => void;
+    addLog: (action: ActivityLog['action'], details: string, userName?: string) => void;
     refreshData: () => Promise<void>;
     isLoading: boolean;
 }
@@ -180,13 +180,13 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     useEffect(() => localStorage.setItem(STORAGE_KEYS.PETTY_CASH, JSON.stringify(pettyCashHistory)), [pettyCashHistory]);
     useEffect(() => localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(logs)), [logs]);
 
-    const addLog = (action: ActivityLog['action'], details: string) => {
+    const addLog = (action: ActivityLog['action'], details: string, userName?: string) => {
         const newLog: ActivityLog = {
             id: Date.now().toString(),
             timestamp: new Date(),
             action,
             details,
-            user: 'System'
+            user: userName || 'System'
         };
         setLogs(prev => [newLog, ...prev]);
     };

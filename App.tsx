@@ -119,9 +119,10 @@ const App: React.FC = () => {
         setDailyReports, setLogs, addLog: contextAddLog
     } = useAppData();
 
-    // Local Helper wrapper for addLog to match App signature if needed, or update usages
+    // Local Helper wrapper for addLog — passes authenticated user's name
     const addLog = (action: ActivityLog['action'], details: string) => {
-        contextAddLog(action, details);
+        const userName = (user as any)?.full_name || user?.username || 'System';
+        contextAddLog(action, details, userName);
     };
 
     const [currentRoute, setCurrentRoute] = useState<AppRoute>(AppRoute.DASHBOARD);
