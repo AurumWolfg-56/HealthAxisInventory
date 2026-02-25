@@ -126,7 +126,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
           redirectTo: window.location.origin,
         });
         if (error) throw error;
-        setSuccess('Se ha enviado un enlace de recuperación a tu correo electrónico.');
+        setSuccess('A recovery link has been sent to your email address.');
         setTimeout(() => {
           setAuthMode('signin');
           setSuccess(null);
@@ -161,7 +161,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
         {/* Logo + Brand — Logo on top, name below */}
         <div className="mb-10 text-center flex flex-col items-center">
           <div className="p-5 rounded-[2.5rem] bg-white dark:bg-slate-900 luxury-shadow mb-6 transform hover:scale-105 transition-transform duration-500">
-            <Logo className="w-20 h-20" />
+            <Logo className="w-20 h-20" showText={false} />
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-none">
             Health<span className="text-medical-600">Axis</span>
@@ -195,8 +195,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
               <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
                 <i className="fa-solid fa-key text-2xl text-amber-500"></i>
               </div>
-              <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Recuperar Contraseña</h2>
-              <p className="text-xs text-slate-400 mt-1">Ingresa tu email y te enviaremos un enlace de recuperación</p>
+              <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Reset Password</h2>
+              <p className="text-xs text-slate-400 mt-1">Enter your email and we'll send you a recovery link</p>
             </div>
           )}
 
@@ -205,8 +205,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
               <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-medical-50 dark:bg-medical-900/20 flex items-center justify-center">
                 <i className="fa-solid fa-shield-halved text-2xl text-medical-500"></i>
               </div>
-              <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Establecer Nueva Contraseña</h2>
-              <p className="text-xs text-slate-400 mt-1">Elige una contraseña segura para tu cuenta</p>
+              <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Set New Password</h2>
+              <p className="text-xs text-slate-400 mt-1">Choose a secure password for your account</p>
             </div>
           )}
 
@@ -261,7 +261,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
                   className="text-[11px] font-bold text-medical-500 hover:text-medical-400 transition-colors tracking-wide"
                 >
                   <i className="fa-solid fa-key mr-1 text-[9px]"></i>
-                  ¿Olvidaste tu contraseña?
+                  Forgot your password?
                 </button>
               </div>
             )}
@@ -277,7 +277,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
                 <>
                   <span>
                     {authMode === 'signin' ? t('btn_login')
-                      : authMode === 'forgot' ? 'Enviar Enlace'
+                      : authMode === 'forgot' ? 'Send Link'
                         : t('btn_save_password')}
                   </span>
                   <i className={`fa-solid ${authMode === 'forgot' ? 'fa-paper-plane' : 'fa-arrow-right'} text-sm`}></i>
@@ -293,7 +293,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
                 className="w-full text-center text-sm font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors flex items-center justify-center gap-2 mt-2"
               >
                 <i className="fa-solid fa-arrow-left text-xs"></i>
-                Volver al Inicio de Sesión
+                Back to Sign In
               </button>
             )}
           </form>
