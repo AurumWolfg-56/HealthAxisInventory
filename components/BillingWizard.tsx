@@ -113,272 +113,275 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
     };
 
     return (
-        <div className="space-y-10 pb-20 animate-fade-in-up max-w-7xl mx-auto">
-            {/* Header with gradient text */}
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-medical-500 flex items-center justify-center text-white shadow-lg shadow-medical-500/20">
-                        <i className="fa-solid fa-file-invoice-dollar text-xl"></i>
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <h2 className="text-display text-slate-900 dark:text-white">
-                                {t('billing_title')}
-                            </h2>
-                            <button
-                                onClick={() => setIsInfoModalOpen(true)}
-                                className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-500 flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all hover:scale-110"
-                                title="Important Billing Info"
-                            >
-                                <i className="fa-solid fa-circle-info"></i>
-                            </button>
+        <>
+            <div className="space-y-10 pb-20 animate-fade-in-up max-w-7xl mx-auto">
+                {/* Header with gradient text */}
+                <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-medical-500 flex items-center justify-center text-white shadow-lg shadow-medical-500/20">
+                            <i className="fa-solid fa-file-invoice-dollar text-xl"></i>
                         </div>
-                        <p className="text-caption mt-0.5">
-                            {t('billing_subtitle')}
-                        </p>
+                        <div>
+                            <div className="flex items-center gap-3">
+                                <h2 className="text-display text-slate-900 dark:text-white">
+                                    {t('billing_title')}
+                                </h2>
+                                <button
+                                    onClick={() => setIsInfoModalOpen(true)}
+                                    className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-500 flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all hover:scale-110"
+                                    title="Important Billing Info"
+                                >
+                                    <i className="fa-solid fa-circle-info"></i>
+                                </button>
+                            </div>
+                            <p className="text-caption mt-0.5">
+                                {t('billing_subtitle')}
+                            </p>
+                        </div>
                     </div>
-                </div>
 
-                {canEdit && (
-                    <button
-                        onClick={() => openModal()}
-                        className="h-14 px-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold shadow-lg flex items-center gap-2 transition-all hover:scale-105"
-                    >
-                        <i className="fa-solid fa-plus"></i> Add Test Rule
-                    </button>
-                )}
-            </header>
-
-            {/* Control Panel - Modern Floating Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-30">
-
-                {/* CUSTOM DROPDOWN */}
-                <div className="relative group" ref={dropdownRef}>
-                    <label className="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-3 block ml-1 flex items-center gap-2">
-                        <i className="fa-solid fa-building-shield text-emerald-500"></i>
-                        {t('lbl_select_insurer')}
-                    </label>
-
-                    <div className="relative">
+                    {canEdit && (
                         <button
-                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            className={`w-full h-20 pl-6 pr-6 flex items-center justify-between bg-white dark:bg-gray-800/60 border-2 rounded-[1.5rem] transition-all duration-300 backdrop-blur-xl shadow-lg hover:shadow-xl
-                        ${isDropdownOpen
-                                    ? 'border-emerald-500 ring-4 ring-emerald-500/10'
-                                    : 'border-white dark:border-gray-700 hover:border-emerald-200 dark:hover:border-emerald-900/50'
-                                }
-                    `}
+                            onClick={() => openModal()}
+                            className="h-14 px-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold shadow-lg flex items-center gap-2 transition-all hover:scale-105"
                         >
-                            <div className="flex items-center gap-4">
-                                {selectedInsurer ? (
-                                    <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-lg">
-                                        {selectedInsurer.charAt(0)}
-                                    </div>
-                                ) : (
-                                    <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400">
-                                        <i className="fa-regular fa-building"></i>
-                                    </div>
-                                )}
-                                <span className={`text-xl font-bold ${selectedInsurer ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
-                                    {selectedInsurer || t('opt_select_insurance')}
-                                </span>
-                            </div>
-
-                            <div className={`w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-gray-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : ''}`}>
-                                <i className="fa-solid fa-chevron-down text-sm"></i>
-                            </div>
+                            <i className="fa-solid fa-plus"></i> Add Test Rule
                         </button>
+                    )}
+                </header>
 
-                        {/* Dropdown Menu */}
-                        {isDropdownOpen && (
-                            <div className="absolute top-full left-0 w-full mt-3 bg-white dark:bg-gray-900 rounded-[1.5rem] shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden animate-fade-in-up z-50">
-                                <div className="p-2 space-y-1 max-h-[320px] overflow-y-auto custom-scrollbar">
-                                    <button
-                                        onClick={() => handleSelect('')}
-                                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors font-bold text-sm ${!selectedInsurer ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
-                                    >
-                                        <div className="w-8 h-8 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
-                                            <i className="fa-solid fa-ban text-xs"></i>
-                                        </div>
-                                        Show All / Reset
-                                    </button>
+                {/* Control Panel - Modern Floating Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-30">
 
-                                    <div className="h-px bg-gray-100 dark:bg-gray-800 my-1 mx-2"></div>
+                    {/* CUSTOM DROPDOWN */}
+                    <div className="relative group" ref={dropdownRef}>
+                        <label className="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-3 block ml-1 flex items-center gap-2">
+                            <i className="fa-solid fa-building-shield text-emerald-500"></i>
+                            {t('lbl_select_insurer')}
+                        </label>
 
-                                    {INSURERS.map(ins => (
-                                        <button
-                                            key={ins}
-                                            onClick={() => handleSelect(ins)}
-                                            className={`w-full flex items-center justify-between p-3 rounded-xl transition-all group ${selectedInsurer === ins ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${selectedInsurer === ins ? 'bg-white/20 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'}`}>
-                                                    {ins.charAt(0)}
-                                                </div>
-                                                <span className="font-bold text-lg">{ins}</span>
-                                            </div>
-                                            {selectedInsurer === ins && (
-                                                <i className="fa-solid fa-check text-white"></i>
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* SEARCH INPUT */}
-                <div className="relative group">
-                    <label className="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-3 block ml-1 flex items-center gap-2">
-                        <i className="fa-solid fa-magnifying-glass text-blue-500"></i>
-                        {t('lbl_reverse_lookup')}
-                    </label>
-                    <div className="relative">
-                        <div className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 text-xl z-10 group-focus-within:text-blue-500 transition-colors">
-                            <i className="fa-solid fa-search"></i>
-                        </div>
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search test name (e.g. Strep)..."
-                            className="w-full h-20 pl-14 pr-14 bg-white dark:bg-gray-800/60 border-2 border-white dark:border-gray-700 rounded-[1.5rem] font-bold text-xl text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder-gray-300 dark:placeholder-gray-600 shadow-lg"
-                        />
-                        {searchQuery && (
+                        <div className="relative">
                             <button
-                                onClick={() => setSearchQuery('')}
-                                className="absolute right-5 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-full text-gray-500 hover:text-white hover:bg-red-500 dark:hover:bg-red-500 transition-all z-10"
+                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                className={`w-full h-20 pl-6 pr-6 flex items-center justify-between bg-white dark:bg-gray-800/60 border-2 rounded-[1.5rem] transition-all duration-300 backdrop-blur-xl shadow-lg hover:shadow-xl
+                        ${isDropdownOpen
+                                        ? 'border-emerald-500 ring-4 ring-emerald-500/10'
+                                        : 'border-white dark:border-gray-700 hover:border-emerald-200 dark:hover:border-emerald-900/50'
+                                    }
+                    `}
                             >
-                                <i className="fa-solid fa-xmark text-sm"></i>
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Results Grid */}
-            <div className="min-h-[400px]">
-                {selectedInsurer || searchQuery || filteredRules.length > 0 ? (
-                    <>
-                        <div className="mb-6 flex justify-between items-end px-2 border-b border-gray-100 dark:border-gray-800 pb-2">
-                            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                Authorized Tests ({filteredRules.length})
-                            </h3>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {filteredRules.length > 0 ? (
-                                filteredRules.map((rule) => (
-                                    <div
-                                        key={rule.id}
-                                        className="group relative bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col h-full"
-                                    >
-                                        {/* Green top border indicator */}
-                                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
-
-                                        <div className="p-6 pt-8 flex flex-col flex-1 h-full relative">
-                                            {/* Decoration bg */}
-                                            <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
-                                                <i className="fa-solid fa-file-medical text-6xl text-emerald-500"></i>
-                                            </div>
-
-                                            {/* Admin Controls */}
-                                            {canEdit && (
-                                                <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                                                    <button
-                                                        onClick={() => openModal(rule)}
-                                                        className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-blue-500 hover:text-white flex items-center justify-center transition-colors"
-                                                    >
-                                                        <i className="fa-solid fa-pen text-xs"></i>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => { if (window.confirm('Delete this rule?')) onDeleteRule(rule.id); }}
-                                                        className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors"
-                                                    >
-                                                        <i className="fa-solid fa-trash text-xs"></i>
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            <div className="mb-4">
-                                                <div className="flex justify-between items-start mb-3">
-                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800/50">
-                                                        <i className="fa-solid fa-check"></i> Authorized
-                                                    </span>
-                                                </div>
-                                                <h3 className="text-xl font-black text-gray-900 dark:text-white leading-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors pr-2">
-                                                    {rule.testName}
-                                                </h3>
-                                            </div>
-
-                                            {/* Insurer Bubbles (only if searching generally) */}
-                                            {!selectedInsurer && (
-                                                <div className="flex flex-wrap gap-1 mb-6 mt-auto">
-                                                    {rule.insurers.slice(0, 3).map(ins => (
-                                                        <span key={ins} className="text-[9px] font-bold px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-md border border-gray-200 dark:border-gray-700">
-                                                            {ins}
-                                                        </span>
-                                                    ))}
-                                                    {rule.insurers.length > 3 && (
-                                                        <span className="text-[9px] font-bold px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-md border border-gray-200 dark:border-gray-700">
-                                                            +{rule.insurers.length - 3}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            <div className="mt-auto pt-5 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between">
-                                                <div>
-                                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">CPT Code</div>
-                                                    <div className="text-3xl font-mono font-black text-gray-800 dark:text-gray-100 tracking-tighter">
-                                                        {rule.cpt}
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    onClick={() => handleCopy(rule.cpt)}
-                                                    className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm ${copiedCpt === rule.cpt
-                                                        ? 'bg-emerald-500 text-white shadow-emerald-500/30 scale-110'
-                                                        : 'bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-gray-700 border border-gray-100 dark:border-gray-700'
-                                                        }`}
-                                                    title="Copy Code"
-                                                >
-                                                    <i className={`fa-solid ${copiedCpt === rule.cpt ? 'fa-check text-lg' : 'fa-copy text-lg'}`}></i>
-                                                </button>
-                                            </div>
+                                <div className="flex items-center gap-4">
+                                    {selectedInsurer ? (
+                                        <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-lg">
+                                            {selectedInsurer.charAt(0)}
                                         </div>
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400">
+                                            <i className="fa-regular fa-building"></i>
+                                        </div>
+                                    )}
+                                    <span className={`text-xl font-bold ${selectedInsurer ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+                                        {selectedInsurer || t('opt_select_insurance')}
+                                    </span>
+                                </div>
+
+                                <div className={`w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-gray-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : ''}`}>
+                                    <i className="fa-solid fa-chevron-down text-sm"></i>
+                                </div>
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {isDropdownOpen && (
+                                <div className="absolute top-full left-0 w-full mt-3 bg-white dark:bg-gray-900 rounded-[1.5rem] shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden animate-fade-in-up z-50">
+                                    <div className="p-2 space-y-1 max-h-[320px] overflow-y-auto custom-scrollbar">
+                                        <button
+                                            onClick={() => handleSelect('')}
+                                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors font-bold text-sm ${!selectedInsurer ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                                        >
+                                            <div className="w-8 h-8 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
+                                                <i className="fa-solid fa-ban text-xs"></i>
+                                            </div>
+                                            Show All / Reset
+                                        </button>
+
+                                        <div className="h-px bg-gray-100 dark:bg-gray-800 my-1 mx-2"></div>
+
+                                        {INSURERS.map(ins => (
+                                            <button
+                                                key={ins}
+                                                onClick={() => handleSelect(ins)}
+                                                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all group ${selectedInsurer === ins ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${selectedInsurer === ins ? 'bg-white/20 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'}`}>
+                                                        {ins.charAt(0)}
+                                                    </div>
+                                                    <span className="font-bold text-lg">{ins}</span>
+                                                </div>
+                                                {selectedInsurer === ins && (
+                                                    <i className="fa-solid fa-check text-white"></i>
+                                                )}
+                                            </button>
+                                        ))}
                                     </div>
-                                ))
-                            ) : (
-                                <div className="col-span-full py-24 text-center">
-                                    <div className="inline-block p-8 rounded-full bg-gray-50 dark:bg-gray-800 mb-6 animate-bounce-slow shadow-sm">
-                                        <i className="fa-solid fa-file-circle-question text-5xl text-gray-300 dark:text-gray-600"></i>
-                                    </div>
-                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">No permitted tests found</h3>
-                                    <p className="text-gray-500 dark:text-gray-400">Try changing the insurance or search terms.</p>
                                 </div>
                             )}
                         </div>
-                    </>
-                ) : (
-                    /* Empty State */
-                    <div className="flex flex-col items-center justify-center py-24 opacity-60">
-                        <div className="w-40 h-40 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-full flex items-center justify-center mb-8 shadow-inner relative">
-                            <i className="fa-solid fa-hand-holding-dollar text-7xl text-gray-300 dark:text-gray-600 relative z-10"></i>
-                            <div className="absolute inset-0 bg-white/20 dark:bg-black/20 rounded-full blur-2xl"></div>
-                        </div>
-                        <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-3 text-center">Select an Insurance to Begin</h3>
-                        <p className="text-gray-500 dark:text-gray-400 text-xl max-w-lg text-center leading-relaxed">
-                            Choose an insurance provider from the dropdown above to see authorized <span className="font-bold text-emerald-600 dark:text-emerald-400">"Bill to Client"</span> tests and codes.
-                        </p>
+                    </div>
 
-                        {/* Visual Arrow Hint */}
-                        <div className="mt-8 animate-bounce">
-                            <i className="fa-solid fa-arrow-up text-gray-300 dark:text-gray-600 text-3xl"></i>
+                    {/* SEARCH INPUT */}
+                    <div className="relative group">
+                        <label className="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-3 block ml-1 flex items-center gap-2">
+                            <i className="fa-solid fa-magnifying-glass text-blue-500"></i>
+                            {t('lbl_reverse_lookup')}
+                        </label>
+                        <div className="relative">
+                            <div className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 text-xl z-10 group-focus-within:text-blue-500 transition-colors">
+                                <i className="fa-solid fa-search"></i>
+                            </div>
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search test name (e.g. Strep)..."
+                                className="w-full h-20 pl-14 pr-14 bg-white dark:bg-gray-800/60 border-2 border-white dark:border-gray-700 rounded-[1.5rem] font-bold text-xl text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder-gray-300 dark:placeholder-gray-600 shadow-lg"
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute right-5 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-full text-gray-500 hover:text-white hover:bg-red-500 dark:hover:bg-red-500 transition-all z-10"
+                                >
+                                    <i className="fa-solid fa-xmark text-sm"></i>
+                                </button>
+                            )}
                         </div>
                     </div>
-                )}
+                </div>
+
+                {/* Results Grid */}
+                <div className="min-h-[400px]">
+                    {selectedInsurer || searchQuery || filteredRules.length > 0 ? (
+                        <>
+                            <div className="mb-6 flex justify-between items-end px-2 border-b border-gray-100 dark:border-gray-800 pb-2">
+                                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Authorized Tests ({filteredRules.length})
+                                </h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {filteredRules.length > 0 ? (
+                                    filteredRules.map((rule) => (
+                                        <div
+                                            key={rule.id}
+                                            className="group relative bg-white dark:bg-gray-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col h-full"
+                                        >
+                                            {/* Green top border indicator */}
+                                            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+
+                                            <div className="p-6 pt-8 flex flex-col flex-1 h-full relative">
+                                                {/* Decoration bg */}
+                                                <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                                                    <i className="fa-solid fa-file-medical text-6xl text-emerald-500"></i>
+                                                </div>
+
+                                                {/* Admin Controls */}
+                                                {canEdit && (
+                                                    <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                                        <button
+                                                            onClick={() => openModal(rule)}
+                                                            className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-blue-500 hover:text-white flex items-center justify-center transition-colors"
+                                                        >
+                                                            <i className="fa-solid fa-pen text-xs"></i>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { if (window.confirm('Delete this rule?')) onDeleteRule(rule.id); }}
+                                                            className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors"
+                                                        >
+                                                            <i className="fa-solid fa-trash text-xs"></i>
+                                                        </button>
+                                                    </div>
+                                                )}
+
+                                                <div className="mb-4">
+                                                    <div className="flex justify-between items-start mb-3">
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800/50">
+                                                            <i className="fa-solid fa-check"></i> Authorized
+                                                        </span>
+                                                    </div>
+                                                    <h3 className="text-xl font-black text-gray-900 dark:text-white leading-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors pr-2">
+                                                        {rule.testName}
+                                                    </h3>
+                                                </div>
+
+                                                {/* Insurer Bubbles (only if searching generally) */}
+                                                {!selectedInsurer && (
+                                                    <div className="flex flex-wrap gap-1 mb-6 mt-auto">
+                                                        {rule.insurers.slice(0, 3).map(ins => (
+                                                            <span key={ins} className="text-[9px] font-bold px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-md border border-gray-200 dark:border-gray-700">
+                                                                {ins}
+                                                            </span>
+                                                        ))}
+                                                        {rule.insurers.length > 3 && (
+                                                            <span className="text-[9px] font-bold px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-md border border-gray-200 dark:border-gray-700">
+                                                                +{rule.insurers.length - 3}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                <div className="mt-auto pt-5 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between">
+                                                    <div>
+                                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">CPT Code</div>
+                                                        <div className="text-3xl font-mono font-black text-gray-800 dark:text-gray-100 tracking-tighter">
+                                                            {rule.cpt}
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleCopy(rule.cpt)}
+                                                        className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm ${copiedCpt === rule.cpt
+                                                            ? 'bg-emerald-500 text-white shadow-emerald-500/30 scale-110'
+                                                            : 'bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-gray-700 border border-gray-100 dark:border-gray-700'
+                                                            }`}
+                                                        title="Copy Code"
+                                                    >
+                                                        <i className={`fa-solid ${copiedCpt === rule.cpt ? 'fa-check text-lg' : 'fa-copy text-lg'}`}></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="col-span-full py-24 text-center">
+                                        <div className="inline-block p-8 rounded-full bg-gray-50 dark:bg-gray-800 mb-6 animate-bounce-slow shadow-sm">
+                                            <i className="fa-solid fa-file-circle-question text-5xl text-gray-300 dark:text-gray-600"></i>
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">No permitted tests found</h3>
+                                        <p className="text-gray-500 dark:text-gray-400">Try changing the insurance or search terms.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        /* Empty State */
+                        <div className="flex flex-col items-center justify-center py-24 opacity-60">
+                            <div className="w-40 h-40 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-full flex items-center justify-center mb-8 shadow-inner relative">
+                                <i className="fa-solid fa-hand-holding-dollar text-7xl text-gray-300 dark:text-gray-600 relative z-10"></i>
+                                <div className="absolute inset-0 bg-white/20 dark:bg-black/20 rounded-full blur-2xl"></div>
+                            </div>
+                            <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-3 text-center">Select an Insurance to Begin</h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-xl max-w-lg text-center leading-relaxed">
+                                Choose an insurance provider from the dropdown above to see authorized <span className="font-bold text-emerald-600 dark:text-emerald-400">"Bill to Client"</span> tests and codes.
+                            </p>
+
+                            {/* Visual Arrow Hint */}
+                            <div className="mt-8 animate-bounce">
+                                <i className="fa-solid fa-arrow-up text-gray-300 dark:text-gray-600 text-3xl"></i>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
             </div>
 
             {/* --- ADD/EDIT MODAL --- */}
@@ -512,7 +515,7 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                     </div>
                 </div>
             )}
-        </div>
+        </>
     );
 };
 
