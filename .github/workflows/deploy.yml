@@ -39,6 +39,9 @@ jobs:
           sed -i 's/"type": "module",//g' deploy_payload/package.json
           cp -r dist deploy_payload/
 
+      - name: Wait for Hostinger auto-deploy to finish
+        run: sleep 120
+
       - name: Deploy to Hostinger via LFTP (Alpine)
         run: |
           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest sh -c "

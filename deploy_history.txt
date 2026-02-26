@@ -1,0 +1,355 @@
+commit c2f076ba1cdaa29616fc7a59ee1ae9ca45be4f24
+Author: Raul Jimenez <iarejyero@gmail.com>
+Date:   Wed Feb 25 18:11:39 2026 -0600
+
+    fix(deploy): switch server.js to CommonJS + strip type:module for Hostinger compatibility
+
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index 889a7fe..747ab4e 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -36,6 +36,7 @@ jobs:
+           mkdir -p deploy_payload/tmp
+           touch deploy_payload/tmp/restart.txt
+           cp server.js package.json deploy_payload/
++          sed -i 's/"type": "module",//g' deploy_payload/package.json
+           cp -r dist deploy_payload/
+ 
+       - name: Deploy to Hostinger via LFTP (Alpine)
+
+commit e668b78829902c8c38db45787c850b5b65ff8b12
+Author: Raul Jimenez <iarejyero@gmail.com>
+Date:   Wed Feb 25 18:06:56 2026 -0600
+
+    fix(deploy): restore deploy_payload structure and remove 2min delay
+
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index f5342b6..889a7fe 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -31,9 +31,13 @@ jobs:
+           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+ 
+-      - name: Wait for Hostinger auto-deploy to finish
+-        run: sleep 120
+-      
++      - name: Prepare deployment payload
++        run: |
++          mkdir -p deploy_payload/tmp
++          touch deploy_payload/tmp/restart.txt
++          cp server.js package.json deploy_payload/
++          cp -r dist deploy_payload/
++
+       - name: Deploy to Hostinger via LFTP (Alpine)
+         run: |
+           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest sh -c "
+@@ -48,8 +52,6 @@ jobs:
+               set xfer:use-temp-file no;
+               set xfer:clobber true;
+               open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
+-              mirror -R --verbose --no-perms --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./;
+-              put ./server.js;
+-              put ./package.json;
++              mirror -R --verbose --no-perms --parallel=1 ./deploy_payload/ ./
+             \"
+           "
+
+commit fc98ef8d3fc9e1b635224e1c07627f43a457a200
+Author: Raul Jimenez <iarejyero@gmail.com>
+Date:   Tue Feb 24 20:13:40 2026 -0600
+
+    fix(deploy): upload dist/ CONTENTS to root so index.html is at public_html root
+
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index 432b904..f5342b6 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -30,17 +30,10 @@ jobs:
+           VITE_OPENAI_API_KEY: ${{ secrets.VITE_OPENAI_API_KEY }}
+           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+-      
+-      - name: Prepare deployment payload
+-        run: |
+-          mkdir -p deploy_payload/tmp
+-          touch deploy_payload/tmp/restart.txt
+-          cp server.js package.json deploy_payload/
+-          cp -r dist deploy_payload/
+ 
+       - name: Wait for Hostinger auto-deploy to finish
+         run: sleep 120
+-
++      
+       - name: Deploy to Hostinger via LFTP (Alpine)
+         run: |
+           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest sh -c "
+@@ -55,6 +48,8 @@ jobs:
+               set xfer:use-temp-file no;
+               set xfer:clobber true;
+               open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
+-              mirror -R --verbose --no-perms --parallel=1 ./deploy_payload/ ./
++              mirror -R --verbose --no-perms --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./;
++              put ./server.js;
++              put ./package.json;
+             \"
+           "
+
+commit 572aed715f62c8721016dd53ff7160993579cde7
+Author: Raul Jimenez <iarejyero@gmail.com>
+Date:   Tue Feb 24 19:58:48 2026 -0600
+
+    fix(deploy): definitive fix - full payload + 2min delay for Hostinger auto-deploy
+
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index d5b619f..432b904 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -31,6 +31,16 @@ jobs:
+           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+       
++      - name: Prepare deployment payload
++        run: |
++          mkdir -p deploy_payload/tmp
++          touch deploy_payload/tmp/restart.txt
++          cp server.js package.json deploy_payload/
++          cp -r dist deploy_payload/
++
++      - name: Wait for Hostinger auto-deploy to finish
++        run: sleep 120
++
+       - name: Deploy to Hostinger via LFTP (Alpine)
+         run: |
+           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest sh -c "
+@@ -45,6 +55,6 @@ jobs:
+               set xfer:use-temp-file no;
+               set xfer:clobber true;
+               open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
+-              mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./
++              mirror -R --verbose --no-perms --parallel=1 ./deploy_payload/ ./
+             \"
+           "
+
+commit 9e86aa2ead6dc3e935a7d6a4444d9d8570c09604
+Author: Raul Jimenez <iarejyero@gmail.com>
+Date:   Tue Feb 24 19:41:03 2026 -0600
+
+    revert: restore original server.js (ESM) and deploy.yml to fix 403
+
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index 0aaaf8f..d5b619f 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -33,11 +33,6 @@ jobs:
+       
+       - name: Deploy to Hostinger via LFTP (Alpine)
+         run: |
+-          mkdir -p deploy_payload/tmp
+-          touch deploy_payload/tmp/restart.txt
+-          cp server.js package.json deploy_payload/
+-          sed -i 's/"type": "module",//g' deploy_payload/package.json
+-          cp -r dist deploy_payload/
+           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest sh -c "
+             apk add --no-cache lftp &&
+             lftp -c \"
+@@ -50,6 +45,6 @@ jobs:
+               set xfer:use-temp-file no;
+               set xfer:clobber true;
+               open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
+-              mirror -R --verbose --no-perms --parallel=1 ./deploy_payload/ ./
++              mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./
+             \"
+           "
+
+commit 17d8c016a6eab31d2d189641c23759733ca3b5ac
+Author: Raul Jimenez <iarejyero@gmail.com>
+Date:   Tue Feb 24 19:29:40 2026 -0600
+
+    fix(deploy): switch server.js to CommonJS and strip type:module for passenger compatibility
+
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index 6f1beb8..0aaaf8f 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -33,8 +33,10 @@ jobs:
+       
+       - name: Deploy to Hostinger via LFTP (Alpine)
+         run: |
+-          mkdir -p deploy_payload
++          mkdir -p deploy_payload/tmp
++          touch deploy_payload/tmp/restart.txt
+           cp server.js package.json deploy_payload/
++          sed -i 's/"type": "module",//g' deploy_payload/package.json
+           cp -r dist deploy_payload/
+           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest sh -c "
+             apk add --no-cache lftp &&
+@@ -48,6 +50,6 @@ jobs:
+               set xfer:use-temp-file no;
+               set xfer:clobber true;
+               open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
+-              mirror -R --verbose --no-perms --only-newer --parallel=1 ./deploy_payload/ ./
++              mirror -R --verbose --no-perms --parallel=1 ./deploy_payload/ ./
+             \"
+           "
+
+commit 616eaf0ebdec2e960ffe52c0aeb5e8e3400679c0
+Author: Raul Jimenez <iarejyero@gmail.com>
+Date:   Tue Feb 24 19:14:06 2026 -0600
+
+    fix(deploy): package server.js, package.json and dist/ into root directory for Hostinger compatibility
+
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index d5b619f..6f1beb8 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -33,6 +33,9 @@ jobs:
+       
+       - name: Deploy to Hostinger via LFTP (Alpine)
+         run: |
++          mkdir -p deploy_payload
++          cp server.js package.json deploy_payload/
++          cp -r dist deploy_payload/
+           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest sh -c "
+             apk add --no-cache lftp &&
+             lftp -c \"
+@@ -45,6 +48,6 @@ jobs:
+               set xfer:use-temp-file no;
+               set xfer:clobber true;
+               open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
+-              mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./
++              mirror -R --verbose --no-perms --only-newer --parallel=1 ./deploy_payload/ ./
+             \"
+           "
+
+commit 7cf88e0e13e841507a47d89d14921f80ede42c39
+Author: Raul Jimenez <iarejyero@gmail.com>
+Date:   Tue Feb 24 18:21:31 2026 -0600
+
+    fix: revert to alpine lftp to fix 403 error and avoid hanging
+
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index 97cd561..d5b619f 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -31,22 +31,20 @@ jobs:
+           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+       
+-      - name: Prepare Deployment Artifacts
++      - name: Deploy to Hostinger via LFTP (Alpine)
+         run: |
+-          mkdir -p deploy_payload
+-          cp server.js deploy_payload/
+-          cp package.json deploy_payload/
+-          cp -r dist deploy_payload/
+-
+-      - name: 📂 Sync files to Hostinger FTP
+-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+-        with:
+-          server: ${{ secrets.FTP_HOST }}
+-          username: ${{ secrets.FTP_USER }}
+-          password: ${{ secrets.FTP_PASSWORD }}
+-          local-dir: ./deploy_payload/
+-          server-dir: ./
+-          exclude: |
+-            **/.git*
+-            **/.git*/**
+-            **/node_modules/**
++          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest sh -c "
++            apk add --no-cache lftp &&
++            lftp -c \"
++              set ssl:verify-certificate no;
++              set net:timeout 15;
++              set net:max-retries 3;
++              set net:reconnect-interval-base 5;
++              set net:connection-limit 1;
++              set ftp:ssl-allow yes;
++              set xfer:use-temp-file no;
++              set xfer:clobber true;
++              open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
++              mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./
++            \"
++          "
+
+commit 1279472715d226b894facce61533bbc14a945dac
+Author: Raul Jimenez <iarejyero@gmail.com>
+Date:   Tue Feb 24 17:46:12 2026 -0600
+
+    fix: package server files correctly for FTP deployment to resolve 403 error
+
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index c106b5c..97cd561 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -31,13 +31,20 @@ jobs:
+           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+       
++      - name: Prepare Deployment Artifacts
++        run: |
++          mkdir -p deploy_payload
++          cp server.js deploy_payload/
++          cp package.json deploy_payload/
++          cp -r dist deploy_payload/
++
+       - name: 📂 Sync files to Hostinger FTP
+         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+         with:
+           server: ${{ secrets.FTP_HOST }}
+           username: ${{ secrets.FTP_USER }}
+           password: ${{ secrets.FTP_PASSWORD }}
+-          local-dir: ./dist/
++          local-dir: ./deploy_payload/
+           server-dir: ./
+           exclude: |
+             **/.git*
+
+commit 29236dd8bc6b262aad48b6cf3eba00a6785e232a
+Author: Raul Jimenez <iarejyero@gmail.com>
+Date:   Tue Feb 24 16:37:45 2026 -0600
+
+    chore: update deployment workflow to use FTP-Deploy-Action to fix hanging lftp
+
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index 713d0ee..c106b5c 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -31,25 +31,15 @@ jobs:
+           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+       
+-      - name: Deploy to Hostinger via LFTP
+-        run: |
+-          sudo apt-get install -y --no-install-recommends lftp || (sudo apt-get update && sudo apt-get install -y --no-install-recommends lftp)
+-          # LFTP command explanation:
+-          # -u: username,password
+-          # -e: execute command
+-          # set ssl:verify-certificate no: prevent self-signed cert errors
+-          # set ftp:ssl-allow yes: allow SSL (try explicit FTPS)
+-          # mirror -R: reverse mirror (upload)
+-          # --parallel=2: use 2 parallel connections for speed
+-          # --verbose: show progress
+-          # --exclude-glob: exclude git and node_modules
+-          lftp -c "set ssl:verify-certificate no;
+-                   set net:timeout 180; 
+-                   set net:max-retries 5; 
+-                   set net:reconnect-interval-base 5; 
+-                   set net:connection-limit 1;
+-                   set ftp:ssl-allow yes;
+-                   set xfer:use-temp-file no;
+-                   set xfer:clobber true;
+-                   open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }}; 
+-                   mirror -R --verbose --no-perms --only-newer --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./"
++      - name: 📂 Sync files to Hostinger FTP
++        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
++        with:
++          server: ${{ secrets.FTP_HOST }}
++          username: ${{ secrets.FTP_USER }}
++          password: ${{ secrets.FTP_PASSWORD }}
++          local-dir: ./dist/
++          server-dir: ./
++          exclude: |
++            **/.git*
++            **/.git*/**
++            **/node_modules/**
