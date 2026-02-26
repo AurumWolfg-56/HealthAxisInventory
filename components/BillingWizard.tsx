@@ -445,55 +445,53 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Compact Header */}
-                        <div className="h-20 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 p-6 flex items-center justify-between flex-shrink-0">
+                        <div className="h-16 md:h-20 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 p-4 md:p-6 flex items-center justify-between flex-shrink-0">
                             <div>
-                                <h3 className="text-xl font-black text-white tracking-tight">{t('guide_title')}</h3>
-                                <p className="text-blue-100 font-bold opacity-90 text-xs">{t('guide_subtitle')}</p>
+                                <h3 className="text-lg md:text-xl font-black text-white tracking-tight">{t('guide_title')}</h3>
+                                <p className="text-blue-100 font-bold opacity-90 text-[10px] md:text-xs">{t('guide_subtitle')}</p>
                             </div>
-                            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-xl flex items-center justify-center text-white border border-white/30">
-                                <i className="fa-solid fa-lightbulb text-lg"></i>
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-white/20 backdrop-blur-xl flex items-center justify-center text-white border border-white/30 shadow-inner">
+                                <i className="fa-solid fa-lightbulb text-sm md:text-lg"></i>
                             </div>
                         </div>
 
                         {/* Optimized Content Area */}
-                        <div className="p-5 md:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
-                            <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-100/50 dark:border-emerald-800/30">
-                                <div className="flex gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex-shrink-0 flex items-center justify-center shadow-md">
-                                        <i className="fa-solid fa-shield-check text-xs"></i>
+                        <div className="p-4 md:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+                            <div className="flex flex-col gap-3">
+                                {/* Success Info Alert */}
+                                <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-3 rounded-xl border border-emerald-100/50 dark:border-emerald-800/30 flex gap-3 items-start">
+                                    <div className="w-7 h-7 rounded-full bg-emerald-500 text-white flex-shrink-0 flex items-center justify-center shadow-sm mt-0.5">
+                                        <i className="fa-solid fa-shield-check text-[10px]"></i>
                                     </div>
-                                    <p className="text-emerald-800 dark:text-emerald-400 font-bold leading-relaxed text-sm">
+                                    <p className="text-emerald-800 dark:text-emerald-400 font-bold leading-snug text-xs md:text-sm">
                                         {t('guide_body')}
+                                    </p>
+                                </div>
+
+                                {/* Warning Alert */}
+                                <div className="bg-amber-50/50 dark:bg-amber-900/10 px-3 py-2.5 rounded-xl border border-amber-100/50 dark:border-amber-800/30 flex items-center gap-2.5">
+                                    <i className="fa-solid fa-circle-exclamation text-amber-600 dark:text-amber-400 text-sm"></i>
+                                    <p className="text-[11px] md:text-xs font-black text-amber-700 dark:text-amber-400/90 leading-tight">
+                                        {t('guide_warning')}
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="bg-amber-50/50 dark:bg-amber-900/10 p-3 rounded-xl border border-amber-100/50 dark:border-amber-800/30 flex items-center gap-3">
-                                <i className="fa-solid fa-circle-exclamation text-amber-600 dark:text-amber-400"></i>
-                                <p className="text-[11px] md:text-xs font-black text-amber-700 dark:text-amber-400/90 leading-tight">
-                                    {t('guide_warning')}
-                                </p>
-                            </div>
-
+                            {/* Compact Insurers Pill List */}
                             <div>
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 block ml-1">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block ml-1">
                                     {t('guide_note_title')}
                                 </label>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <div className="flex flex-wrap gap-2">
                                     {INSURERS.sort().map((ins) => (
                                         <div
                                             key={ins}
-                                            className="group relative p-3 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-700/50 hover:border-blue-500/50 transition-all duration-200 flex items-center gap-3"
+                                            className="px-3 py-2 bg-gray-50 dark:bg-slate-800/80 rounded-lg border border-gray-200 dark:border-slate-700 flex items-center gap-2 shadow-sm hover:border-blue-500/50 transition-colors"
                                         >
-                                            <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all group-hover:w-1.5 ${['Medicare', 'Medicaid'].includes(ins) ? 'bg-emerald-500' :
+                                            <div className={`w-2 h-2 rounded-full ${['Medicare', 'Medicaid'].includes(ins) ? 'bg-emerald-500' :
                                                 ['UHC', 'BCBS'].includes(ins) ? 'bg-blue-500' : 'bg-indigo-500'
                                                 }`}></div>
-
-                                            <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center font-black text-sm text-gray-400 group-hover:bg-gray-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-slate-900 transition-all">
-                                                {ins.charAt(0)}
-                                            </div>
-
-                                            <span className="font-black text-gray-900 dark:text-white text-sm tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                            <span className="font-extrabold text-gray-700 dark:text-gray-200 text-xs tracking-tight">
                                                 {ins}
                                             </span>
                                         </div>
@@ -503,10 +501,10 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                         </div>
 
                         {/* Fixed Footer */}
-                        <div className="p-4 bg-gray-50 dark:bg-gray-950/50 border-t border-gray-100 dark:border-gray-800 flex justify-end flex-shrink-0">
+                        <div className="p-3 md:p-4 bg-gray-50 dark:bg-gray-950/50 border-t border-gray-100 dark:border-gray-800 flex justify-end flex-shrink-0">
                             <button
                                 onClick={() => setIsInfoModalOpen(false)}
-                                className="px-8 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg"
+                                className="px-6 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors shadow-md w-full sm:w-auto"
                             >
                                 {t('btn_understood')}
                             </button>
