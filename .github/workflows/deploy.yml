@@ -31,14 +31,6 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
 
-      - name: Prepare deployment payload
-        run: |
-          mkdir -p deploy_payload/tmp
-          touch deploy_payload/tmp/restart.txt
-          cp server.js package.json deploy_payload/
-          sed -i 's/"type": "module",//g' deploy_payload/package.json
-          cp -r dist deploy_payload/
-
       - name: Wait for Hostinger auto-deploy to finish
         run: sleep 120
 
@@ -56,6 +48,8 @@ jobs:
               set xfer:use-temp-file no;
               set xfer:clobber true;
               open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
-              mirror -R --verbose --no-perms --parallel=1 ./deploy_payload/ ./
+              mirror -R --verbose --no-perms --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./;
+              put ./server.js;
+              put ./package.json;
             \"
           "
