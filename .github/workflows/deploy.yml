@@ -31,9 +31,13 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
 
-      - name: Wait for Hostinger auto-deploy to finish
-        run: sleep 120
-      
+      - name: Prepare deployment payload
+        run: |
+          mkdir -p deploy_payload/tmp
+          touch deploy_payload/tmp/restart.txt
+          cp server.js package.json deploy_payload/
+          cp -r dist deploy_payload/
+
       - name: Deploy to Hostinger via LFTP (Alpine)
         run: |
           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest sh -c "
@@ -48,8 +52,6 @@ jobs:
               set xfer:use-temp-file no;
               set xfer:clobber true;
               open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
-              mirror -R --verbose --no-perms --parallel=1 --exclude-glob .git* --exclude-glob node_modules ./dist/ ./;
-              put ./server.js;
-              put ./package.json;
+              mirror -R --verbose --no-perms --parallel=1 ./deploy_payload/ ./
             \"
           "
