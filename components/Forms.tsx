@@ -547,7 +547,7 @@ I, **{{patientName}}**, hereby authorize...
                                     onChange={e => setSelectedDoctorId(e.target.value)}
                                     className="w-full h-12 px-3 rounded-xl bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-800/30 font-bold text-sm focus:ring-2 focus:ring-blue-500/20 outline-none text-gray-900 dark:text-white"
                                 >
-                                    <option value="">Select Doctor / Owner</option>
+                                    <option value="">Select Provider</option>
                                     {providers.map(d => {
                                         const _name = d.username || (d as any).full_name;
                                         return (
