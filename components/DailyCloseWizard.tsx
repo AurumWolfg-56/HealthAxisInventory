@@ -765,8 +765,8 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                                         {isProviderDropdownOpen && (
                                             <>
                                                 <div className="fixed inset-0 z-40" onClick={() => setIsProviderDropdownOpen(false)}></div>
-                                                <div className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden z-50 animate-fade-in-up">
-                                                    <div className="p-2 max-h-60 overflow-y-auto custom-scrollbar">
+                                                <div className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden z-[100] animate-fade-in-up">
+                                                    <div className="p-2 max-h-[400px] md:max-h-[500px] overflow-y-auto custom-scrollbar">
                                                         {availableProviders.map(p => (
                                                             <button
                                                                 key={p.id}
