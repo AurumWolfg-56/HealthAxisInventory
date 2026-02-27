@@ -142,17 +142,20 @@ const PrintLayout: React.FC<PrintLayoutProps> = ({ template, content, details, r
 
                 {/* === DEMOGRAPHICS BOX === */}
                 {template.useLetterhead && details && (
-                    <div className="mx-14 mb-8 relative z-10 break-inside-avoid">
-                        <div className="bg-[#FAFAFA] border border-gray-200 rounded-md p-5 flex flex-wrap shadow-[0_2px_8px_rgba(0,0,0,0.03)] print:shadow-none">
-                            {/* Row 1 (Formerly Row 2) */}
-                            <div className="w-2/3 border-r border-gray-200 pr-6">
-                                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest block mb-1">Ordering Provider</span>
-                                <span className="text-sm font-bold text-gray-700 block">{details.providerName || '____________________'}</span>
-                            </div>
-                            <div className="w-1/3 pl-6">
-                                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest block mb-1">Date of Service</span>
-                                <span className="text-sm font-bold text-gray-700 block">{details.date}</span>
-                            </div>
+                    <div className="mx-14 mb-10 pt-2 pb-6 border-b-2 border-gray-100 flex justify-between items-end relative z-10 break-inside-avoid">
+                        <div className="flex flex-col">
+                            <span className="text-[8px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1.5 flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#DC2626]"></div>
+                                Provider
+                            </span>
+                            <span className="text-xl font-black text-gray-900 tracking-tight">{details.providerName || '____________________'}</span>
+                        </div>
+                        <div className="flex flex-col text-right">
+                            <span className="text-[8px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1.5 flex items-center justify-end gap-2">
+                                Date of Service
+                                <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
+                            </span>
+                            <span className="text-xl font-black text-gray-900 tracking-tight">{details.date}</span>
                         </div>
                     </div>
                 )}
@@ -161,11 +164,11 @@ const PrintLayout: React.FC<PrintLayoutProps> = ({ template, content, details, r
                 <div className={`pl-14 pr-12 py-2 relative z-10 ${!template.useLetterhead ? 'pt-14' : ''}`}>
 
                     {/* Document Title */}
-                    <div className="mb-8 flex items-center break-inside-avoid">
-                        <div className="w-1.5 h-8 bg-[#DC2626] mr-4 rounded-full"></div>
-                        <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight">
+                    <div className="mb-10 break-inside-avoid">
+                        <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter mb-3">
                             {template.title}
                         </h2>
+                        <div className="w-12 h-1.5 bg-[#DC2626] rounded-full"></div>
                     </div>
 
                     {/* Main Text Content */}
