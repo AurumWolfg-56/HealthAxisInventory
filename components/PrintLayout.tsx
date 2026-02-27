@@ -45,7 +45,12 @@ const PrintLayout: React.FC<PrintLayoutProps> = ({ template, content, details, r
                 .replace(/>/g, "&gt;")
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
                 .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
-                .replace(/__(.*?)__/g, '<u>$1</u>'); // Underline
+                // Underline: Matches __text__ but strictly requires the content to not be solely underscores or padding spaces
+                .replace(/__([^\s_][\s\S]*?[^\s_]|[^\s_])__/g, '<u>$1</u>')
+                // Form Fields: Transforms 2 or more consecutive underscores into a solid CSS bottom border
+                .replace(/(_{2,})/g, (match) => {
+                    return `<span style="display: inline-block; border-bottom: 1.5px solid currentColor; width: ${match.length * 0.55}em; transform: translateY(-0.1em);">&nbsp;</span>`;
+                });
 
             // If line is empty/whitespace only, render a non-breaking space to maintain height
             if (!formattedHtml.trim()) {
