@@ -551,7 +551,7 @@ I, **{{patientName}}**, hereby authorize...
                                     {providers.map(d => {
                                         const _name = d.username || (d as any).full_name;
                                         return (
-                                            <option key={d.id} value={d.id}>{d.role === 'DOCTOR' ? 'Dr.' : ''} {_name} ({d.role})</option>
+                                            <option key={d.id} value={d.id}>{d.role === 'DOCTOR' ? 'Dr.' : ''} {_name}</option>
                                         );
                                     })}
                                 </select>
