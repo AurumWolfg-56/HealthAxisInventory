@@ -445,70 +445,87 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
             {isInfoModalOpen && createPortal(
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-6 bg-slate-900/80 backdrop-blur-md animate-fade-in" onClick={() => setIsInfoModalOpen(false)}>
                     <div
-                        className="bg-white dark:bg-slate-900 rounded-[2rem] w-full max-w-2xl max-h-[90vh] shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] border border-white/20 dark:border-slate-800 overflow-hidden flex flex-col relative"
+                        className="bg-slate-900 border border-slate-700/50 rounded-[2rem] w-full max-w-2xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col relative"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* More Prominent Header */}
-                        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 p-6 md:p-8 flex items-center justify-between flex-shrink-0">
+                        {/* Decorative Top Glow */}
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-indigo-500/20 rounded-full blur-[80px] pointer-events-none"></div>
+
+                        {/* Floating Header Area */}
+                        <div className="p-8 pb-4 flex items-start justify-between flex-shrink-0 relative z-10">
                             <div>
-                                <h3 className="text-2xl md:text-3xl font-black text-white tracking-tight leading-tight">{t('guide_title')}</h3>
-                                <p className="text-blue-100 font-bold opacity-90 text-sm md:text-base mt-1">{t('guide_subtitle')}</p>
+                                <h3 className="text-3xl font-black text-white tracking-tight leading-tight">{t('guide_title')}</h3>
+                                <div className="mt-2 text-indigo-200/80 font-bold uppercase tracking-widest text-xs">{t('guide_subtitle')}</div>
                             </div>
-                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white/20 backdrop-blur-xl flex items-center justify-center text-white border border-white/30 shadow-inner">
-                                <i className="fa-solid fa-lightbulb text-xl md:text-2xl"></i>
+                            <div className="w-12 h-12 rounded-[14px] bg-white/5 flex items-center justify-center text-teal-400 border border-white/10 shadow-inner backdrop-blur-md">
+                                <i className="fa-solid fa-lightbulb text-xl"></i>
                             </div>
                         </div>
 
-                        {/* Larger Content Area */}
-                        <div className="p-6 md:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
-                            <div className="flex flex-col gap-4">
-                                {/* Success Info Alert */}
-                                <div className="bg-emerald-50/80 dark:bg-emerald-900/20 p-4 md:p-5 rounded-2xl border border-emerald-200/50 dark:border-emerald-800/50 flex gap-4 items-start shadow-sm">
-                                    <div className="w-10 h-10 rounded-full bg-emerald-500 text-white flex-shrink-0 flex items-center justify-center shadow-md mt-0.5">
-                                        <i className="fa-solid fa-shield-check text-lg"></i>
+                        {/* Content Area */}
+                        <div className="p-8 pt-4 space-y-6 overflow-y-auto custom-scrollbar flex-1 relative z-10">
+                            <div className="space-y-4">
+                                {/* Rule 1 Block (Green/Positive "Hero") */}
+                                <div className="bg-[#0a231c] p-6 rounded-2xl border border-emerald-500/20 flex gap-5 items-center shadow-lg">
+                                    <div className="w-10 h-10 rounded-full bg-emerald-500/90 text-white flex-shrink-0 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                                        <div className="w-3 h-3 rounded-full bg-white animate-pulse"></div>
                                     </div>
-                                    <p className="text-emerald-900 dark:text-emerald-300 font-bold leading-relaxed text-sm md:text-base">
+                                    <p className="text-emerald-50 font-medium leading-relaxed text-sm md:text-base">
                                         {t('guide_body')}
                                     </p>
                                 </div>
 
-                                {/* Warning Alert */}
-                                <div className="bg-amber-50/80 dark:bg-amber-900/20 px-4 py-3 md:py-4 rounded-2xl border border-amber-200/50 dark:border-amber-800/50 flex items-start md:items-center gap-4 shadow-sm">
-                                    <i className="fa-solid fa-circle-exclamation text-amber-600 dark:text-amber-400 text-xl mt-0.5 md:mt-0"></i>
-                                    <p className="text-sm font-black text-amber-800 dark:text-amber-400/90 leading-snug">
+                                {/* Rule 2 Block (Orange/Warning) */}
+                                <div className="bg-[#24130a] p-5 rounded-2xl border border-amber-500/20 flex gap-4 items-center shadow-lg">
+                                    <div className="w-6 h-6 rounded-full bg-amber-500/90 text-amber-950 flex-shrink-0 flex items-center justify-center text-xs font-black shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                                        !
+                                    </div>
+                                    <p className="text-amber-100/90 font-medium text-sm leading-relaxed">
                                         {t('guide_warning')}
                                     </p>
                                 </div>
                             </div>
 
-                            {/* Larger Insurers Pill List */}
-                            <div className="pt-2">
-                                <label className="text-xs font-black text-gray-400 uppercase tracking-[0.25em] mb-4 block ml-1">
+                            {/* Restyled Insurers Pill List */}
+                            <div className="pt-6">
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 text-center">
                                     {t('guide_note_title')}
-                                </label>
-                                <div className="flex flex-wrap gap-3">
-                                    {INSURERS.sort().map((ins) => (
-                                        <div
-                                            key={ins}
-                                            className="px-4 py-2.5 bg-gray-50 dark:bg-slate-800/80 rounded-xl border border-gray-200 dark:border-slate-700 flex items-center gap-3 shadow-sm hover:border-blue-500/50 hover:shadow-md transition-all"
-                                        >
-                                            <div className={`w-3 h-3 rounded-full shadow-inner ${['Medicare', 'Medicaid'].includes(ins) ? 'bg-emerald-500' :
-                                                ['UHC', 'BCBS'].includes(ins) ? 'bg-blue-500' : 'bg-indigo-500'
-                                                }`}></div>
-                                            <span className="font-extrabold text-gray-800 dark:text-gray-100 text-sm md:text-base tracking-tight">
-                                                {ins}
-                                            </span>
-                                        </div>
-                                    ))}
+                                </h4>
+                                <div className="flex flex-wrap justify-center gap-2 lg:gap-3">
+                                    {INSURERS.sort().map((ins) => {
+                                        // Assign dot colors matching the mockup
+                                        let dotColor = "bg-blue-500";
+                                        let dotGlow = "shadow-[0_0_8px_rgba(59,130,246,0.6)]";
+
+                                        if (['Aetna', 'BCBS', 'Cigna'].includes(ins)) {
+                                            dotColor = "bg-indigo-500";
+                                            dotGlow = "shadow-[0_0_8px_rgba(99,102,241,0.6)]";
+                                        } else if (['Medicaid', 'Medicare'].includes(ins)) {
+                                            dotColor = "bg-emerald-500";
+                                            dotGlow = "shadow-[0_0_8px_rgba(16,185,129,0.6)]";
+                                        }
+
+                                        return (
+                                            <div
+                                                key={ins}
+                                                className="px-4 py-2 bg-white/5 rounded-xl border border-white/5 flex items-center gap-2.5 backdrop-blur-md transition-all hover:bg-white/10"
+                                            >
+                                                <div className={`w-2.5 h-2.5 rounded-full ${dotColor} ${dotGlow}`}></div>
+                                                <span className="font-bold text-gray-200 text-sm tracking-wide">
+                                                    {ins}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Thicker Footer */}
-                        <div className="p-4 md:p-6 bg-gray-50 dark:bg-gray-950/80 border-t border-gray-200 dark:border-gray-800 flex justify-end flex-shrink-0">
+                        {/* Refined Footer */}
+                        <div className="px-8 pb-8 pt-2 flex justify-center flex-shrink-0 relative z-10">
                             <button
                                 onClick={() => setIsInfoModalOpen(false)}
-                                className="px-8 py-3.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-black text-sm md:text-base uppercase tracking-widest hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors shadow-lg w-full sm:w-auto active:scale-95"
+                                className="px-10 py-3.5 bg-white text-black rounded-xl font-black text-xs md:text-sm uppercase tracking-[0.15em] hover:bg-gray-100 hover:scale-[1.02] transition-all duration-200 shadow-[0_4px_20px_rgba(255,255,255,0.15)] active:scale-95"
                             >
                                 {t('btn_understood')}
                             </button>

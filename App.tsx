@@ -116,7 +116,7 @@ const App: React.FC = () => {
     // --- APP DATA CONTEXT ---
     const {
         templates, setTemplates, dailyReports, billingRules, pettyCashHistory, logs,
-        setDailyReports, setLogs, addLog: contextAddLog
+        setDailyReports, setLogs, addLog: contextAddLog, setBillingRules
     } = useAppData();
 
     // Local Helper wrapper for addLog — passes authenticated user's name
@@ -890,7 +890,29 @@ const App: React.FC = () => {
                             t={t}
                         />
                     )}
-                    {currentRoute === AppRoute.BILLING_WIZARD && hasPermission('billing.view') && <BillingWizard billingRules={billingRules} user={user} onSaveRule={() => { }} onDeleteRule={() => { }} t={t} />}
+                    {currentRoute === AppRoute.BILLING_WIZARD && hasPermission('billing.view') && (
+                        <BillingWizard
+                            billingRules={billingRules}
+                            user={user}
+                            onSaveRule={(newRule) => {
+                                setBillingRules(prev => {
+                                    const exists = prev.find(r => r.id === newRule.id);
+                                    if (exists) {
+                                        return prev.map(r => r.id === newRule.id ? newRule : r);
+                                    }
+                                    return [newRule, ...prev];
+                                });
+                                addToast('Billing rule saved successfully', 'success');
+                                addLog('BILLING_RULE_SAVED', `Saved rule for ${newRule.testName}`);
+                            }}
+                            onDeleteRule={(id) => {
+                                setBillingRules(prev => prev.filter(r => r.id !== id));
+                                addToast('Billing rule deleted', 'info');
+                                addLog('BILLING_RULE_DELETED', `Deleted rule ID: ${id}`);
+                            }}
+                            t={t}
+                        />
+                    )}
                     {currentRoute === AppRoute.MEDICAL_CODES && hasPermission('codes.view') && (
                         <MedicalCodesManager
                             codes={codes}
