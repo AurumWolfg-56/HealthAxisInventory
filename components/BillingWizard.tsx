@@ -1,5 +1,5 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { BillingRule, User, UserRole } from '../types';
 
 interface BillingWizardProps {
@@ -385,7 +385,7 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
             </div>
 
             {/* --- ADD/EDIT MODAL --- */}
-            {isModalOpen && (
+            {isModalOpen && createPortal(
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}>
                     <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-lg p-8 shadow-2xl animate-fade-in-up border border-gray-100 dark:border-gray-800" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-6">
@@ -437,11 +437,12 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                             <button onClick={handleSave} className="flex-1 h-12 rounded-xl bg-emerald-600 text-white font-bold shadow-lg hover:bg-emerald-500 transition-colors">Save Rule</button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* --- BILLING INFO MODAL (INFORMATIVE) --- */}
-            {isInfoModalOpen && (
+            {isInfoModalOpen && createPortal(
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-fade-in" onClick={() => setIsInfoModalOpen(false)}>
                     <div
                         className="bg-white dark:bg-slate-900 rounded-[2rem] w-full max-w-2xl max-h-[95vh] shadow-2xl border border-white/20 dark:border-slate-800 overflow-hidden flex flex-col relative"
@@ -513,7 +514,8 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );
