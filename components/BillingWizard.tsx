@@ -443,59 +443,59 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
 
             {/* --- BILLING INFO MODAL (INFORMATIVE) --- */}
             {isInfoModalOpen && createPortal(
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-fade-in" onClick={() => setIsInfoModalOpen(false)}>
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-6 bg-slate-900/80 backdrop-blur-md animate-fade-in" onClick={() => setIsInfoModalOpen(false)}>
                     <div
-                        className="bg-white dark:bg-slate-900 rounded-[2rem] w-full max-w-2xl max-h-[95vh] shadow-2xl border border-white/20 dark:border-slate-800 overflow-hidden flex flex-col relative"
+                        className="bg-white dark:bg-slate-900 rounded-[2rem] w-full max-w-2xl max-h-[90vh] shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] border border-white/20 dark:border-slate-800 overflow-hidden flex flex-col relative"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Compact Header */}
-                        <div className="h-16 md:h-20 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 p-4 md:p-6 flex items-center justify-between flex-shrink-0">
+                        {/* More Prominent Header */}
+                        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 p-6 md:p-8 flex items-center justify-between flex-shrink-0">
                             <div>
-                                <h3 className="text-lg md:text-xl font-black text-white tracking-tight">{t('guide_title')}</h3>
-                                <p className="text-blue-100 font-bold opacity-90 text-[10px] md:text-xs">{t('guide_subtitle')}</p>
+                                <h3 className="text-2xl md:text-3xl font-black text-white tracking-tight leading-tight">{t('guide_title')}</h3>
+                                <p className="text-blue-100 font-bold opacity-90 text-sm md:text-base mt-1">{t('guide_subtitle')}</p>
                             </div>
-                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-white/20 backdrop-blur-xl flex items-center justify-center text-white border border-white/30 shadow-inner">
-                                <i className="fa-solid fa-lightbulb text-sm md:text-lg"></i>
+                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white/20 backdrop-blur-xl flex items-center justify-center text-white border border-white/30 shadow-inner">
+                                <i className="fa-solid fa-lightbulb text-xl md:text-2xl"></i>
                             </div>
                         </div>
 
-                        {/* Optimized Content Area */}
-                        <div className="p-4 md:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
-                            <div className="flex flex-col gap-3">
+                        {/* Larger Content Area */}
+                        <div className="p-6 md:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+                            <div className="flex flex-col gap-4">
                                 {/* Success Info Alert */}
-                                <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-3 rounded-xl border border-emerald-100/50 dark:border-emerald-800/30 flex gap-3 items-start">
-                                    <div className="w-7 h-7 rounded-full bg-emerald-500 text-white flex-shrink-0 flex items-center justify-center shadow-sm mt-0.5">
-                                        <i className="fa-solid fa-shield-check text-[10px]"></i>
+                                <div className="bg-emerald-50/80 dark:bg-emerald-900/20 p-4 md:p-5 rounded-2xl border border-emerald-200/50 dark:border-emerald-800/50 flex gap-4 items-start shadow-sm">
+                                    <div className="w-10 h-10 rounded-full bg-emerald-500 text-white flex-shrink-0 flex items-center justify-center shadow-md mt-0.5">
+                                        <i className="fa-solid fa-shield-check text-lg"></i>
                                     </div>
-                                    <p className="text-emerald-800 dark:text-emerald-400 font-bold leading-snug text-xs md:text-sm">
+                                    <p className="text-emerald-900 dark:text-emerald-300 font-bold leading-relaxed text-sm md:text-base">
                                         {t('guide_body')}
                                     </p>
                                 </div>
 
                                 {/* Warning Alert */}
-                                <div className="bg-amber-50/50 dark:bg-amber-900/10 px-3 py-2.5 rounded-xl border border-amber-100/50 dark:border-amber-800/30 flex items-center gap-2.5">
-                                    <i className="fa-solid fa-circle-exclamation text-amber-600 dark:text-amber-400 text-sm"></i>
-                                    <p className="text-[11px] md:text-xs font-black text-amber-700 dark:text-amber-400/90 leading-tight">
+                                <div className="bg-amber-50/80 dark:bg-amber-900/20 px-4 py-3 md:py-4 rounded-2xl border border-amber-200/50 dark:border-amber-800/50 flex items-start md:items-center gap-4 shadow-sm">
+                                    <i className="fa-solid fa-circle-exclamation text-amber-600 dark:text-amber-400 text-xl mt-0.5 md:mt-0"></i>
+                                    <p className="text-sm font-black text-amber-800 dark:text-amber-400/90 leading-snug">
                                         {t('guide_warning')}
                                     </p>
                                 </div>
                             </div>
 
-                            {/* Compact Insurers Pill List */}
-                            <div>
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block ml-1">
+                            {/* Larger Insurers Pill List */}
+                            <div className="pt-2">
+                                <label className="text-xs font-black text-gray-400 uppercase tracking-[0.25em] mb-4 block ml-1">
                                     {t('guide_note_title')}
                                 </label>
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-3">
                                     {INSURERS.sort().map((ins) => (
                                         <div
                                             key={ins}
-                                            className="px-3 py-2 bg-gray-50 dark:bg-slate-800/80 rounded-lg border border-gray-200 dark:border-slate-700 flex items-center gap-2 shadow-sm hover:border-blue-500/50 transition-colors"
+                                            className="px-4 py-2.5 bg-gray-50 dark:bg-slate-800/80 rounded-xl border border-gray-200 dark:border-slate-700 flex items-center gap-3 shadow-sm hover:border-blue-500/50 hover:shadow-md transition-all"
                                         >
-                                            <div className={`w-2 h-2 rounded-full ${['Medicare', 'Medicaid'].includes(ins) ? 'bg-emerald-500' :
+                                            <div className={`w-3 h-3 rounded-full shadow-inner ${['Medicare', 'Medicaid'].includes(ins) ? 'bg-emerald-500' :
                                                 ['UHC', 'BCBS'].includes(ins) ? 'bg-blue-500' : 'bg-indigo-500'
                                                 }`}></div>
-                                            <span className="font-extrabold text-gray-700 dark:text-gray-200 text-xs tracking-tight">
+                                            <span className="font-extrabold text-gray-800 dark:text-gray-100 text-sm md:text-base tracking-tight">
                                                 {ins}
                                             </span>
                                         </div>
@@ -504,11 +504,11 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                             </div>
                         </div>
 
-                        {/* Fixed Footer */}
-                        <div className="p-3 md:p-4 bg-gray-50 dark:bg-gray-950/50 border-t border-gray-100 dark:border-gray-800 flex justify-end flex-shrink-0">
+                        {/* Thicker Footer */}
+                        <div className="p-4 md:p-6 bg-gray-50 dark:bg-gray-950/80 border-t border-gray-200 dark:border-gray-800 flex justify-end flex-shrink-0">
                             <button
                                 onClick={() => setIsInfoModalOpen(false)}
-                                className="px-6 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors shadow-md w-full sm:w-auto"
+                                className="px-8 py-3.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-black text-sm md:text-base uppercase tracking-widest hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors shadow-lg w-full sm:w-auto active:scale-95"
                             >
                                 {t('btn_understood')}
                             </button>
