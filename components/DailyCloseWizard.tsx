@@ -763,38 +763,35 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                                         </button>
 
                                         {isProviderDropdownOpen && (
-                                            <>
-                                                <div className="fixed inset-0 z-40" onClick={() => setIsProviderDropdownOpen(false)}></div>
-                                                <div className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden z-[100] animate-fade-in-up">
-                                                    <div className="p-2 max-h-[400px] md:max-h-[500px] overflow-y-auto custom-scrollbar">
-                                                        {availableProviders.map(p => (
-                                                            <button
-                                                                key={p.id}
-                                                                onClick={() => {
-                                                                    dispatch({ type: 'SET_OP_PROVIDER', payload: { id: p.id, value: 0 } });
-                                                                    setIsProviderDropdownOpen(false);
-                                                                }}
-                                                                className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 group transition-all text-left"
-                                                            >
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm
+                                            <div className="mt-3 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-fade-in-up mb-4">
+                                                <div className="p-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                                    {availableProviders.map(p => (
+                                                        <button
+                                                            key={p.id}
+                                                            onClick={() => {
+                                                                dispatch({ type: 'SET_OP_PROVIDER', payload: { id: p.id, value: 0 } });
+                                                                setIsProviderDropdownOpen(false);
+                                                            }}
+                                                            className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 group transition-all text-left"
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm
                                                                         ${p.role === UserRole.OWNER ? 'bg-red-50 text-red-600 dark:bg-red-900/20' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20'}
                                                                     `}>
-                                                                        {(p.full_name || p.username || '?').charAt(0).toUpperCase()}
-                                                                    </div>
-                                                                    <div>
-                                                                        <div className="font-bold text-slate-900 dark:text-white text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{p.full_name || p.username}</div>
-                                                                        <div className="text-[10px] uppercase font-black tracking-wider text-slate-400">{p.role === UserRole.OWNER ? 'Clinic Owner' : 'Provider'}</div>
-                                                                    </div>
+                                                                    {(p.full_name || p.username || '?').charAt(0).toUpperCase()}
                                                                 </div>
-                                                                <div className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-300 group-hover:border-indigo-500 group-hover:text-indigo-500 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 transition-all">
-                                                                    <i className="fa-solid fa-plus"></i>
+                                                                <div>
+                                                                    <div className="font-bold text-slate-900 dark:text-white text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{p.full_name || p.username}</div>
+                                                                    <div className="text-[10px] uppercase font-black tracking-wider text-slate-400">{p.role === UserRole.OWNER ? 'Clinic Owner' : 'Provider'}</div>
                                                                 </div>
-                                                            </button>
-                                                        ))}
-                                                    </div>
+                                                            </div>
+                                                            <div className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-300 group-hover:border-indigo-500 group-hover:text-indigo-500 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 transition-all">
+                                                                <i className="fa-solid fa-plus"></i>
+                                                            </div>
+                                                        </button>
+                                                    ))}
                                                 </div>
-                                            </>
+                                            </div>
                                         )}
                                     </div>
                                 ) : (
@@ -860,7 +857,8 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                         />
                     </div>
                 </div>
-            )}
+            )
+            }
 
             {/* Footer Controls */}
             <div className="flex gap-3 mt-10 p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/40">
@@ -915,15 +913,17 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
           3. Use z-index -9999 to hide behind app.
           4. Visibility: visible is required for html2canvas to capture it.
       */}
-            {createPortal(
-                <div style={{ position: 'absolute', top: 0, left: '-10000px', width: '215.9mm', zIndex: -9999, pointerEvents: 'none' }}>
-                    <div ref={reportRef}>
-                        <DailyReportDocument report={getTempReport()} usersDb={usersDb} />
-                    </div>
-                </div>,
-                document.body
-            )}
-        </div>
+            {
+                createPortal(
+                    <div style={{ position: 'absolute', top: 0, left: '-10000px', width: '215.9mm', zIndex: -9999, pointerEvents: 'none' }}>
+                        <div ref={reportRef}>
+                            <DailyReportDocument report={getTempReport()} usersDb={usersDb} />
+                        </div>
+                    </div>,
+                    document.body
+                )
+            }
+        </div >
     );
 };
 
