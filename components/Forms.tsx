@@ -45,7 +45,8 @@ const Forms: React.FC<FormsProps> = ({ templates, users, user, hasPermission, on
     const getDetails = () => {
         const provider = users.find(u => u.id === selectedDoctorId);
         const providerPrefix = provider?.role === UserRole.DOCTOR ? 'Dr. ' : '';
-        const providerName = provider ? `${providerPrefix}${provider.username}` : '';
+        const rawName = provider ? (provider.username || (provider as any).full_name) : '';
+        const providerName = provider ? `${providerPrefix}${rawName}` : '';
         const now = new Date();
 
         // Enforce MM/DD/YYYY Format for the Current Date
@@ -547,9 +548,12 @@ I, **{{patientName}}**, hereby authorize...
                                     className="w-full h-12 px-3 rounded-xl bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-800/30 font-bold text-sm focus:ring-2 focus:ring-blue-500/20 outline-none text-gray-900 dark:text-white"
                                 >
                                     <option value="">Select Doctor / Owner</option>
-                                    {providers.map(d => (
-                                        <option key={d.id} value={d.id}>{d.role === 'DOCTOR' ? 'Dr.' : ''} {d.username} ({d.role})</option>
-                                    ))}
+                                    {providers.map(d => {
+                                        const _name = d.username || (d as any).full_name;
+                                        return (
+                                            <option key={d.id} value={d.id}>{d.role === 'DOCTOR' ? 'Dr.' : ''} {_name} ({d.role})</option>
+                                        );
+                                    })}
                                 </select>
                             </div>
 
