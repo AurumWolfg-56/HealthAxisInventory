@@ -126,11 +126,11 @@ const PrintLayout: React.FC<PrintLayoutProps> = ({ template, content, details, r
                         </div>
 
                         {/* Clinic Contact Info */}
-                        <div className="text-right pt-0.5">
+                        <div className="text-right pt-0.5 shrink-0">
                             <h3 className="font-bold text-gray-900 uppercase text-[10px] tracking-wider mb-1.5 pb-1 border-b-2 border-[#DC2626] inline-block">
                                 URGENT CARE
                             </h3>
-                            <div className="text-[9px] text-gray-500 font-medium leading-relaxed">
+                            <div className="text-[9px] text-gray-500 font-medium leading-relaxed whitespace-nowrap">
                                 <p>888 E Main Street, East Dundee, IL 60118</p>
                                 <p className="mt-1">
                                     <span className="text-gray-900 font-bold">P:</span> (847) 426-0600
@@ -150,15 +150,15 @@ const PrintLayout: React.FC<PrintLayoutProps> = ({ template, content, details, r
                     <div className="mx-14 mb-10 pt-2 pb-6 border-b-2 border-gray-100 flex justify-between items-end relative z-10 break-inside-avoid">
                         <div className="flex flex-col">
                             <span className="text-[8px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1.5 flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-[#DC2626]"></div>
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#DC2626] shrink-0"></div>
                                 Provider
                             </span>
                             <span className="text-xl font-black text-gray-900 tracking-tight">{details.providerName || '____________________'}</span>
                         </div>
                         <div className="flex flex-col text-right">
-                            <span className="text-[8px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1.5 flex items-center justify-end gap-2">
+                            <span className="text-[8px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1.5 flex items-center justify-end gap-2 text-right">
                                 Date of Service
-                                <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
+                                <div className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0"></div>
                             </span>
                             <span className="text-xl font-black text-gray-900 tracking-tight">{details.date}</span>
                         </div>
