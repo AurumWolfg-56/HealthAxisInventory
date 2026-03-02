@@ -24,6 +24,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
     const [editingItem, setEditingItem] = useState<PriceItem | null>(null);
     const [formData, setFormData] = useState<Partial<PriceItem>>({});
     const [isLoading, setIsLoading] = useState(false);
+    const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const canManage = hasPermission('prices.manage');
@@ -150,13 +151,15 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
 
     const handleAddNew = () => {
         setEditingItem(null);
-        setFormData({ serviceName: '', price: 0, category: 'General', code: '', type: priceTab });
+        setFormData({ serviceName: '', price: 0, category: '', code: '', type: priceTab });
+        setIsCategoryDropdownOpen(false);
         setIsModalOpen(true);
     };
 
     const handleEdit = (item: PriceItem) => {
         setEditingItem(item);
         setFormData({ ...item });
+        setIsCategoryDropdownOpen(false);
         setIsModalOpen(true);
     };
 
@@ -627,23 +630,57 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                         placeholder="0.00"
                                     />
                                 </div>
-                                <div>
+                                <div className="relative">
                                     <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
                                         <i className="fa-solid fa-folder mr-2"></i>Category
                                     </label>
                                     <input
                                         type="text"
-                                        list="category-options"
                                         value={formData.category || ''}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                                        onChange={(e) => {
+                                            setFormData(prev => ({ ...prev, category: e.target.value }));
+                                            setIsCategoryDropdownOpen(true);
+                                        }}
+                                        onFocus={() => setIsCategoryDropdownOpen(true)}
+                                        onBlur={() => {
+                                            // Delay hiding to allow click events on dropdown items to fire
+                                            setTimeout(() => setIsCategoryDropdownOpen(false), 200);
+                                        }}
                                         className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-lg font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                                        placeholder="General"
+                                        placeholder="Type or select a category"
+                                        autoComplete="off"
                                     />
-                                    <datalist id="category-options">
-                                        {categories.filter(c => c !== 'All').map(cat => (
-                                            <option key={cat} value={cat} />
-                                        ))}
-                                    </datalist>
+                                    <button
+                                        type="button"
+                                        className="absolute right-4 top-[2.4rem] text-slate-400 hover:text-emerald-500 transition-colors"
+                                        onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                                    >
+                                        <i className={`fa-solid fa-chevron-${isCategoryDropdownOpen ? 'up' : 'down'}`}></i>
+                                    </button>
+
+                                    {/* Custom Dropdown */}
+                                    {isCategoryDropdownOpen && (
+                                        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
+                                            {categories.filter(c => c !== 'All' && c.toLowerCase().includes((formData.category || '').toLowerCase())).length > 0 ? (
+                                                categories.filter(c => c !== 'All' && c.toLowerCase().includes((formData.category || '').toLowerCase())).map(cat => (
+                                                    <div
+                                                        key={cat}
+                                                        className="px-5 py-3 cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/30 text-slate-700 dark:text-slate-300 font-bold transition-colors border-b border-slate-100 dark:border-slate-700/50 last:border-0"
+                                                        onClick={() => {
+                                                            setFormData(prev => ({ ...prev, category: cat }));
+                                                            setIsCategoryDropdownOpen(false);
+                                                        }}
+                                                    >
+                                                        {cat}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="px-5 py-3 text-slate-400 text-sm italic">
+                                                    Press enter to create "{formData.category}"
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
