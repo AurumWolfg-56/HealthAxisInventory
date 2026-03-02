@@ -633,11 +633,17 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                     </label>
                                     <input
                                         type="text"
+                                        list="category-options"
                                         value={formData.category || ''}
                                         onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                                         className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-lg font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                                         placeholder="General"
                                     />
+                                    <datalist id="category-options">
+                                        {categories.filter(c => c !== 'All').map(cat => (
+                                            <option key={cat} value={cat} />
+                                        ))}
+                                    </datalist>
                                 </div>
                             </div>
 
