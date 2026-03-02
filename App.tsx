@@ -835,14 +835,24 @@ const App: React.FC = () => {
                             isLoadingPrices={isLoadingPrices}
                             onAddPrice={async (priceData) => {
                                 try {
+                                    // Verify if we already have it locally first to save a trip
+                                    if (prices.some(p => p.serviceName.toLowerCase() === priceData.serviceName.toLowerCase())) {
+                                        addToast('A service with this exact name already exists. Please edit it instead.', 'error');
+                                        return;
+                                    }
+
                                     const newPrice = await PriceService.createPrice(priceData);
                                     if (newPrice) {
                                         setPrices(prev => [newPrice, ...prev]);
                                         addToast('Price item added', 'success');
                                         addLog('PRICE_ADDED', `Added service: ${newPrice.serviceName}`);
                                     }
-                                } catch (e) {
-                                    addToast('Failed to add price item', 'error');
+                                } catch (e: any) {
+                                    if (e.message && e.message.includes('duplicate key value violates unique constraint')) {
+                                        addToast('A service with this exact name already exists.', 'error');
+                                    } else {
+                                        addToast('Failed to add price item', 'error');
+                                    }
                                 }
                             }}
                             onUpdatePrice={async (price) => {

@@ -155,9 +155,13 @@ export class PriceService {
             }));
 
             try {
-                const response = await fetch(`${this.apiUrl}/prices`, {
+                // UPSERT logic: On conflict with service_name (must add unique constraint in DB if not there), update prices/categories
+                const response = await fetch(`${this.apiUrl}/prices?on_conflict=service_name`, {
                     method: 'POST',
-                    headers: this.getHeaders(),
+                    headers: {
+                        ...this.getHeaders(),
+                        'Prefer': 'return=representation,resolution=merge-duplicates'
+                    },
                     body: JSON.stringify(dbPrices)
                 });
 
