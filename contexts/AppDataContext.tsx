@@ -6,6 +6,7 @@ import { TemplateService } from '../services/TemplateService';
 import { UserService } from '../services/UserService';
 import { InventoryService } from '../services/InventoryService';
 import { OrderService } from '../services/OrderService';
+import { BillingRuleService } from '../services/BillingRuleService';
 import { billingRules as INITIAL_BILLING_RULES } from '../data/billingRules';
 import { supabase } from '../src/lib/supabase';
 
@@ -78,9 +79,10 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         try {
             // Run fetches in parallel using Promise.allSettled so one failure doesn't block the other result
-            const [reportsResult, templatesResult] = await Promise.allSettled([
+            const [reportsResult, templatesResult, billingRulesResult] = await Promise.allSettled([
                 DailyReportService.getReports(),
-                TemplateService.getTemplates()
+                TemplateService.getTemplates(),
+                BillingRuleService.getRules()
             ]);
 
             // Handle Reports
@@ -101,6 +103,16 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 }
             } else {
                 console.error('[AppDataContext] ❌ Templates fetch failed:', templatesResult.reason);
+            }
+
+            // Handle Billing Rules
+            if (billingRulesResult.status === 'fulfilled') {
+                if (mountedRef.current) {
+                    console.log('[AppDataContext] ✅ Billing Rules fetched:', billingRulesResult.value.length);
+                    setBillingRules(billingRulesResult.value.length > 0 ? billingRulesResult.value : INITIAL_BILLING_RULES);
+                }
+            } else {
+                console.error('[AppDataContext] ❌ Billing Rules fetch failed:', billingRulesResult.reason);
             }
 
             hasLoadedRef.current = true;
@@ -129,6 +141,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 UserService.setAccessToken(session.access_token);
                 InventoryService.setAccessToken(session.access_token);
                 OrderService.setAccessToken(session.access_token);
+                BillingRuleService.setAccessToken(session.access_token);
                 await fetchAllData();
             } else {
                 console.log('[AppDataContext] No session found on init');
@@ -148,6 +161,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 UserService.setAccessToken(session.access_token);
                 InventoryService.setAccessToken(session.access_token);
                 OrderService.setAccessToken(session.access_token);
+                BillingRuleService.setAccessToken(session.access_token);
                 if (mountedRef.current) {
                     await fetchAllData();
                 }

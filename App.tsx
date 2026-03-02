@@ -43,6 +43,7 @@ import { OrderService } from './services/OrderService';
 import { PriceService } from './services/PriceService';
 import { MedicalCodeService } from './services/MedicalCodeService';
 import { UserService } from './services/UserService';
+import { BillingRuleService } from './services/BillingRuleService';
 import { migrateLocalToCloud } from './utils/migrateLocalToCloud';
 
 const STORAGE_KEYS = {
@@ -894,21 +895,47 @@ const App: React.FC = () => {
                         <BillingWizard
                             billingRules={billingRules}
                             user={user}
-                            onSaveRule={(newRule) => {
-                                setBillingRules(prev => {
-                                    const exists = prev.find(r => r.id === newRule.id);
+                            onSaveRule={async (newRule) => {
+                                try {
+                                    const exists = billingRules.find(r => r.id === newRule.id);
+                                    let savedRule;
+
                                     if (exists) {
-                                        return prev.map(r => r.id === newRule.id ? newRule : r);
+                                        savedRule = await BillingRuleService.updateRule(newRule);
+                                    } else {
+                                        savedRule = await BillingRuleService.createRule(newRule);
                                     }
-                                    return [newRule, ...prev];
-                                });
-                                addToast('Billing rule saved successfully', 'success');
-                                addLog('BILLING_RULE_SAVED', `Saved rule for ${newRule.testName}`);
+
+                                    if (savedRule) {
+                                        setBillingRules(prev => {
+                                            const currentlyExists = prev.find(r => r.id === savedRule.id);
+                                            if (currentlyExists) {
+                                                return prev.map(r => r.id === savedRule.id ? savedRule : r);
+                                            }
+                                            return [savedRule, ...prev];
+                                        });
+                                        addToast('Billing rule saved successfully', 'success');
+                                        addLog('BILLING_RULE_SAVED', `Saved rule for ${savedRule.testName}`);
+                                    }
+                                } catch (e: any) {
+                                    addToast(`Failed to save billing rule: ${e.message}`, 'error');
+                                }
                             }}
-                            onDeleteRule={(id) => {
-                                setBillingRules(prev => prev.filter(r => r.id !== id));
-                                addToast('Billing rule deleted', 'info');
-                                addLog('BILLING_RULE_DELETED', `Deleted rule ID: ${id}`);
+                            onDeleteRule={async (id) => {
+                                if (confirm('Delete this billing rule?')) {
+                                    try {
+                                        const success = await BillingRuleService.deleteRule(id);
+                                        if (success) {
+                                            setBillingRules(prev => prev.filter(r => r.id !== id));
+                                            addToast('Billing rule deleted', 'info');
+                                            addLog('BILLING_RULE_DELETED', `Deleted rule ID: ${id}`);
+                                        } else {
+                                            addToast('Failed to delete billing rule', 'error');
+                                        }
+                                    } catch (e: any) {
+                                        addToast(`Error deleting rule: ${e.message}`, 'error');
+                                    }
+                                }
                             }}
                             t={t}
                         />
