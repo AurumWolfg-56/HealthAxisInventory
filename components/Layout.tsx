@@ -58,7 +58,7 @@ export const Layout: React.FC<LayoutProps> = ({
         { route: AppRoute.SETTINGS, icon: "fa-gear", label: t('nav_settings') },
     ];
 
-    const NavContent = () => (
+    const renderNavContent = () => (
         <nav className="flex-1 px-4 space-y-1.5 mt-2 custom-scrollbar overflow-y-auto pb-safe">
             {NAV_ITEMS.map((item: any, idx) => {
                 if (item.header) return <div key={idx} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-6 py-2 mt-4 mb-1 opacity-70">{item.header}</div>;
@@ -108,7 +108,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         <button onClick={handleSignOut} className="text-red-500 hover:bg-red-100 p-2 rounded-lg transition-colors"><i className="fa-solid fa-right-from-bracket"></i></button>
                     </div>
                     <div className="h-px bg-slate-200 dark:bg-slate-800 mx-6 mb-2"></div>
-                    <NavContent />
+                    {renderNavContent()}
                 </div>
             </div>
 
@@ -118,7 +118,7 @@ export const Layout: React.FC<LayoutProps> = ({
                     <div className="p-8 pb-4 flex items-center gap-3 z-10">
                         <Logo className="w-10 h-10" classNameText="text-2xl" />
                     </div>
-                    <NavContent />
+                    {renderNavContent()}
                     <div className="p-4 z-10">
                         <div className="p-4 rounded-[1.5rem] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800/50 border border-slate-200 dark:border-slate-700/50 shadow-sm relative overflow-hidden group">
                             <div className="flex items-center gap-3 mb-3 relative z-10">
