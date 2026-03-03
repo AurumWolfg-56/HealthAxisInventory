@@ -399,7 +399,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
         const reportTimestamp = state.customDate ? new Date(state.customDate).toISOString() : (initialData?.timestamp || new Date().toISOString());
 
         return {
-            id: initialData?.id || `RPT-${Date.now().toString().slice(-6)}`,
+            id: initialData?.id || `RPT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
             author: initialData?.author || user.username,
             timestamp: reportTimestamp,
             financials: state.financials,

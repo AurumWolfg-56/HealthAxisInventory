@@ -56,13 +56,13 @@ export const DailyReportService = {
                 patients: report.totals.patients
             };
 
-            const url = `${SUPABASE_URL}/rest/v1/daily_reports`;
+            const url = `${SUPABASE_URL}/rest/v1/daily_reports?on_conflict=id`;
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 45000);
 
             const response = await fetch(url, {
                 method: 'POST',
-                headers: { ...getHeaders(), 'Prefer': 'return=representation' },
+                headers: { ...getHeaders(), 'Prefer': 'resolution=merge-duplicates,return=representation' },
                 body: JSON.stringify(dbPayload),
                 signal: controller.signal
             });
