@@ -112,7 +112,10 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
     filteredReports.forEach(r => {
         if (!r.operational?.providerVisits) return;
         Object.entries(r.operational.providerVisits).forEach(([providerId, count]) => {
-            patientsByProvider[providerId] = (patientsByProvider[providerId] || 0) + count;
+            if (patientsByProvider[providerId] === undefined) {
+                patientsByProvider[providerId] = 0;
+            }
+            patientsByProvider[providerId] += count;
         });
     });
 
@@ -205,14 +208,19 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
         value: value as number
     })).filter((d: { value: number }) => d.value > 0);
 
-    const providerPatientData = Object.entries(patientsByProvider).map(([key, value]) => {
-        // If key is UUID, try to resolve name
-        const user = users.find(u => u.id === key);
-        return {
-            name: user ? (user.full_name || (user as any).username || 'Unknown Provider') : key,
-            value: value as number
-        };
-    }).sort((a: { value: number }, b: { value: number }) => b.value - a.value);
+    const providerPatientData = Object.entries(patientsByProvider)
+        .map(([key, value]) => {
+            // If key is UUID, try to resolve name
+            const user = users.find(u => u.id === key);
+            return {
+                name: user ? (user.full_name || (user as any).username || 'Unknown Provider') : key,
+                value: value as number
+            };
+        })
+        .filter(d => d.value > 0)
+        .sort((a: { value: number }, b: { value: number }) => b.value - a.value);
+
+    console.log('[DashboardAnalytics] providerPatientData:', providerPatientData);
 
     const categoryValueData = Object.entries(valueByCategory)
         .map(([name, value]) => ({ name, value: value as number }))
