@@ -6,6 +6,31 @@ const openAiKey = import.meta.env.VITE_OPENAI_API_KEY || '';
 
 import { CATEGORIES } from '../utils/constants';
 
+/**
+ * Safely parses JSON from Gemini responses, stripping any markdown wrappers
+ * or trailing characters that might cause a parse error.
+ */
+function safeParseJson<T>(text: string): T {
+  let cleanText = text.trim();
+  // Remove markdown JSON code blocks if they exist
+  if (cleanText.startsWith('```json')) {
+    cleanText = cleanText.substring(7);
+  } else if (cleanText.startsWith('```')) {
+    cleanText = cleanText.substring(3);
+  }
+  if (cleanText.endsWith('```')) {
+    cleanText = cleanText.substring(0, cleanText.length - 3);
+  }
+  cleanText = cleanText.trim();
+
+  try {
+    return JSON.parse(cleanText) as T;
+  } catch (err) {
+    console.error("Failed to parse clean text as JSON:", cleanText);
+    throw err;
+  }
+}
+
 // Predefined categories for intelligent matching
 export const INVENTORY_CATEGORIES = CATEGORIES;
 
@@ -86,7 +111,8 @@ Be precise and clinical. If unsure, use reasonable medical supply defaults.`;
             confidence: { type: Type.NUMBER }
           },
           required: ["name", "category", "stock", "unit", "minStock", "maxStock", "location", "averageCost", "confidence"]
-        }
+        },
+        maxOutputTokens: 2048
       }
     });
 
@@ -95,7 +121,7 @@ Be precise and clinical. If unsure, use reasonable medical supply defaults.`;
       throw new Error("Empty response from Gemini");
     }
 
-    return JSON.parse(text) as ScannedItemData;
+    return safeParseJson<ScannedItemData>(text);
 
   } catch (error) {
     console.error("Gemini Scan Error:", error);
@@ -153,7 +179,7 @@ export const processAudioCommand = async (base64Audio: string): Promise<{
 
     const text = response.text;
     if (!text) return { intent: "UNKNOWN", item: "", quantity: 0 };
-    return JSON.parse(text);
+    return safeParseJson<any>(text);
 
   } catch (error) {
     console.error("Gemini Audio Error:", error);
@@ -194,13 +220,14 @@ export const processTextCommand = async (text: string): Promise<{
             item: { type: Type.STRING },
             quantity: { type: Type.NUMBER }
           }
-        }
+        },
+        maxOutputTokens: 1024
       }
     });
 
     const resultText = response.text;
     if (!resultText) return { intent: "UNKNOWN", item: "", quantity: 0 };
-    return JSON.parse(resultText);
+    return safeParseJson<any>(resultText);
 
   } catch (error) {
     console.error("Gemini Text Command Error:", error);
@@ -326,13 +353,14 @@ Be precise with numbers. Extract ALL line items visible. If values are unclear, 
             confidence: { type: Type.NUMBER }
           },
           required: ["vendor", "items", "grandTotal", "confidence"]
-        }
+        },
+        maxOutputTokens: 8192
       }
     });
 
     const text = response.text;
     if (!text) return null;
-    return JSON.parse(text) as ParsedOrderData;
+    return safeParseJson<ParsedOrderData>(text);
 
   } catch (error: any) {
     console.error("Gemini Invoice Error:", error);
