@@ -23,7 +23,7 @@ const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#6366f1'
 const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
     dailyReports, inventory, orders, users, t, onNavigate
 }) => {
-    const [dateRange, setDateRange] = useState<DateRange>('month');
+    const [dateRange, setDateRange] = useState<DateRange>('all');
 
     // --- 1. Filter Data based on Range ---
     const filteredReports = useMemo(() => {
@@ -32,10 +32,14 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
 
         if (dateRange === 'month') {
             startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else if (dateRange === 'quarter') {
+            startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
         } else if (dateRange === 'semester') {
             startDate.setMonth(now.getMonth() - 6);
         } else if (dateRange === 'year') {
             startDate.setFullYear(now.getFullYear() - 1);
+        } else if (dateRange === 'all') {
+            startDate = new Date(2000, 0, 1);
         }
 
         // Sort chronological
@@ -50,10 +54,14 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
 
         if (dateRange === 'month') {
             startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else if (dateRange === 'quarter') {
+            startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
         } else if (dateRange === 'semester') {
             startDate.setMonth(now.getMonth() - 6);
         } else if (dateRange === 'year') {
             startDate.setFullYear(now.getFullYear() - 1);
+        } else if (dateRange === 'all') {
+            startDate = new Date(2000, 0, 1);
         }
 
         return orders.filter(o => new Date(o.orderDate) >= startDate);

@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-export type DateRange = 'month' | 'semester' | 'year';
+export type DateRange = 'all' | 'month' | 'quarter' | 'semester' | 'year';
 
 interface DateRangeFilterProps {
     currentRange: DateRange;
@@ -12,19 +12,37 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ currentRange, onRange
     return (
         <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
             <button
+                onClick={() => onRangeChange('all')}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${currentRange === 'all'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    }`}
+            >
+                All Time
+            </button>
+            <button
                 onClick={() => onRangeChange('month')}
                 className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${currentRange === 'month'
-                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                     }`}
             >
                 Month
             </button>
             <button
+                onClick={() => onRangeChange('quarter')}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${currentRange === 'quarter'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    }`}
+            >
+                Quarter
+            </button>
+            <button
                 onClick={() => onRangeChange('semester')}
                 className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${currentRange === 'semester'
-                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                     }`}
             >
                 Semester
@@ -32,8 +50,8 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ currentRange, onRange
             <button
                 onClick={() => onRangeChange('year')}
                 className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${currentRange === 'year'
-                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                     }`}
             >
                 Year
