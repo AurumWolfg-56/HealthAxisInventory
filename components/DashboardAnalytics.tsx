@@ -209,13 +209,13 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
         // If key is UUID, try to resolve name
         const user = users.find(u => u.id === key);
         return {
-            name: user ? user.username : key,
+            name: user ? (user.full_name || (user as any).username || 'Unknown Provider') : key,
             value: value as number
         };
     }).sort((a: { value: number }, b: { value: number }) => b.value - a.value);
 
     const categoryValueData = Object.entries(valueByCategory)
-        .map(([name, value]) => ({ name, value }))
+        .map(([name, value]) => ({ name, value: value as number }))
         .sort((a, b) => b.value - a.value)
         .filter(d => d.value > 0)
         .slice(0, 8); // Top 8 categories
