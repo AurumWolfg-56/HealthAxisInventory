@@ -277,7 +277,8 @@ const initialState: DailyReportState = {
         xrays: 0
     },
     notes: '',
-    errors: []
+    errors: [],
+    customDate: ''
 };
 
 function reducer(state: DailyReportState, action: DailyReportAction): DailyReportState {
@@ -300,6 +301,8 @@ function reducer(state: DailyReportState, action: DailyReportAction): DailyRepor
             return { ...state, stats: { ...state.stats, [action.payload.key]: action.payload.value } };
         case 'SET_NOTES':
             return { ...state, notes: action.payload };
+        case 'SET_CUSTOM_DATE':
+            return { ...state, customDate: action.payload };
         case 'NEXT_STEP':
             return { ...state, step: Math.min(state.step + 1, 3), errors: [] };
         case 'PREV_STEP':
@@ -339,6 +342,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                     operational: initialData.operational,
                     stats: initialData.stats,
                     notes: initialData.notes,
+                    customDate: initialData.timestamp,
                     step: 1
                 }
             });
@@ -391,21 +395,25 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
     const isStatsBalanced = totalIns === totalStatsPatients;
 
     // Meta data for report construction
-    const getTempReport = (): DailyReport => ({
-        id: initialData?.id || `RPT-${Date.now().toString().slice(-6)}`,
-        author: initialData?.author || user.username,
-        timestamp: initialData?.timestamp || new Date().toISOString(),
-        financials: state.financials,
-        insurances: state.insurances,
-        operational: state.operational,
-        stats: state.stats,
-        notes: state.notes,
-        totals: {
-            revenue: totalMethods,
-            patients: totalIns
-        },
-        isBalanced: isFinBalanced && isVolBalanced && isStatsBalanced
-    });
+    const getTempReport = (): DailyReport => {
+        const reportTimestamp = state.customDate ? new Date(state.customDate).toISOString() : (initialData?.timestamp || new Date().toISOString());
+
+        return {
+            id: initialData?.id || `RPT-${Date.now().toString().slice(-6)}`,
+            author: initialData?.author || user.username,
+            timestamp: reportTimestamp,
+            financials: state.financials,
+            insurances: state.insurances,
+            operational: state.operational,
+            stats: state.stats,
+            notes: state.notes,
+            totals: {
+                revenue: totalMethods,
+                patients: totalIns
+            },
+            isBalanced: isFinBalanced && isVolBalanced && isStatsBalanced
+        };
+    };
 
     const handleNext = () => {
         const errors: string[] = [];
@@ -534,7 +542,23 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                         <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                             {initialData ? 'Edit Daily Report' : 'Daily Reconciliation'}
                         </h2>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{formatDate(new Date())}</p>
+                        {user.role === UserRole.MANAGER ? (
+                            <div className="mt-2 flex items-center gap-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase">Report Date:</label>
+                                <input
+                                    type="date"
+                                    value={state.customDate ? state.customDate.split('T')[0] : new Date().toISOString().split('T')[0]}
+                                    onChange={(e) => {
+                                        // When picking a date, set time to noon to avoid timezone shift saving edge cases
+                                        const d = new Date(e.target.value + 'T12:00:00');
+                                        dispatch({ type: 'SET_CUSTOM_DATE', payload: d.toISOString() });
+                                    }}
+                                    className="bg-slate-100 dark:bg-slate-800 text-sm font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg outline-none focus:border-medical-500 transition-colors"
+                                />
+                            </div>
+                        ) : (
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{state.customDate ? formatDate(state.customDate) : formatDate(new Date())}</p>
+                        )}
                     </div>
                     <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/60">
                         <i className="fa-solid fa-clipboard-check text-medical-500"></i>

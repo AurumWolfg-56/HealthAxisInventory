@@ -40,6 +40,7 @@ export interface DailyReportState {
   stats: Stats;
   notes: string;
   errors: string[];
+  customDate?: string;
 }
 
 export interface DailyReport {
@@ -73,4 +74,5 @@ export type DailyReportAction =
   | { type: 'NEXT_STEP' }
   | { type: 'PREV_STEP' }
   | { type: 'VALIDATE_AND_SET_ERRORS'; payload: string[] }
+  | { type: 'SET_CUSTOM_DATE'; payload: string }
   | { type: 'LOAD_DATA'; payload: Partial<DailyReportState> };
