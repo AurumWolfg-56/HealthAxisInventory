@@ -468,7 +468,18 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-                                <XAxis dataKey="name" interval={0} tick={{ fontSize: 13, fontWeight: 500, fill: '#64748B' }} axisLine={false} tickLine={false} dy={10} />
+                                <XAxis
+                                    dataKey="name"
+                                    interval={0}
+                                    tickFormatter={(name: string) => {
+                                        if (!name || name === 'Unknown Provider') return 'UNK';
+                                        return name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
+                                    }}
+                                    tick={{ fontSize: 13, fontWeight: 500, fill: '#64748B' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    dy={10}
+                                />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B' }} />
                                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99, 102, 241, 0.05)', radius: [8, 8, 0, 0] }} />
                                 <Bar dataKey="value" name="Patients" radius={[8, 8, 0, 0]} maxBarSize={50} label={{ position: 'top', fill: '#64748B', fontSize: 13, formatter: (value: number) => `${value} (${totalPatients > 0 ? ((value / totalPatients) * 100).toFixed(1) : 0}%)` }}>
