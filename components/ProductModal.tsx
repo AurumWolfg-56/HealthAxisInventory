@@ -102,7 +102,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
               />
             </InputGroup>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <InputGroup label={t('lbl_cat')}>
                 <div className="relative">
                   <select
@@ -133,7 +133,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
 
             {/* STOCK CONTROLS */}
             <div className="bg-gray-50 dark:bg-gray-800/40 p-5 rounded-3xl border border-gray-100 dark:border-gray-800 space-y-4">
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InputGroup label={t('lbl_current_stock')}>
                   <input
                     type="number"
@@ -158,7 +158,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                 </InputGroup>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InputGroup label="Unit Cost ($)">
                   <div className="relative">
                     <span className="absolute left-4 top-4 text-gray-400 font-bold">$</span>
@@ -185,7 +185,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6 pt-2 border-t border-gray-200 dark:border-gray-700">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <InputGroup label={t('lbl_min_alert')}>
                   <input
                     type="number"
@@ -208,7 +208,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <InputGroup label={t('lbl_batch_num')}>
                 <input
                   type="text"
@@ -230,7 +230,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
             </div>
           </div>
 
-          <div className="shrink-0 p-4 md:p-6 bg-gray-50/90 dark:bg-gray-800/90 backdrop-blur-md border-t border-gray-100 dark:border-gray-700 flex gap-4 mt-auto">
+          <div className="shrink-0 p-4 md:p-6 bg-gray-50/90 dark:bg-gray-800/90 backdrop-blur-md border-t border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-4 mt-auto">
             <button
               type="button"
               onClick={onClose}

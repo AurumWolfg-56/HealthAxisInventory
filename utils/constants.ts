@@ -1,5 +1,5 @@
 
-export const CATEGORIES = ['Surgical', 'PPE', 'Pharma', 'General', 'Diagnostics', 'Uncategorized'];
+export const CATEGORIES = ['Protective', 'Testing', 'Cleaning', 'Consumables', 'Lab', 'Medical', 'Diagnostic', 'Office', 'Uncategorized'];
 export const UNITS = ['unit_each', 'unit_box', 'unit_pack', 'unit_bottle', 'unit_vial', 'unit_tube', 'unit_roll', 'unit_kit', 'unit_ream', 'unit_liter', 'unit_gallon', 'unit_ampoule'];
 export const LOCATIONS = [
     'Front Desk',
