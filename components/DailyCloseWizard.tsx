@@ -331,6 +331,10 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
         initialValue: 0
     });
 
+    // Stable ID for new reports (prevents PDF vs DB mismatch)
+    const [reportId] = useState(() => initialData?.id || `RPT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     // Load initial data if editing
     useEffect(() => {
         if (initialData) {
@@ -399,7 +403,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
         const reportTimestamp = state.customDate ? new Date(state.customDate).toISOString() : (initialData?.timestamp || new Date().toISOString());
 
         return {
-            id: initialData?.id || `RPT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+            id: reportId,
             author: initialData?.author || user.username,
             timestamp: reportTimestamp,
             financials: state.financials,
@@ -432,10 +436,14 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
     };
 
     const handleSignAndGenerate = async () => {
+        if (isSubmitting) return;
+
         if (!isStatsBalanced) {
             dispatch({ type: 'VALIDATE_AND_SET_ERRORS', payload: [`Patient mismatch: New (${state.stats.newPts}) + Est (${state.stats.estPts}) = ${totalStatsPatients}. Must equal Total Patients (${totalIns}).`] });
             return;
         }
+
+        setIsSubmitting(true);
 
         // 1. Generate PDF
         generatePDF();
@@ -457,6 +465,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
         } catch (e: any) {
             console.error("Failed to save report to DB", e);
             dispatch({ type: 'VALIDATE_AND_SET_ERRORS', payload: [`CRITICAL: Failed to save report to database. ${e.message || 'Check connection'}. Data has NOT been saved to history.`] });
+            setIsSubmitting(false);
         }
     };
 
@@ -528,8 +537,10 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                             </div>
                         </div>
                         <div className="p-4 bg-white border-t flex justify-end gap-4">
-                            <button onClick={() => setShowPreview(false)} className="px-6 py-2 rounded-lg font-bold text-gray-500 hover:bg-gray-100">Close</button>
-                            <button onClick={() => { setShowPreview(false); handleSignAndGenerate(); }} className="px-6 py-2 rounded-lg bg-medical-600 text-white font-bold shadow-lg hover:bg-medical-700">Sign & Generate PDF</button>
+                            <button onClick={() => setShowPreview(false)} disabled={isSubmitting} className="px-6 py-2 rounded-lg font-bold text-gray-500 hover:bg-gray-100 disabled:opacity-50">Close</button>
+                            <button onClick={() => { handleSignAndGenerate(); }} disabled={isSubmitting} className="px-6 py-2 rounded-lg bg-medical-600 text-white font-bold shadow-lg hover:bg-medical-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                {isSubmitting ? 'Saving to Database...' : 'Sign & Generate PDF'}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -914,7 +925,8 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                         <>
                             <button
                                 onClick={() => setShowPreview(true)}
-                                className="px-5 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold text-sm border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-all flex items-center gap-2"
+                                disabled={isSubmitting}
+                                className="px-5 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold text-sm border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-all flex items-center gap-2 disabled:opacity-50"
                             >
                                 <i className="fa-solid fa-eye text-xs"></i> Preview
                             </button>

@@ -56,7 +56,7 @@ export const DailyReportService = {
                 patients: report.totals.patients
             };
 
-            const url = `${SUPABASE_URL}/rest/v1/daily_reports?on_conflict=id`;
+            const url = `${SUPABASE_URL}/rest/v1/daily_reports`;
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 45000);
 
