@@ -4,12 +4,10 @@ import { GoogleGenAI, Type } from "@google/genai";
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || '' });
 const openAiKey = import.meta.env.VITE_OPENAI_API_KEY || '';
 
+import { CATEGORIES } from '../utils/constants';
+
 // Predefined categories for intelligent matching
-export const INVENTORY_CATEGORIES = [
-  'Surgical', 'Pharma', 'PPE', 'Diagnostics', 'Laboratory',
-  'Wound Care', 'Respiratory', 'Cardiovascular', 'Orthopedic',
-  'Consumables', 'Equipment', 'Office Supplies'
-];
+export const INVENTORY_CATEGORIES = CATEGORIES;
 
 // Predefined locations for intelligent suggestion
 const INVENTORY_LOCATIONS = [

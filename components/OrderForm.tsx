@@ -134,7 +134,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
         const newItem: OrderItem = {
             id: Date.now().toString(),
             name: '',
-            category: 'General',
+            category: INVENTORY_CATEGORIES[0],
             quantity: 1,
             unitCost: 0,
             unitType: 'unit_each',
@@ -216,7 +216,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                     items: result.items?.map((aiItem: any, idx: number) => ({
                         id: `ai-${Date.now()}-${idx}`,
                         name: aiItem.name || 'Unknown Item',
-                        category: aiItem.category || 'General',
+                        category: aiItem.category || INVENTORY_CATEGORIES[0],
                         quantity: aiItem.quantity || 1,
                         unitCost: aiItem.unitCost || 0,
                         unitType: 'unit_each',
@@ -516,11 +516,10 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                                 <div className="md:col-span-2 w-full">
                                     <div className="md:hidden text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Category</div>
                                     <select
-                                        value={item.category || 'General'}
+                                        value={item.category || INVENTORY_CATEGORIES[0]}
                                         onChange={e => handleItemChange(item.id, 'category', e.target.value)}
                                         className="w-full h-12 md:h-auto bg-gray-50 dark:bg-gray-900/50 rounded-xl py-2.5 px-3 text-sm font-bold text-gray-700 dark:text-gray-300 focus:bg-white dark:focus:bg-black transition-colors outline-none shadow-inner border border-gray-100 dark:border-gray-800"
                                     >
-                                        <option value="General">General</option>
                                         {INVENTORY_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                 </div>

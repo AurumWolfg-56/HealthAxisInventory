@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { ScannedItemData, scanItemLabel } from '../services/geminiService';
 import { InventoryItem } from '../types';
+import { CATEGORIES, LOCATIONS, UNITS } from '../utils/constants';
 
 interface ItemScannerModalProps {
     isOpen: boolean;
@@ -22,19 +23,6 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
-
-    const CATEGORIES = [
-        'Surgical', 'Pharma', 'PPE', 'Diagnostics', 'Laboratory',
-        'Wound Care', 'Respiratory', 'Cardiovascular', 'Orthopedic',
-        'Consumables', 'Equipment', 'Office Supplies'
-    ];
-
-    const LOCATIONS = [
-        'Front Desk', "Manager's Office", 'Nursing Station / Provider Station',
-        'Exam Rooms', 'Soiled Utility Room', 'Break Room', 'Laboratory'
-    ];
-
-    const UNITS = ['each', 'box', 'pack', 'case', 'vial', 'bottle', 'roll', 'pair'];
 
     // Start camera
     const startCamera = useCallback(async () => {

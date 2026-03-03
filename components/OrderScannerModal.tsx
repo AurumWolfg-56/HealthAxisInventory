@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Order, OrderItem, InventoryItem } from '../types';
-import { parseInvoiceFromImage, ParsedOrderData } from '../services/geminiService';
+import { parseInvoiceFromImage, ParsedOrderData, INVENTORY_CATEGORIES } from '../services/geminiService';
 
 interface OrderScannerModalProps {
     isOpen: boolean;
@@ -168,7 +168,7 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                 return {
                     id: `extracted-${Date.now()}-${idx}`,
                     name: item.name,
-                    category: item.category || (match ? match.category : 'General'),
+                    category: item.category || (match ? match.category : INVENTORY_CATEGORIES[0]),
                     sku: item.sku || '',
                     quantity: item.quantity || 1,
                     unitCost: item.unitCost || 0,

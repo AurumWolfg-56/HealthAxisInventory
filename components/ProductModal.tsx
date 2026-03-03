@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { scanItemLabel } from '../services/geminiService';
 import { InventoryItem } from '../types';
 
 interface ProductModalProps {
@@ -22,7 +22,7 @@ const InputGroup = ({ label, children }: { label: string; children?: React.React
 const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, initialData, t }) => {
   const [formData, setFormData] = useState<Partial<InventoryItem>>({
     name: '',
-    category: 'General',
+    category: CATEGORIES[0],
     stock: 0,
     unit: 'unit_each',
     averageCost: 0,
@@ -39,7 +39,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
     } else if (isOpen) {
       setFormData({
         name: '',
-        category: 'General',
+        category: CATEGORIES[0],
         stock: 0,
         unit: 'unit_each',
         averageCost: 0,
@@ -76,8 +76,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
       <div className="relative bg-white dark:bg-gray-900 w-full max-w-lg h-[100dvh] md:h-auto md:max-h-[90vh] md:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-fade-in-up border border-gray-100 dark:border-gray-800">
         <div className="shrink-0 p-4 md:p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30 z-10">
           <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-sm ${initialData?.id ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/20' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20'}`}>
-              <i className={`fa-solid ${initialData?.id ? 'fa-pen' : 'fa-plus'}`}></i>
+            <div className={`w - 12 h - 12 rounded - 2xl flex items - center justify - center text - xl shadow - sm ${initialData?.id ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/20' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20'} `}>
+              <i className={`fa - solid ${initialData?.id ? 'fa-pen' : 'fa-plus'} `}></i>
             </div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">
               {initialData?.id ? t('modal_edit_title') : t('modal_add_title')}
