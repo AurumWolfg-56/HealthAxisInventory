@@ -28,6 +28,7 @@ import BillingWizard from './components/BillingWizard';
 import MedicalCodesManager from './components/MedicalCodesManager';
 import PettyCashLedger from './components/PettyCashLedger';
 import VoiceMemos from './components/VoiceMemos';
+import Budgets from './components/Budgets';
 import { InventoryIntelligenceDashboard } from './components/InventoryIntelligence';
 import { InventoryIntelligenceVerification } from './components/InventoryIntelligenceVerification';
 import Login from './components/Login';
@@ -1027,6 +1028,7 @@ const App: React.FC = () => {
                             t={t}
                         />
                     )}
+                    {currentRoute === AppRoute.BUDGETS && hasPermission('finance.view') && <Budgets user={user} t={t} />}
                     {currentRoute === AppRoute.PETTY_CASH && hasPermission('finance.view') && <PettyCashLedger user={user} t={t} />}
                     {currentRoute === AppRoute.VOICE_MEMOS && hasPermission('voice.dictate') && <VoiceMemos user={user} t={t} />}
                     {currentRoute === AppRoute.FORMS && hasPermission('forms.generate') && (

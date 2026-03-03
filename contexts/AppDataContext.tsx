@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { FormTemplate, BillingRule, PettyCashTransaction, ActivityLog } from '../types';
+import { FormTemplate, BillingRule, PettyCashTransaction, ActivityLog, Budget } from '../types';
 import { DailyReport } from '../types/dailyReport';
 import { DailyReportService } from '../services/DailyReportService';
 import { TemplateService } from '../services/TemplateService';
@@ -7,6 +7,7 @@ import { UserService } from '../services/UserService';
 import { InventoryService } from '../services/InventoryService';
 import { OrderService } from '../services/OrderService';
 import { BillingRuleService } from '../services/BillingRuleService';
+import { BudgetService } from '../services/BudgetService';
 import { billingRules as INITIAL_BILLING_RULES } from '../data/billingRules';
 import { supabase } from '../src/lib/supabase';
 
@@ -40,6 +41,8 @@ interface AppDataContextType {
     logs: ActivityLog[];
     setLogs: React.Dispatch<React.SetStateAction<ActivityLog[]>>;
     addLog: (action: ActivityLog['action'], details: string, userName?: string) => void;
+    budgets: Budget[];
+    setBudgets: React.Dispatch<React.SetStateAction<Budget[]>>;
     refreshData: () => Promise<void>;
     isLoading: boolean;
 }
@@ -56,6 +59,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const loadedLogs = loadState(STORAGE_KEYS.LOGS, []);
         return loadedLogs.map((log: any) => ({ ...log, timestamp: new Date(log.timestamp) }));
     });
+    const [budgets, setBudgets] = useState<Budget[]>([]);
 
     const [isLoading, setIsLoading] = useState(false);
 
@@ -78,11 +82,15 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         console.log('[AppDataContext] === Starting data fetch ===');
 
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const userId = session?.user?.id;
+
             // Run fetches in parallel using Promise.allSettled so one failure doesn't block the other result
-            const [reportsResult, templatesResult, billingRulesResult] = await Promise.allSettled([
+            const [reportsResult, templatesResult, billingRulesResult, budgetsResult] = await Promise.allSettled([
                 DailyReportService.getReports(),
                 TemplateService.getTemplates(),
-                BillingRuleService.getRules()
+                BillingRuleService.getRules(),
+                BudgetService.getBudgets(userId)
             ]);
 
             // Handle Reports
@@ -113,6 +121,16 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 }
             } else {
                 console.error('[AppDataContext] ❌ Billing Rules fetch failed:', billingRulesResult.reason);
+            }
+
+            // Handle Budgets
+            if (budgetsResult.status === 'fulfilled') {
+                if (mountedRef.current) {
+                    console.log('[AppDataContext] ✅ Budgets fetched:', budgetsResult.value.length);
+                    setBudgets(budgetsResult.value);
+                }
+            } else {
+                console.error('[AppDataContext] ❌ Budgets fetch failed:', budgetsResult.reason);
             }
 
             hasLoadedRef.current = true;
@@ -179,6 +197,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 if (mountedRef.current) {
                     setDailyReports([]);
                     setTemplates([]);
+                    setBudgets([]);
                 }
             }
         });
@@ -212,6 +231,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         pettyCashHistory, setPettyCashHistory,
         logs, setLogs,
         addLog,
+        budgets, setBudgets,
         refreshData: fetchAllData,
         isLoading
     };

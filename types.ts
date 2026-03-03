@@ -137,6 +137,18 @@ export interface BillingRule {
   billToClient: boolean;
 }
 
+export interface Budget {
+  id: string;
+  category: string;
+  amount: number;
+  period: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+  startDate: string;
+  endDate: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+
 export type OrderStatus = 'DRAFT' | 'PENDING' | 'RECEIVED' | 'CANCELLED';
 
 export interface OrderItem {
@@ -217,7 +229,8 @@ export enum AppRoute {
   MEDICAL_CODES = 'MEDICAL_CODES',
   PETTY_CASH = 'PETTY_CASH',
   INTELLIGENCE = 'INTELLIGENCE', // New
-  VOICE_MEMOS = 'VOICE_MEMOS' // New
+  VOICE_MEMOS = 'VOICE_MEMOS', // New
+  BUDGETS = 'BUDGETS' // New
 }
 
 export interface ChartDataPoint {
