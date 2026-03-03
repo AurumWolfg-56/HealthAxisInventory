@@ -205,8 +205,9 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
 
     const insuranceData = Object.entries(patientsByInsurance).map(([key, value]) => ({
         name: key.replace(/([A-Z])/g, ' $1').trim(), // Camel to Title
-        value: value as number
-    })).filter((d: { value: number }) => d.value > 0);
+        value: value as number,
+        percentage: totalPatients > 0 ? ((value as number) / totalPatients * 100).toFixed(1) + '%' : '0%'
+    })).filter((d) => d.value > 0);
 
     const providerPatientData = Object.entries(patientsByProvider)
         .map(([key, value]) => {
@@ -214,7 +215,8 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
             const user = users.find(u => u.id === key);
             return {
                 name: user ? (user.full_name || (user as any).username || 'Unknown Provider') : key,
-                value: value as number
+                value: value as number,
+                percentage: totalPatients > 0 ? ((value as number) / totalPatients * 100).toFixed(1) + '%' : '0%'
             };
         })
         .filter(d => d.value > 0)
@@ -245,6 +247,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                                     {entry.name === 'Revenue' || entry.name === 'Total Spend' || entry.name.includes('Spend') || entry.name === 'Value'
                                         ? `$${Number(entry.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                                         : entry.value.toLocaleString()}
+                                    {entry.payload?.percentage ? ` (${entry.payload.percentage})` : ''}
                                 </span>
                             </div>
                         ))}
@@ -434,12 +437,12 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                     </h3>
                     <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart layout="vertical" data={insuranceData} margin={{ left: 20, right: 20 }}>
+                            <BarChart layout="vertical" data={insuranceData} margin={{ left: 20, right: 60 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.2} />
                                 <XAxis type="number" hide />
                                 <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 13, fontWeight: 500, fill: '#64748B' }} axisLine={false} tickLine={false} />
                                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99, 102, 241, 0.05)', radius: 8 }} />
-                                <Bar dataKey="value" name="Patients" radius={[0, 8, 8, 0]} maxBarSize={40}>
+                                <Bar dataKey="value" name="Patients" radius={[0, 8, 8, 0]} maxBarSize={40} label={{ position: 'right', fill: '#64748B', fontSize: 13, formatter: (value: number) => `${value} (${totalPatients > 0 ? ((value / totalPatients) * 100).toFixed(1) : 0}%)` }}>
                                     {insuranceData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
@@ -457,7 +460,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                     </h3>
                     <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={providerPatientData} margin={{ top: 20 }}>
+                            <BarChart data={providerPatientData} margin={{ top: 30 }}>
                                 <defs>
                                     <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="0%" stopColor="#8b5cf6" stopOpacity={1} />
@@ -468,7 +471,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                                 <XAxis dataKey="name" tick={{ fontSize: 13, fontWeight: 500, fill: '#64748B' }} axisLine={false} tickLine={false} dy={10} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B' }} />
                                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99, 102, 241, 0.05)', radius: [8, 8, 0, 0] }} />
-                                <Bar dataKey="value" name="Patients" fill="url(#barGradient)" radius={[8, 8, 0, 0]} maxBarSize={50} />
+                                <Bar dataKey="value" name="Patients" fill="url(#barGradient)" radius={[8, 8, 0, 0]} maxBarSize={50} label={{ position: 'top', fill: '#64748B', fontSize: 13, formatter: (value: number) => `${value} (${totalPatients > 0 ? ((value / totalPatients) * 100).toFixed(1) : 0}%)` }} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
