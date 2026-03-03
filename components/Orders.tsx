@@ -477,7 +477,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                         </div>
                         <div className="overflow-visible">
                             <table className="w-full text-left border-separate border-spacing-y-4">
-                                <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                                <thead className="hidden md:table-header-group bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
                                     <tr>
                                         <th className="p-6 text-xs font-extrabold text-gray-400 uppercase tracking-wider">{t('lbl_vendor')}</th>
                                         <th className="p-6 text-xs font-extrabold text-gray-400 uppercase tracking-wider">{t('lbl_po')}</th>
@@ -488,9 +488,9 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                                         <th className="p-6 text-xs font-extrabold text-gray-400 uppercase tracking-wider text-right">{t('th_controls')}</th>
                                     </tr>
                                 </thead>
-                                <tbody className="space-y-4">
+                                <tbody className="space-y-4 md:space-y-0 text-sm md:text-base">
                                     {filteredOrders.length === 0 ? (
-                                        <tr><td colSpan={7} className="p-20 text-center">
+                                        <tr><td colSpan={7} className="p-20 text-center block md:table-cell">
                                             <div className="flex flex-col items-center justify-center opacity-40">
                                                 <i className="fa-solid fa-file-invoice text-6xl mb-4 text-slate-300"></i>
                                                 <p className="text-xl font-bold text-slate-400">No orders found</p>
@@ -501,71 +501,92 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                                         return (
                                             <tr
                                                 key={order.id}
-                                                className="group relative transition-all duration-300 hover:scale-[1.01] hover:-translate-y-1 block md:table-row"
+                                                className="group relative transition-all duration-300 md:hover:scale-[1.01] md:hover:-translate-y-1 block md:table-row bg-white dark:bg-slate-900 md:bg-transparent rounded-[1.5rem] md:rounded-none shadow-glass md:shadow-none mb-4 md:mb-0 border border-slate-100 dark:border-slate-800 md:border-none overflow-hidden"
                                                 style={{ animationDelay: `${index * 50}ms` }}
                                                 onClick={() => setViewingOrder(order)}
                                             >
-                                                <td className="p-5 bg-white dark:bg-slate-900 border-y border-l border-white dark:border-slate-800 rounded-l-[1.5rem] shadow-sm group-hover:shadow-xl group-hover:shadow-medical-500/10 group-hover:border-medical-500/20 transition-all cursor-pointer align-middle block md:table-cell">
+                                                {/* Vendor */}
+                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y md:border-l border-white dark:border-slate-800 md:rounded-l-[1.5rem] md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-gray-50 dark:border-slate-800/50 md:border-b-0">
+                                                    <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">{t('lbl_vendor')}</div>
                                                     <div className="flex items-center gap-4">
                                                         {vendorInfo?.logo ? (
-                                                            <div className={`w-14 h-14 rounded-2xl ${(vendorInfo as any).logoBg || 'bg-white'} p-2 shadow-md flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                                                            <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl ${(vendorInfo as any).logoBg || 'bg-white'} p-2 shadow-md flex items-center justify-center md:group-hover:scale-110 transition-transform`}>
                                                                 <img src={vendorInfo.logo} alt={order.vendor} className="w-full h-full object-contain" />
                                                             </div>
                                                         ) : (
-                                                            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${vendorInfo?.color || 'from-slate-400 to-slate-600'} flex items-center justify-center text-white font-extrabold text-xl shadow-md group-hover:scale-110 transition-transform border border-white/10`}>
+                                                            <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br ${vendorInfo?.color || 'from-slate-400 to-slate-600'} flex items-center justify-center text-white font-extrabold text-xl shadow-md md:group-hover:scale-110 transition-transform border border-white/10`}>
                                                                 {(vendorInfo as any)?.initials || order.vendor.charAt(0).toUpperCase()}
                                                             </div>
                                                         )}
-                                                        <div>
-                                                            <div className="font-extrabold text-slate-900 dark:text-slate-100 text-lg group-hover:text-medical-600 transition-colors uppercase tracking-tight">{order.vendor}</div>
+                                                        <div className="text-right md:text-left">
+                                                            <div className="font-extrabold text-slate-900 dark:text-slate-100 text-base md:text-lg group-hover:text-medical-600 transition-colors uppercase tracking-tight">{order.vendor}</div>
                                                             <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-0.5">{order.items.length} items</div>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="p-5 bg-white dark:bg-slate-900 border-y border-white dark:border-slate-800 shadow-sm group-hover:shadow-xl group-hover:shadow-medical-500/10 group-hover:border-medical-500/20 transition-all cursor-pointer align-middle block md:table-cell">
-                                                    <div className="font-mono font-extrabold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 px-3 py-1 rounded-lg inline-block text-[11px] border border-slate-100 dark:border-slate-700/50">
+
+                                                {/* PO Number */}
+                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-gray-50 dark:border-slate-800/50 md:border-b-0">
+                                                    <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">{t('lbl_po')}</div>
+                                                    <div className="font-mono font-extrabold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 px-3 py-1 rounded-lg inline-block text-[11px] md:text-xs border border-slate-100 dark:border-slate-700/50">
                                                         #{order.poNumber}
                                                     </div>
                                                 </td>
-                                                <td className="p-5 bg-white dark:bg-slate-900 border-y border-white dark:border-slate-800 shadow-sm group-hover:shadow-xl group-hover:shadow-medical-500/10 group-hover:border-medical-500/20 transition-all cursor-pointer align-middle block md:table-cell">
-                                                    <div className="font-extrabold text-slate-700 dark:text-slate-300 text-sm">
-                                                        {new Date(order.orderDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                    </div>
-                                                    {order.expectedDate && (
-                                                        <div className="text-[10px] font-extrabold text-medical-500 mt-1 uppercase tracking-widest">
-                                                            ETA: {new Date(order.expectedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+
+                                                {/* Date */}
+                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-gray-50 dark:border-slate-800/50 md:border-b-0">
+                                                    <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">{t('lbl_date')}</div>
+                                                    <div className="text-right md:text-left">
+                                                        <div className="font-extrabold text-slate-700 dark:text-slate-300 text-sm">
+                                                            {new Date(order.orderDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                                         </div>
-                                                    )}
+                                                        {order.expectedDate && (
+                                                            <div className="text-[10px] font-extrabold text-medical-500 mt-1 uppercase tracking-widest">
+                                                                ETA: {new Date(order.expectedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </td>
-                                                <td className="p-5 bg-white dark:bg-slate-900 border-y border-white dark:border-slate-800 shadow-sm group-hover:shadow-xl group-hover:shadow-medical-500/10 group-hover:border-medical-500/20 transition-all cursor-pointer align-middle block md:table-cell">
+
+                                                {/* Items */}
+                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-gray-50 dark:border-slate-800/50 md:border-b-0">
+                                                    <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Items Detail</div>
                                                     <div className="flex -space-x-2.5 overflow-hidden py-1">
                                                         {order.items.slice(0, 3).map((item, i) => (
-                                                            <div key={i} className="w-9 h-9 rounded-full bg-slate-50 dark:bg-slate-800 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-extrabold text-slate-600 shadow-sm" title={item.name}>
+                                                            <div key={i} className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-slate-50 dark:bg-slate-800 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-extrabold text-slate-600 shadow-sm z-10 hover:z-20 transform hover:scale-110 transition-transform" title={item.name}>
                                                                 {item.name.charAt(0)}
                                                             </div>
                                                         ))}
                                                         {order.items.length > 3 && (
-                                                            <div className="w-9 h-9 rounded-full bg-medical-50 dark:bg-medical-900/30 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-extrabold text-medical-600 shadow-sm">
+                                                            <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-medical-50 dark:bg-medical-900/30 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-extrabold text-medical-600 shadow-sm z-10">
                                                                 +{order.items.length - 3}
                                                             </div>
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="p-5 bg-white dark:bg-slate-900 border-y border-white dark:border-slate-800 shadow-sm group-hover:shadow-xl group-hover:shadow-medical-500/10 group-hover:border-medical-500/20 transition-all cursor-pointer align-middle block md:table-cell">
-                                                    <div className="font-black text-slate-900 dark:text-slate-200 text-xl tracking-tight">
+
+                                                {/* Total */}
+                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-gray-50 dark:border-slate-800/50 md:border-b-0">
+                                                    <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">{t('lbl_total')}</div>
+                                                    <div className="font-black text-slate-900 dark:text-slate-200 text-lg md:text-xl tracking-tight">
                                                         ${order.grandTotal.toFixed(2)}
                                                     </div>
                                                 </td>
-                                                <td className="p-5 bg-white dark:bg-slate-900 border-y border-white dark:border-slate-800 shadow-sm group-hover:shadow-xl group-hover:shadow-medical-500/10 group-hover:border-medical-500/20 transition-all cursor-pointer align-middle block md:table-cell">
-                                                    <span className={`px-4 py-2 rounded-xl text-[10px] font-extrabold uppercase tracking-widest ${getStatusBadge(order.status)} transform group-hover:scale-110 transition-transform inline-block border border-white/20 shadow-sm`}>
+
+                                                {/* Status */}
+                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-gray-50 dark:border-slate-800/50 md:border-b-0">
+                                                    <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">{t('lbl_status')}</div>
+                                                    <span className={`px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[10px] font-extrabold uppercase tracking-widest ${getStatusBadge(order.status)} transform md:group-hover:scale-110 transition-transform inline-block border border-white/20 shadow-sm`}>
                                                         {order.status}
                                                     </span>
                                                 </td>
-                                                <td className="p-5 bg-white dark:bg-slate-900 border-y border-r border-white dark:border-slate-800 rounded-r-[1.5rem] shadow-sm group-hover:shadow-xl group-hover:shadow-blue-500/10 group-hover:border-blue-500/20 transition-all cursor-pointer text-right align-middle block md:table-cell" onClick={(e) => e.stopPropagation()}>
-                                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+
+                                                {/* Controls */}
+                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y md:border-r border-white dark:border-slate-800 md:rounded-r-[1.5rem] md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-blue-500/10 md:group-hover:border-blue-500/20 transition-all cursor-pointer text-right align-middle flex justify-center items-center md:table-cell bg-slate-50/50 dark:bg-slate-900/50 md:bg-transparent" onClick={(e) => e.stopPropagation()}>
+                                                    <div className="flex justify-center md:justify-end gap-3 md:gap-2 w-full md:w-auto md:opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <button
-                                                            onClick={() => setViewingOrder(order)}
-                                                            className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 hover:bg-blue-500 hover:text-white flex items-center justify-center transition-all shadow-sm hover:shadow-blue-500/30"
+                                                            onClick={(e) => { e.stopPropagation(); setViewingOrder(order); }}
+                                                            className="flex-1 md:flex-none h-12 md:w-10 md:h-10 rounded-xl bg-white md:bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 md:border-transparent text-slate-600 hover:bg-blue-500 hover:text-white flex items-center justify-center transition-all shadow-sm hover:shadow-blue-500/30"
                                                             title="View Details"
                                                         >
                                                             <i className="fa-solid fa-eye"></i>
@@ -574,18 +595,19 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                                                             <>
                                                                 {hasPermission('orders.create') && (
                                                                     <button
-                                                                        onClick={() => handleEdit(order)}
-                                                                        className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center shadow-sm hover:shadow-amber-500/30"
+                                                                        onClick={(e) => { e.stopPropagation(); handleEdit(order); }}
+                                                                        className="flex-1 md:flex-none h-12 md:w-10 md:h-10 rounded-xl bg-white md:bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 md:border-transparent text-slate-600 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center shadow-sm hover:shadow-amber-500/30"
                                                                     >
                                                                         <i className="fa-solid fa-pen"></i>
                                                                     </button>
                                                                 )}
                                                                 {hasPermission('orders.receive') && (
                                                                     <button
-                                                                        onClick={() => {
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
                                                                             if (window.confirm(t('msg_receive_confirm'))) onReceiveOrder(order);
                                                                         }}
-                                                                        className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center shadow-sm hover:shadow-emerald-500/30"
+                                                                        className="flex-1 md:flex-none h-12 md:w-10 md:h-10 rounded-xl bg-emerald-50 md:bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 md:border-transparent text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center shadow-sm hover:shadow-emerald-500/30"
                                                                         title={t('btn_receive')}
                                                                     >
                                                                         <i className="fa-solid fa-box-open"></i>
@@ -595,21 +617,18 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                                                         )}
                                                         {hasPermission('orders.delete') && (
                                                             <button
-                                                                onClick={() => {
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
                                                                     if (window.confirm(t('msg_delete_confirm') || 'Are you sure you want to delete this order?')) {
                                                                         onDeleteOrder(order.id);
                                                                     }
                                                                 }}
-                                                                className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center shadow-sm hover:shadow-red-500/30"
+                                                                className="flex-1 md:flex-none h-12 md:w-10 md:h-10 rounded-xl bg-red-50 md:bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 md:border-transparent text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center shadow-sm hover:shadow-red-500/30"
                                                                 title="Delete Order"
                                                             >
                                                                 <i className="fa-solid fa-trash"></i>
                                                             </button>
                                                         )}
-                                                    </div>
-                                                    {/* Mobile visible controls trigger */}
-                                                    <div className="md:hidden text-slate-400">
-                                                        <i className="fa-solid fa-ellipsis-vertical"></i>
                                                     </div>
                                                 </td>
                                             </tr>

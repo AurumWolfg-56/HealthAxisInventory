@@ -10,10 +10,10 @@ interface DateRangeFilterProps {
 
 const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ currentRange, onRangeChange }) => {
     return (
-        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+        <div className="flex overflow-x-auto hide-scrollbar bg-slate-100 dark:bg-slate-800 p-1 rounded-xl max-w-full">
             <button
                 onClick={() => onRangeChange('all')}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${currentRange === 'all'
+                className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${currentRange === 'all'
                     ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                     }`}
@@ -22,7 +22,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ currentRange, onRange
             </button>
             <button
                 onClick={() => onRangeChange('month')}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${currentRange === 'month'
+                className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${currentRange === 'month'
                     ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                     }`}
@@ -31,7 +31,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ currentRange, onRange
             </button>
             <button
                 onClick={() => onRangeChange('quarter')}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${currentRange === 'quarter'
+                className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${currentRange === 'quarter'
                     ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                     }`}
@@ -40,7 +40,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ currentRange, onRange
             </button>
             <button
                 onClick={() => onRangeChange('semester')}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${currentRange === 'semester'
+                className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${currentRange === 'semester'
                     ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                     }`}
@@ -49,7 +49,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ currentRange, onRange
             </button>
             <button
                 onClick={() => onRangeChange('year')}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${currentRange === 'year'
+                className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${currentRange === 'year'
                     ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                     }`}

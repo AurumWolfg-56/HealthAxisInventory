@@ -103,9 +103,9 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, isDarkMode, tog
 
                 <div className="space-y-6">
                     {/* Theme Toggle */}
-                    <div className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer" onClick={toggleTheme}>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer gap-4" onClick={toggleTheme}>
                         <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl ${isDarkMode ? 'bg-gray-800 text-yellow-400' : 'bg-yellow-100 text-orange-500'}`}>
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl flex-shrink-0 ${isDarkMode ? 'bg-gray-800 text-yellow-400' : 'bg-yellow-100 text-orange-500'}`}>
                                 <i className={`fa-solid ${isDarkMode ? 'fa-moon' : 'fa-sun'}`}></i>
                             </div>
                             <div>
@@ -113,15 +113,15 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, isDarkMode, tog
                                 <p className="text-sm text-gray-500">{t('desc_appearance')}</p>
                             </div>
                         </div>
-                        <div className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ${isDarkMode ? 'bg-medical-600' : 'bg-gray-300'}`}>
+                        <div className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 flex-shrink-0 self-start sm:self-auto ${isDarkMode ? 'bg-medical-600' : 'bg-gray-300'}`}>
                             <div className={`w-6 h-6 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${isDarkMode ? 'translate-x-6' : 'translate-x-0'}`}></div>
                         </div>
                     </div>
 
                     {/* Language Toggle */}
-                    <div className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors gap-4">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-xl">
+                            <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-xl flex-shrink-0">
                                 <i className="fa-solid fa-language"></i>
                             </div>
                             <div>
@@ -129,16 +129,16 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, isDarkMode, tog
                                 <p className="text-sm text-gray-500">{t('desc_language')}</p>
                             </div>
                         </div>
-                        <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+                        <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl self-start sm:self-auto">
                             <button
                                 onClick={() => setLanguage('en')}
-                                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${language === 'en' ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500'}`}
+                                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${language === 'en' ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500'}`}
                             >
                                 🇺🇸 EN
                             </button>
                             <button
                                 onClick={() => setLanguage('es')}
-                                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${language === 'es' ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500'}`}
+                                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${language === 'es' ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500'}`}
                             >
                                 🇪🇸 ES
                             </button>

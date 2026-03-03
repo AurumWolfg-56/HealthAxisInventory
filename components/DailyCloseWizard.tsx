@@ -565,21 +565,21 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                         <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Step {state.step} of 3</span>
                     </div>
                 </div>
-                <div className="flex items-center gap-0">
+                <div className="flex items-center gap-0 overflow-x-auto hide-scrollbar pb-2">
                     {[
                         { num: 1, label: 'Financials', icon: 'fa-dollar-sign' },
                         { num: 2, label: 'Volume', icon: 'fa-users' },
                         { num: 3, label: 'Sign Off', icon: 'fa-file-signature' }
                     ].map((s, i) => (
                         <React.Fragment key={s.num}>
-                            <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                            <div className="flex flex-col items-center gap-1.5 flex-shrink-0 min-w-[70px]">
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-500 shadow-sm
                                     ${state.step > s.num ? 'bg-emerald-500 text-white scale-95' : state.step === s.num ? 'bg-medical-600 text-white ring-4 ring-medical-500/20 scale-110' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'}`}>
                                     {state.step > s.num ? <i className="fa-solid fa-check text-xs"></i> : <i className={`fa-solid ${s.icon} text-xs`}></i>}
                                 </div>
                                 <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${state.step >= s.num ? 'text-medical-600 dark:text-medical-400' : 'text-slate-400'}`}>{s.label}</span>
                             </div>
-                            {i < 2 && <div className={`flex-1 h-0.5 rounded-full mx-2 mb-5 transition-all duration-500 ${state.step > s.num ? 'bg-emerald-400' : 'bg-slate-200 dark:bg-slate-700'}`}></div>}
+                            {i < 2 && <div className={`flex-1 min-w-[30px] h-0.5 rounded-full mx-2 mb-5 transition-all duration-500 ${state.step > s.num ? 'bg-emerald-400' : 'bg-slate-200 dark:bg-slate-700'}`}></div>}
                         </React.Fragment>
                     ))}
                 </div>

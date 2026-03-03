@@ -93,7 +93,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
         if (!file) return;
 
         const targetName = priceTab === 'combo' ? 'Packages & Combos' : 'Individual Services';
-        if (!window.confirm(`Importing into ${targetName}.\n\nNew items from the CSV will be added to your current list. Existing items will not be deleted.\n\nContinue?`)) {
+        if (!window.confirm(`Importing into ${targetName}.\n\nNew items will be added, and existing items (with the same name) will be updated with the new price and category.\n\nContinue?`)) {
             e.target.value = '';
             return;
         }
@@ -518,47 +518,63 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                             {filteredPrices.map(item => (
                                 <div
                                     key={item.id}
-                                    className="p-5 flex items-center gap-4 active:bg-slate-50 dark:active:bg-slate-800 transition-colors"
+                                    className="p-5 flex flex-col gap-3 active:bg-slate-50 dark:active:bg-slate-800 transition-colors"
                                 >
-                                    {/* Star toggle for mobile */}
-                                    {priceTab === 'individual' && canManage && (
-                                        <button
-                                            onClick={async (e) => {
-                                                e.stopPropagation();
-                                                if (onToggleFeatured) {
-                                                    await onToggleFeatured(item.id, !item.isFeatured);
-                                                }
-                                            }}
-                                            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0 ${item.isFeatured
-                                                ? 'text-amber-400'
-                                                : 'text-slate-300 dark:text-slate-600'
-                                                }`}
-                                        >
-                                            <i className={`fa-${item.isFeatured ? 'solid' : 'regular'} fa-star`}></i>
-                                        </button>
-                                    )}
-                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black text-xl shadow-sm flex-shrink-0">
-                                        {item.serviceName.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="font-bold text-slate-900 dark:text-white truncate">{item.serviceName}</div>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase">{item.category}</span>
-                                            {item.code && (
-                                                <>
-                                                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                                    <span className="text-[10px] font-mono text-slate-400">{item.code}</span>
-                                                </>
-                                            )}
+                                    <div className="flex items-start gap-4">
+                                        {/* Star toggle for mobile */}
+                                        {priceTab === 'individual' && canManage && (
+                                            <button
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    if (onToggleFeatured) {
+                                                        await onToggleFeatured(item.id, !item.isFeatured);
+                                                    }
+                                                }}
+                                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all flex-shrink-0 ${item.isFeatured
+                                                    ? 'text-amber-400'
+                                                    : 'text-slate-300 dark:text-slate-600'
+                                                    }`}
+                                            >
+                                                <i className={`fa-${item.isFeatured ? 'solid' : 'regular'} fa-star`}></i>
+                                            </button>
+                                        )}
+                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black text-xl shadow-sm flex-shrink-0">
+                                            {item.serviceName.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 min-w-0 pt-1">
+                                            <div className="font-bold text-slate-900 dark:text-white leading-tight break-words">{item.serviceName}</div>
+                                            <div className="flex items-center gap-2 mt-1.5 break-words flex-wrap">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase">{item.category}</span>
+                                                {item.code && (
+                                                    <>
+                                                        <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                                        <span className="text-[10px] font-mono text-slate-400">{item.code}</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="text-right flex-shrink-0 whitespace-nowrap pl-2 pt-1">
+                                            <div className="text-xl font-black text-emerald-600 dark:text-emerald-400">
+                                                ${item.price.toFixed(2)}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="text-right flex-shrink-0 whitespace-nowrap pl-2">
-                                        <div className="text-xl font-black text-emerald-600 dark:text-emerald-400">
-                                            ${item.price.toFixed(2)}
-                                        </div>
-                                    </div>
+                                    {/* Action row */}
                                     {canManage && (
-                                        <i className="fa-solid fa-chevron-right text-slate-300 dark:text-slate-600"></i>
+                                        <div className="flex gap-2 justify-end mt-1 pt-3 border-t border-slate-100 dark:border-slate-800/50">
+                                            <button
+                                                onClick={() => handleEdit(item)}
+                                                className="px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-bold text-sm"
+                                            >
+                                                <i className="fa-solid fa-pen mr-2"></i>Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(item.id)}
+                                                className="px-4 py-2 rounded-xl bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-400 font-bold text-sm"
+                                            >
+                                                <i className="fa-solid fa-trash mr-2"></i>Delete
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             ))}
@@ -571,11 +587,11 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
             {isModalOpen && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 animate-fade-in">
                     <div
-                        className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-slate-800 overflow-hidden animate-scale-in"
+                        className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-slate-800 animate-scale-in"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Modal Header */}
-                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 rounded-t-[2.5rem]">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-xl shadow-emerald-500/30">
@@ -699,7 +715,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex gap-4">
+                        <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex gap-4 rounded-b-[2.5rem]">
                             <button
                                 onClick={() => setIsModalOpen(false)}
                                 className="flex-1 h-14 rounded-2xl bg-slate-200 dark:bg-slate-700 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 transition-all active:scale-[0.98]"

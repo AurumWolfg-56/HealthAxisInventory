@@ -807,8 +807,8 @@ export const InventoryIntelligenceVerification: React.FC = () => {
     return (
         <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-lg border-t-4 border-purple-600">
             {/* Header */}
-            <div className="flex justify-between items-start mb-6">
-                <div>
+            <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
+                <div className="w-full">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <i className="fa-solid fa-shield-halved text-purple-600" />
                         Governance Audit Suite v2
@@ -831,7 +831,7 @@ export const InventoryIntelligenceVerification: React.FC = () => {
                 <button
                     onClick={runStrictVerification}
                     disabled={isRunning}
-                    className={`px-5 py-2.5 rounded-lg text-white font-bold shadow transition-all
+                    className={`w-full md:w-auto px-5 py-2.5 rounded-lg text-white font-bold shadow transition-all
                         ${isRunning ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 active:scale-95'}`}
                 >
                     {isRunning ? (

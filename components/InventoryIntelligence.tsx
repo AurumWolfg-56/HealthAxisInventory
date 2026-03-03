@@ -314,9 +314,9 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                             <p className="text-caption">No items require attention in this view.</p>
                         </div>
                     ) : (
-                        <table className="min-w-full">
-                            <thead>
-                                <tr className="bg-slate-50/80 dark:bg-slate-800/40">
+                        <table className="w-full text-left border-separate border-spacing-y-4 md:border-spacing-0">
+                            <thead className="hidden md:table-header-group bg-slate-50/80 dark:bg-slate-800/40">
+                                <tr>
                                     <th className="table-header rounded-tl-none">Item</th>
                                     <th className="table-header">Status</th>
                                     <th className="table-header">Coverage</th>
@@ -325,7 +325,7 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                                     {activeTab === 'anomalies' && <th className="table-header">Detected Issues</th>}
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            <tbody className="space-y-4 md:space-y-0 md:divide-y md:divide-slate-100 md:dark:divide-slate-800">
                                 {displayedItems.map((m) => {
                                     const override = overrides[m.itemId];
                                     const currentQty = override ? override.qty : m.recommendedQuantity;
@@ -333,26 +333,31 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                                     const statusCfg = getStatusConfig(m.status);
 
                                     return (
-                                        <tr key={m.itemId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+                                        <tr key={m.itemId} className="block md:table-row bg-white dark:bg-slate-900 md:bg-transparent rounded-2xl shadow-sm md:shadow-none border border-slate-100 dark:border-slate-800 md:border-none p-4 md:p-0 md:hover:bg-slate-50/50 md:dark:hover:bg-slate-800/30 transition-colors group">
                                             {/* Item */}
-                                            <td className="table-cell">
-                                                <div className="font-medium text-slate-900 dark:text-white text-sm">{m.itemName}</div>
+                                            <td className="md:table-cell p-0 md:p-4 block mb-4 md:mb-0 border-b border-slate-100 dark:border-slate-800 md:border-none pb-4 md:pb-0">
+                                                <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-1">Item</div>
+                                                <div className="font-bold text-slate-900 dark:text-white text-base md:text-sm">{m.itemName}</div>
                                                 <div className="text-caption mt-0.5">Stock: {m.currentStock} units</div>
                                             </td>
 
                                             {/* Status */}
-                                            <td className="table-cell">
-                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${statusCfg.badge}`}>
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`}></span>
-                                                    {m.status.replace('_', ' ')}
-                                                </span>
-                                                {m.leadTime > 0 && (
-                                                    <div className="text-caption mt-1">Lead: {m.leadTime}d</div>
-                                                )}
+                                            <td className="md:table-cell p-0 md:p-4 flex justify-between items-center md:table-cell border-b border-slate-50 dark:border-slate-800/50 md:border-none py-2 md:py-0">
+                                                <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Status</div>
+                                                <div className="text-right md:text-left">
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${statusCfg.badge}`}>
+                                                        <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`}></span>
+                                                        {m.status.replace('_', ' ')}
+                                                    </span>
+                                                    {m.leadTime > 0 && (
+                                                        <div className="text-[10px] text-slate-500 mt-1">Lead: {m.leadTime}d</div>
+                                                    )}
+                                                </div>
                                             </td>
 
                                             {/* Coverage */}
-                                            <td className="table-cell text-sm text-slate-600 dark:text-slate-300 font-medium">
+                                            <td className="md:table-cell p-0 md:p-4 flex justify-between items-center md:table-cell border-b border-slate-50 dark:border-slate-800/50 md:border-none py-2 md:py-0 text-sm text-slate-600 dark:text-slate-300 font-medium">
+                                                <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Coverage</div>
                                                 {m.daysRemaining === Infinity ? (
                                                     <span className="text-slate-400">∞ days</span>
                                                 ) : (
@@ -361,8 +366,9 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                                             </td>
 
                                             {/* Confidence */}
-                                            <td className="table-cell">
-                                                <div className="flex flex-col gap-1">
+                                            <td className="md:table-cell p-0 md:p-4 flex justify-between items-center md:table-cell border-b border-slate-50 dark:border-slate-800/50 md:border-none py-2 md:py-0 py-2 md:py-0">
+                                                <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Confidence</div>
+                                                <div className="flex flex-col md:gap-1 text-right md:text-left">
                                                     <span className={`text-xs font-bold ${m.confidence === 'HIGH' ? 'text-emerald-500' :
                                                         m.confidence === 'MEDIUM' ? 'text-amber-500' :
                                                             'text-slate-400'
@@ -370,18 +376,19 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                                                         {m.confidence}
                                                     </span>
                                                     {m.stabilityIndex > 0 && (
-                                                        <span className="text-caption">Var: {Math.round(m.stabilityIndex)}%</span>
+                                                        <span className="text-[10px] text-slate-500">Var: {Math.round(m.stabilityIndex)}%</span>
                                                     )}
                                                 </div>
                                             </td>
 
                                             {/* Reorder Qty */}
-                                            <td className="table-cell">
+                                            <td className="md:table-cell p-0 md:p-4 block pt-3 md:pt-0">
+                                                <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-2">Reorder Qty</div>
                                                 <div className="flex items-center gap-2">
                                                     <input
                                                         type="number"
                                                         min="0"
-                                                        className={`w-20 h-8 px-2 text-center text-sm font-bold rounded-lg border outline-none transition-all focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500
+                                                        className={`w-20 md:w-24 h-10 md:h-8 px-2 text-center text-sm font-bold rounded-lg border outline-none transition-all focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500
                                                             ${isOverridden
                                                                 ? 'border-amber-400/50 bg-amber-500/10 text-amber-500'
                                                                 : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200'
@@ -389,7 +396,7 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                                                         value={currentQty}
                                                         onChange={(e) => handleQtyChange(m.itemId, parseInt(e.target.value) || 0)}
                                                     />
-                                                    <div className="flex flex-col text-[10px] leading-tight">
+                                                    <div className="flex flex-col text-[10px] md:text-xs leading-tight">
                                                         <span className="text-slate-400">Rec: {m.recommendedQuantity}</span>
                                                         {isOverridden && <span className="text-amber-500 font-bold">Manual</span>}
                                                     </div>
@@ -398,7 +405,7 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                                                     <input
                                                         type="text"
                                                         placeholder="Reason for change..."
-                                                        className="mt-2 w-full h-7 px-2 text-xs rounded-lg border border-amber-400/30 bg-amber-500/5 text-slate-600 dark:text-slate-300 placeholder-slate-400 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/20"
+                                                        className="mt-2 w-full h-8 md:h-7 px-2 text-xs rounded-lg border border-amber-400/30 bg-amber-500/5 text-slate-600 dark:text-slate-300 placeholder-slate-400 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/20"
                                                         value={override?.reason || ''}
                                                         onChange={(e) => handleReasonChange(m.itemId, e.target.value)}
                                                     />
@@ -407,8 +414,9 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
 
                                             {/* Anomalies column */}
                                             {activeTab === 'anomalies' && (
-                                                <td className="table-cell">
-                                                    <div className="flex flex-col gap-1">
+                                                <td className="md:table-cell p-0 md:p-4 flex justify-between items-center md:table-cell mt-3 md:mt-0 pt-3 md:pt-0 border-t border-slate-50 dark:border-slate-800/50 md:border-none">
+                                                    <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Detected Issues</div>
+                                                    <div className="flex flex-row md:flex-col gap-1.5 md:gap-1 text-right md:text-left justify-end md:justify-start">
                                                         {m.isVolatile && (
                                                             <span className="badge badge-warning">
                                                                 <i className="fa-solid fa-bolt text-[9px]"></i> Volatile

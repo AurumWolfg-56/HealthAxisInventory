@@ -156,11 +156,11 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 animate-fade-in">
-            <div className="w-full max-w-2xl max-h-[95vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-slate-800">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-xl md:p-4 animate-fade-in">
+            <div className="w-full h-[100dvh] md:h-auto md:max-h-[95vh] max-w-2xl flex flex-col bg-white dark:bg-slate-900 md:rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-slate-800 overflow-hidden">
 
                 {/* Header */}
-                <div className="sticky top-0 z-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-6 border-b border-slate-100 dark:border-slate-800 rounded-t-[2.5rem]">
+                <div className="shrink-0 z-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-4 md:p-6 border-b border-slate-100 dark:border-slate-800 md:rounded-t-[2.5rem]">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-xl shadow-indigo-500/30">
@@ -178,7 +178,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                 </div>
 
                 {/* Content */}
-                <div className="p-6 space-y-6">
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 custom-scrollbar flex flex-col">
 
                     {/* IDLE STATE - Selection */}
                     {state === 'idle' && (
@@ -300,8 +300,8 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                                     </div>
                                 </div>
                                 <div className={`px-4 py-2 rounded-full font-black text-sm ${scannedData.confidence >= 80 ? 'bg-emerald-100 text-emerald-700' :
-                                        scannedData.confidence >= 50 ? 'bg-amber-100 text-amber-700' :
-                                            'bg-red-100 text-red-700'
+                                    scannedData.confidence >= 50 ? 'bg-amber-100 text-amber-700' :
+                                        'bg-red-100 text-red-700'
                                     }`}>
                                     {scannedData.confidence}% Confidence
                                 </div>
@@ -428,26 +428,28 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                                     />
                                 </div>
                             </div>
-
-                            {/* Actions */}
-                            <div className="flex gap-4 pt-4">
-                                <button
-                                    onClick={handleRetry}
-                                    className="flex-1 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-all"
-                                >
-                                    <i className="fa-solid fa-rotate-right mr-2"></i> Scan Again
-                                </button>
-                                <button
-                                    onClick={handleSave}
-                                    disabled={!editedData.name}
-                                    className="flex-1 h-14 rounded-2xl bg-emerald-600 text-white font-black shadow-xl shadow-emerald-500/30 hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                                >
-                                    <i className="fa-solid fa-check text-xl"></i> Add to Inventory
-                                </button>
-                            </div>
                         </div>
                     )}
                 </div>
+
+                {/* Actions (Sticky Footer for Preview state) */}
+                {state === 'preview' && scannedData && (
+                    <div className="shrink-0 p-4 md:p-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex gap-4 mt-auto">
+                        <button
+                            onClick={handleRetry}
+                            className="flex-1 h-14 rounded-[1.25rem] bg-slate-100 dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-all border border-slate-200 dark:border-slate-700"
+                        >
+                            <i className="fa-solid fa-rotate-right mr-2"></i> Scan Again
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={!editedData.name}
+                            className="flex-1 h-14 rounded-[1.25rem] bg-emerald-600 text-white font-black shadow-xl shadow-emerald-500/30 hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                        >
+                            <i className="fa-solid fa-check text-xl"></i> Add to Inventory
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

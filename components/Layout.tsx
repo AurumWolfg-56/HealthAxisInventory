@@ -25,6 +25,14 @@ export const Layout: React.FC<LayoutProps> = ({
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+    // Reset main content scroll when route changes
+    React.useEffect(() => {
+        const scrollContainer = document.getElementById('main-scroll-container');
+        if (scrollContainer) {
+            scrollContainer.scrollTo(0, 0);
+        }
+    }, [currentRoute]);
+
     // If no user, we might want to just render children (login page) or return null
     // But App.tsx handles the Login conditional return BEFORE rendering Layout usually.
     // We assume user is present if Layout is rendered, or handle safe fallback.
@@ -60,14 +68,14 @@ export const Layout: React.FC<LayoutProps> = ({
 
     const renderNavContent = () => (
         <nav className="flex-1 px-4 space-y-1.5 mt-2 custom-scrollbar overflow-y-auto pb-safe">
-            {NAV_ITEMS.map((item: any, idx) => {
-                if (item.header) return <div key={idx} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-6 py-2 mt-4 mb-1 opacity-70">{item.header}</div>;
+            {NAV_ITEMS.map((item: any) => {
+                if (item.header) return <div key={`header-${item.header}`} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-6 py-2 mt-4 mb-1 opacity-70">{item.header}</div>;
                 if (item.perm && !hasPermission(item.perm as Permission)) return null;
 
                 const isActive = currentRoute === item.route;
                 return (
                     <button
-                        key={idx}
+                        key={item.route}
                         onClick={() => handleNavigateWrapper(item.route as AppRoute)}
                         className={`group relative flex items-center gap-4 px-5 py-3.5 w-full rounded-2xl transition-all duration-300 active:scale-95 outline-none
                           ${isActive
@@ -169,10 +177,8 @@ export const Layout: React.FC<LayoutProps> = ({
                 </header>
 
                 {/* Dynamic Content Area with Page Transitions */}
-                <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-12 pb-28 md:pb-12 relative z-0 custom-scrollbar scroll-smooth pt-4">
-                    <div key={currentRoute} className="max-w-[1600px] mx-auto print:max-w-none animate-fade-in-up">
-                        {children}
-                    </div>
+                <div id="main-scroll-container" className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-12 pb-28 md:pb-12 relative z-0 custom-scrollbar scroll-smooth pt-4">
+                    {children}
                 </div>
             </main>
         </div>

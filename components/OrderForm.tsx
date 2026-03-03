@@ -457,7 +457,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
             {/* Items Table - Redesigned */}
             <div className="mb-6">
                 {/* Table Header */}
-                <div className="grid grid-cols-12 gap-4 px-4 mb-3 text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
+                <div className="hidden md:grid grid-cols-12 gap-4 px-4 mb-3 text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
                     <div className="col-span-1 text-center">#</div>
                     <div className="col-span-4">{t('th_details')}</div>
                     <div className="col-span-2">{t('th_category')}</div>
@@ -472,13 +472,19 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                         const comparison = getPriceComparison(item);
 
                         return (
-                            <div key={item.id} className="relative group grid grid-cols-12 gap-4 items-center bg-white dark:bg-gray-800/40 p-3 rounded-2xl border border-transparent hover:border-medical-200 dark:hover:border-medical-900 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
+                            <div key={item.id} className="relative group grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-2 items-start md:items-center bg-white dark:bg-gray-800/40 p-5 md:p-3 rounded-[1.5rem] md:rounded-2xl border border-gray-100 dark:border-gray-800 md:border-transparent md:hover:border-medical-200 md:dark:hover:border-medical-900 shadow-sm md:shadow-none hover:shadow-lg transition-all duration-300 md:hover:-translate-y-0.5">
 
-                                {/* Index */}
-                                <div className="col-span-1 text-center font-mono text-xs text-gray-400 font-bold">{idx + 1}</div>
+                                {/* Index & Mobile Header */}
+                                <div className="hidden md:block col-span-1 text-center font-mono text-xs text-gray-400 font-bold">{idx + 1}</div>
+                                <div className="md:hidden flex justify-between items-center w-full mb-1">
+                                    <span className="font-mono text-xs text-medical-500 font-bold border border-medical-200 dark:border-medical-900 bg-medical-50 dark:bg-medical-900/30 px-2 py-0.5 rounded-md">Item #{idx + 1}</span>
+                                    <button onClick={() => handleRemoveItem(item.id)} className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center border border-red-100 dark:border-red-900/50">
+                                        <i className="fa-solid fa-times"></i>
+                                    </button>
+                                </div>
 
                                 {/* Autocomplete Item Input */}
-                                <div className="col-span-4 relative">
+                                <div className="md:col-span-4 relative w-full">
                                     <div className="flex items-center gap-3">
                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm shadow-md transition-colors ${item.inventoryItemId ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'}`}>
                                             <i className={`fa-solid ${item.inventoryItemId ? 'fa-link' : 'fa-box-open'}`}></i>
@@ -494,7 +500,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                                                 onFocus={() => setActiveSearchRow(item.id)}
                                                 onBlur={() => setTimeout(() => setActiveSearchRow(null), 200)}
                                                 placeholder={t('ph_search_item')}
-                                                className="w-full bg-transparent border-none focus:ring-0 p-0 font-bold text-gray-900 dark:text-white placeholder-gray-400 text-sm"
+                                                className="w-full bg-transparent border-none focus:ring-0 p-0 font-bold text-gray-900 dark:text-white placeholder-gray-400 text-sm md:text-base"
                                             />
                                             {item.inventoryItemId && <div className="text-[10px] text-emerald-500 font-bold mt-0.5 flex items-center gap-1"><i className="fa-solid fa-check"></i> Linked</div>}
                                         </div>
@@ -507,19 +513,82 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                                 </div>
 
                                 {/* Category Input */}
-                                <div className="col-span-2">
+                                <div className="md:col-span-2 w-full">
+                                    <div className="md:hidden text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Category</div>
                                     <select
                                         value={item.category || 'General'}
                                         onChange={e => handleItemChange(item.id, 'category', e.target.value)}
-                                        className="w-full bg-gray-50 dark:bg-gray-900/50 rounded-xl py-2.5 px-2 text-sm font-bold text-gray-700 dark:text-gray-300 focus:bg-white dark:focus:bg-black transition-colors outline-none shadow-inner"
+                                        className="w-full h-12 md:h-auto bg-gray-50 dark:bg-gray-900/50 rounded-xl py-2.5 px-3 text-sm font-bold text-gray-700 dark:text-gray-300 focus:bg-white dark:focus:bg-black transition-colors outline-none shadow-inner border border-gray-100 dark:border-gray-800"
                                     >
                                         <option value="General">General</option>
                                         {INVENTORY_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                 </div>
 
-                                {/* Qty & Unit */}
-                                <div className="col-span-1 flex flex-col gap-1">
+                                {/* Mobile Row for Qty, Cost, Total */}
+                                <div className="grid grid-cols-3 gap-3 md:hidden w-full mt-2">
+                                    <div className="col-span-1">
+                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Qty</div>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={item.quantity}
+                                            onChange={e => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                            className="w-full h-12 bg-gray-50 dark:bg-gray-900/50 rounded-xl py-2.5 px-2 text-center font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black transition-colors outline-none shadow-inner border border-gray-100 dark:border-gray-800"
+                                        />
+                                    </div>
+                                    <div className="col-span-1">
+                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Cost</div>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">$</span>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.0001"
+                                                value={item.unitCost}
+                                                onChange={e => handleItemChange(item.id, 'unitCost', parseFloat(e.target.value) || 0)}
+                                                className="w-full h-12 bg-gray-50 dark:bg-gray-900/50 rounded-xl py-2.5 pl-7 pr-2 text-right font-mono text-sm text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black transition-colors outline-none shadow-inner border border-gray-100 dark:border-gray-800"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="col-span-1">
+                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Total</div>
+                                        <div className="relative">
+                                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-medical-500 text-xs font-bold">$</span>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={item.total}
+                                                onChange={e => handleItemChange(item.id, 'total', parseFloat(e.target.value) || 0)}
+                                                className="w-full h-12 bg-medical-50 dark:bg-medical-900/10 border border-medical-100 dark:border-medical-900/50 rounded-xl py-2.5 pl-6 pr-2 text-right font-mono text-sm font-bold text-medical-700 dark:text-medical-400 focus:border-medical-500 transition-colors outline-none shadow-inner"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="md:hidden w-full mb-1">
+                                    <select
+                                        value={item.unitType}
+                                        onChange={e => handleItemChange(item.id, 'unitType', e.target.value)}
+                                        className="w-full bg-gray-50 dark:bg-gray-900/50 rounded-xl py-2 text-[10px] font-bold text-gray-500 uppercase focus:outline-none text-center border border-gray-100 dark:border-gray-800"
+                                    >
+                                        {UNITS.map(u => <option key={u} value={u}>{t(u)}</option>)}
+                                    </select>
+                                    {comparison && item.unitCost > 0 && (
+                                        <div className={`text-[10px] text-center mt-2 font-bold ${comparison.isSame ? 'text-gray-400' : comparison.isCheaper ? 'text-emerald-500' : 'text-red-500'}`}>
+                                            {comparison.isSame ? 'Matches avg price' : (
+                                                <>
+                                                    <i className={`fa-solid ${comparison.isCheaper ? 'fa-arrow-down' : 'fa-arrow-up'} mr-1`}></i>
+                                                    {comparison.percent}% vs Avg (${comparison.historyCost})
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+
+                                {/* Qty & Unit (Desktop) */}
+                                <div className="hidden md:flex md:col-span-1 flex-col gap-1 w-full">
                                     <input
                                         type="number"
                                         min="1"
@@ -536,8 +605,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                                     </select>
                                 </div>
 
-                                {/* Unit Cost + Comparison */}
-                                <div className="col-span-2">
+                                {/* Unit Cost + Comparison (Desktop) */}
+                                <div className="hidden md:block md:col-span-2 w-full">
                                     <div className="relative">
                                         <span className="absolute left-2 top-2.5 text-gray-400 text-xs font-bold">$</span>
                                         <input
@@ -562,8 +631,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                                     )}
                                 </div>
 
-                                {/* Total */}
-                                <div className="col-span-1">
+                                {/* Total (Desktop) */}
+                                <div className="hidden md:block md:col-span-1 w-full">
                                     <div className="relative">
                                         <span className="absolute left-2 top-2.5 text-gray-400 text-xs font-bold">$</span>
                                         <input
@@ -577,8 +646,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                                     </div>
                                 </div>
 
-                                {/* Remove */}
-                                <div className="col-span-1 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                {/* Remove (Desktop) */}
+                                <div className="hidden md:flex md:col-span-1 text-center opacity-0 group-hover:opacity-100 transition-opacity justify-center w-full">
                                     <button onClick={() => handleRemoveItem(item.id)} className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center">
                                         <i className="fa-solid fa-times"></i>
                                     </button>
@@ -596,91 +665,94 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                 {t('btn_add_item')}
             </button>
 
-            {/* Footer Financials */}
-            <div className="flex flex-col md:flex-row justify-end items-start gap-8 border-t border-gray-200 dark:border-gray-800 pt-8">
-                <div className="w-full md:w-96 bg-slate-900 dark:bg-black text-white p-8 rounded-[2rem] shadow-2xl relative overflow-hidden">
-                    {/* Abstract BG */}
-                    <div className="absolute top-0 right-0 w-40 h-40 bg-medical-500/20 rounded-full blur-[60px]"></div>
+            {/* Footer Financials & Sticky Actions */}
+            <div className="mt-8 md:mt-12 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 -mx-6 md:-mx-10 -mb-6 md:-mb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] pt-6 md:pt-8 px-6 md:px-10 pb-6 md:pb-10 sticky bottom-0 z-40 rounded-b-[2.5rem]">
+                <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 md:gap-8">
+                    {/* Financials Summary */}
+                    <div className="w-full md:w-96 bg-slate-900 dark:bg-black text-white p-6 md:p-8 rounded-[2rem] shadow-2xl relative overflow-hidden flex-shrink-0">
+                        {/* Abstract BG */}
+                        <div className="absolute top-0 right-0 w-40 h-40 bg-medical-500/20 rounded-full blur-[60px]"></div>
 
-                    <div className="relative z-10 space-y-5">
-                        <div className="flex justify-between items-center text-sm text-gray-400 font-medium group relative">
-                            <span className="flex items-center gap-2">
-                                {t('lbl_subtotal')}
-                                {isSubtotalManual && (
-                                    <button
-                                        onClick={() => setIsSubtotalManual(false)}
-                                        className="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500 hover:text-white transition-colors"
-                                        title="Reset to auto-calculated sum"
-                                    >
-                                        Manual (Reset)
-                                    </button>
-                                )}
-                            </span>
-                            <div className="flex items-center gap-1 bg-white/10 rounded-lg px-3 py-1.5 backdrop-blur-sm transition-colors focus-within:bg-white/20">
-                                <span className="text-xs text-gray-300">$</span>
-                                <input
-                                    type="number"
-                                    value={formData.subtotal}
-                                    onChange={e => {
-                                        setIsSubtotalManual(true);
-                                        setFormData({ ...formData, subtotal: parseFloat(e.target.value) || 0 });
-                                    }}
-                                    className="w-24 bg-transparent text-right font-mono text-white outline-none font-bold tracking-wide"
-                                />
+                        <div className="relative z-10 space-y-4 md:space-y-5">
+                            <div className="flex justify-between items-center text-sm text-gray-400 font-medium group relative">
+                                <span className="flex items-center gap-2">
+                                    {t('lbl_subtotal')}
+                                    {isSubtotalManual && (
+                                        <button
+                                            onClick={() => setIsSubtotalManual(false)}
+                                            className="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
+                                            title="Reset to auto-calculated sum"
+                                        >
+                                            Reset
+                                        </button>
+                                    )}
+                                </span>
+                                <div className="flex items-center gap-1 bg-white/10 rounded-lg px-3 py-1.5 backdrop-blur-sm transition-colors focus-within:bg-white/20">
+                                    <span className="text-xs text-gray-300">$</span>
+                                    <input
+                                        type="number"
+                                        value={formData.subtotal}
+                                        onChange={e => {
+                                            setIsSubtotalManual(true);
+                                            setFormData({ ...formData, subtotal: parseFloat(e.target.value) || 0 });
+                                        }}
+                                        className="w-20 md:w-24 bg-transparent text-right font-mono text-white outline-none font-bold tracking-wide"
+                                    />
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex justify-between items-center text-sm text-gray-400 font-medium">
-                            <span>{t('lbl_ship_cost')}</span>
-                            <div className="flex items-center gap-1 bg-white/10 rounded-lg px-3 py-1.5 backdrop-blur-sm">
-                                <span className="text-xs text-gray-300">$</span>
-                                <input
-                                    type="number"
-                                    value={formData.shippingCost}
-                                    onChange={e => setFormData({ ...formData, shippingCost: parseFloat(e.target.value) || 0 })}
-                                    className="w-16 bg-transparent text-right font-mono text-white outline-none"
-                                />
+                            <div className="flex justify-between items-center text-sm text-gray-400 font-medium">
+                                <span>{t('lbl_ship_cost')}</span>
+                                <div className="flex items-center gap-1 bg-white/10 rounded-lg px-3 py-1.5 backdrop-blur-sm">
+                                    <span className="text-xs text-gray-300">$</span>
+                                    <input
+                                        type="number"
+                                        value={formData.shippingCost}
+                                        onChange={e => setFormData({ ...formData, shippingCost: parseFloat(e.target.value) || 0 })}
+                                        className="w-16 bg-transparent text-right font-mono text-white outline-none"
+                                    />
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex justify-between items-center text-sm text-gray-400 font-medium">
-                            <span>{t('lbl_tax_amount')}</span>
-                            <div className="flex items-center gap-1 bg-white/10 rounded-lg px-3 py-1.5 backdrop-blur-sm">
-                                <span className="text-xs text-gray-300">$</span>
-                                <input
-                                    type="number"
-                                    value={formData.totalTax}
-                                    onChange={e => setFormData({ ...formData, totalTax: parseFloat(e.target.value) || 0 })}
-                                    className="w-16 bg-transparent text-right font-mono text-white outline-none"
-                                />
+                            <div className="flex justify-between items-center text-sm text-gray-400 font-medium">
+                                <span>{t('lbl_tax_amount')}</span>
+                                <div className="flex items-center gap-1 bg-white/10 rounded-lg px-3 py-1.5 backdrop-blur-sm">
+                                    <span className="text-xs text-gray-300">$</span>
+                                    <input
+                                        type="number"
+                                        value={formData.totalTax}
+                                        onChange={e => setFormData({ ...formData, totalTax: parseFloat(e.target.value) || 0 })}
+                                        className="w-16 bg-transparent text-right font-mono text-white outline-none"
+                                    />
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="h-px bg-white/20 my-2"></div>
+                            <div className="h-px bg-white/20 my-2"></div>
 
-                        <div className="flex justify-between text-2xl font-black items-end">
-                            <span className="text-medical-400 text-lg uppercase tracking-wider">{t('lbl_grand_total')}</span>
-                            <span>${formData.grandTotal?.toFixed(2)}</span>
+                            <div className="flex justify-between text-xl md:text-2xl font-black items-end">
+                                <span className="text-medical-400 text-sm md:text-lg uppercase tracking-wider">{t('lbl_grand_total')}</span>
+                                <span>${formData.grandTotal?.toFixed(2)}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            {/* Actions */}
-            <div className="flex gap-4 mt-8">
-                <button
-                    onClick={onCancel}
-                    disabled={isSaving}
-                    className="flex-1 h-16 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-extrabold rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-lg disabled:opacity-50 tracking-tight"
-                >
-                    {t('btn_cancel')}
-                </button>
-                <button
-                    onClick={handleSaveOrder}
-                    disabled={isSaving}
-                    className="flex-1 h-16 bg-gradient-to-r from-medical-600 to-teal-600 text-white font-extrabold rounded-2xl shadow-2xl shadow-medical-500/30 hover:shadow-medical-500/50 hover:scale-[1.02] active:scale-95 transition-all text-lg flex items-center justify-center gap-3 disabled:opacity-75 disabled:cursor-wait tracking-tight"
-                >
-                    {isSaving ? <i className="fa-solid fa-circle-notch fa-spin text-xl"></i> : <i className="fa-solid fa-check"></i>}
-                    {isSaving ? 'Processing...' : 'Complete Order'}
-                </button>
+                    {/* Actions */}
+                    <div className="flex gap-4 w-full md:w-auto">
+                        <button
+                            onClick={onCancel}
+                            disabled={isSaving}
+                            className="flex-1 md:flex-none md:w-32 h-14 md:h-16 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-extrabold rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-sm md:text-lg disabled:opacity-50 tracking-tight shadow-sm"
+                        >
+                            {t('btn_cancel')}
+                        </button>
+                        <button
+                            onClick={handleSaveOrder}
+                            disabled={isSaving}
+                            className="flex-1 md:flex-none md:w-64 h-14 md:h-16 bg-gradient-to-r from-medical-600 to-teal-600 text-white font-extrabold rounded-2xl shadow-xl shadow-medical-500/30 hover:shadow-medical-500/50 hover:scale-[1.02] active:scale-95 transition-all text-sm md:text-lg flex items-center justify-center gap-2 md:gap-3 disabled:opacity-75 disabled:cursor-wait tracking-tight"
+                        >
+                            {isSaving ? <i className="fa-solid fa-circle-notch fa-spin text-lg md:text-xl"></i> : <i className="fa-solid fa-check"></i>}
+                            {isSaving ? 'Processing...' : 'Complete Order'}
+                        </button>
+                    </div>
+                </div>
             </div>
 
         </div >

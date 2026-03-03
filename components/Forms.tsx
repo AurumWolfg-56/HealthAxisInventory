@@ -599,9 +599,9 @@ I, **{{patientName}}**, hereby authorize...
 
                     {/* Right: Live Preview */}
                     <div className="lg:col-span-2">
-                        <div className="bg-gray-200 dark:bg-black/50 p-8 rounded-3xl h-full flex items-center justify-center overflow-auto shadow-inner border border-gray-100 dark:border-gray-800">
+                        <div className="bg-gray-200 dark:bg-black/50 p-4 sm:p-8 rounded-3xl h-full flex items-center justify-center overflow-auto shadow-inner border border-gray-100 dark:border-gray-800">
                             {/* A4 Paper Simulation - Scaled down */}
-                            <div className="bg-white w-[216mm] min-h-[279mm] shadow-2xl scale-[0.6] lg:scale-[0.7] xl:scale-[0.8] origin-top transform transition-transform duration-500 relative">
+                            <div className="bg-white w-[216mm] min-h-[279mm] shadow-2xl scale-[0.4] sm:scale-[0.5] md:scale-[0.6] lg:scale-[0.7] xl:scale-[0.8] origin-top transform transition-transform duration-500 relative">
 
                                 {/* Visible Preview Render for PDF Generation */}
                                 <div className="p-0 h-full overflow-hidden">
