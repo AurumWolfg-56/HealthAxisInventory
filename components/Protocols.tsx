@@ -77,14 +77,14 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
             const wA = severityWeight[a.severity] || 0;
             const wB = severityWeight[b.severity] || 0;
             if (wA !== wB) return wB - wA;
-            return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+            return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
         });
     }, [protocols, searchTerm, selectedArea, selectedType, selectedSeverity]);
 
     // Unread critical protocols prompt
     const unreadCriticals = useMemo(() => {
         if (loadingAcks) return [];
-        return protocols.filter(p => p.requires_acknowledgment && !myAcknowledgments[p.id]);
+        return protocols.filter(p => p.requiresAcknowledgment && !myAcknowledgments[p.id]);
     }, [protocols, myAcknowledgments, loadingAcks]);
 
     const handleSaveProtocol = async (data: Partial<Protocol>) => {
