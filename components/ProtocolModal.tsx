@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Protocol, ProtocolSeverity, ProtocolArea, ProtocolType, ProtocolTargetRole } from '../types';
+import { RichTextContent } from './RichTextContent';
 
 interface ProtocolModalProps {
     isOpen: boolean;
@@ -36,6 +37,27 @@ const ProtocolModal: React.FC<ProtocolModalProps> = ({ isOpen, onClose, onSave, 
             });
         }
     }, [isOpen, initialData]);
+
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    const insertText = (before: string, after: string = '') => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const currentText = formData.content;
+
+        const selectedText = currentText.substring(start, end);
+        const newText = currentText.substring(0, start) + before + selectedText + after + currentText.substring(end);
+
+        setFormData({ ...formData, content: newText });
+
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + before.length, end + before.length);
+        }, 0);
+    };
 
     if (!isOpen) return null;
 
@@ -148,14 +170,51 @@ const ProtocolModal: React.FC<ProtocolModalProps> = ({ isOpen, onClose, onSave, 
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Details / Content</label>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Details / Content</label>
+                                <div className="flex bg-slate-100 dark:bg-slate-800/80 rounded-lg p-1 gap-1 border border-slate-200 dark:border-slate-700">
+                                    <button type="button" onClick={() => insertText('**', '**')} className="w-8 h-8 rounded-md shrink-0 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white shadow-sm transition-all" title="Bold">
+                                        <i className="fa-solid fa-bold"></i>
+                                    </button>
+                                    <button type="button" onClick={() => insertText('- ')} className="w-8 h-8 rounded-md shrink-0 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white shadow-sm transition-all" title="Bullet List">
+                                        <i className="fa-solid fa-list-ul"></i>
+                                    </button>
+                                    <button type="button" onClick={() => insertText('1. ')} className="w-8 h-8 rounded-md shrink-0 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white shadow-sm transition-all" title="Numbered List">
+                                        <i className="fa-solid fa-list-ol"></i>
+                                    </button>
+                                    <div className="w-px h-5 bg-slate-300 dark:bg-slate-600 mx-1 self-center"></div>
+                                    <button type="button" onClick={() => insertText('ℹ️ ')} className="w-8 h-8 rounded-md shrink-0 flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 shadow-sm transition-all" title="Info Icon">
+                                        <i className="fa-solid fa-circle-info text-blue-500"></i>
+                                    </button>
+                                    <button type="button" onClick={() => insertText('⚠️ ')} className="w-8 h-8 rounded-md shrink-0 flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 shadow-sm transition-all" title="Warning Icon">
+                                        <i className="fa-solid fa-triangle-exclamation text-orange-500"></i>
+                                    </button>
+                                    <button type="button" onClick={() => insertText('🛑 ')} className="w-8 h-8 rounded-md shrink-0 flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 shadow-sm transition-all" title="Critical Icon">
+                                        <i className="fa-solid fa-octagon-xmark text-red-500"></i>
+                                    </button>
+                                </div>
+                            </div>
                             <textarea
+                                ref={textareaRef}
                                 required
                                 value={formData.content}
                                 onChange={e => setFormData({ ...formData, content: e.target.value })}
-                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 focus:border-transparent transition-all outline-none h-48 custom-scrollbar resize-none"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 focus:border-transparent transition-all outline-none h-40 custom-scrollbar resize-none"
                                 placeholder="Describe the protocol, steps, or rules in detail..."
                             ></textarea>
+
+                            {/* Live Preview Box */}
+                            {formData.content && formData.content.trim() !== '' && (
+                                <div className="mt-4 p-4 rounded-xl border border-indigo-100 dark:border-indigo-500/20 bg-indigo-50/50 dark:bg-indigo-900/10">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <i className="fa-solid fa-eye text-indigo-500 text-sm"></i>
+                                        <span className="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase tracking-wider">Live Preview</span>
+                                    </div>
+                                    <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm max-h-48 overflow-y-auto custom-scrollbar">
+                                        <RichTextContent content={formData.content} />
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

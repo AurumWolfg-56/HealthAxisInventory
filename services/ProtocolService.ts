@@ -210,10 +210,11 @@ export const ProtocolService = {
         }
     },
 
-    acknowledgeProtocol: async (protocolId: string): Promise<boolean> => {
+    acknowledgeProtocol: async (protocolId: string, userId: string): Promise<boolean> => {
         try {
             const payload = {
-                protocol_id: protocolId
+                protocol_id: protocolId,
+                user_id: userId
             };
 
             const controller = new AbortController();

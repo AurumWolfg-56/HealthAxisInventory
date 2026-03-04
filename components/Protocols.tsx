@@ -1,10 +1,12 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { User, Protocol, ProtocolSeverity, ProtocolArea, ProtocolType } from '../types';
 import { useAppData } from '../contexts/AppDataContext';
 import { useAuth } from '../contexts/AuthContext';
 import { ProtocolService } from '../services/ProtocolService';
+import { supabase } from '../src/lib/supabase';
 import ProtocolModal from './ProtocolModal';
 import ProtocolSignaturesModal from './ProtocolSignaturesModal';
+import { RichTextContent } from './RichTextContent';
 
 interface ProtocolsProps {
     user: User | null;
@@ -12,59 +14,10 @@ interface ProtocolsProps {
     t: (key: string) => string;
 }
 
-// Simple Markdown Parser for Protocol Content
-const RichTextContent: React.FC<{ content: string }> = ({ content }) => {
-    const renderContent = () => {
-        return content.split('\n').map((line, index) => {
-            // Bold rule: **text**
-            const bolded = line.split(/(\*\*.*?\*\*)/g).map((part, i) => {
-                if (part.startsWith('**') && part.endsWith('**')) {
-                    return <strong key={i} className="font-bold text-slate-900 dark:text-white">{part.replace(/\*\*/g, '')}</strong>;
-                }
-                return part;
-            });
-
-            // List rule: `- item` or `* item`
-            if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-                return (
-                    <div key={index} className="flex gap-3 mb-2">
-                        <span className="text-medical-500 mt-1">•</span>
-                        <span>{bolded}</span>
-                    </div>
-                );
-            }
-
-            // Numbered list rule: `1. item`
-            if (/^\d+\.\s/.test(line.trim())) {
-                const numMatch = line.trim().match(/^(\d+\.)\s/);
-                const prefix = numMatch ? numMatch[1] : '';
-                const text = line.trim().replace(/^(\d+\.)\s/, '');
-
-                // re-apply bolded just to text
-                const boldedText = text.split(/(\*\*.*?\*\*)/g).map((part, i) => {
-                    if (part.startsWith('**') && part.endsWith('**')) {
-                        return <strong key={i} className="font-bold text-slate-900 dark:text-white">{part.replace(/\*\*/g, '')}</strong>;
-                    }
-                    return part;
-                });
-
-                return (
-                    <div key={index} className="flex gap-3 mb-2">
-                        <span className="text-medical-600 dark:text-medical-400 font-bold mt-1">{prefix}</span>
-                        <span>{boldedText}</span>
-                    </div>
-                );
-            }
-
-            return <div key={index} className="mb-2 min-h-[1rem]">{bolded}</div>;
-        });
-    };
-
-    return <div className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">{renderContent()}</div>;
-};
+// RichTextContent is imported from components/RichTextContent.tsx
 
 const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
-    const { protocols, setProtocols } = useAppData();
+    const { protocols, setProtocols, refreshData, isLoading } = useAppData();
     const { hasPermission } = useAuth();
     const isManager = hasPermission('protocols.manage');
 
@@ -126,6 +79,45 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
         return false;
     };
 
+    // Determine if a protocol has been signed by EVERYONE in its target audience
+    const isProtocolFullyAcknowledged = useCallback((protocol: Protocol) => {
+        if (!protocol.requiresAcknowledgment) return true;
+
+        const protocolAcks = allAcknowledgments.filter(a => a.protocolId === protocol.id);
+        const signedIds = new Set(protocolAcks.map(a => a.userId));
+
+        let targetUsers = users;
+        if (protocol.targetRole === 'MEDICAL_ONLY') {
+            targetUsers = users.filter(u => u.role === 'MA' || u.role === 'DOCTOR');
+        } else if (protocol.targetRole === 'FRONT_DESK_ONLY') {
+            targetUsers = users.filter(u => u.role === 'FRONT_DESK');
+        } else {
+            // ALL_STAFF -> exclude owner/manager from being forced to sign, just the operational staff
+            targetUsers = users.filter(u => u.role === 'MA' || u.role === 'FRONT_DESK' || u.role === 'DOCTOR');
+        }
+
+        if (targetUsers.length === 0) return true;
+        return targetUsers.every(u => signedIds.has(u.id));
+    }, [users, allAcknowledgments]);
+
+    useEffect(() => {
+        // Bulletproof F5 Refresh Fallback
+        let isMounted = true;
+        if (protocols.length === 0) {
+            supabase.auth.getSession().then(({ data }) => {
+                if (data.session && isMounted) {
+                    ProtocolService.setAccessToken(data.session.access_token);
+                    ProtocolService.getProtocols().then(fetched => {
+                        if (fetched && fetched.length > 0 && isMounted) {
+                            setProtocols(fetched);
+                        }
+                    });
+                }
+            });
+        }
+        return () => { isMounted = false; };
+    }, [protocols.length, setProtocols]);
+
     // Data filtering with "Advanced Smart Search"
     const filteredProtocols = useMemo(() => {
         let result = protocols;
@@ -162,13 +154,13 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
 
     const groupedProtocols = useMemo(() => {
         return {
-            PINNED: filteredProtocols.filter(p => p.isPinned),
-            EMERGENCY: filteredProtocols.filter(p => !p.isPinned && p.type === 'EMERGENCY'),
-            HIPAA: filteredProtocols.filter(p => !p.isPinned && p.type === 'HIPAA'),
-            OSHA: filteredProtocols.filter(p => !p.isPinned && p.type === 'OSHA'),
-            STANDARD: filteredProtocols.filter(p => !p.isPinned && p.type === 'STANDARD')
+            PINNED: filteredProtocols.filter(p => p.isPinned && !isProtocolFullyAcknowledged(p)),
+            EMERGENCY: filteredProtocols.filter(p => p.type === 'EMERGENCY'),
+            HIPAA: filteredProtocols.filter(p => p.type === 'HIPAA'),
+            OSHA: filteredProtocols.filter(p => p.type === 'OSHA'),
+            STANDARD: filteredProtocols.filter(p => p.type === 'STANDARD')
         };
-    }, [filteredProtocols]);
+    }, [filteredProtocols, isProtocolFullyAcknowledged]);
 
     const handleSaveProtocol = async (data: Partial<Protocol>) => {
         try {
@@ -205,7 +197,7 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
     const handleAcknowledge = async (id: string, e?: React.MouseEvent) => {
         e?.stopPropagation(); // Prevent accordion expansion
         if (!user?.id) return;
-        const success = await ProtocolService.acknowledgeProtocol(id);
+        const success = await ProtocolService.acknowledgeProtocol(id, user.id);
         if (success) {
             setMyAcknowledgments(prev => ({ ...prev, [id]: true }));
             setAllAcknowledgments(prev => [...prev, { protocolId: id, userId: user.id, acknowledgedAt: new Date().toISOString() }]);
@@ -281,6 +273,7 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
     const renderProtocolCard = (protocol: Protocol) => {
         const isUnread = protocol.requiresAcknowledgment && !myAcknowledgments[protocol.id] && isUserInTargetAudience(protocol);
         const isExpanded = expandedCardId === protocol.id;
+        const isCurrentlyPinned = protocol.isPinned && !isProtocolFullyAcknowledged(protocol);
 
         const dateObj = new Date(protocol.updatedAt);
         const safeDate = isNaN(dateObj.getTime()) ? new Date().toLocaleDateString() : dateObj.toLocaleDateString();
@@ -289,8 +282,8 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
             <div
                 key={protocol.id}
                 className={`bg-white dark:bg-[#1a2235] rounded-2xl overflow-hidden shadow-sm transition-all duration-300 border ${isUnread ? 'border-orange-400 dark:border-orange-500 shadow-md shadow-orange-500/20'
-                        : isExpanded ? 'border-medical-300 dark:border-medical-500/50 shadow-lg'
-                            : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                    : isExpanded ? 'border-medical-300 dark:border-medical-500/50 shadow-lg'
+                        : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                     }`}
             >
                 {/* Accordion Header (Compact) */}
@@ -300,23 +293,29 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
                 >
                     <div className="flex items-center gap-4 flex-1 overflow-hidden pr-4">
                         <div className={`w-2 h-10 rounded-full flex-shrink-0 ${protocol.severity === 'CRITICAL' ? 'bg-red-500' :
-                                protocol.severity === 'WARNING' ? 'bg-orange-400' :
-                                    protocol.severity === 'INFO' ? 'bg-blue-400' : 'bg-emerald-400'
+                            protocol.severity === 'WARNING' ? 'bg-orange-400' :
+                                protocol.severity === 'INFO' ? 'bg-blue-400' : 'bg-emerald-400'
                             }`}></div>
 
                         <div className="flex flex-col min-w-0">
                             <h3 className="text-base font-bold text-slate-900 dark:text-white truncate group-hover:text-medical-600 transition-colors">
-                                {protocol.isPinned && <i className="fa-solid fa-thumbtack text-medical-500 mr-2"></i>}
+                                {isCurrentlyPinned && <i className="fa-solid fa-thumbtack text-medical-500 mr-2"></i>}
                                 {protocol.title}
                             </h3>
-                            <div className="flex items-center gap-3 mt-1 opacity-70">
+                            <div className="flex flex-wrap items-center gap-2 mt-1 opacity-70">
                                 <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${getSeverityColor(protocol.severity).split(' ')[1]}`}>
                                     {protocol.severity}
                                 </span>
-                                <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
                                     <i className="fa-solid fa-location-dot mr-1"></i>
                                     {protocol.area.replace('_', ' ')}
                                 </span>
+                                {isCurrentlyPinned && (
+                                    <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-bold whitespace-nowrap border-l border-slate-300 dark:border-slate-700 pl-2">
+                                        <i className="fa-solid fa-folder mr-1"></i>
+                                        {protocol.type}
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -23,17 +23,17 @@ const ProtocolSignaturesModal: React.FC<ProtocolSignaturesModalProps> = ({ isOpe
         if (!protocol || !protocol.requires_acknowledgment) return [];
 
         // Filter acknowledgments for this specific protocol
-        const protocolAcks = acknowledgments.filter(ack => ack.protocol_id === protocol.id);
-        const signedUserIds = new Set(protocolAcks.map(ack => ack.user_id));
+        const protocolAcks = acknowledgments.filter(ack => ack.protocolId === protocol.id);
+        const signedUserIds = new Set(protocolAcks.map(ack => ack.userId));
 
         // Create a definitive list combining all users and indicating their sign status
         return allUsers.map(u => {
-            const ack = protocolAcks.find(a => a.user_id === u.id);
+            const ack = protocolAcks.find(a => a.userId === u.id);
             return {
                 id: u.id,
                 name: u.username || u.email || 'Unknown User',
                 role: u.role || 'Staff',
-                signedAt: ack ? ack.acknowledged_at : undefined
+                signedAt: ack ? ack.acknowledgedAt : undefined
             };
         }).sort((a, b) => {
             // Unsigned first, then alphabetical by name
