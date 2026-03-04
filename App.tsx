@@ -145,14 +145,12 @@ const App: React.FC = () => {
 
     // --- INTELLIGENT ROUTING LOGIC ---
     useEffect(() => {
-        // If a user just logged in and we are on DASHBOARD, but they lack dashboard.view 
-        // (which is implicitly only Owner/Manager per AuthContext), route them to Protocols
-        if (user && currentRoute === AppRoute.DASHBOARD && !hasPermission('dashboard.view')) {
-            if (hasPermission('protocols.view')) {
+        if (user && currentRoute === AppRoute.DASHBOARD) {
+            if (user.role === 'MA' || user.role === 'FRONT_DESK' || !hasPermission('dashboard.view')) {
                 setCurrentRoute(AppRoute.PROTOCOLS);
             }
         }
-    }, [user, hasPermission, currentRoute]);
+    }, [user, currentRoute, hasPermission]);
 
     const [editingReport, setEditingReport] = useState<DailyReport | undefined>(undefined);
     const [viewingReport, setViewingReport] = useState<DailyReport | null>(null);

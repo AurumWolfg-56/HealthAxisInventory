@@ -195,6 +195,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 InventoryService.setAccessToken(session.access_token);
                 OrderService.setAccessToken(session.access_token);
                 BillingRuleService.setAccessToken(session.access_token);
+                ProtocolService.setAccessToken(session.access_token);
                 if (mountedRef.current) {
                     await fetchAllData();
                 }
