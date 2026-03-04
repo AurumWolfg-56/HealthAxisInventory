@@ -88,18 +88,27 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
     }, [protocols, myAcknowledgments, loadingAcks]);
 
     const handleSaveProtocol = async (data: Partial<Protocol>) => {
-        if (editingProtocol) {
-            const updated = await ProtocolService.updateProtocol(editingProtocol.id, data);
-            if (updated) {
-                setProtocols(prev => prev.map(p => p.id === updated.id ? updated : p));
+        try {
+            if (editingProtocol) {
+                const updated = await ProtocolService.updateProtocol(editingProtocol.id, data);
+                if (updated) {
+                    setProtocols(prev => prev.map(p => p.id === updated.id ? updated : p));
+                } else {
+                    throw new Error('Failed to update protocol');
+                }
+            } else {
+                const created = await ProtocolService.createProtocol(data as Omit<Protocol, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>);
+                if (created) {
+                    setProtocols(prev => [created, ...prev]);
+                } else {
+                    throw new Error('Failed to create protocol. Check permissions.');
+                }
             }
-        } else {
-            const created = await ProtocolService.createProtocol(data as Omit<Protocol, 'id' | 'created_at' | 'updated_at'>);
-            if (created) {
-                setProtocols(prev => [created, ...prev]);
-            }
+            setIsModalOpen(false);
+        } catch (error: any) {
+            console.error('Protocol save error:', error);
+            alert(error?.message || 'An error occurred while saving the protocol.');
         }
-        setIsModalOpen(false);
     };
 
     const handleDeleteProtocol = async (id: string) => {
