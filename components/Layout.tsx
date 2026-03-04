@@ -52,7 +52,7 @@ export const Layout: React.FC<LayoutProps> = ({
         { route: AppRoute.INVENTORY, icon: "fa-boxes-stacked", label: t('nav_inventory'), perm: 'inventory.view' },
         { route: AppRoute.INTELLIGENCE, icon: "fa-brain", label: "Intelligence", perm: 'intelligence.view' }, // New
         { route: AppRoute.ORDERS, icon: "fa-cart-shopping", label: t('nav_orders'), perm: 'orders.view' },
-        { route: AppRoute.BUDGETS, icon: "fa-wallet", label: "Budgets", perm: 'finance.view' },
+        { route: AppRoute.BUDGETS, icon: "fa-wallet", label: "Budgets", perm: 'finance.manage' },
         { route: AppRoute.PRICELIST, icon: "fa-tags", label: t('nav_prices'), perm: 'prices.view' },
         { header: "Clinical" },
         { route: AppRoute.BILLING_WIZARD, icon: "fa-file-invoice-dollar", label: t('nav_billing'), perm: 'billing.view' },
