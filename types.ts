@@ -250,6 +250,7 @@ export interface ToastMessage {
 export type ProtocolSeverity = 'CRITICAL' | 'WARNING' | 'INFO' | 'ROUTINE';
 export type ProtocolArea = 'FRONT_DESK' | 'MA_STATION' | 'EXAM_ROOM' | 'LAB' | 'GENERAL' | 'STORAGE';
 export type ProtocolType = 'STANDARD' | 'HIPAA' | 'OSHA' | 'EMERGENCY';
+export type ProtocolTargetRole = 'ALL_STAFF' | 'MEDICAL_ONLY' | 'FRONT_DESK_ONLY';
 
 export interface Protocol {
   id: string;
@@ -259,6 +260,8 @@ export interface Protocol {
   area: ProtocolArea;
   type: ProtocolType;
   requiresAcknowledgment: boolean;
+  isPinned: boolean;
+  targetRole: ProtocolTargetRole;
   createdBy: string;
   createdAt: string;
   updatedAt: string;

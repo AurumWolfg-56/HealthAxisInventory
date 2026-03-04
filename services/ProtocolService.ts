@@ -46,6 +46,8 @@ export const ProtocolService = {
                 area: item.area as ProtocolArea,
                 type: item.type as ProtocolType,
                 requiresAcknowledgment: item.requires_acknowledgment,
+                isPinned: item.is_pinned,
+                targetRole: item.target_role,
                 createdBy: item.created_by,
                 createdAt: item.created_at,
                 updatedAt: item.updated_at
@@ -64,7 +66,9 @@ export const ProtocolService = {
                 severity: protocol.severity,
                 area: protocol.area,
                 type: protocol.type,
-                requires_acknowledgment: protocol.requiresAcknowledgment
+                requires_acknowledgment: protocol.requiresAcknowledgment,
+                is_pinned: protocol.isPinned,
+                target_role: protocol.targetRole
             };
 
             const controller = new AbortController();
@@ -94,6 +98,8 @@ export const ProtocolService = {
                 area: item.area as ProtocolArea,
                 type: item.type as ProtocolType,
                 requiresAcknowledgment: item.requires_acknowledgment,
+                isPinned: item.is_pinned,
+                targetRole: item.target_role,
                 createdBy: item.created_by,
                 createdAt: item.created_at,
                 updatedAt: item.updated_at
@@ -113,6 +119,8 @@ export const ProtocolService = {
             if (updates.area !== undefined) dbUpdates.area = updates.area;
             if (updates.type !== undefined) dbUpdates.type = updates.type;
             if (updates.requiresAcknowledgment !== undefined) dbUpdates.requires_acknowledgment = updates.requiresAcknowledgment;
+            if (updates.isPinned !== undefined) dbUpdates.is_pinned = updates.isPinned;
+            if (updates.targetRole !== undefined) dbUpdates.target_role = updates.targetRole;
             dbUpdates.updated_at = new Date().toISOString();
 
             const controller = new AbortController();
@@ -140,6 +148,8 @@ export const ProtocolService = {
                 area: item.area as ProtocolArea,
                 type: item.type as ProtocolType,
                 requiresAcknowledgment: item.requires_acknowledgment,
+                isPinned: item.is_pinned,
+                targetRole: item.target_role,
                 createdBy: item.created_by,
                 createdAt: item.created_at,
                 updatedAt: item.updated_at

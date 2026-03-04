@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Protocol, ProtocolSeverity, ProtocolArea, ProtocolType } from '../types';
+import { Protocol, ProtocolSeverity, ProtocolArea, ProtocolType, ProtocolTargetRole } from '../types';
 
 interface ProtocolModalProps {
     isOpen: boolean;
@@ -16,7 +16,9 @@ const ProtocolModal: React.FC<ProtocolModalProps> = ({ isOpen, onClose, onSave, 
         severity: 'INFO',
         area: 'GENERAL',
         type: 'STANDARD',
-        requiresAcknowledgment: false
+        requiresAcknowledgment: false,
+        isPinned: false,
+        targetRole: 'ALL_STAFF'
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,7 +30,9 @@ const ProtocolModal: React.FC<ProtocolModalProps> = ({ isOpen, onClose, onSave, 
                 severity: 'INFO',
                 area: 'GENERAL',
                 type: 'STANDARD',
-                requiresAcknowledgment: false
+                requiresAcknowledgment: false,
+                isPinned: false,
+                targetRole: 'ALL_STAFF'
             });
         }
     }, [isOpen, initialData]);
@@ -127,6 +131,20 @@ const ProtocolModal: React.FC<ProtocolModalProps> = ({ isOpen, onClose, onSave, 
                                     <option value="EMERGENCY">Emergency Protocol</option>
                                 </select>
                             </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Target Audience</label>
+                                <select
+                                    value={formData.targetRole}
+                                    onChange={e => setFormData({ ...formData, targetRole: e.target.value as ProtocolTargetRole })}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 transition-all outline-none"
+                                    required
+                                >
+                                    <option value="ALL_STAFF">All Staff (Everyone)</option>
+                                    <option value="MEDICAL_ONLY">Medical Staff Only (MA/Providers)</option>
+                                    <option value="FRONT_DESK_ONLY">Front Desk Only</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div>
@@ -140,22 +158,44 @@ const ProtocolModal: React.FC<ProtocolModalProps> = ({ isOpen, onClose, onSave, 
                             ></textarea>
                         </div>
 
-                        <div className="flex items-center p-4 bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 rounded-2xl">
-                            <div className="flex-1">
-                                <h4 className="text-sm font-bold text-orange-800 dark:text-orange-400">Require Acknowledgment</h4>
-                                <p className="text-xs text-orange-600 dark:text-orange-300 mt-1">
-                                    Enabling this will force all staff to digitally sign they have read this protocol.
-                                </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Require Acknowledgment */}
+                            <div className="flex items-center p-4 bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 rounded-2xl">
+                                <div className="flex-1">
+                                    <h4 className="text-sm font-bold text-orange-800 dark:text-orange-400">Require Acknowledgment</h4>
+                                    <p className="text-xs text-orange-600 dark:text-orange-300 mt-1">
+                                        Force the target audience to digitally sign they have read this protocol.
+                                    </p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer ml-4">
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only peer"
+                                        checked={formData.requiresAcknowledgment}
+                                        onChange={e => setFormData(prev => ({ ...prev, requiresAcknowledgment: e.target.checked }))}
+                                    />
+                                    <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                                </label>
                             </div>
-                            <label className="relative inline-flex items-center cursor-pointer ml-4">
-                                <input
-                                    type="checkbox"
-                                    className="sr-only peer"
-                                    checked={formData.requiresAcknowledgment}
-                                    onChange={e => setFormData(prev => ({ ...prev, requiresAcknowledgment: e.target.checked }))}
-                                />
-                                <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
-                            </label>
+
+                            {/* Pin to Top */}
+                            <div className="flex items-center p-4 bg-medical-50 dark:bg-medical-500/10 border border-medical-200 dark:border-medical-500/20 rounded-2xl">
+                                <div className="flex-1">
+                                    <h4 className="text-sm font-bold text-medical-800 dark:text-medical-400">Pin to Top 📌</h4>
+                                    <p className="text-xs text-medical-600 dark:text-medical-300 mt-1">
+                                        Highlight this protocol at the very top of the staff dashboard.
+                                    </p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer ml-4">
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only peer"
+                                        checked={formData.isPinned}
+                                        onChange={e => setFormData(prev => ({ ...prev, isPinned: e.target.checked }))}
+                                    />
+                                    <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-500"></div>
+                                </label>
+                            </div>
                         </div>
 
                     </form>
