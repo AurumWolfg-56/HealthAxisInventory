@@ -49,6 +49,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
     const NAV_ITEMS = [
         { route: AppRoute.DASHBOARD, icon: "fa-chart-pie", label: t('nav_dashboard'), perm: 'dashboard.view' },
+        { route: AppRoute.PROTOCOLS, icon: "fa-book-medical", label: "Staff Hub", perm: 'protocols.view' },
         { route: AppRoute.INVENTORY, icon: "fa-boxes-stacked", label: t('nav_inventory'), perm: 'inventory.view' },
         { route: AppRoute.INTELLIGENCE, icon: "fa-brain", label: "Intelligence", perm: 'intelligence.view' }, // New
         { route: AppRoute.ORDERS, icon: "fa-cart-shopping", label: t('nav_orders'), perm: 'orders.view' },

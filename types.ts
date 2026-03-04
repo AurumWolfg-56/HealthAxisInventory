@@ -8,11 +8,11 @@ export enum UserRole {
 }
 
 export const INITIAL_ROLE_CONFIGS: RoleConfig[] = [
-  { role: UserRole.OWNER, permissions: ['inventory.view', 'inventory.edit', 'inventory.audit', 'orders.view', 'orders.create', 'orders.receive', 'orders.delete', 'reports.view', 'reports.create', 'prices.view', 'prices.manage', 'forms.manage', 'forms.generate', 'billing.view', 'codes.view', 'codes.manage', 'finance.view', 'finance.manage', 'admin.access', 'intelligence.view'] },
-  { role: UserRole.MANAGER, permissions: ['inventory.view', 'inventory.edit', 'inventory.audit', 'orders.view', 'orders.create', 'orders.receive', 'orders.delete', 'reports.view', 'reports.create', 'prices.view', 'prices.manage', 'forms.manage', 'forms.generate', 'billing.view', 'codes.view', 'codes.manage', 'finance.view', 'finance.manage', 'admin.access', 'intelligence.view'] },
-  { role: UserRole.DOCTOR, permissions: ['inventory.view', 'inventory.edit', 'orders.view', 'orders.create', 'reports.view', 'reports.create', 'prices.view', 'forms.generate', 'billing.view', 'codes.view'] },
-  { role: UserRole.MA, permissions: ['inventory.view', 'inventory.audit', 'orders.view', 'forms.generate', 'codes.view'] },
-  { role: UserRole.FRONT_DESK, permissions: ['prices.view', 'prices.manage', 'inventory.view', 'forms.generate', 'reports.view', 'reports.create', 'billing.view', 'codes.view', 'finance.view'] }
+  { role: UserRole.OWNER, permissions: ['inventory.view', 'inventory.edit', 'inventory.audit', 'orders.view', 'orders.create', 'orders.receive', 'orders.delete', 'reports.view', 'reports.create', 'prices.view', 'prices.manage', 'forms.manage', 'forms.generate', 'billing.view', 'codes.view', 'codes.manage', 'finance.view', 'finance.manage', 'admin.access', 'intelligence.view', 'protocols.view', 'protocols.manage'] },
+  { role: UserRole.MANAGER, permissions: ['inventory.view', 'inventory.edit', 'inventory.audit', 'orders.view', 'orders.create', 'orders.receive', 'orders.delete', 'reports.view', 'reports.create', 'prices.view', 'prices.manage', 'forms.manage', 'forms.generate', 'billing.view', 'codes.view', 'codes.manage', 'finance.view', 'finance.manage', 'admin.access', 'intelligence.view', 'protocols.view', 'protocols.manage'] },
+  { role: UserRole.DOCTOR, permissions: ['inventory.view', 'inventory.edit', 'orders.view', 'orders.create', 'reports.view', 'reports.create', 'prices.view', 'forms.generate', 'billing.view', 'codes.view', 'protocols.view'] },
+  { role: UserRole.MA, permissions: ['inventory.view', 'inventory.audit', 'orders.view', 'forms.generate', 'codes.view', 'protocols.view'] },
+  { role: UserRole.FRONT_DESK, permissions: ['prices.view', 'prices.manage', 'inventory.view', 'forms.generate', 'reports.view', 'reports.create', 'billing.view', 'codes.view', 'finance.view', 'protocols.view'] }
 ];
 
 export type Permission =
@@ -35,7 +35,9 @@ export type Permission =
   | 'codes.manage' // New
   | 'finance.view' // New
   | 'finance.manage' // New
-  | 'intelligence.view'; // New
+  | 'intelligence.view' // New
+  | 'protocols.view'
+  | 'protocols.manage';
 
 export interface RoleConfig {
   role: UserRole;
@@ -230,7 +232,8 @@ export enum AppRoute {
   PETTY_CASH = 'PETTY_CASH',
   INTELLIGENCE = 'INTELLIGENCE', // New
   VOICE_MEMOS = 'VOICE_MEMOS', // New
-  BUDGETS = 'BUDGETS' // New
+  BUDGETS = 'BUDGETS', // New
+  PROTOCOLS = 'PROTOCOLS' // New
 }
 
 export interface ChartDataPoint {
@@ -242,6 +245,29 @@ export interface ToastMessage {
   id: string;
   type: 'success' | 'error' | 'info';
   text: string;
+}
+
+export type ProtocolSeverity = 'CRITICAL' | 'WARNING' | 'INFO' | 'ROUTINE';
+export type ProtocolArea = 'FRONT_DESK' | 'MA_STATION' | 'EXAM_ROOM' | 'LAB' | 'GENERAL' | 'STORAGE';
+export type ProtocolType = 'STANDARD' | 'HIPAA' | 'OSHA' | 'EMERGENCY';
+
+export interface Protocol {
+  id: string;
+  title: string;
+  content: string;
+  severity: ProtocolSeverity;
+  area: ProtocolArea;
+  type: ProtocolType;
+  requiresAcknowledgment: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProtocolAcknowledgment {
+  protocolId: string;
+  userId: string;
+  acknowledgedAt: string;
 }
 
 // --- DATABASE MODELS (Supabase Mirrors) ---

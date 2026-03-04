@@ -29,6 +29,7 @@ import MedicalCodesManager from './components/MedicalCodesManager';
 import PettyCashLedger from './components/PettyCashLedger';
 import VoiceMemos from './components/VoiceMemos';
 import Budgets from './components/Budgets';
+import Protocols from './components/Protocols';
 import { InventoryIntelligenceDashboard } from './components/InventoryIntelligence';
 import { InventoryIntelligenceVerification } from './components/InventoryIntelligenceVerification';
 import Login from './components/Login';
@@ -141,6 +142,17 @@ const App: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalItem, setModalItem] = useState<Partial<InventoryItem> | undefined>(undefined);
     const [voiceSearchTerm, setVoiceSearchTerm] = useState<string>("");
+
+    // --- INTELLIGENT ROUTING LOGIC ---
+    useEffect(() => {
+        // If a user just logged in and we are on DASHBOARD, but they lack dashboard.view 
+        // (which is implicitly only Owner/Manager per AuthContext), route them to Protocols
+        if (user && currentRoute === AppRoute.DASHBOARD && !hasPermission('dashboard.view')) {
+            if (hasPermission('protocols.view')) {
+                setCurrentRoute(AppRoute.PROTOCOLS);
+            }
+        }
+    }, [user, hasPermission, currentRoute]);
 
     const [editingReport, setEditingReport] = useState<DailyReport | undefined>(undefined);
     const [viewingReport, setViewingReport] = useState<DailyReport | null>(null);
@@ -501,6 +513,7 @@ const App: React.FC = () => {
 
 
                     {currentRoute === AppRoute.DASHBOARD && hasPermission('dashboard.view') && <Dashboard inventory={inventory} logs={logs} dailyReports={dailyReports} pettyCashHistory={pettyCashHistory} orders={orders} users={usersDb} prices={prices} t={t} onNavigate={handleNavigate} />}
+                    {currentRoute === AppRoute.PROTOCOLS && hasPermission('protocols.view') && <Protocols user={user} users={usersDb} t={t} />}
                     {currentRoute === AppRoute.INVENTORY && hasPermission('inventory.view') && (
                         <Inventory
                             items={inventory}
