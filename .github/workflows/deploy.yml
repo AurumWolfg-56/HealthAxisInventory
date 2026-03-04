@@ -45,6 +45,8 @@ jobs:
               set net:reconnect-interval-base 5;
               set net:connection-limit 1;
               set ftp:ssl-allow yes;
+              set ftp:ssl-force true;
+              set ftp:passive-mode true;
               set xfer:use-temp-file no;
               set xfer:clobber true;
               open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
