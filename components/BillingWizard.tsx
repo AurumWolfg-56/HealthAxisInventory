@@ -10,7 +10,7 @@ interface BillingWizardProps {
     t: (key: string) => string;
 }
 
-const INSURERS = ["Medicare", "Medicaid", "UHC", "BCBS", "Aetna", "Cigna", "Meridian"];
+const INSURERS = ["BCBS", "Aetna", "Cigna", "Meridian"];
 
 const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSaveRule, onDeleteRule, t }) => {
     const [selectedInsurer, setSelectedInsurer] = useState<string>('');
@@ -500,9 +500,6 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                                         if (['Aetna', 'BCBS', 'Cigna'].includes(ins)) {
                                             dotColor = "bg-indigo-500";
                                             dotGlow = "shadow-[0_0_8px_rgba(99,102,241,0.6)]";
-                                        } else if (['Medicaid', 'Medicare'].includes(ins)) {
-                                            dotColor = "bg-emerald-500";
-                                            dotGlow = "shadow-[0_0_8px_rgba(16,185,129,0.6)]";
                                         }
 
                                         return (

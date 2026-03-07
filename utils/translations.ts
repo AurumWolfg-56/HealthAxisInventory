@@ -27,9 +27,9 @@ export const translations = {
     guide_title: "Billing Guide",
     guide_subtitle: "Client Bill Policy Reference",
     guide_header: "Client Bill Processing",
-    guide_body: "Patients with BCBS, Aetna, Cigna, or Meridian are authorized for ALL tests listed below as 'Bill to Client'.",
-    guide_note_title: "Insurers under Client Policy",
-    guide_warning: "Other insurers (e.g., Medicare, Medicaid, UHC) are ONLY authorized for their specific existing tests. Always verify before billing.",
+    guide_body: "All procedures found in this module must be sent to the client.",
+    guide_note_title: "Authorized Insurers",
+    guide_warning: "There is no longer a need to review anything else. Only the allowed insurers are listed here.",
     btn_understood: "Understood",
 
     // Admin
@@ -279,9 +279,9 @@ export const translations = {
     guide_title: "Guía de Facturación",
     guide_subtitle: "Referencia de Política 'Bill to Client'",
     guide_header: "Procesamiento 'Client Bill'",
-    guide_body: "Patients with BCBS, Aetna, Cigna, or Meridian are authorized for ALL tests listed below as 'Bill to Client'.",
-    guide_note_title: "Insurers under Client Policy",
-    guide_warning: "Other insurers (e.g., Medicare, Medicaid, UHC) are ONLY authorized for their specific existing tests. Always verify before billing.",
+    guide_body: "Todos los procedimientos que se encuentran en este módulo deben ser enviados a Client.",
+    guide_note_title: "Aseguradoras Autorizadas",
+    guide_warning: "Ya no hay necesidad de revisar absolutamente nada más que los que van a quedar aquí.",
     btn_understood: "Entendido",
 
     // Admin
