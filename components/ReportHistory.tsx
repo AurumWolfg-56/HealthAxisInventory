@@ -229,8 +229,11 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ reports, user, onEditRepo
             end = new Date(now.getFullYear(), 11, 31);
             end.setHours(23, 59, 59, 999);
         } else if (filterType === 'custom' && startDate && endDate) {
-            start = new Date(startDate);
-            end = new Date(endDate);
+            // Parse YYYY-MM-DD robustly in local timezone
+            const [sYear, sMonth, sDay] = startDate.split('-').map(Number);
+            const [eYear, eMonth, eDay] = endDate.split('-').map(Number);
+            start = new Date(sYear, sMonth - 1, sDay);
+            end = new Date(eYear, eMonth - 1, eDay);
             end.setHours(23, 59, 59, 999);
         }
 
