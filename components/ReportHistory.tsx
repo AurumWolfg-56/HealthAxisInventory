@@ -338,7 +338,7 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ reports, user, onEditRepo
             </header>
 
             {/* Control Bar */}
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col xl:flex-row gap-6 items-center justify-between">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col xl:flex-row xl:flex-wrap gap-6 items-center justify-between">
                 {/* Filters */}
                 <div className="flex flex-wrap gap-2">
                     {[
@@ -382,7 +382,7 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ reports, user, onEditRepo
 
                     <button
                         onClick={handleGenerateSummary}
-                        className="h-12 px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-md shadow-indigo-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5"
+                        className="h-12 px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-md shadow-indigo-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5 whitespace-nowrap flex-shrink-0"
                         title="Generate summarized PDF for selected period"
                     >
                         <i className="fa-solid fa-file-invoice-dollar"></i> Generate Period Summary
