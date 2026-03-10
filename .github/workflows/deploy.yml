@@ -40,11 +40,13 @@ jobs:
             apk add --no-cache lftp &&
             lftp -c \"
               set ssl:verify-certificate no;
-              set net:timeout 15;
-              set net:max-retries 3;
+              set ftp:ssl-allow no;
+              set ftp:passive-mode true;
+              set dns:fatal-timeout no;
+              set net:timeout 30;
+              set net:max-retries 10;
               set net:reconnect-interval-base 5;
               set net:connection-limit 1;
-              set ftp:ssl-allow yes;
               set xfer:use-temp-file no;
               set xfer:clobber true;
               open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
