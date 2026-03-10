@@ -445,31 +445,30 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
 
         setIsSubmitting(true);
 
-        // 1. Generate PDF
-        generatePDF();
-
-        // 2. Construct Report Object
-        const report = getTempReport();
-
-        // 3. Save to Supabase
         try {
+            // 1. Generate PDF FIRST and wait for it to finish!
+            // If we don't await, the component might unmount while html2pdf is running, creating corrupted PDFs.
+            await generatePDF();
+
+            // 2. Construct Report Object
+            const report = getTempReport();
+
+            // 3. Save to Supabase (or local storage if offline)
             if (user?.id) {
                 await DailyReportService.createReport(report, user.id);
             }
 
-            // 4. Complete (Allow a slight delay for PDF download to start)
+            // 4. Complete
             localStorage.removeItem('ha_daily_report_draft'); // Clear draft on success
-            setTimeout(() => {
-                onCloseComplete(report);
-            }, 1500);
+            onCloseComplete(report);
         } catch (e: any) {
-            console.error("Failed to save report to DB", e);
-            dispatch({ type: 'VALIDATE_AND_SET_ERRORS', payload: [`CRITICAL: Failed to save report to database. ${e.message || 'Check connection'}. Data has NOT been saved to history.`] });
+            console.error("Failed to process report", e);
+            dispatch({ type: 'VALIDATE_AND_SET_ERRORS', payload: [`Critical Error: Failed to complete workflow. ${e.message || 'Check connection'}.`] });
             setIsSubmitting(false);
         }
     };
 
-    const generatePDF = () => {
+    const generatePDF = async () => {
         if (!reportRef.current || !(window as any).html2pdf) {
             alert("PDF generator not ready. Please wait.");
             return;
@@ -492,7 +491,8 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
             jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
         };
 
-        (window as any).html2pdf().set(opt).from(reportRef.current).save();
+        // MUST return the promise so we can await it
+        return (window as any).html2pdf().set(opt).from(reportRef.current).save();
     };
 
     const openCalculator = (category: 'methods' | 'types', key: string, currentValue: number) => {

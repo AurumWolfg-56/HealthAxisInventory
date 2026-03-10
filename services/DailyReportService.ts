@@ -90,7 +90,14 @@ export const DailyReportService = {
             } else {
                 console.error('[DailyReportService] ❌ Error creating report:', error);
             }
-            throw error;
+
+            // IMPORTANT: If network fails, STILL save it locally so no data is lost!
+            // The next time the app loads (or user goes online), restoreLocalReports will sync it.
+            console.warn('[DailyReportService] Network failed. Saving OFFLINE copy to prevent data loss.', report.id);
+            this.saveLocalReport(report);
+
+            // Return it so the UI can proceed and let the user finish!
+            return report;
         }
     },
 
@@ -131,6 +138,18 @@ export const DailyReportService = {
                 console.error('[DailyReportService] ❌ Fetch aborted after 45s timeout');
             } else {
                 console.error('[DailyReportService] ❌ Error fetching reports:', error);
+            }
+
+            // FALLBACK TO LOCAL STORAGE IF NETWORK DEAD
+            try {
+                const localData = localStorage.getItem('ha_daily_reports');
+                if (localData) {
+                    const parsed = JSON.parse(localData);
+                    console.log('[DailyReportService] ♻️ Returning', parsed.length, 'offline backup reports.');
+                    return parsed;
+                }
+            } catch (e) {
+                console.error('[DailyReportService] Failed to read local backup', e);
             }
             return [];
         }
