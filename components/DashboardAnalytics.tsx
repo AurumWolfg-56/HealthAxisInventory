@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import { DailyReport, DailyReportState } from '../types/dailyReport';
 import { InventoryItem, Order, User } from '../types';
-import DateRangeFilter, { DateRange } from './dashboard/DateRangeFilter';
+import DateRangeFilter, { DateRange, DateFilterPayload } from './dashboard/DateRangeFilter';
 import StatCard from './dashboard/StatCard';
 
 interface DashboardAnalyticsProps {
@@ -23,49 +23,58 @@ const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#6366f1'
 const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
     dailyReports, inventory, orders, users, t, onNavigate
 }) => {
-    const [dateRange, setDateRange] = useState<DateRange>('all');
+    const [dateFilter, setDateFilter] = useState<DateFilterPayload>({ range: 'all' });
 
     // --- 1. Filter Data based on Range ---
-    const filteredReports = useMemo(() => {
+    const { startDate, endDate } = useMemo(() => {
         const now = new Date();
-        let startDate = new Date();
+        let start = new Date(2000, 0, 1);
+        let end = new Date(); // To end of current day generally
 
-        if (dateRange === 'month') {
-            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        } else if (dateRange === 'quarter') {
-            startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-        } else if (dateRange === 'semester') {
-            startDate.setMonth(now.getMonth() - 6);
-        } else if (dateRange === 'year') {
-            startDate.setFullYear(now.getFullYear() - 1);
-        } else if (dateRange === 'all') {
-            startDate = new Date(2000, 0, 1);
+        if (dateFilter.range === 'month') {
+            if (dateFilter.specificMonth) {
+                const [y, m] = dateFilter.specificMonth.split('-').map(Number);
+                start = new Date(y, m - 1, 1);
+                end = new Date(y, m, 0, 23, 59, 59, 999);
+            } else {
+                start = new Date(now.getFullYear(), now.getMonth(), 1);
+                end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+            }
+        } else if (dateFilter.range === 'quarter') {
+            start = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+        } else if (dateFilter.range === 'semester') {
+            start = new Date(now);
+            start.setMonth(now.getMonth() - 6);
+        } else if (dateFilter.range === 'year') {
+            start = new Date(now);
+            start.setFullYear(now.getFullYear() - 1);
+        } else if (dateFilter.range === 'custom' && dateFilter.customStart && dateFilter.customEnd) {
+            const [sY, sM, sD] = dateFilter.customStart.split('-').map(Number);
+            const [eY, eM, eD] = dateFilter.customEnd.split('-').map(Number);
+            start = new Date(sY, sM - 1, sD);
+            end = new Date(eY, eM - 1, eD, 23, 59, 59, 999);
+        } else if (dateFilter.range === 'all') {
+            // Leave defaults
         }
 
-        // Sort chronological
+        return { startDate: start, endDate: end };
+    }, [dateFilter]);
+
+    const filteredReports = useMemo(() => {
         return dailyReports
-            .filter(r => new Date(r.timestamp) >= startDate)
+            .filter(r => {
+                const rDate = new Date(r.timestamp);
+                return rDate >= startDate && rDate <= endDate;
+            })
             .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-    }, [dailyReports, dateRange]);
+    }, [dailyReports, startDate, endDate]);
 
     const filteredOrders = useMemo(() => {
-        const now = new Date();
-        let startDate = new Date();
-
-        if (dateRange === 'month') {
-            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        } else if (dateRange === 'quarter') {
-            startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-        } else if (dateRange === 'semester') {
-            startDate.setMonth(now.getMonth() - 6);
-        } else if (dateRange === 'year') {
-            startDate.setFullYear(now.getFullYear() - 1);
-        } else if (dateRange === 'all') {
-            startDate = new Date(2000, 0, 1);
-        }
-
-        return orders.filter(o => new Date(o.orderDate) >= startDate);
-    }, [orders, dateRange]);
+        return orders.filter(o => {
+            const oDate = new Date(o.orderDate);
+            return oDate >= startDate && oDate <= endDate;
+        });
+    }, [orders, startDate, endDate]);
 
 
     // --- 2. Calculate Aggregates ---
@@ -267,7 +276,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                     <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Analytics Overview</h2>
                     <p className="text-slate-500 text-sm">Real-time performance metrics</p>
                 </div>
-                <DateRangeFilter currentRange={dateRange} onRangeChange={setDateRange} />
+                <DateRangeFilter currentRange={dateFilter.range} onRangeChange={setDateFilter} />
             </div>
 
             {/* KPI Cards */}
