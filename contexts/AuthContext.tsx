@@ -227,64 +227,74 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Listen to Supabase Auth Changes
     useEffect(() => {
-        const fetchProfile = async (sessionUser: any) => {
-            if (!sessionUser) {
-                // Keep local user if offline, or clear? For now, we rely on specific sign out action to clear.
-                // But if we are online and explicit "no session", we might want to be careful.
-                // Existing App.tsx logic didn't auto-clear on simple refresh if session missing but localstorage existed?
-                // Actually supabase.auth.getSession() handles validation.
-                return;
-            }
+        const fetchProfile = async (sessionUser: any, token: string) => {
+            if (!sessionUser) return;
+
+            const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+            const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
             try {
-                // Fetch profile to get Role/Permissions
-                const { data: profile, error } = await supabase
-                    .from('profiles')
-                    .select('id, full_name, user_roles(role_id), permissions')
-                    .eq('id', sessionUser.id)
-                    .single();
+                // Use REST API with the ACTUAL session token (not supabase client internal auth)
+                const url = `${SUPABASE_URL}/rest/v1/profiles?select=id,full_name,user_roles(role_id),permissions&id=eq.${sessionUser.id}`;
+                const response = await fetch(url, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Profile fetch failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const profile = data?.[0];
 
                 if (profile) {
                     const dbRole = profile.user_roles?.[0]?.role_id as UserRole;
                     const dbPermissions = profile.permissions as Permission[];
                     const dbUsername = profile.full_name;
 
-                    // CRITICAL: Always use database values, never fall back to cached localStorage
-                    // This ensures stale permissions don't persist after refresh
+                    console.log('[AuthContext] ✅ Profile loaded from DB:', dbUsername, dbRole);
                     setUser({
                         id: sessionUser.id,
                         email: sessionUser.email,
                         username: dbUsername || sessionUser.email?.split('@')[0] || 'User',
                         role: dbRole || UserRole.FRONT_DESK,
-                        // IMPORTANT: Use dbPermissions even if null/undefined - convert to empty array
                         permissions: dbPermissions || []
                     });
                 } else {
-                    // Fallback if no profile exists (e.g. invite flow not fully complete in DB trigger)
-                    console.warn('[AuthContext] No profile found in DB for user, using session fallback');
+                    console.warn('[AuthContext] No profile found in DB, using session fallback');
+                    // Only set if no existing user in localStorage
+                    if (!localStorage.getItem(STORAGE_KEYS.USER)) {
+                        setUser({
+                            id: sessionUser.id,
+                            email: sessionUser.email,
+                            username: sessionUser.email?.split('@')[0] || 'New User',
+                            role: UserRole.FRONT_DESK,
+                            permissions: []
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error('[AuthContext] ⚠️ Profile fetch error (keeping cached user):', e);
+                // CRITICAL: Do NOT overwrite user to FRONT_DESK on error!
+                // Keep the existing user from localStorage — their role/permissions are still valid
+                const existingUser = localStorage.getItem(STORAGE_KEYS.USER);
+                if (!existingUser) {
+                    // Only set basic user if there's no cached user at all (first-ever login)
                     setUser({
                         id: sessionUser.id,
                         email: sessionUser.email,
-                        username: sessionUser.email?.split('@')[0] || 'New User',
-                        role: UserRole.FRONT_DESK, // Default safe role
+                        username: sessionUser.email?.split('@')[0] || 'User',
+                        role: UserRole.FRONT_DESK,
                         permissions: []
                     });
                 }
-            } catch (e) {
-                console.error('[AuthContext] Error fetching profile:', e);
-                // Even on error, set basic user if we have session, so we don't hang
-                setUser({
-                    id: sessionUser.id,
-                    email: sessionUser.email,
-                    username: 'User (Offline)',
-                    role: UserRole.FRONT_DESK,
-                    permissions: []
-                });
+                // If cached user exists, we just keep it — don't call setUser at all
             } finally {
-                // CRITICAL: Only stop loading if roleConfigs are also ready
-                // This prevents race condition where UI renders before permissions are available
                 console.log('[AuthContext] fetchProfile complete. roleConfigsLoaded:', roleConfigsLoaded);
-                // We'll handle isLoading in a separate useEffect that waits for BOTH
             }
         };
 
@@ -296,7 +306,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
                 console.log('[AuthContext] ✅ Session via', event, '— caching token + fetching profile');
                 setAccessToken(session.access_token);
-                await fetchProfile(session.user);
+                await fetchProfile(session.user, session.access_token);
             } else if (event === 'INITIAL_SESSION' && !session) {
                 console.log('[AuthContext] ⚠️ No session on init');
                 setAccessToken(null);
