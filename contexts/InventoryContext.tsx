@@ -99,8 +99,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
     }, [isAuthenticated]);
 
-    // Listen for auth state changes — relies entirely on onAuthStateChange
-    // which fires INITIAL_SESSION on page refresh, SIGNED_IN on login, etc.
+    // Listen for auth state changes - optimized to prevent duplicate fetches
     useEffect(() => {
         let mounted = true;
 
@@ -116,11 +115,14 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             }
         };
 
-        // Subscribe to auth changes — handles INITIAL_SESSION (page refresh),
-        // SIGNED_IN (login), and TOKEN_REFRESHED (token renewal)
+        // Check initial session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (mounted) handleSession(session);
+        });
+
+        // Subscribe to auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (!mounted) return;
-            console.log('[InventoryContext] Auth event:', event, '| hasSession:', !!session);
             handleSession(session);
         });
 

@@ -223,12 +223,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
     }, [user?.id]);
 
-    // Listen to Supabase Auth Changes — relies entirely on onAuthStateChange
-    // which fires INITIAL_SESSION on page refresh, SIGNED_IN on login,
-    // and TOKEN_REFRESHED when the access token is renewed.
+    // Listen to Supabase Auth Changes
     useEffect(() => {
         const fetchProfile = async (sessionUser: any) => {
-            if (!sessionUser) return;
+            if (!sessionUser) {
+                // Keep local user if offline, or clear? For now, we rely on specific sign out action to clear.
+                // But if we are online and explicit "no session", we might want to be careful.
+                // Existing App.tsx logic didn't auto-clear on simple refresh if session missing but localstorage existed?
+                // Actually supabase.auth.getSession() handles validation.
+                return;
+            }
 
             try {
                 // Fetch profile to get Role/Permissions
@@ -243,25 +247,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     const dbPermissions = profile.permissions as Permission[];
                     const dbUsername = profile.full_name;
 
+                    // CRITICAL: Always use database values, never fall back to cached localStorage
+                    // This ensures stale permissions don't persist after refresh
                     setUser({
                         id: sessionUser.id,
                         email: sessionUser.email,
                         username: dbUsername || sessionUser.email?.split('@')[0] || 'User',
                         role: dbRole || UserRole.FRONT_DESK,
+                        // IMPORTANT: Use dbPermissions even if null/undefined - convert to empty array
                         permissions: dbPermissions || []
                     });
                 } else {
+                    // Fallback if no profile exists (e.g. invite flow not fully complete in DB trigger)
                     console.warn('[AuthContext] No profile found in DB for user, using session fallback');
                     setUser({
                         id: sessionUser.id,
                         email: sessionUser.email,
                         username: sessionUser.email?.split('@')[0] || 'New User',
-                        role: UserRole.FRONT_DESK,
+                        role: UserRole.FRONT_DESK, // Default safe role
                         permissions: []
                     });
                 }
             } catch (e) {
                 console.error('[AuthContext] Error fetching profile:', e);
+                // Even on error, set basic user if we have session, so we don't hang
                 setUser({
                     id: sessionUser.id,
                     email: sessionUser.email,
@@ -270,23 +279,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     permissions: []
                 });
             } finally {
+                // CRITICAL: Only stop loading if roleConfigs are also ready
+                // This prevents race condition where UI renders before permissions are available
                 console.log('[AuthContext] fetchProfile complete. roleConfigsLoaded:', roleConfigsLoaded);
+                // We'll handle isLoading in a separate useEffect that waits for BOTH
             }
         };
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('[AuthContext] Auth event:', event, '| hasSession:', !!session);
-
-            if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
-                console.log('[AuthContext] Session detected via', event, '— fetching profile...');
+        const initSession = async () => {
+            console.log('[AuthContext] Initializing session...');
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                console.log('[AuthContext] Session found, fetching profile...');
                 await fetchProfile(session.user);
-            } else if (event === 'INITIAL_SESSION' && !session) {
-                console.log('[AuthContext] No session found on init');
+            } else {
+                console.log('[AuthContext] No session found');
+                // Only set loading false if roleConfigs are also loaded
+                // This prevents race condition on refresh
                 if (roleConfigsLoaded) {
                     setIsLoading(false);
                 }
             }
+        };
 
+        initSession();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                if (session?.user) await fetchProfile(session.user);
+            }
             if (event === 'SIGNED_OUT') {
                 setUser(null);
                 localStorage.removeItem(STORAGE_KEYS.USER);
@@ -368,9 +389,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('[AuthContext] Starting sign out (Fire-and-Forget mode)...');
 
         try {
-            // 1. Clear app-specific localStorage keys only — NOT localStorage.clear()
-            //    localStorage.clear() wipes Supabase auth session tokens, breaking session
-            //    restore on next page load. Supabase stores tokens under 'sb-*' keys.
+            // 1. Immediate Local Cleanup — only clear app keys, preserve Supabase tokens
             const appKeys = [
                 'ha_user', 'ha_users_db', 'ha_theme', 'ha_lang',
                 'ha_templates', 'ha_daily_reports', 'ha_medical_codes',
@@ -379,13 +398,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 'ha_migration_dismissed'
             ];
             appKeys.forEach(key => localStorage.removeItem(key));
-
             setUser(null);
             setRoleConfigs([]);
 
-            // 2. Let Supabase clean up its own session tokens properly
+            // 2. Fire Supabase cleanup asynchronously (don't wait for it)
             supabase.removeAllChannels().catch(e => console.warn('Channel cleanup warning:', e));
-            await supabase.auth.signOut({ scope: 'local' });
+            supabase.auth.signOut({ scope: 'local' }).catch(e => console.warn('SignOut warning:', e));
 
             console.log('[AuthContext] Local state cleared, forcing reload now.');
 
