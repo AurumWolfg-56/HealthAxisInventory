@@ -82,9 +82,6 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setIsLoading(true); // UI Feedback
         console.log('[AppDataContext] === Starting data fetch ===');
 
-        isFetchingRef.current = true;
-        console.log('[AppDataContext] === Starting data fetch ===');
-
         try {
             const { data: { session } } = await supabase.auth.getSession();
             const userId = session?.user?.id;
@@ -158,38 +155,17 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
     }, []);
 
-    // Single unified auth listener
+    // Single unified auth listener — relies entirely on onAuthStateChange
+    // which fires INITIAL_SESSION on page refresh, SIGNED_IN on login,
+    // and TOKEN_REFRESHED when the access token is renewed.
     useEffect(() => {
         mountedRef.current = true;
 
-        const handleAuth = async () => {
-            // Step 1: Check for existing session (handles page refresh)
-            console.log('[AppDataContext] Checking for existing session...');
-            const { data: { session } } = await supabase.auth.getSession();
-
-            if (session && mountedRef.current) {
-                console.log('[AppDataContext] ✅ Session found on init, caching token...');
-                DailyReportService.setAccessToken(session.access_token);
-                TemplateService.setAccessToken(session.access_token);
-                UserService.setAccessToken(session.access_token);
-                InventoryService.setAccessToken(session.access_token);
-                OrderService.setAccessToken(session.access_token);
-                BillingRuleService.setAccessToken(session.access_token);
-                ProtocolService.setAccessToken(session.access_token);
-                await fetchAllData();
-            } else {
-                console.log('[AppDataContext] No session found on init');
-            }
-        };
-
-        handleAuth();
-
-        // Step 2: Listen for future auth changes (handles login/logout)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             console.log('[AppDataContext] Auth event:', event, '| hasSession:', !!session);
 
-            if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) { // Removed hasLoaded check to ensure refresh
-                console.log('[AppDataContext] Session detected, caching token...');
+            if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+                console.log('[AppDataContext] Session detected via', event, '— caching token & fetching data...');
                 DailyReportService.setAccessToken(session.access_token);
                 TemplateService.setAccessToken(session.access_token);
                 UserService.setAccessToken(session.access_token);
@@ -200,15 +176,13 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 if (mountedRef.current) {
                     await fetchAllData();
                 }
+            } else if (event === 'INITIAL_SESSION' && !session) {
+                console.log('[AppDataContext] No session found on init (INITIAL_SESSION without session)');
             }
 
             if (event === 'SIGNED_OUT') {
                 console.log('[AppDataContext] SIGNED_OUT — clearing data & token');
                 DailyReportService.clearAccessToken();
-                // TemplateService and UserService effectively clear on next setAccessToken, 
-                // but good practice might be to add clear methods if needed. 
-                // For now, nullifying session in services isn't strictly enforced by a method but by logic.
-                // We'll leave it as is since DailyReportService has it.
                 hasLoadedRef.current = false;
                 isFetchingRef.current = false;
                 if (mountedRef.current) {
