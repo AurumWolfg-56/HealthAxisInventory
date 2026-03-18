@@ -1,5 +1,5 @@
 // IMPORTANT: Increment this version whenever you deploy new code to force cache refresh
-const CACHE_VERSION = 'healthaxis-v5-auth-fix';
+const CACHE_VERSION = 'healthaxis-v6-simplified-auth';
 const ASSETS_TO_CACHE = [
     '/logo.png',
     '/manifest.json'

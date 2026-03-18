@@ -11,6 +11,7 @@ import { BudgetService } from '../services/BudgetService';
 import { ProtocolService } from '../services/ProtocolService';
 import { billingRules as INITIAL_BILLING_RULES } from '../data/billingRules';
 import { supabase } from '../src/lib/supabase';
+import { useAuth } from './AuthContext';
 
 // Storage Keys
 const STORAGE_KEYS = {
@@ -53,6 +54,9 @@ interface AppDataContextType {
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
 export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    // Get authenticated user from AuthContext
+    const { user } = useAuth();
+
     // State
     const [templates, setTemplates] = useState<FormTemplate[]>([]);
     const [dailyReports, setDailyReports] = useState<DailyReport[]>([]);
@@ -71,29 +75,45 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const hasLoadedRef = useRef(false);
     const mountedRef = useRef(true);
 
-    // Core data fetching function — uses the cached token (set via setAccessToken)
+    // Cleanup on unmount
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => { mountedRef.current = false; };
+    }, []);
+
+    // Core data fetching function
     const fetchAllData = useCallback(async (userId?: string) => {
         if (isFetchingRef.current) {
-            console.log('[AppDataContext] ⏳ already fetching, skipping concurrent');
+            console.log('[AppDataContext] ⏳ Skipping — fetch already in progress');
             return;
         }
 
         isFetchingRef.current = true;
-        setIsLoading(true); // UI Feedback
-        console.log('[AppDataContext] === Starting data fetch === userId:', userId || 'not provided');
+        setIsLoading(true);
+        console.log('[AppDataContext] === Starting data fetch === userId:', userId || 'none');
 
         try {
-            // If userId wasn't passed, try to get it (fallback for manual refreshData calls)
-            let resolvedUserId = userId;
-            if (!resolvedUserId) {
-                const { data: { session } } = await supabase.auth.getSession();
-                resolvedUserId = session?.user?.id;
-                console.log('[AppDataContext] Resolved userId from getSession:', resolvedUserId);
+            // Get the current session token for API calls
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.access_token) {
+                console.warn('[AppDataContext] ⚠️ No session token available, aborting fetch');
+                return;
             }
 
-            console.log('[AppDataContext] Calling DailyReportService.getReports()...');
+            const resolvedUserId = userId || session.user?.id;
 
-            // Run fetches in parallel using Promise.allSettled so one failure doesn't block the other result
+            // Cache token on all services
+            DailyReportService.setAccessToken(session.access_token);
+            TemplateService.setAccessToken(session.access_token);
+            UserService.setAccessToken(session.access_token);
+            InventoryService.setAccessToken(session.access_token);
+            OrderService.setAccessToken(session.access_token);
+            BillingRuleService.setAccessToken(session.access_token);
+            ProtocolService.setAccessToken(session.access_token);
+
+            console.log('[AppDataContext] 🔑 Token cached. Fetching all data...');
+
+            // Run fetches in parallel
             const [reportsResult, templatesResult, billingRulesResult, budgetsResult, protocolsResult] = await Promise.allSettled([
                 DailyReportService.getReports(),
                 TemplateService.getTemplates(),
@@ -102,112 +122,84 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 ProtocolService.getProtocols()
             ]);
 
+            if (!mountedRef.current) return;
+
             // Handle Reports
             if (reportsResult.status === 'fulfilled') {
-                if (mountedRef.current) {
-                    console.log('[AppDataContext] ✅ Reports fetched:', reportsResult.value.length, 'reports');
-                    setDailyReports(reportsResult.value);
-                }
+                console.log('[AppDataContext] ✅ Reports:', reportsResult.value.length);
+                setDailyReports(reportsResult.value);
             } else {
-                console.error('[AppDataContext] ❌ Reports fetch REJECTED:', reportsResult.reason?.message || reportsResult.reason);
+                console.error('[AppDataContext] ❌ Reports failed:', reportsResult.reason?.message || reportsResult.reason);
             }
 
             // Handle Templates
             if (templatesResult.status === 'fulfilled') {
-                if (mountedRef.current) {
-                    console.log('[AppDataContext] ✅ Templates fetched:', templatesResult.value.length);
-                    setTemplates(templatesResult.value);
-                }
+                console.log('[AppDataContext] ✅ Templates:', templatesResult.value.length);
+                setTemplates(templatesResult.value);
             } else {
-                console.error('[AppDataContext] ❌ Templates fetch failed:', templatesResult.reason);
+                console.error('[AppDataContext] ❌ Templates failed:', templatesResult.reason);
             }
 
             // Handle Billing Rules
             if (billingRulesResult.status === 'fulfilled') {
-                if (mountedRef.current) {
-                    console.log('[AppDataContext] ✅ Billing Rules fetched:', billingRulesResult.value.length);
-                    setBillingRules(billingRulesResult.value.length > 0 ? billingRulesResult.value : INITIAL_BILLING_RULES);
-                }
+                console.log('[AppDataContext] ✅ Billing Rules:', billingRulesResult.value.length);
+                setBillingRules(billingRulesResult.value.length > 0 ? billingRulesResult.value : INITIAL_BILLING_RULES);
             } else {
-                console.error('[AppDataContext] ❌ Billing Rules fetch failed:', billingRulesResult.reason);
+                console.error('[AppDataContext] ❌ Billing Rules failed:', billingRulesResult.reason);
             }
 
             // Handle Budgets
             if (budgetsResult.status === 'fulfilled') {
-                if (mountedRef.current) {
-                    console.log('[AppDataContext] ✅ Budgets fetched:', budgetsResult.value.length);
-                    setBudgets(budgetsResult.value);
-                }
+                console.log('[AppDataContext] ✅ Budgets:', budgetsResult.value.length);
+                setBudgets(budgetsResult.value);
             } else {
-                console.error('[AppDataContext] ❌ Budgets fetch failed:', budgetsResult.reason);
+                console.error('[AppDataContext] ❌ Budgets failed:', budgetsResult.reason);
             }
 
             // Handle Protocols
             if (protocolsResult.status === 'fulfilled') {
-                if (mountedRef.current) {
-                    console.log('[AppDataContext] ✅ Protocols fetched:', protocolsResult.value.length);
-                    setProtocols(protocolsResult.value);
-                }
+                console.log('[AppDataContext] ✅ Protocols:', protocolsResult.value.length);
+                setProtocols(protocolsResult.value);
             } else {
-                console.error('[AppDataContext] ❌ Protocols fetch failed:', protocolsResult.reason);
+                console.error('[AppDataContext] ❌ Protocols failed:', protocolsResult.reason);
             }
 
             hasLoadedRef.current = true;
             console.log('[AppDataContext] === Data fetch complete ===');
         } catch (err: any) {
-            console.error('[AppDataContext] 🔥 Critical fetch error:', err?.message || err);
+            console.error('[AppDataContext] 🔥 Critical error:', err?.message || err);
         } finally {
             isFetchingRef.current = false;
             if (mountedRef.current) setIsLoading(false);
         }
     }, []);
 
-    // Single unified auth listener — relies entirely on onAuthStateChange
-    // which fires INITIAL_SESSION on page refresh, SIGNED_IN on login,
-    // and TOKEN_REFRESHED when the access token is renewed.
+    // ──────────────────────────────────────────────────────────────────
+    // SIMPLE APPROACH: Fetch data when the user becomes available.
+    // No separate onAuthStateChange listener needed — AuthContext 
+    // already handles session restoration and provides the `user` object.
+    // This eliminates ALL race conditions from competing listeners.
+    // ──────────────────────────────────────────────────────────────────
     useEffect(() => {
-        mountedRef.current = true;
+        if (user?.id && !hasLoadedRef.current) {
+            console.log('[AppDataContext] 👤 User detected:', user.id.substring(0, 8), '— loading data...');
+            fetchAllData(user.id);
+        }
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('[AppDataContext] 🔔 Auth event:', event, '| hasSession:', !!session, '| userId:', session?.user?.id?.substring(0, 8) || 'none');
-
-            if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
-                console.log('[AppDataContext] ✅ Session detected via', event, '— caching token & fetching data...');
-                DailyReportService.setAccessToken(session.access_token);
-                TemplateService.setAccessToken(session.access_token);
-                UserService.setAccessToken(session.access_token);
-                InventoryService.setAccessToken(session.access_token);
-                OrderService.setAccessToken(session.access_token);
-                BillingRuleService.setAccessToken(session.access_token);
-                ProtocolService.setAccessToken(session.access_token);
-                if (mountedRef.current) {
-                    await fetchAllData(session.user.id);
-                } else {
-                    console.warn('[AppDataContext] ⚠️ Component unmounted before fetchAllData could run');
-                }
-            } else if (event === 'INITIAL_SESSION' && !session) {
-                console.log('[AppDataContext] ⚠️ No session found on init (INITIAL_SESSION without session)');
-            }
-
-            if (event === 'SIGNED_OUT') {
-                console.log('[AppDataContext] 🚪 SIGNED_OUT — clearing data & token');
+        if (!user) {
+            // User signed out — clear data
+            if (hasLoadedRef.current) {
+                console.log('[AppDataContext] 🚪 User gone — clearing data');
                 DailyReportService.clearAccessToken();
                 hasLoadedRef.current = false;
                 isFetchingRef.current = false;
-                if (mountedRef.current) {
-                    setDailyReports([]);
-                    setTemplates([]);
-                    setBudgets([]);
-                    setProtocols([]);
-                }
+                setDailyReports([]);
+                setTemplates([]);
+                setBudgets([]);
+                setProtocols([]);
             }
-        });
-
-        return () => {
-            mountedRef.current = false;
-            subscription.unsubscribe();
-        };
-    }, [fetchAllData]);
+        }
+    }, [user?.id, fetchAllData]);
 
     // LocalStorage persistence for non-Supabase data
     useEffect(() => localStorage.setItem(STORAGE_KEYS.BILLING_RULES, JSON.stringify(billingRules)), [billingRules]);
