@@ -72,37 +72,44 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const mountedRef = useRef(true);
 
     // Core data fetching function — uses the cached token (set via setAccessToken)
-    const fetchAllData = useCallback(async () => {
+    const fetchAllData = useCallback(async (userId?: string) => {
         if (isFetchingRef.current) {
-            console.log('[AppDataContext] already fetching, skipping concurrent');
+            console.log('[AppDataContext] ⏳ already fetching, skipping concurrent');
             return;
         }
 
         isFetchingRef.current = true;
         setIsLoading(true); // UI Feedback
-        console.log('[AppDataContext] === Starting data fetch ===');
+        console.log('[AppDataContext] === Starting data fetch === userId:', userId || 'not provided');
 
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const userId = session?.user?.id;
+            // If userId wasn't passed, try to get it (fallback for manual refreshData calls)
+            let resolvedUserId = userId;
+            if (!resolvedUserId) {
+                const { data: { session } } = await supabase.auth.getSession();
+                resolvedUserId = session?.user?.id;
+                console.log('[AppDataContext] Resolved userId from getSession:', resolvedUserId);
+            }
+
+            console.log('[AppDataContext] Calling DailyReportService.getReports()...');
 
             // Run fetches in parallel using Promise.allSettled so one failure doesn't block the other result
             const [reportsResult, templatesResult, billingRulesResult, budgetsResult, protocolsResult] = await Promise.allSettled([
                 DailyReportService.getReports(),
                 TemplateService.getTemplates(),
                 BillingRuleService.getRules(),
-                BudgetService.getBudgets(userId),
+                BudgetService.getBudgets(resolvedUserId),
                 ProtocolService.getProtocols()
             ]);
 
             // Handle Reports
             if (reportsResult.status === 'fulfilled') {
                 if (mountedRef.current) {
-                    console.log('[AppDataContext] ✅ Reports fetched:', reportsResult.value.length);
+                    console.log('[AppDataContext] ✅ Reports fetched:', reportsResult.value.length, 'reports');
                     setDailyReports(reportsResult.value);
                 }
             } else {
-                console.error('[AppDataContext] ❌ Reports fetch failed:', reportsResult.reason);
+                console.error('[AppDataContext] ❌ Reports fetch REJECTED:', reportsResult.reason?.message || reportsResult.reason);
             }
 
             // Handle Templates
@@ -147,8 +154,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
             hasLoadedRef.current = true;
             console.log('[AppDataContext] === Data fetch complete ===');
-        } catch (err) {
-            console.error('[AppDataContext] Critical fetch error:', err);
+        } catch (err: any) {
+            console.error('[AppDataContext] 🔥 Critical fetch error:', err?.message || err);
         } finally {
             isFetchingRef.current = false;
             if (mountedRef.current) setIsLoading(false);
@@ -162,10 +169,10 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         mountedRef.current = true;
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('[AppDataContext] Auth event:', event, '| hasSession:', !!session);
+            console.log('[AppDataContext] 🔔 Auth event:', event, '| hasSession:', !!session, '| userId:', session?.user?.id?.substring(0, 8) || 'none');
 
             if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
-                console.log('[AppDataContext] Session detected via', event, '— caching token & fetching data...');
+                console.log('[AppDataContext] ✅ Session detected via', event, '— caching token & fetching data...');
                 DailyReportService.setAccessToken(session.access_token);
                 TemplateService.setAccessToken(session.access_token);
                 UserService.setAccessToken(session.access_token);
@@ -174,14 +181,16 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 BillingRuleService.setAccessToken(session.access_token);
                 ProtocolService.setAccessToken(session.access_token);
                 if (mountedRef.current) {
-                    await fetchAllData();
+                    await fetchAllData(session.user.id);
+                } else {
+                    console.warn('[AppDataContext] ⚠️ Component unmounted before fetchAllData could run');
                 }
             } else if (event === 'INITIAL_SESSION' && !session) {
-                console.log('[AppDataContext] No session found on init (INITIAL_SESSION without session)');
+                console.log('[AppDataContext] ⚠️ No session found on init (INITIAL_SESSION without session)');
             }
 
             if (event === 'SIGNED_OUT') {
-                console.log('[AppDataContext] SIGNED_OUT — clearing data & token');
+                console.log('[AppDataContext] 🚪 SIGNED_OUT — clearing data & token');
                 DailyReportService.clearAccessToken();
                 hasLoadedRef.current = false;
                 isFetchingRef.current = false;
