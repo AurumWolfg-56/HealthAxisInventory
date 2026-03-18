@@ -97,7 +97,7 @@ const loadState = <T,>(key: string, fallback: T): T => {
 
 const App: React.FC = () => {
     // --- AUTH CONTEXT ---
-    const { user, hasPermission, roleConfigs, updateRoleConfig, signOut, updateUser, isLoading } = useAuth();
+    const { user, accessToken, hasPermission, roleConfigs, updateRoleConfig, signOut, updateUser, isLoading } = useAuth();
 
     // --- STATE ---
     // const [user, setUser] = useState<User | null>(() => loadState(STORAGE_KEYS.USER, null)); // Moved to Context
@@ -207,7 +207,7 @@ const App: React.FC = () => {
     // Fetch real users from DB for dropdowns - ensures we have the latest list (especially newly added doctors/owners)
     useEffect(() => {
         const fetchUsersDb = async () => {
-            if (!user?.id || isLoading) return; // Wait until AppDataContext finishes auth/token setup
+            if (!user?.id || !accessToken) return; // Wait for BOTH user AND token
             try {
                 const fetchedUsers = await UserService.getUsers();
                 console.log('[Debug] Users fetched:', fetchedUsers);
@@ -219,7 +219,7 @@ const App: React.FC = () => {
         };
 
         fetchUsersDb();
-    }, [user?.id, isLoading]);
+    }, [user?.id, accessToken]);
 
     // Removed: useEffect(() => { localStorage.setItem(STORAGE_KEYS.ROLES, JSON.stringify(roleConfigs)); }, [roleConfigs]);
 

@@ -288,32 +288,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         };
 
-        const initSession = async () => {
-            console.log('[AuthContext] Initializing session...');
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-                console.log('[AuthContext] Session found, caching token + fetching profile...');
+        // SINGLE unified auth listener — handles ALL events including INITIAL_SESSION
+        // INITIAL_SESSION fires on page refresh, SIGNED_IN on login, TOKEN_REFRESHED on token renewal
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('[AuthContext] 🔔 Auth event:', event, '| hasSession:', !!session);
+
+            if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+                console.log('[AuthContext] ✅ Session via', event, '— caching token + fetching profile');
                 setAccessToken(session.access_token);
                 await fetchProfile(session.user);
-            } else {
-                console.log('[AuthContext] No session found');
+            } else if (event === 'INITIAL_SESSION' && !session) {
+                console.log('[AuthContext] ⚠️ No session on init');
                 setAccessToken(null);
                 if (roleConfigsLoaded) {
                     setIsLoading(false);
                 }
             }
-        };
 
-        initSession();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('[AuthContext] Auth event:', event, '| hasSession:', !!session);
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-                if (session?.user) {
-                    setAccessToken(session.access_token);
-                    await fetchProfile(session.user);
-                }
-            }
             if (event === 'SIGNED_OUT') {
                 setUser(null);
                 setAccessToken(null);
