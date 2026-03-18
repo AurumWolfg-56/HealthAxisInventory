@@ -4,7 +4,7 @@ import { InventoryService } from '../services/InventoryService';
 import { OrderService } from '../services/OrderService';
 import { PriceService } from '../services/PriceService';
 import { MedicalCodeService } from '../services/MedicalCodeService';
-import { supabase } from '../src/lib/supabase';
+import { useAuth } from './AuthContext';
 
 interface InventoryContextType {
     inventory: InventoryItem[];
@@ -31,6 +31,9 @@ interface InventoryContextType {
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
 
 export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    // Get token from AuthContext — SINGLE source of truth
+    const { accessToken } = useAuth();
+
     const [inventory, setInventory] = useState<InventoryItem[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
     const [prices, setPrices] = useState<PriceItem[]>([]);
@@ -42,20 +45,11 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const [isLoadingPrices, setIsLoadingPrices] = useState(false);
     const [isLoadingCodes, setIsLoadingCodes] = useState(false);
 
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const isFetchingRef = useRef(false);
     const hasLoadedRef = useRef(false);
 
     const refreshInventory = useCallback(async () => {
-        // Prevent concurrent fetches
-        if (isFetchingRef.current) {
-            return;
-        }
-
-        // Don't fetch if not authenticated
-        if (!isAuthenticated) {
-            return;
-        }
+        if (isFetchingRef.current || !accessToken) return;
 
         isFetchingRef.current = true;
         setIsLoadingInventory(true);
@@ -64,12 +58,10 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setIsLoadingCodes(true);
 
         try {
-            // Load inventory first as it's the primary focus
             const fetchedInventory = await InventoryService.fetchAll();
             setInventory(fetchedInventory);
             setIsLoadingInventory(false);
 
-            // Load others in parallel/settled
             const results = await Promise.allSettled([
                 OrderService.fetchAll(),
                 PriceService.fetchAll(),
@@ -84,7 +76,6 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                     if (index === 2) setCodes(result.value);
                     if (index === 3) setCodeGroups(result.value);
                 }
-                // Silently handle failures - tables might be empty
             });
 
             hasLoadedRef.current = true;
@@ -97,47 +88,30 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setIsLoadingCodes(false);
             isFetchingRef.current = false;
         }
-    }, [isAuthenticated]);
+    }, [accessToken]);
 
-    // Listen for auth state changes - optimized to prevent duplicate fetches
+    // ──────────────────────────────────────────────────────────────
+    // When accessToken changes (from null → token), cache it on
+    // services and trigger data fetch. NO getSession(), NO
+    // onAuthStateChange — just watching the token from AuthContext.
+    // ──────────────────────────────────────────────────────────────
     useEffect(() => {
-        let mounted = true;
+        if (accessToken) {
+            console.log('[InventoryContext] 🔑 Token received from AuthContext — caching on services');
+            InventoryService.setAccessToken(accessToken);
+            OrderService.setAccessToken(accessToken);
+            PriceService.setAccessToken(accessToken);
+            MedicalCodeService.setAccessToken(accessToken);
 
-        const handleSession = (session: any) => {
-            if (session?.access_token) {
-                InventoryService.setAccessToken(session.access_token);
-                OrderService.setAccessToken(session.access_token);
-                PriceService.setAccessToken(session.access_token);
-                MedicalCodeService.setAccessToken(session.access_token);
-                if (mounted) setIsAuthenticated(true);
-            } else {
-                if (mounted) setIsAuthenticated(false);
+            if (!hasLoadedRef.current) {
+                refreshInventory();
             }
-        };
-
-        // Check initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (mounted) handleSession(session);
-        });
-
-        // Subscribe to auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            if (!mounted) return;
-            handleSession(session);
-        });
-
-        return () => {
-            mounted = false;
-            subscription.unsubscribe();
-        };
-    }, []);
-
-    // Load data when authenticated (only once)
-    useEffect(() => {
-        if (isAuthenticated && !hasLoadedRef.current && !isFetchingRef.current) {
-            refreshInventory();
+        } else {
+            // Token cleared (sign out)
+            hasLoadedRef.current = false;
+            isFetchingRef.current = false;
         }
-    }, [isAuthenticated, refreshInventory]);
+    }, [accessToken, refreshInventory]);
 
     const value = {
         inventory, orders, prices, codes, codeGroups,

@@ -5,6 +5,7 @@ import { supabase } from '../src/lib/supabase';
 // Define the shape of our Auth Context
 interface AuthContextType {
     user: User | null;
+    accessToken: string | null;
     isLoading: boolean;
     isAdmin: boolean;
     hasPermission: (permission: Permission) => boolean;
@@ -28,6 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const stored = localStorage.getItem(STORAGE_KEYS.USER);
         return stored ? JSON.parse(stored) : null;
     });
+    const [accessToken, setAccessToken] = useState<string | null>(null);
 
     // CRITICAL FIX: Initialize with empty array to prevent using hardcoded permissions on page refresh
     // Permissions will only be available after loading from database
@@ -290,12 +292,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log('[AuthContext] Initializing session...');
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
-                console.log('[AuthContext] Session found, fetching profile...');
+                console.log('[AuthContext] Session found, caching token + fetching profile...');
+                setAccessToken(session.access_token);
                 await fetchProfile(session.user);
             } else {
                 console.log('[AuthContext] No session found');
-                // Only set loading false if roleConfigs are also loaded
-                // This prevents race condition on refresh
+                setAccessToken(null);
                 if (roleConfigsLoaded) {
                     setIsLoading(false);
                 }
@@ -305,11 +307,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         initSession();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('[AuthContext] Auth event:', event, '| hasSession:', !!session);
             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-                if (session?.user) await fetchProfile(session.user);
+                if (session?.user) {
+                    setAccessToken(session.access_token);
+                    await fetchProfile(session.user);
+                }
             }
             if (event === 'SIGNED_OUT') {
                 setUser(null);
+                setAccessToken(null);
                 localStorage.removeItem(STORAGE_KEYS.USER);
             }
         });
@@ -424,6 +431,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const value = {
         user,
+        accessToken,
         isLoading,
         isAdmin: hasPermission('admin.access'),
         hasPermission,

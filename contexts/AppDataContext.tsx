@@ -10,7 +10,6 @@ import { BillingRuleService } from '../services/BillingRuleService';
 import { BudgetService } from '../services/BudgetService';
 import { ProtocolService } from '../services/ProtocolService';
 import { billingRules as INITIAL_BILLING_RULES } from '../data/billingRules';
-import { supabase } from '../src/lib/supabase';
 import { useAuth } from './AuthContext';
 
 // Storage Keys
@@ -54,8 +53,8 @@ interface AppDataContextType {
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
 export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    // Get authenticated user from AuthContext
-    const { user } = useAuth();
+    // Get token from AuthContext — SINGLE source of truth
+    const { user, accessToken } = useAuth();
 
     // State
     const [templates, setTemplates] = useState<FormTemplate[]>([]);
@@ -75,50 +74,34 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const hasLoadedRef = useRef(false);
     const mountedRef = useRef(true);
 
-    // Cleanup on unmount
     useEffect(() => {
         mountedRef.current = true;
         return () => { mountedRef.current = false; };
     }, []);
 
     // Core data fetching function
-    const fetchAllData = useCallback(async (userId?: string) => {
+    const fetchAllData = useCallback(async () => {
         if (isFetchingRef.current) {
             console.log('[AppDataContext] ⏳ Skipping — fetch already in progress');
             return;
         }
 
+        if (!accessToken) {
+            console.warn('[AppDataContext] ⚠️ No accessToken, aborting fetch');
+            return;
+        }
+
         isFetchingRef.current = true;
         setIsLoading(true);
-        console.log('[AppDataContext] === Starting data fetch === userId:', userId || 'none');
+        console.log('[AppDataContext] === Starting data fetch ===');
 
         try {
-            // Get the current session token for API calls
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session?.access_token) {
-                console.warn('[AppDataContext] ⚠️ No session token available, aborting fetch');
-                return;
-            }
-
-            const resolvedUserId = userId || session.user?.id;
-
-            // Cache token on all services
-            DailyReportService.setAccessToken(session.access_token);
-            TemplateService.setAccessToken(session.access_token);
-            UserService.setAccessToken(session.access_token);
-            InventoryService.setAccessToken(session.access_token);
-            OrderService.setAccessToken(session.access_token);
-            BillingRuleService.setAccessToken(session.access_token);
-            ProtocolService.setAccessToken(session.access_token);
-
-            console.log('[AppDataContext] 🔑 Token cached. Fetching all data...');
-
             // Run fetches in parallel
             const [reportsResult, templatesResult, billingRulesResult, budgetsResult, protocolsResult] = await Promise.allSettled([
                 DailyReportService.getReports(),
                 TemplateService.getTemplates(),
                 BillingRuleService.getRules(),
-                BudgetService.getBudgets(resolvedUserId),
+                BudgetService.getBudgets(user?.id),
                 ProtocolService.getProtocols()
             ]);
 
@@ -134,7 +117,6 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
             // Handle Templates
             if (templatesResult.status === 'fulfilled') {
-                console.log('[AppDataContext] ✅ Templates:', templatesResult.value.length);
                 setTemplates(templatesResult.value);
             } else {
                 console.error('[AppDataContext] ❌ Templates failed:', templatesResult.reason);
@@ -142,7 +124,6 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
             // Handle Billing Rules
             if (billingRulesResult.status === 'fulfilled') {
-                console.log('[AppDataContext] ✅ Billing Rules:', billingRulesResult.value.length);
                 setBillingRules(billingRulesResult.value.length > 0 ? billingRulesResult.value : INITIAL_BILLING_RULES);
             } else {
                 console.error('[AppDataContext] ❌ Billing Rules failed:', billingRulesResult.reason);
@@ -150,7 +131,6 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
             // Handle Budgets
             if (budgetsResult.status === 'fulfilled') {
-                console.log('[AppDataContext] ✅ Budgets:', budgetsResult.value.length);
                 setBudgets(budgetsResult.value);
             } else {
                 console.error('[AppDataContext] ❌ Budgets failed:', budgetsResult.reason);
@@ -158,7 +138,6 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
             // Handle Protocols
             if (protocolsResult.status === 'fulfilled') {
-                console.log('[AppDataContext] ✅ Protocols:', protocolsResult.value.length);
                 setProtocols(protocolsResult.value);
             } else {
                 console.error('[AppDataContext] ❌ Protocols failed:', protocolsResult.reason);
@@ -172,36 +151,40 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             isFetchingRef.current = false;
             if (mountedRef.current) setIsLoading(false);
         }
-    }, []);
+    }, [accessToken, user?.id]);
 
-    // ──────────────────────────────────────────────────────────────────
-    // SIMPLE APPROACH: Fetch data when the user becomes available.
-    // No separate onAuthStateChange listener needed — AuthContext 
-    // already handles session restoration and provides the `user` object.
-    // This eliminates ALL race conditions from competing listeners.
-    // ──────────────────────────────────────────────────────────────────
+    // ──────────────────────────────────────────────────────────────
+    // When accessToken changes (from null → token), cache it on
+    // services and trigger data fetch. NO getSession(), NO
+    // onAuthStateChange — just watching the token from AuthContext.
+    // ──────────────────────────────────────────────────────────────
     useEffect(() => {
-        if (user?.id && !hasLoadedRef.current) {
-            console.log('[AppDataContext] 👤 User detected:', user.id.substring(0, 8), '— loading data...');
-            fetchAllData(user.id);
-        }
+        if (accessToken) {
+            console.log('[AppDataContext] 🔑 Token received from AuthContext — caching on services');
+            DailyReportService.setAccessToken(accessToken);
+            TemplateService.setAccessToken(accessToken);
+            UserService.setAccessToken(accessToken);
+            InventoryService.setAccessToken(accessToken);
+            OrderService.setAccessToken(accessToken);
+            BillingRuleService.setAccessToken(accessToken);
+            ProtocolService.setAccessToken(accessToken);
 
-        if (!user) {
-            // User signed out — clear data
-            if (hasLoadedRef.current) {
-                console.log('[AppDataContext] 🚪 User gone — clearing data');
-                DailyReportService.clearAccessToken();
-                hasLoadedRef.current = false;
-                isFetchingRef.current = false;
-                setDailyReports([]);
-                setTemplates([]);
-                setBudgets([]);
-                setProtocols([]);
+            if (!hasLoadedRef.current) {
+                fetchAllData();
             }
+        } else {
+            // Token cleared (sign out)
+            DailyReportService.clearAccessToken();
+            hasLoadedRef.current = false;
+            isFetchingRef.current = false;
+            setDailyReports([]);
+            setTemplates([]);
+            setBudgets([]);
+            setProtocols([]);
         }
-    }, [user?.id, fetchAllData]);
+    }, [accessToken, fetchAllData]);
 
-    // LocalStorage persistence for non-Supabase data
+    // LocalStorage persistence
     useEffect(() => localStorage.setItem(STORAGE_KEYS.BILLING_RULES, JSON.stringify(billingRules)), [billingRules]);
     useEffect(() => localStorage.setItem(STORAGE_KEYS.PETTY_CASH, JSON.stringify(pettyCashHistory)), [pettyCashHistory]);
     useEffect(() => localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(logs)), [logs]);
