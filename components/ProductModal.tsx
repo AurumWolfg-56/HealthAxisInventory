@@ -138,8 +138,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                   <input
                     type="number"
                     min="0"
-                    value={formData.stock}
-                    onChange={(e) => handleChange('stock', parseInt(e.target.value) || 0)}
+                    value={formData.stock || ''}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => handleChange('stock', e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                     className="w-full h-14 pl-5 pr-5 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-4 focus:ring-medical-500/10 focus:border-medical-500 transition-all outline-none font-mono font-bold text-lg"
                   />
                 </InputGroup>
@@ -166,8 +167,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                       type="number"
                       min="0"
                       step="0.01"
-                      value={formData.averageCost}
-                      onChange={(e) => handleChange('averageCost', parseFloat(e.target.value) || 0)}
+                      value={formData.averageCost || ''}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => handleChange('averageCost', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                       className="w-full h-12 pl-8 pr-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none font-mono font-bold"
                       placeholder="0.00"
                     />
@@ -190,8 +192,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                   <input
                     type="number"
                     min="0"
-                    value={formData.minStock}
-                    onChange={(e) => handleChange('minStock', parseInt(e.target.value) || 0)}
+                    value={formData.minStock || ''}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => handleChange('minStock', e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                     className="w-full h-12 px-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all outline-none font-mono font-bold"
                   />
                 </InputGroup>
@@ -200,8 +203,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                   <input
                     type="number"
                     min="0"
-                    value={formData.maxStock}
-                    onChange={(e) => handleChange('maxStock', parseInt(e.target.value) || 0)}
+                    value={formData.maxStock || ''}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => handleChange('maxStock', e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                     className="w-full h-12 px-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none font-mono font-bold"
                   />
                 </InputGroup>
