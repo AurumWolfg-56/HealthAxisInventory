@@ -3,7 +3,6 @@ import { useAppData } from '../contexts/AppDataContext';
 import { useInventory } from '../contexts/InventoryContext';
 import { Budget, Order, User } from '../types';
 import { BudgetService } from '../services/BudgetService';
-import { CATEGORIES } from '../utils/constants';
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
     LineChart, Line, CartesianGrid, Legend, Cell
@@ -18,11 +17,6 @@ interface BudgetsProps {
 // Helpers
 // ──────────────────────────────────────────────────────────────────
 const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-const getMatchingCategories = (budget: Budget): string[] => {
-    if (budget.categories && budget.categories.length > 0) return budget.categories;
-    return [budget.category];
-};
 
 const getStatusInfo = (pct: number) => {
     if (pct >= 100) return { label: 'OVER BUDGET', color: 'text-red-500', bg: 'bg-red-500', badge: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800', glow: 'shadow-[0_0_20px_rgba(239,68,68,0.4)]' };
@@ -47,9 +41,16 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
 
     const exportRef = useRef<HTMLDivElement>(null);
 
+    // Extract unique vendors from orders
+    const availableVendors = useMemo(() => {
+        const vendors = new Set<string>();
+        orders.forEach(o => { if (o.vendor) vendors.add(o.vendor); });
+        return [...vendors].sort();
+    }, [orders]);
+
     // Modal Form State
     const [formData, setFormData] = useState<Partial<Budget>>({
-        category: CATEGORIES[0],
+        category: '',
         categories: [],
         amount: 0,
         period: 'MONTHLY',
@@ -62,11 +63,17 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
     const openModal = (budget?: Budget) => {
         if (budget) {
             setEditingBudget(budget);
-            setFormData({ ...budget });
+            setFormData({
+                ...budget,
+                // Ensure categories is populated — use category as fallback for old budgets
+                categories: (budget.categories && budget.categories.length > 0)
+                    ? budget.categories
+                    : budget.category ? [budget.category] : []
+            });
         } else {
             setEditingBudget(null);
             setFormData({
-                category: CATEGORIES[0],
+                category: '',
                 categories: [],
                 amount: 0,
                 period: 'MONTHLY',
@@ -83,26 +90,21 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
         e.preventDefault();
         if (!user || !user.id) return;
 
-        // Set primary category from multi-select
+        const vendors = formData.categories || [];
         const saveData = {
             ...formData,
-            category: (formData.categories && formData.categories.length > 0)
-                ? formData.categories[0]
-                : formData.category || CATEGORIES[0]
+            category: vendors.length > 0 ? vendors[0] : formData.category || 'General',
+            categories: vendors
         };
 
         setIsSaving(true);
         try {
             if (editingBudget && editingBudget.id) {
                 const updated = await BudgetService.updateBudget(editingBudget.id, saveData);
-                if (updated) {
-                    setBudgets(prev => prev.map(b => b.id === updated.id ? updated : b));
-                }
+                if (updated) setBudgets(prev => prev.map(b => b.id === updated.id ? updated : b));
             } else {
                 const created = await BudgetService.createBudget(saveData as any, user.id);
-                if (created) {
-                    setBudgets(prev => [created, ...prev]);
-                }
+                if (created) setBudgets(prev => [created, ...prev]);
             }
             setIsModalOpen(false);
         } catch (error) {
@@ -120,11 +122,10 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
             setBudgets(prev => prev.filter(b => b.id !== id));
         } catch (error) {
             console.error("Failed to delete budget", error);
-            alert("Failed to delete budget.");
         }
     };
 
-    // Auto-roll recurring budgets that have expired
+    // Auto-roll recurring budgets
     const handleAutoRoll = async (budget: Budget) => {
         if (!user?.id) return;
         const start = new Date(budget.endDate);
@@ -145,22 +146,32 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                 startDate: start.toISOString().split('T')[0],
                 endDate: end.toISOString().split('T')[0]
             }, user.id);
-            if (created) {
-                setBudgets(prev => [created, ...prev]);
-            }
+            if (created) setBudgets(prev => [created, ...prev]);
         } catch (err) {
             console.error('Auto-roll failed:', err);
         }
     };
 
+    // Toggle vendor selection
+    const toggleVendor = (vendor: string) => {
+        const current = formData.categories || [];
+        if (current.includes(vendor)) {
+            setFormData({ ...formData, categories: current.filter(v => v !== vendor) });
+        } else {
+            setFormData({ ...formData, categories: [...current, vendor] });
+        }
+    };
+
     // ──────────────────────────────────────────────────────────────
-    // Calculate Budget Utilization + Matching Orders
+    // Budget Stats — match by VENDOR
     // ──────────────────────────────────────────────────────────────
     const budgetStats = useMemo(() => {
         return budgets.map(budget => {
             const budgetStart = new Date(budget.startDate).getTime();
             const budgetEnd = new Date(budget.endDate).getTime();
-            const cats = getMatchingCategories(budget);
+            const vendors = (budget.categories && budget.categories.length > 0)
+                ? budget.categories
+                : budget.category ? [budget.category] : [];
 
             const matchingOrders: { order: Order; amount: number }[] = [];
             let spent = 0;
@@ -170,16 +181,11 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                 const orderDate = new Date(order.orderDate).getTime();
                 if (orderDate < budgetStart || orderDate > budgetEnd) return;
 
-                let orderSpent = 0;
-                order.items.forEach(item => {
-                    const itemCat = item.category || 'Uncategorized';
-                    if (cats.includes(itemCat)) {
-                        orderSpent += (item.total || (item.quantity * item.unitCost) || 0);
-                    }
-                });
-                if (orderSpent > 0) {
-                    spent += orderSpent;
-                    matchingOrders.push({ order, amount: orderSpent });
+                // Match by VENDOR name
+                if (vendors.some(v => v.toLowerCase() === order.vendor?.toLowerCase())) {
+                    const total = order.grandTotal || order.subtotal || 0;
+                    spent += total;
+                    matchingOrders.push({ order, amount: total });
                 }
             });
 
@@ -195,7 +201,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                 status,
                 matchingOrders,
                 isExpired,
-                cats
+                vendors
             };
         });
     }, [budgets, orders]);
@@ -205,11 +211,11 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
     const alertCount = budgetStats.filter(b => b.truePercentUsed >= 75).length;
 
     // ──────────────────────────────────────────────────────────────
-    // Chart Data — Budget vs Actual
+    // Chart Data — Budget vs Actual by vendor
     // ──────────────────────────────────────────────────────────────
     const chartData = useMemo(() => {
         return budgetStats.map(b => ({
-            name: b.cats.length > 1 ? `${b.cats[0]} +${b.cats.length - 1}` : b.cats[0],
+            name: b.vendors.length > 1 ? `${b.vendors[0]} +${b.vendors.length - 1}` : (b.vendors[0] || b.category || 'N/A'),
             Budget: b.amount,
             Spent: b.spent,
             pct: b.truePercentUsed
@@ -217,12 +223,11 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
     }, [budgetStats]);
 
     // ──────────────────────────────────────────────────────────────
-    // Trend Data — Monthly spending over time
+    // Trend Data — monthly spending by vendor
     // ──────────────────────────────────────────────────────────────
     const trendData = useMemo(() => {
         const months: Record<string, Record<string, number>> = {};
         const now = new Date();
-        // Look back 6 months
         for (let i = 5; i >= 0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
             const key = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
@@ -230,26 +235,22 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
         }
 
         orders.forEach(order => {
-            if (order.status === 'CANCELLED') return;
+            if (order.status === 'CANCELLED' || !order.vendor) return;
             const d = new Date(order.orderDate);
             const key = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
             if (!months[key]) return;
-
-            order.items.forEach(item => {
-                const cat = item.category || 'Uncategorized';
-                months[key][cat] = (months[key][cat] || 0) + (item.total || (item.quantity * item.unitCost) || 0);
-            });
+            const total = order.grandTotal || order.subtotal || 0;
+            months[key][order.vendor] = (months[key][order.vendor] || 0) + total;
         });
 
-        // Get active budget categories
-        const activeCats: string[] = [...new Set<string>(budgetStats.flatMap(b => b.cats))];
+        const trackedVendors: string[] = [...new Set<string>(budgetStats.flatMap(b => b.vendors))];
 
-        return Object.entries(months).map(([month, catMap]) => {
+        return Object.entries(months).map(([month, vendorMap]) => {
             const point: any = { month };
             let total = 0;
-            activeCats.forEach(cat => {
-                const val = catMap[cat] || 0;
-                point[cat] = val;
+            trackedVendors.forEach(v => {
+                const val = vendorMap[v] || 0;
+                point[v] = val;
                 total += val;
             });
             point['Total'] = total;
@@ -257,7 +258,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
         });
     }, [orders, budgetStats]);
 
-    const trendCategories: string[] = [...new Set<string>(budgetStats.flatMap(b => b.cats))];
+    const trendVendors: string[] = [...new Set<string>(budgetStats.flatMap(b => b.vendors))];
     const TREND_COLORS = ['#6366f1', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
 
     // ──────────────────────────────────────────────────────────────
@@ -266,7 +267,6 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
     const handleExportPDF = async () => {
         const el = exportRef.current;
         if (!el) return;
-
         // @ts-ignore
         const html2pdf = (await import('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js')).default || window.html2pdf;
         html2pdf().set({
@@ -276,16 +276,6 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
             html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
         }).from(el).save();
-    };
-
-    // Category toggle for multi-select
-    const toggleCategory = (cat: string) => {
-        const current = formData.categories || [];
-        if (current.includes(cat)) {
-            setFormData({ ...formData, categories: current.filter(c => c !== cat) });
-        } else {
-            setFormData({ ...formData, categories: [...current, cat] });
-        }
     };
 
     // ═══════════════════════════════════════════════════════════════
@@ -301,7 +291,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                     </div>
                     <div>
                         <h2 className="text-display text-slate-900 dark:text-white">Budget Control</h2>
-                        <p className="text-caption mt-1">Manage departmental limits and track real-time spending.</p>
+                        <p className="text-caption mt-1">Track spending limits by vendor.</p>
                     </div>
                     {alertCount > 0 && (
                         <div className="ml-2 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full text-xs font-black animate-pulse flex items-center gap-2">
@@ -312,14 +302,10 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                 </div>
 
                 <div className="flex items-center gap-3 flex-wrap">
-                    {/* View Toggle */}
                     <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 gap-1">
                         {([['cards', 'fa-grip', 'Cards'], ['chart', 'fa-chart-column', 'Chart'], ['trends', 'fa-chart-line', 'Trends']] as const).map(([view, icon, label]) => (
-                            <button
-                                key={view}
-                                onClick={() => setActiveView(view)}
-                                className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${activeView === view ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                            >
+                            <button key={view} onClick={() => setActiveView(view)}
+                                className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${activeView === view ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
                                 <i className={`fa-solid ${icon}`}></i>
                                 <span className="hidden sm:inline">{label}</span>
                             </button>
@@ -328,7 +314,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
 
                     <button onClick={handleExportPDF} className="h-12 px-5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center gap-2 text-sm">
                         <i className="fa-solid fa-file-pdf"></i>
-                        <span className="hidden sm:inline">Export PDF</span>
+                        <span className="hidden sm:inline">Export</span>
                     </button>
 
                     <button onClick={() => openModal()} className="h-12 px-6 rounded-full bg-gradient-to-r from-medical-600 to-medical-500 text-white font-black shadow-xl shadow-medical-500/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
@@ -343,9 +329,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                 <div className="glass-panel p-5 md:p-6 rounded-3xl border border-white/50 dark:border-slate-800/50 relative overflow-hidden group">
                     <div className="absolute -right-8 -top-8 w-32 h-32 bg-indigo-500/10 dark:bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-colors"></div>
                     <div className="flex items-center gap-2.5 mb-3 relative z-10">
-                        <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-sm">
-                            <i className="fa-solid fa-vault"></i>
-                        </div>
+                        <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-sm"><i className="fa-solid fa-vault"></i></div>
                         <h3 className="font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Total Allocated</h3>
                     </div>
                     <p className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter relative z-10">${fmt(totalBudgeted)}</p>
@@ -354,9 +338,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                 <div className="glass-panel p-5 md:p-6 rounded-3xl border border-white/50 dark:border-slate-800/50 relative overflow-hidden group">
                     <div className="absolute -right-8 -top-8 w-32 h-32 bg-medical-500/10 dark:bg-medical-500/5 rounded-full blur-3xl group-hover:bg-medical-500/20 transition-colors"></div>
                     <div className="flex items-center gap-2.5 mb-3 relative z-10">
-                        <div className="w-9 h-9 rounded-xl bg-medical-100 dark:bg-medical-900/30 flex items-center justify-center text-medical-600 dark:text-medical-400 text-sm">
-                            <i className="fa-solid fa-chart-line"></i>
-                        </div>
+                        <div className="w-9 h-9 rounded-xl bg-medical-100 dark:bg-medical-900/30 flex items-center justify-center text-medical-600 dark:text-medical-400 text-sm"><i className="fa-solid fa-chart-line"></i></div>
                         <h3 className="font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Total Spent</h3>
                     </div>
                     <p className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter relative z-10">${fmt(totalSpent)}</p>
@@ -365,9 +347,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                 <div className="glass-panel p-5 md:p-6 rounded-3xl border border-white/50 dark:border-slate-800/50 relative overflow-hidden group">
                     <div className="absolute -right-8 -top-8 w-32 h-32 bg-emerald-500/10 dark:bg-emerald-500/5 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-colors"></div>
                     <div className="flex items-center gap-2.5 mb-3 relative z-10">
-                        <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-sm">
-                            <i className="fa-solid fa-piggy-bank"></i>
-                        </div>
+                        <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-sm"><i className="fa-solid fa-piggy-bank"></i></div>
                         <h3 className="font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Remaining</h3>
                     </div>
                     <p className={`text-3xl md:text-4xl font-black tracking-tighter relative z-10 ${totalBudgeted - totalSpent < 0 ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
@@ -381,7 +361,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                 <div className="glass-panel p-6 md:p-8 rounded-3xl border border-white/50 dark:border-slate-800/50">
                     <h3 className="text-lg font-black text-slate-800 dark:text-white mb-6 flex items-center gap-3">
                         <i className="fa-solid fa-chart-column text-indigo-500"></i>
-                        Budget vs Actual Spending
+                        Budget vs Actual by Vendor
                     </h3>
                     <div style={{ width: '100%', minHeight: 320 }}>
                         <ResponsiveContainer width="100%" height={320}>
@@ -389,11 +369,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.2} />
                                 <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }} />
                                 <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} tickFormatter={(v) => `$${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
-                                <Tooltip
-                                    contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 16, fontWeight: 700, fontSize: 13 }}
-                                    itemStyle={{ color: '#e2e8f0' }}
-                                    formatter={(value: number) => [`$${fmt(value)}`, undefined]}
-                                />
+                                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 16, fontWeight: 700, fontSize: 13 }} itemStyle={{ color: '#e2e8f0' }} formatter={(value: number) => [`$${fmt(value)}`, undefined]} />
                                 <Bar dataKey="Budget" fill="#818cf8" radius={[8, 8, 0, 0]} maxBarSize={50} />
                                 <Bar dataKey="Spent" radius={[8, 8, 0, 0]} maxBarSize={50}>
                                     {chartData.map((entry, i) => (
@@ -412,7 +388,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                 <div className="glass-panel p-6 md:p-8 rounded-3xl border border-white/50 dark:border-slate-800/50">
                     <h3 className="text-lg font-black text-slate-800 dark:text-white mb-6 flex items-center gap-3">
                         <i className="fa-solid fa-chart-line text-medical-500"></i>
-                        6-Month Spending Trends
+                        6-Month Vendor Spending Trends
                     </h3>
                     <div style={{ width: '100%', minHeight: 320 }}>
                         <ResponsiveContainer width="100%" height={320}>
@@ -420,13 +396,9 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.2} />
                                 <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }} />
                                 <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} tickFormatter={(v) => `$${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
-                                <Tooltip
-                                    contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 16, fontWeight: 700, fontSize: 13 }}
-                                    itemStyle={{ color: '#e2e8f0' }}
-                                    formatter={(value: number) => [`$${fmt(value)}`, undefined]}
-                                />
-                                {trendCategories.map((cat, i) => (
-                                    <Line key={cat} type="monotone" dataKey={cat} stroke={TREND_COLORS[i % TREND_COLORS.length]} strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 16, fontWeight: 700, fontSize: 13 }} itemStyle={{ color: '#e2e8f0' }} formatter={(value: number) => [`$${fmt(value)}`, undefined]} />
+                                {trendVendors.map((v, i) => (
+                                    <Line key={v} type="monotone" dataKey={v} stroke={TREND_COLORS[i % TREND_COLORS.length]} strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                                 ))}
                                 <Line type="monotone" dataKey="Total" stroke="#94a3b8" strokeWidth={2} strokeDasharray="5 5" dot={false} />
                                 <Legend wrapperStyle={{ fontWeight: 700, fontSize: 12 }} />
@@ -436,19 +408,19 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                 </div>
             )}
 
-            {/* ─── CARDS VIEW ─── */}
+            {/* ─── BUDGET CARDS ─── */}
             <h3 className="text-xl font-black text-slate-800 dark:text-white mt-6 mb-4 px-2 flex items-center gap-3">
-                Active Budgets
+                Vendor Budgets
                 <span className="text-sm font-bold text-slate-400">({budgetStats.length})</span>
             </h3>
 
             {budgetStats.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center glass-panel rounded-3xl border border-dashed border-slate-300 dark:border-slate-700">
                     <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500 text-4xl mb-6 shadow-inner">
-                        <i className="fa-solid fa-piggy-bank"></i>
+                        <i className="fa-solid fa-truck-field"></i>
                     </div>
-                    <h3 className="text-2xl font-black text-slate-800 dark:text-white mb-2">No Budgets Setup</h3>
-                    <p className="text-slate-500 dark:text-slate-400 max-w-sm mb-8">Establish your first financial boundaries to start tracking expenses automatically against your purchasing orders.</p>
+                    <h3 className="text-2xl font-black text-slate-800 dark:text-white mb-2">No Vendor Budgets</h3>
+                    <p className="text-slate-500 dark:text-slate-400 max-w-sm mb-8">Set spending limits for your vendors (Amazon, McKesson, etc.) and track orders against them automatically.</p>
                     <button onClick={() => openModal()} className="px-8 h-12 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:scale-105 transition-transform">Create First Budget</button>
                 </div>
             ) : (
@@ -457,19 +429,17 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                         const isExpanded = expandedBudget === budget.id;
                         return (
                             <div key={budget.id} className={`glass-panel rounded-[2rem] border border-white/60 dark:border-slate-800/60 shadow-xl shadow-slate-200/20 dark:shadow-none flex flex-col group transition-all duration-300 ${budget.status.glow}`}>
-                                {/* Card Header */}
                                 <div className="p-6 md:p-8">
+                                    {/* Header */}
                                     <div className="flex justify-between items-start mb-6">
                                         <div>
                                             <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                                {budget.cats.map(cat => (
-                                                    <span key={cat} className="px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-black uppercase tracking-widest border border-indigo-100 dark:border-indigo-500/20">
-                                                        {cat}
+                                                {budget.vendors.map(v => (
+                                                    <span key={v} className="px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-black uppercase tracking-widest border border-indigo-100 dark:border-indigo-500/20 flex items-center gap-1.5">
+                                                        <i className="fa-solid fa-truck text-[8px]"></i>{v}
                                                     </span>
                                                 ))}
-                                                <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                                                    {budget.period}
-                                                </span>
+                                                <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-lg text-[10px] font-black uppercase tracking-widest">{budget.period}</span>
                                                 {budget.isRecurring && (
                                                     <span className="px-2.5 py-1 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg text-[10px] font-black uppercase tracking-widest border border-purple-100 dark:border-purple-800 flex items-center gap-1">
                                                         <i className="fa-solid fa-rotate text-[8px]"></i> Auto
@@ -480,13 +450,10 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                                                 <h4 className="text-slate-500 dark:text-slate-400 font-bold text-sm">
                                                     {new Date(budget.startDate).toLocaleDateString()} — {new Date(budget.endDate).toLocaleDateString()}
                                                 </h4>
-                                                {budget.isExpired && (
-                                                    <span className="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded text-[9px] font-black">EXPIRED</span>
-                                                )}
+                                                {budget.isExpired && <span className="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded text-[9px] font-black">EXPIRED</span>}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            {/* Alert Badge */}
                                             <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${budget.status.badge}`}>
                                                 {budget.truePercentUsed >= 75 && <i className="fa-solid fa-triangle-exclamation mr-1"></i>}
                                                 {budget.status.label}
@@ -504,9 +471,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                                     <div className="flex items-end justify-between mb-4">
                                         <div>
                                             <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-1">Spent</p>
-                                            <p className={`text-3xl font-black leading-none ${budget.truePercentUsed >= 100 ? 'text-red-500' : 'text-slate-900 dark:text-white'}`}>
-                                                ${fmt(budget.spent)}
-                                            </p>
+                                            <p className={`text-3xl font-black leading-none ${budget.truePercentUsed >= 100 ? 'text-red-500' : 'text-slate-900 dark:text-white'}`}>${fmt(budget.spent)}</p>
                                         </div>
                                         <div className="text-right">
                                             <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-1">Limit</p>
@@ -516,41 +481,37 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
 
                                     {/* Progress Bar */}
                                     <div className="relative h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div
-                                            className={`absolute left-0 top-0 bottom-0 rounded-full transition-all duration-1000 ease-out ${budget.status.bg} ${budget.status.glow}`}
-                                            style={{ width: `${budget.percentUsed}%` }}
-                                        ></div>
+                                        <div className={`absolute left-0 top-0 bottom-0 rounded-full transition-all duration-1000 ease-out ${budget.status.bg} ${budget.status.glow}`} style={{ width: `${budget.percentUsed}%` }}></div>
                                     </div>
                                     <div className="flex justify-between mt-2.5 text-xs font-bold font-mono">
                                         <span className={budget.truePercentUsed >= 100 ? 'text-red-500 animate-pulse' : 'text-slate-500 dark:text-slate-400'}>
                                             {budget.truePercentUsed.toFixed(1)}% Used
                                         </span>
-                                        <span className="text-slate-400">
-                                            ${fmt(Math.max(0, budget.amount - budget.spent))} Remaining
-                                        </span>
+                                        <span className="text-slate-400">${fmt(Math.max(0, budget.amount - budget.spent))} Remaining</span>
                                     </div>
 
-                                    {/* Auto-roll button for expired recurring */}
+                                    {budget.notes && (
+                                        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 italic px-1">{budget.notes}</p>
+                                    )}
+
+                                    {/* Auto-roll for expired recurring */}
                                     {budget.isExpired && budget.isRecurring && (
                                         <button onClick={() => handleAutoRoll(budget)} className="mt-4 w-full py-2.5 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-xs font-black hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-all flex items-center justify-center gap-2 border border-purple-100 dark:border-purple-800">
-                                            <i className="fa-solid fa-rotate"></i>
-                                            Roll to Next Period
+                                            <i className="fa-solid fa-rotate"></i> Roll to Next Period
                                         </button>
                                     )}
 
-                                    {/* Spending Breakdown Toggle */}
+                                    {/* Breakdown toggle */}
                                     {budget.matchingOrders.length > 0 && (
-                                        <button
-                                            onClick={() => setExpandedBudget(isExpanded ? null : budget.id)}
-                                            className="mt-4 w-full py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
-                                        >
+                                        <button onClick={() => setExpandedBudget(isExpanded ? null : budget.id)}
+                                            className="mt-4 w-full py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2">
                                             <i className={`fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
-                                            {isExpanded ? 'Hide' : 'View'} Spending Breakdown ({budget.matchingOrders.length} order{budget.matchingOrders.length > 1 ? 's' : ''})
+                                            {isExpanded ? 'Hide' : 'View'} Orders ({budget.matchingOrders.length})
                                         </button>
                                     )}
                                 </div>
 
-                                {/* Spending Breakdown (expanded) */}
+                                {/* Expanded Order Breakdown */}
                                 {isExpanded && (
                                     <div className="border-t border-slate-100 dark:border-slate-800 p-4 md:px-8 md:pb-6 bg-slate-50/50 dark:bg-slate-800/20 rounded-b-[2rem] space-y-2 animate-fade-in-up">
                                         <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-3 px-1">Order Breakdown</p>
@@ -562,7 +523,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                                                     </div>
                                                     <div className="min-w-0">
                                                         <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{order.poNumber || 'No PO#'}</p>
-                                                        <p className="text-[10px] text-slate-400 font-bold">{order.vendor} · {new Date(order.orderDate).toLocaleDateString()}</p>
+                                                        <p className="text-[10px] text-slate-400 font-bold">{new Date(order.orderDate).toLocaleDateString()} · {order.items.length} item{order.items.length > 1 ? 's' : ''}</p>
                                                     </div>
                                                 </div>
                                                 <p className="text-sm font-black text-slate-900 dark:text-white ml-3 flex-shrink-0">${fmt(amount)}</p>
@@ -577,89 +538,91 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
             )}
 
             {/* ═══════════════════════════════════════════════════════════ */}
-            {/* MODAL — Add / Edit Budget                                */}
+            {/* MODAL                                                    */}
             {/* ═══════════════════════════════════════════════════════════ */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !isSaving && setIsModalOpen(false)}></div>
                     <div className="bg-white dark:bg-slate-900 w-full max-w-lg max-h-[95vh] rounded-[2.5rem] shadow-2xl relative z-10 flex flex-col overflow-hidden animate-scale-in border border-slate-100 dark:border-slate-800">
-                        {/* Modal Header */}
                         <div className="shrink-0 p-6 md:p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl">
                                     <i className={`fa-solid ${editingBudget ? 'fa-pen' : 'fa-wallet'}`}></i>
                                 </div>
-                                <h3 className="text-xl font-black text-slate-900 dark:text-white">
-                                    {editingBudget ? 'Edit Budget' : 'New Budget Limit'}
-                                </h3>
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white">{editingBudget ? 'Edit Budget' : 'New Vendor Budget'}</h3>
                             </div>
-                            <button disabled={isSaving} onClick={() => setIsModalOpen(false)} className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                                <i className="fa-solid fa-xmark"></i>
-                            </button>
+                            <button disabled={isSaving} onClick={() => setIsModalOpen(false)} className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"><i className="fa-solid fa-xmark"></i></button>
                         </div>
 
                         <form onSubmit={handleSave} className="flex-1 overflow-y-auto custom-scrollbar">
                             <div className="p-6 md:p-8 space-y-6">
 
-                                {/* Multi-Category Select */}
+                                {/* Vendor Select */}
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center gap-2">
-                                        <i className="fa-solid fa-tags text-indigo-400"></i> Categories
+                                        <i className="fa-solid fa-truck text-indigo-400"></i> Vendors
                                         <span className="text-slate-300 dark:text-slate-600 font-normal normal-case tracking-normal">(select one or more)</span>
                                     </label>
-                                    <div className="flex flex-wrap gap-2 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 max-h-36 overflow-y-auto custom-scrollbar">
-                                        {CATEGORIES.map(cat => {
-                                            const isSelected = (formData.categories || []).includes(cat);
-                                            return (
-                                                <button
-                                                    key={cat}
-                                                    type="button"
-                                                    onClick={() => toggleCategory(cat)}
-                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isSelected
-                                                        ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30'
-                                                        : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:border-indigo-300 dark:hover:border-indigo-600'
-                                                    }`}
-                                                >
-                                                    {isSelected && <i className="fa-solid fa-check mr-1 text-[10px]"></i>}
-                                                    {cat}
-                                                </button>
-                                            );
-                                        })}
+                                    <div className="flex flex-wrap gap-2 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 max-h-40 overflow-y-auto custom-scrollbar">
+                                        {availableVendors.length === 0 ? (
+                                            <p className="text-xs text-slate-400 italic">No vendors found. Create purchase orders first.</p>
+                                        ) : (
+                                            availableVendors.map(vendor => {
+                                                const isSelected = (formData.categories || []).includes(vendor);
+                                                return (
+                                                    <button key={vendor} type="button" onClick={() => toggleVendor(vendor)}
+                                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isSelected
+                                                            ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30'
+                                                            : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:border-indigo-300 dark:hover:border-indigo-600'}`}>
+                                                        {isSelected && <i className="fa-solid fa-check mr-1 text-[10px]"></i>}
+                                                        {vendor}
+                                                    </button>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                    {/* Custom vendor input */}
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Or type a new vendor name..."
+                                            className="flex-1 h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm outline-none focus:border-indigo-500"
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    const val = (e.target as HTMLInputElement).value.trim();
+                                                    if (val && !(formData.categories || []).includes(val)) {
+                                                        setFormData({ ...formData, categories: [...(formData.categories || []), val] });
+                                                        (e.target as HTMLInputElement).value = '';
+                                                    }
+                                                }
+                                            }}
+                                        />
                                     </div>
                                     {(formData.categories || []).length === 0 && (
-                                        <p className="text-[10px] text-amber-500 font-bold ml-1">Select at least one category</p>
+                                        <p className="text-[10px] text-amber-500 font-bold ml-1">Select at least one vendor</p>
                                     )}
                                 </div>
 
                                 {/* Amount + Period */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Limit Amount ($)</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Spending Limit ($)</label>
                                         <div className="relative">
                                             <span className="absolute left-5 top-4 text-slate-400 font-black">$</span>
-                                            <input
-                                                type="number"
-                                                required
-                                                min="1"
-                                                step="0.01"
+                                            <input type="number" required min="1" step="0.01"
                                                 value={formData.amount || ''}
                                                 onFocus={e => e.target.select()}
                                                 onChange={e => setFormData({ ...formData, amount: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })}
                                                 className="w-full h-14 pl-9 pr-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-black text-lg outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
-                                                placeholder="Enter budget amount"
-                                            />
+                                                placeholder="Enter limit" />
                                         </div>
                                     </div>
-
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Period</label>
                                         <div className="relative">
-                                            <select
-                                                required
-                                                value={formData.period}
-                                                onChange={e => setFormData({ ...formData, period: e.target.value as any })}
-                                                className="w-full h-14 px-5 appearance-none rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 cursor-pointer"
-                                            >
+                                            <select required value={formData.period} onChange={e => setFormData({ ...formData, period: e.target.value as any })}
+                                                className="w-full h-14 px-5 appearance-none rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 cursor-pointer">
                                                 <option value="MONTHLY">Monthly</option>
                                                 <option value="QUARTERLY">Quarterly</option>
                                                 <option value="YEARLY">Yearly</option>
@@ -683,22 +646,17 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                                     </div>
                                 </div>
 
-                                {/* Auto-Roll Toggle */}
+                                {/* Auto-Renew */}
                                 <div className="flex items-center justify-between p-4 rounded-2xl bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-800">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
-                                            <i className="fa-solid fa-rotate"></i>
-                                        </div>
+                                        <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400"><i className="fa-solid fa-rotate"></i></div>
                                         <div>
                                             <p className="text-sm font-bold text-slate-800 dark:text-white">Auto-Renew</p>
-                                            <p className="text-[10px] text-slate-500 dark:text-slate-400">Automatically create next period when this budget expires</p>
+                                            <p className="text-[10px] text-slate-500 dark:text-slate-400">Create next period when this expires</p>
                                         </div>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, isRecurring: !formData.isRecurring })}
-                                        className={`w-14 h-8 rounded-full transition-all duration-300 relative ${formData.isRecurring ? 'bg-purple-500' : 'bg-slate-200 dark:bg-slate-700'}`}
-                                    >
+                                    <button type="button" onClick={() => setFormData({ ...formData, isRecurring: !formData.isRecurring })}
+                                        className={`w-14 h-8 rounded-full transition-all duration-300 relative ${formData.isRecurring ? 'bg-purple-500' : 'bg-slate-200 dark:bg-slate-700'}`}>
                                         <div className={`w-6 h-6 rounded-full bg-white shadow-md absolute top-1 transition-all duration-300 ${formData.isRecurring ? 'left-7' : 'left-1'}`}></div>
                                     </button>
                                 </div>
@@ -706,25 +664,17 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                                 {/* Notes */}
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Notes (optional)</label>
-                                    <textarea
-                                        value={formData.notes || ''}
-                                        onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                                        rows={2}
-                                        placeholder="Add any notes about this budget..."
-                                        className="w-full px-5 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 resize-none text-sm"
-                                    />
+                                    <textarea value={formData.notes || ''} onChange={e => setFormData({ ...formData, notes: e.target.value })} rows={2}
+                                        placeholder="Add any notes..."
+                                        className="w-full px-5 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 resize-none text-sm" />
                                 </div>
                             </div>
 
-                            {/* Save Button */}
                             <div className="p-6 md:px-8 md:pb-8">
-                                <button
-                                    type="submit"
-                                    disabled={isSaving || (formData.categories || []).length === 0}
-                                    className="w-full h-16 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-black text-lg shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-70 disabled:scale-100 flex items-center justify-center gap-3"
-                                >
+                                <button type="submit" disabled={isSaving || (formData.categories || []).length === 0}
+                                    className="w-full h-16 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-black text-lg shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-70 disabled:scale-100 flex items-center justify-center gap-3">
                                     {isSaving ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-check"></i>}
-                                    {isSaving ? 'Saving...' : 'Save Budget Limit'}
+                                    {isSaving ? 'Saving...' : 'Save Budget'}
                                 </button>
                             </div>
                         </form>
