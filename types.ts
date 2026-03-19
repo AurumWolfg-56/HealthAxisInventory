@@ -142,10 +142,13 @@ export interface BillingRule {
 export interface Budget {
   id: string;
   category: string;
+  categories?: string[]; // Multi-category support
   amount: number;
   period: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
   startDate: string;
   endDate: string;
+  isRecurring?: boolean;
+  notes?: string;
   createdAt?: string;
   updatedAt?: string;
 }
