@@ -41,11 +41,16 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
 
     const exportRef = useRef<HTMLDivElement>(null);
 
-    // Extract unique vendors from orders
+    // Known clinic vendors — always shown even if no orders exist yet
+    const KNOWN_VENDORS = ['Amazon', 'Henry Schein', 'Labcorp', 'McKesson', 'Medline'];
+
+    // Merge known vendors + any from orders (deduped)
     const availableVendors = useMemo(() => {
-        const vendors = new Set<string>();
-        orders.forEach(o => { if (o.vendor) vendors.add(o.vendor); });
-        return [...vendors].sort();
+        const set = new Set<string>(KNOWN_VENDORS);
+        orders.forEach(o => { if (o.vendor) set.add(o.vendor); });
+        // Remove Walmart (one-time, not tracked)
+        set.delete('Walmart');
+        return [...set].sort();
     }, [orders]);
 
     // Modal Form State
