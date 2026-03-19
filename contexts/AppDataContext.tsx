@@ -167,6 +167,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             InventoryService.setAccessToken(accessToken);
             OrderService.setAccessToken(accessToken);
             BillingRuleService.setAccessToken(accessToken);
+            BudgetService.setAccessToken(accessToken);
             ProtocolService.setAccessToken(accessToken);
 
             if (!hasLoadedRef.current) {

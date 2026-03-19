@@ -303,11 +303,13 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                                         <input
                                             type="number"
                                             required
-                                            min="0"
+                                            min="1"
                                             step="0.01"
-                                            value={formData.amount}
-                                            onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+                                            value={formData.amount || ''}
+                                            onFocus={e => e.target.select()}
+                                            onChange={e => setFormData({ ...formData, amount: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })}
                                             className="w-full h-14 pl-9 pr-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-black text-lg outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                                            placeholder="Enter budget amount"
                                         />
                                     </div>
                                 </div>

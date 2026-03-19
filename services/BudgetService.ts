@@ -1,63 +1,83 @@
-import { supabase } from '../src/lib/supabase';
 import { Budget } from '../types';
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+let _cachedToken: string | null = null;
+
+const getHeaders = () => {
+    if (!_cachedToken) {
+        console.error('[BudgetService] ❌ No cached token!');
+        throw new Error('No access token cached for BudgetService');
+    }
+    return {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${_cachedToken}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+    };
+};
+
+const mapRow = (item: any): Budget => ({
+    id: item.id,
+    category: item.category,
+    amount: Number(item.amount),
+    period: item.period,
+    startDate: item.start_date,
+    endDate: item.end_date,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at
+});
+
 export const BudgetService = {
+    setAccessToken(token: string) {
+        _cachedToken = token;
+        console.log('[BudgetService] 🔑 Access token cached');
+    },
+
     async getBudgets(userId?: string): Promise<Budget[]> {
         if (!userId) return [];
 
-        const { data, error } = await supabase
-            .from('budgets')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/budgets?select=*&order=created_at.desc`,
+            { headers: getHeaders() }
+        );
 
-        if (error) {
-            console.error('Error fetching budgets:', error);
-            throw error;
+        if (!response.ok) {
+            const err = await response.text();
+            console.error('[BudgetService] Error fetching budgets:', err);
+            throw new Error(`Failed to fetch budgets: ${response.status}`);
         }
 
-        return (data || []).map(item => ({
-            id: item.id,
-            category: item.category,
-            amount: Number(item.amount),
-            period: item.period,
-            startDate: item.start_date,
-            endDate: item.end_date,
-            createdAt: item.created_at,
-            updatedAt: item.updated_at
-        }));
+        const data = await response.json();
+        return (data || []).map(mapRow);
     },
 
     async createBudget(budget: Omit<Budget, 'id' | 'createdAt' | 'updatedAt'>, userId: string): Promise<Budget | null> {
-        const { data, error } = await supabase
-            .from('budgets')
-            .insert([{
-                user_id: userId,
-                category: budget.category,
-                amount: budget.amount,
-                period: budget.period,
-                start_date: budget.startDate,
-                end_date: budget.endDate
-            }])
-            .select()
-            .single();
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/budgets`,
+            {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({
+                    user_id: userId,
+                    category: budget.category,
+                    amount: budget.amount,
+                    period: budget.period,
+                    start_date: budget.startDate,
+                    end_date: budget.endDate
+                })
+            }
+        );
 
-        if (error) {
-            console.error('Error creating budget:', error);
-            throw error;
+        if (!response.ok) {
+            const err = await response.text();
+            console.error('[BudgetService] Error creating budget:', err);
+            throw new Error(`Failed to create budget: ${response.status}`);
         }
 
-        if (!data) return null;
-
-        return {
-            id: data.id,
-            category: data.category,
-            amount: Number(data.amount),
-            period: data.period,
-            startDate: data.start_date,
-            endDate: data.end_date,
-            createdAt: data.created_at,
-            updatedAt: data.updated_at
-        };
+        const data = await response.json();
+        return data?.[0] ? mapRow(data[0]) : null;
     },
 
     async updateBudget(id: string, updates: Partial<Budget>): Promise<Budget | null> {
@@ -68,41 +88,38 @@ export const BudgetService = {
         if (updates.startDate !== undefined) dbUpdates.start_date = updates.startDate;
         if (updates.endDate !== undefined) dbUpdates.end_date = updates.endDate;
 
-        const { data, error } = await supabase
-            .from('budgets')
-            .update(dbUpdates)
-            .eq('id', id)
-            .select()
-            .single();
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/budgets?id=eq.${id}`,
+            {
+                method: 'PATCH',
+                headers: getHeaders(),
+                body: JSON.stringify(dbUpdates)
+            }
+        );
 
-        if (error) {
-            console.error('Error updating budget:', error);
-            throw error;
+        if (!response.ok) {
+            const err = await response.text();
+            console.error('[BudgetService] Error updating budget:', err);
+            throw new Error(`Failed to update budget: ${response.status}`);
         }
 
-        if (!data) return null;
-
-        return {
-            id: data.id,
-            category: data.category,
-            amount: Number(data.amount),
-            period: data.period,
-            startDate: data.start_date,
-            endDate: data.end_date,
-            createdAt: data.created_at,
-            updatedAt: data.updated_at
-        };
+        const data = await response.json();
+        return data?.[0] ? mapRow(data[0]) : null;
     },
 
     async deleteBudget(id: string): Promise<boolean> {
-        const { error } = await supabase
-            .from('budgets')
-            .delete()
-            .eq('id', id);
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/budgets?id=eq.${id}`,
+            {
+                method: 'DELETE',
+                headers: { ...getHeaders(), 'Prefer': '' }
+            }
+        );
 
-        if (error) {
-            console.error('Error deleting budget:', error);
-            throw error;
+        if (!response.ok) {
+            const err = await response.text();
+            console.error('[BudgetService] Error deleting budget:', err);
+            throw new Error(`Failed to delete budget: ${response.status}`);
         }
 
         return true;
