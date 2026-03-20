@@ -394,10 +394,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const signOut = async () => {
-        console.log('[AuthContext] Starting sign out (Fire-and-Forget mode)...');
+        console.log('[AuthContext] Starting sign out...');
 
         try {
-            // 1. Immediate Local Cleanup — only clear app keys, preserve Supabase tokens
+            // 1. Clear app-specific localStorage keys
             const appKeys = [
                 'ha_user', 'ha_users_db', 'ha_theme', 'ha_lang',
                 'ha_templates', 'ha_daily_reports', 'ha_medical_codes',
@@ -406,21 +406,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 'ha_migration_dismissed'
             ];
             appKeys.forEach(key => localStorage.removeItem(key));
+
+            // 2. Clear Supabase auth tokens from localStorage
+            const supabaseKeys = Object.keys(localStorage).filter(k =>
+                k.startsWith('sb-') || k.includes('supabase')
+            );
+            supabaseKeys.forEach(key => localStorage.removeItem(key));
+
+            // 3. Reset React state
             setUser(null);
+            setAccessToken(null);
             setRoleConfigs([]);
 
-            // 2. Fire Supabase cleanup asynchronously (don't wait for it)
+            // 4. Clean up Supabase channels
             supabase.removeAllChannels().catch(e => console.warn('Channel cleanup warning:', e));
-            supabase.auth.signOut({ scope: 'local' }).catch(e => console.warn('SignOut warning:', e));
 
-            console.log('[AuthContext] Local state cleared, forcing reload now.');
+            // 5. AWAIT Supabase sign out (critical - must complete before reload)
+            await supabase.auth.signOut({ scope: 'local' });
+            console.log('[AuthContext] Supabase session cleared.');
 
-            // 3. Immediate Hard Reload
+            // 6. Hard reload AFTER session is cleared
             window.location.href = '/';
         } catch (err) {
-            console.error('[AuthContext] Logout critical error:', err);
-            // Emergency fallback — clear app keys only
-            ['ha_user', 'ha_roles'].forEach(key => localStorage.removeItem(key));
+            console.error('[AuthContext] Logout error:', err);
+            // Emergency: clear everything and reload
+            const allKeys = Object.keys(localStorage).filter(k =>
+                k.startsWith('ha_') || k.startsWith('sb-') || k.includes('supabase')
+            );
+            allKeys.forEach(key => localStorage.removeItem(key));
             window.location.href = '/';
         }
     };
