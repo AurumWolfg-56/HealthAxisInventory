@@ -7,6 +7,7 @@ import { DailyReport } from '../types/dailyReport';
 // Supabase JS client when multiple contexts compete for it.
 // ──────────────────────────────────────────────────────────────────────
 let _cachedToken: string | null = null;
+let _locationId: string | null = null;
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -36,6 +37,10 @@ export const DailyReportService = {
 
     clearAccessToken() {
         _cachedToken = null;
+    },
+
+    setLocationId(id: string) {
+        _locationId = id;
     },
 
     async createReport(report: DailyReport, userId: string): Promise<DailyReport | null> {

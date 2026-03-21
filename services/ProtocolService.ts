@@ -1,6 +1,7 @@
 import { Protocol, ProtocolAcknowledgment, ProtocolSeverity, ProtocolArea, ProtocolType } from '../types';
 
 let _cachedToken: string | null = null;
+let _locationId: string | null = null;
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -21,6 +22,10 @@ export const ProtocolService = {
     setAccessToken(token: string) {
         _cachedToken = token;
         console.log('[ProtocolService] 🔑 Access token cached');
+    },
+
+    setLocationId(id: string) {
+        _locationId = id;
     },
 
     getProtocols: async (): Promise<Protocol[]> => {

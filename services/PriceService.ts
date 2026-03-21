@@ -3,11 +3,16 @@ import { PriceItem, DBPrice } from '../types';
 
 export class PriceService {
     private static accessToken: string | null = null;
+    private static locationId: string | null = null;
     private static apiUrl = import.meta.env.VITE_SUPABASE_URL + '/rest/v1';
     private static apiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     static setAccessToken(token: string) {
         this.accessToken = token;
+    }
+
+    static setLocationId(id: string) {
+        this.locationId = id;
     }
 
     private static getHeaders() {

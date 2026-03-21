@@ -2,6 +2,7 @@ import { supabase } from '../src/lib/supabase';
 import { MedicalCode, CodeGroup, DBMedicalCode, DBCodeGroup } from '../types';
 
 let _accessToken: string | null = null;
+let _locationId: string | null = null;
 const API_URL = import.meta.env.VITE_SUPABASE_URL + '/rest/v1';
 const API_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -20,6 +21,10 @@ function getHeaders() {
 export const MedicalCodeService = {
     setAccessToken(token: string) {
         _accessToken = token;
+    },
+
+    setLocationId(id: string) {
+        _locationId = id;
     },
 
     // --- MAPPERS ---

@@ -4,6 +4,7 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 let _cachedToken: string | null = null;
+let _locationId: string | null = null;
 
 const getHeaders = () => {
     if (!_cachedToken) {
@@ -38,11 +39,16 @@ export const BudgetService = {
         console.log('[BudgetService] 🔑 Access token cached');
     },
 
+    setLocationId(id: string) {
+        _locationId = id;
+    },
+
     async getBudgets(userId?: string): Promise<Budget[]> {
         if (!userId) return [];
 
+        const locFilter = _locationId ? `&location_id=eq.${_locationId}` : '';
         const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/budgets?select=*&order=created_at.desc`,
+            `${SUPABASE_URL}/rest/v1/budgets?select=*&order=created_at.desc${locFilter}`,
             { headers: getHeaders() }
         );
 

@@ -1,6 +1,7 @@
 import { BillingRule } from '../types';
 
 let _cachedToken: string | null = null;
+let _locationId: string | null = null;
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -26,6 +27,10 @@ export const BillingRuleService = {
     clearAccessToken() {
         _cachedToken = null;
         console.log('[BillingRuleService] 🔒 Access token cleared');
+    },
+
+    setLocationId(id: string) {
+        _locationId = id;
     },
 
     async getRules(): Promise<BillingRule[]> {

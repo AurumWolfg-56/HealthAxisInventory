@@ -346,6 +346,7 @@ export interface DBOrder {
   attachment_url: string | null;
   created_by: string; // UUID
   created_at: string;
+  location_id: string | null; // Multi-tenant
 }
 
 export interface DBOrderItem {

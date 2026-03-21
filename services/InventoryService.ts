@@ -1,6 +1,7 @@
 import { InventoryItem, ActivityLog } from '../types';
 
 let _cachedToken: string | null = null;
+let _locationId: string | null = null;
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -21,6 +22,10 @@ export const InventoryService = {
         _cachedToken = token;
     },
 
+    setLocationId(id: string) {
+        _locationId = id;
+    },
+
     /**
      * Fetches all inventory items from the items table.
      */
@@ -28,7 +33,8 @@ export const InventoryService = {
         try {
             if (!_cachedToken) return []; // Allow initial load to fail silently if not auth'd yet, or better, return empty
 
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/items?select=*&order=name.asc`, {
+            const locFilter = _locationId ? `&location_id=eq.${_locationId}` : '';
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/items?select=*&order=name.asc${locFilter}`, {
                 method: 'GET',
                 headers: getHeaders()
             });
@@ -75,7 +81,8 @@ export const InventoryService = {
             batch_number: item.batchNumber || '',
             location: item.location || 'Unassigned',
             sku: item.sku || null,
-            is_active: true
+            is_active: true,
+            location_id: _locationId
         };
 
         try {
@@ -216,7 +223,8 @@ export const InventoryService = {
             batch_number: (item.batchNumber || '').trim(),
             location: (item.location || 'Unassigned').trim(),
             sku: item.sku || null,
-            is_active: true
+            is_active: true,
+            location_id: _locationId
         }));
 
         // Deduplicate logic
@@ -262,7 +270,8 @@ export const InventoryService = {
                 resource_id: resourceId,
                 metadata: typeof metadata === 'string' ? { notes: metadata } : metadata,
                 new_value: newValue || null,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                location_id: _locationId
             };
 
             const response = await fetch(`${SUPABASE_URL}/rest/v1/audit_log`, {

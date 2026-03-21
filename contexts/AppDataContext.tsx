@@ -9,8 +9,11 @@ import { OrderService } from '../services/OrderService';
 import { BillingRuleService } from '../services/BillingRuleService';
 import { BudgetService } from '../services/BudgetService';
 import { ProtocolService } from '../services/ProtocolService';
+import { PriceService } from '../services/PriceService';
+import { MedicalCodeService } from '../services/MedicalCodeService';
 import { billingRules as INITIAL_BILLING_RULES } from '../data/billingRules';
 import { useAuth } from './AuthContext';
+import { useTenant } from './TenantContext';
 
 // Storage Keys
 const STORAGE_KEYS = {
@@ -55,6 +58,8 @@ const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     // Get token from AuthContext — SINGLE source of truth
     const { user, accessToken } = useAuth();
+    // Get locationId from TenantContext
+    const { locationId } = useTenant();
 
     // State
     const [templates, setTemplates] = useState<FormTemplate[]>([]);
@@ -169,6 +174,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             BillingRuleService.setAccessToken(accessToken);
             BudgetService.setAccessToken(accessToken);
             ProtocolService.setAccessToken(accessToken);
+            MedicalCodeService.setAccessToken(accessToken);
+            PriceService.setAccessToken(accessToken);
 
             if (!hasLoadedRef.current) {
                 fetchAllData();
@@ -184,6 +191,33 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             setProtocols([]);
         }
     }, [accessToken, fetchAllData]);
+
+    // ──────────────────────────────────────────────────────────────
+    // When locationId changes, distribute it to all services and
+    // re-fetch scoped data for the new clinic.
+    // ──────────────────────────────────────────────────────────────
+    useEffect(() => {
+        if (!locationId) return;
+        console.log('[AppDataContext] 📍 Location changed:', locationId);
+
+        // Distribute to all services
+        InventoryService.setLocationId(locationId);
+        OrderService.setLocationId(locationId);
+        DailyReportService.setLocationId(locationId);
+        TemplateService.setLocationId(locationId);
+        BillingRuleService.setLocationId(locationId);
+        BudgetService.setLocationId(locationId);
+        ProtocolService.setLocationId(locationId);
+        UserService.setLocationId(locationId);
+        MedicalCodeService.setLocationId(locationId);
+        PriceService.setLocationId(locationId);
+
+        // Re-fetch if data was already loaded (location switch)
+        if (hasLoadedRef.current && accessToken) {
+            hasLoadedRef.current = false;
+            fetchAllData();
+        }
+    }, [locationId, accessToken, fetchAllData]);
 
     // LocalStorage persistence
     useEffect(() => localStorage.setItem(STORAGE_KEYS.BILLING_RULES, JSON.stringify(billingRules)), [billingRules]);

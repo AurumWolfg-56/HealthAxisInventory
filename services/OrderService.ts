@@ -2,11 +2,16 @@ import { Order, OrderItem, DBOrder, OrderStatus } from '../types';
 
 export class OrderService {
     private static accessToken: string | null = null;
+    private static locationId: string | null = null;
     private static apiUrl = import.meta.env.VITE_SUPABASE_URL + '/rest/v1';
     private static apiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     static setAccessToken(token: string) {
         this.accessToken = token;
+    }
+
+    static setLocationId(id: string) {
+        this.locationId = id;
     }
 
     private static getHeaders() {
@@ -27,7 +32,8 @@ export class OrderService {
             if (!this.accessToken) return [];
 
             // Fetch orders with their items using PostgREST resource embedding
-            const response = await fetch(`${this.apiUrl}/orders?select=*,order_items(*)&order=created_at.desc`, {
+            const locFilter = this.locationId ? `&location_id=eq.${this.locationId}` : '';
+            const response = await fetch(`${this.apiUrl}/orders?select=*,order_items(*)&order=created_at.desc${locFilter}`, {
                 headers: this.getHeaders()
             });
 
@@ -83,7 +89,8 @@ export class OrderService {
                 grand_total: order.grandTotal,
                 notes: order.notes || null,
                 attachment_url: order.attachmentUrl || null,
-                created_by: userId
+                created_by: userId,
+                location_id: this.locationId
             };
 
             const orderResponse = await fetch(`${this.apiUrl}/orders`, {

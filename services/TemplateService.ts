@@ -2,6 +2,7 @@ import { FormTemplate } from '../types';
 
 // Shared token cache pattern (copied from DailyReportService for reliability)
 let _cachedToken: string | null = null;
+let _locationId: string | null = null;
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -22,6 +23,10 @@ export const TemplateService = {
     setAccessToken(token: string) {
         _cachedToken = token;
         console.log('[TemplateService] 🔑 Access token cached');
+    },
+
+    setLocationId(id: string) {
+        _locationId = id;
     },
 
     async getTemplates(): Promise<FormTemplate[]> {

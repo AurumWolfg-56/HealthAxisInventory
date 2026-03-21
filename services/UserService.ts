@@ -5,6 +5,7 @@ import { Permission, UserRole } from '../types';
 // This eliminates supabase-js client deadlocks.
 // ──────────────────────────────────────────────────────────────────────
 let _cachedToken: string | null = null;
+let _locationId: string | null = null;
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -34,6 +35,10 @@ export const UserService = {
     setAccessToken(token: string) {
         _cachedToken = token;
         console.log('[UserService] 🔑 Access token cached');
+    },
+
+    setLocationId(id: string) {
+        _locationId = id;
     },
 
     async getUsers(): Promise<DBUser[]> {
