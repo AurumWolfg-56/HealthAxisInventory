@@ -403,7 +403,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 'ha_templates', 'ha_daily_reports', 'ha_medical_codes',
                 'ha_code_groups', 'ha_petty_cash', 'ha_voice_memos',
                 'ha_billing_rules', 'ha_roles', 'ha_logs',
-                'ha_migration_dismissed'
+                'ha_migration_dismissed',
+                'nv_current_location', 'nv_tenant_cache'
             ];
             appKeys.forEach(key => localStorage.removeItem(key));
 

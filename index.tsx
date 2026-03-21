@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
+import { TenantProvider } from './contexts/TenantContext';
 import { InventoryProvider } from './contexts/InventoryContext';
 import { AppDataProvider } from './contexts/AppDataContext';
 import './index.css';
@@ -26,11 +27,13 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <AuthProvider>
-      <InventoryProvider>
-        <AppDataProvider>
-          <App />
-        </AppDataProvider>
-      </InventoryProvider>
+      <TenantProvider>
+        <InventoryProvider>
+          <AppDataProvider>
+            <App />
+          </AppDataProvider>
+        </InventoryProvider>
+      </TenantProvider>
     </AuthProvider>
   </React.StrictMode>
 );
