@@ -164,10 +164,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
             <Logo className="w-20 h-20" showText={false} />
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-none">
-            Health<span className="text-medical-600">Axis</span>
+            Norv<span className="text-medical-600">exis</span>
           </h1>
           <p className="text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-[0.25em] text-[9px] mt-2">
-            Inventory Management System
+            Clinical Operations Platform
           </p>
         </div>
 
@@ -221,7 +221,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@healthaxis.com"
+                    placeholder="name@clinic.com"
                     className="w-full h-14 pl-12 pr-6 rounded-2xl border-none bg-slate-100/50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-extrabold placeholder:text-slate-400 focus:ring-4 ring-medical-500/10 transition-all outline-none"
                   />
                 </div>
@@ -300,7 +300,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
         </div>
 
         <div className="mt-10 text-center text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.3em]">
-          &copy; {new Date().getFullYear()} HealthAxis Global • Precision Operations
+          &copy; {new Date().getFullYear()} Norvexis Core • Clinical Operations
         </div>
       </div>
     </div>
