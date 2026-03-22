@@ -45,8 +45,8 @@ export const UserService = {
         console.log('[UserService] Fetching users via REST...');
         try {
             // Fetch profiles with roles via PostgREST resource embedding
-            // REST URL equivalent: /rest/v1/profiles?select=id,full_name,permissions,user_roles(role_id)
-            const url = `${SUPABASE_URL}/rest/v1/profiles?select=id,full_name,permissions,user_roles(role_id)`;
+            // Phase F: Read from user_location_assignments instead of deprecated user_roles
+            const url = `${SUPABASE_URL}/rest/v1/profiles?select=id,full_name,permissions,user_location_assignments(role_id,location_id)`;
 
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 45000);
@@ -69,8 +69,8 @@ export const UserService = {
             return (data || []).map((p: any) => ({
                 id: p.id,
                 full_name: p.full_name || 'Anonymous User',
-                email: 'N/A', // Email is not exposed in public profiles/roles query usually, but logic kept from Admin.tsx
-                role: p.user_roles?.[0]?.role_id || UserRole.FRONT_DESK,
+                email: 'N/A',
+                role: p.user_location_assignments?.[0]?.role_id || UserRole.FRONT_DESK,
                 permissions: p.permissions || undefined
             }));
 
@@ -171,9 +171,20 @@ export const UserService = {
             });
             if (!pResp.ok) throw new Error(`Failed to update profile: ${await pResp.text()}`);
 
-            // 2. Update Role (user_roles table)
-            // user_roles has (user_id, role_id). We presume one role per user for now based on Admin.tsx logic.
-            // Using PATCH on the record where user_id matches.
+            // 2. Update Role (user_location_assignments table — Phase F)
+            // Update the role for all location assignments for this user
+            const ulaUrl = `${SUPABASE_URL}/rest/v1/user_location_assignments?user_id=eq.${userId}`;
+            const ulaResp = await fetch(ulaUrl, {
+                method: 'PATCH',
+                headers: getHeaders(),
+                body: JSON.stringify({ role_id: updates.role })
+            });
+
+            if (!ulaResp.ok) {
+                console.warn('[UserService] ULA role update failed:', await ulaResp.text());
+            }
+
+            // Dual-write to user_roles for backward compatibility
             const roleUrl = `${SUPABASE_URL}/rest/v1/user_roles?user_id=eq.${userId}`;
             const rResp = await fetch(roleUrl, {
                 method: 'PATCH',
@@ -182,10 +193,7 @@ export const UserService = {
             });
 
             if (!rResp.ok) {
-                // If PATCH fails, it might be because the row doesn't exist? (Unlikely if user exists, but possible)
-                console.warn('[UserService] Role update failed (maybe no row?), trying upsert...');
-                // If logic needed, we could try POST, but for now throwing error is safer as Admin.tsx expects success
-                throw new Error(`Failed to update role: ${await rResp.text()}`);
+                console.warn('[UserService] Legacy user_roles update failed (non-critical):', await rResp.text());
             }
 
         } catch (error: any) {

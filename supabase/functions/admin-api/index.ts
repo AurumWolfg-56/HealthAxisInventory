@@ -71,12 +71,13 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    // 2. RBAC Check (Must be OWNER or MANAGER)
+    // 2. RBAC Check (Must be OWNER or MANAGER via user_location_assignments)
     const { data: roleData, error: roleError } = await supabaseAdmin
-      .from('user_roles')
+      .from('user_location_assignments')
       .select('role_id')
       .eq('user_id', user.sub)
       .in('role_id', ['OWNER', 'MANAGER'])
+      .limit(1)
       .single()
 
     if (roleError || !roleData) {
@@ -118,12 +119,30 @@ serve(async (req) => {
         })
         if (inviteError) throw inviteError
 
-        // Assign role immediately
+        // Get the caller's location to assign the new user to the same location
+        const { data: callerAssignment } = await supabaseAdmin
+          .from('user_location_assignments')
+          .select('location_id')
+          .eq('user_id', callerId)
+          .limit(1)
+          .single()
+
+        const locationId = callerAssignment?.location_id
+
+        // Assign role via user_location_assignments (primary)
+        if (locationId) {
+          const { error: ulaError } = await supabaseAdmin
+            .from('user_location_assignments')
+            .insert({ user_id: inviteData.user.id, location_id: locationId, role_id, is_default: true })
+          if (ulaError) console.error('ULA insert error:', ulaError)
+        }
+
+        // Dual-write to user_roles for backward compatibility
         const { error: roleInsertError } = await supabaseAdmin
           .from('user_roles')
           .insert({ user_id: inviteData.user.id, role_id })
 
-        if (roleInsertError) throw roleInsertError
+        if (roleInsertError) console.warn('Legacy user_roles insert failed (non-critical):', roleInsertError)
 
         return new Response(JSON.stringify({ success: true, user: inviteData.user }), {
           headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },

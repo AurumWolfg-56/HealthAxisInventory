@@ -195,12 +195,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     try {
                         const { data: profile, error } = await supabase
                             .from('profiles')
-                            .select('id, full_name, user_roles(role_id), permissions')
+                            .select('id, full_name, user_location_assignments(role_id, location_id), permissions')
                             .eq('id', user.id)
                             .single();
 
                         if (profile && !error) {
-                            const dbRole = profile.user_roles?.[0]?.role_id as UserRole;
+                            const dbRole = profile.user_location_assignments?.[0]?.role_id as UserRole;
                             const dbPermissions = profile.permissions as Permission[];
                             const dbUsername = profile.full_name;
 
@@ -235,7 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             try {
                 // Use REST API with the ACTUAL session token (not supabase client internal auth)
-                const url = `${SUPABASE_URL}/rest/v1/profiles?select=id,full_name,user_roles(role_id),permissions&id=eq.${sessionUser.id}`;
+                const url = `${SUPABASE_URL}/rest/v1/profiles?select=id,full_name,user_location_assignments(role_id,location_id),permissions&id=eq.${sessionUser.id}`;
                 const response = await fetch(url, {
                     headers: {
                         'apikey': SUPABASE_KEY,
@@ -252,7 +252,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const profile = data?.[0];
 
                 if (profile) {
-                    const dbRole = profile.user_roles?.[0]?.role_id as UserRole;
+                    const dbRole = profile.user_location_assignments?.[0]?.role_id as UserRole;
                     const dbPermissions = profile.permissions as Permission[];
                     const dbUsername = profile.full_name;
 

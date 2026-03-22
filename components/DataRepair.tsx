@@ -18,23 +18,23 @@ export const DataRepair: React.FC = () => {
         setLoading(true);
         setStatus('Scanning database...');
         try {
-            // Fetch all roles
-            const { data: roles, error: roleError } = await supabase.from('user_roles').select('*');
-            if (roleError) throw roleError;
+            // Fetch all location assignments (Phase F: replaces user_roles)
+            const { data: assignments, error: assignError } = await supabase.from('user_location_assignments').select('user_id, role_id, assigned_at');
+            if (assignError) throw assignError;
 
             // Fetch all profiles
             const { data: profiles, error: profileError } = await supabase.from('profiles').select('id');
             if (profileError) throw profileError;
 
             const profileIds = new Set(profiles?.map(p => p.id));
-            const foundOrphans = roles?.filter(r => !profileIds.has(r.user_id)) || [];
+            const foundOrphans = assignments?.filter(r => !profileIds.has(r.user_id)) || [];
 
             setOrphans(foundOrphans.map(o => ({
                 user_id: o.user_id,
                 role_id: o.role_id,
-                created_at: o.created_at
+                created_at: o.assigned_at
             })));
-            setStatus(`Scan complete. Found ${foundOrphans.length} orphaned roles.`);
+            setStatus(`Scan complete. Found ${foundOrphans.length} orphaned assignments.`);
             setScanned(true);
         } catch (e: any) {
             setStatus(`Scan failed: ${e.message}`);
