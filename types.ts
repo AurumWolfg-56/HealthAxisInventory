@@ -236,7 +236,8 @@ export enum AppRoute {
   INTELLIGENCE = 'INTELLIGENCE', // New
   VOICE_MEMOS = 'VOICE_MEMOS', // New
   BUDGETS = 'BUDGETS', // New
-  PROTOCOLS = 'PROTOCOLS' // New
+  PROTOCOLS = 'PROTOCOLS', // New
+  PLATFORM = 'PLATFORM' // Norvexis Core Command Center
 }
 
 export interface ChartDataPoint {

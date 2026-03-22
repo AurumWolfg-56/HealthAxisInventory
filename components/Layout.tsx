@@ -29,6 +29,32 @@ export const Layout: React.FC<LayoutProps> = ({
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [showLocationPicker, setShowLocationPicker] = useState(false);
 
+    // Helper: render location icon using CSS instead of unreliable PNGs
+    const renderLocationIcon = (size: string = 'w-10 h-10', rounded: string = 'rounded-xl') => {
+        const logoUrl = currentLocation?.logo_url;
+        // If logo_url starts with 'icon:', render a CSS-based icon
+        if (logoUrl && logoUrl.startsWith('icon:')) {
+            const parts = logoUrl.split(':');
+            const iconName = parts[1] || 'building';
+            const bgColor = parts[2] || '14b8a6';
+            return (
+                <div className={`${size} ${rounded} flex items-center justify-center text-white shadow-md`} style={{ backgroundColor: `#${bgColor}` }}>
+                    <i className={`fa-solid fa-${iconName} text-lg`}></i>
+                </div>
+            );
+        }
+        // If logo_url is a real URL/path, use img but with dark bg to hide white artifacts
+        if (logoUrl) {
+            return <img src={logoUrl} alt={currentLocation?.name || ''} className={`${size} ${rounded} object-contain bg-slate-900 p-0.5`} />;
+        }
+        // Fallback: first letter
+        return (
+            <div className={`${size} ${rounded} bg-medical-500/10 flex items-center justify-center text-medical-500 font-black`}>
+                {currentLocation?.name?.charAt(0) || 'N'}
+            </div>
+        );
+    };
+
     // Reset main content scroll when route changes
     React.useEffect(() => {
         const scrollContainer = document.getElementById('main-scroll-container');
@@ -119,11 +145,7 @@ export const Layout: React.FC<LayoutProps> = ({
                             </button>
                         </div>
                         <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30">
-                            {currentLocation?.logo_url ? (
-                                <img src={currentLocation.logo_url} alt="" className="w-9 h-9 rounded-xl object-contain" />
-                            ) : (
-                                <div className="w-9 h-9 rounded-xl bg-medical-500/10 flex items-center justify-center text-medical-500 font-black text-sm">{currentLocation?.name?.charAt(0) || 'N'}</div>
-                            )}
+                            {renderLocationIcon('w-9 h-9', 'rounded-xl')}
                             <div className="overflow-hidden flex-1">
                                 {currentLocation && <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{currentLocation.name}</p>}
                                 {currentOrg && <p className="text-[10px] font-semibold text-slate-400 truncate">{currentOrg.name}</p>}
@@ -152,11 +174,7 @@ export const Layout: React.FC<LayoutProps> = ({
                             <span className="text-sm font-black text-slate-500 dark:text-slate-400 tracking-tight">Norvexis <span className="text-transparent bg-clip-text bg-gradient-to-r from-medical-500 to-blue-600">Core</span></span>
                         </div>
                         <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800">
-                            {currentLocation?.logo_url ? (
-                                <img src={currentLocation.logo_url} alt={currentLocation.name} className="w-10 h-10 rounded-xl object-contain" />
-                            ) : (
-                                <div className="w-10 h-10 rounded-xl bg-medical-500/10 flex items-center justify-center text-medical-500 font-black">{currentLocation?.name?.charAt(0) || 'N'}</div>
-                            )}
+                            {renderLocationIcon('w-10 h-10', 'rounded-xl')}
                             {currentLocation && (
                                 <div className="overflow-hidden">
                                     <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{currentLocation.name}</p>
@@ -166,6 +184,24 @@ export const Layout: React.FC<LayoutProps> = ({
                         </div>
                     </div>
                     {renderNavContent()}
+                    {/* Command Center button for OWNER/MANAGER */}
+                    {(user.role === 'OWNER' || user.role === 'MANAGER') && (
+                        <div className="px-4 pb-2 z-10">
+                            <button
+                                onClick={() => handleNavigateWrapper(AppRoute.PLATFORM)}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 text-sm font-bold
+                                    ${currentRoute === AppRoute.PLATFORM
+                                        ? 'bg-gradient-to-r from-violet-600/10 to-indigo-500/10 text-violet-600 dark:text-violet-400'
+                                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50'
+                                    }`}
+                            >
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${currentRoute === AppRoute.PLATFORM ? 'bg-violet-500 text-white shadow-lg' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>
+                                    <i className="fa-solid fa-satellite-dish text-sm"></i>
+                                </div>
+                                <span>Command Center</span>
+                            </button>
+                        </div>
+                    )}
                     <div className="p-4 z-10">
                         <div className="p-4 rounded-[1.5rem] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800/50 border border-slate-200 dark:border-slate-700/50 shadow-sm relative overflow-hidden group">
                             <div className="flex items-center gap-3 mb-3 relative z-10">

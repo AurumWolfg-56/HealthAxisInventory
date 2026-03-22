@@ -35,6 +35,7 @@ import { InventoryIntelligenceVerification } from './components/InventoryIntelli
 import Login from './components/Login';
 import Toast from './components/Toast';
 import Logo from './components/Logo';
+import { PlatformAdmin } from './components/PlatformAdmin';
 import * as XLSX from 'xlsx';
 import { translations, Language } from './utils/translations';
 import { medicalCodes as INITIAL_CODES } from './data/medicalCodes';
@@ -419,7 +420,7 @@ const App: React.FC = () => {
             <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-[#0a0f18] text-indigo-600">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-lg font-medium text-gray-600 dark:text-gray-300 animate-pulse">Loading HealthAxis...</p>
+                    <p className="text-lg font-medium text-gray-600 dark:text-gray-300 animate-pulse">Loading Norvexis Core...</p>
                 </div>
             </div>
         );
@@ -1163,6 +1164,22 @@ const App: React.FC = () => {
                     )}
                     {currentRoute === AppRoute.SETTINGS && <Settings user={user} onUpdateUser={updateUser} isDarkMode={isDarkMode} toggleTheme={toggleTheme} onResetData={() => { }} language={language} setLanguage={setLanguage} t={t} />}
                     {currentRoute === AppRoute.ADMIN && hasPermission('admin.access') && <Admin roleConfigs={roleConfigs} onUpdateRoleConfig={updateRoleConfig} currentUser={user} t={t} />}
+                    {currentRoute === AppRoute.PLATFORM && hasPermission('admin.access') && (
+                        <div className="max-w-none -mx-4 md:-mx-8">
+                            <div className="px-4 md:px-8 py-6">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-10 h-10 rounded-xl bg-violet-500 flex items-center justify-center text-white shadow-lg">
+                                        <i className="fa-solid fa-satellite-dish"></i>
+                                    </div>
+                                    <div>
+                                        <h1 className="text-2xl font-black text-slate-900 dark:text-white">Command Center</h1>
+                                        <p className="text-xs font-semibold text-slate-400">Norvexis Core — Platform Administration</p>
+                                    </div>
+                                </div>
+                                <PlatformAdmin />
+                            </div>
+                        </div>
+                    )}
                 </div>
             </Layout>
 
