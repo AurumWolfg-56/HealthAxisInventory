@@ -164,7 +164,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
             <Logo className="w-20 h-20" showText={false} />
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-none">
-            Norv<span className="text-medical-600">exis</span>
+            Norvexis <span className="text-medical-600">Core</span>
           </h1>
           <p className="text-slate-400 dark:text-slate-500 font-extrabold uppercase tracking-[0.25em] text-[9px] mt-2">
             Clinical Operations Platform
