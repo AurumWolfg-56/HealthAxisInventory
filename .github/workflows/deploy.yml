@@ -42,10 +42,10 @@ jobs:
               set ssl:verify-certificate no;
               set ftp:ssl-allow no;
               set ftp:passive-mode true;
-              set dns:fatal-timeout no;
-              set net:timeout 30s;
+              set dns:fatal-timeout 30;
+              set net:timeout 30;
               set net:max-retries 10;
-              set net:reconnect-interval-base 5s;
+              set net:reconnect-interval-base 5;
               set net:connection-limit 1;
               set xfer:use-temp-file no;
               set xfer:clobber true;
