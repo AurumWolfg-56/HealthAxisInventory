@@ -108,18 +108,27 @@ export const Layout: React.FC<LayoutProps> = ({
             >
                 <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
                 <div className={`absolute top-0 bottom-0 left-0 w-[85%] max-w-[320px] bg-white/90 dark:bg-slate-900/95 backdrop-blur-2xl shadow-2xl border-r border-white/20 dark:border-slate-800 transition-transform duration-300 ease-out flex flex-col pt-safe pb-safe ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                    <div className="p-6 pb-2 flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                            {currentLocation?.logo_url ? (
-                                <img src={currentLocation.logo_url} alt="" className="w-8 h-8 rounded-lg object-contain" />
-                            ) : (
-                                <Logo className="w-8 h-8" classNameText="text-xl" />
-                            )}
-                            {currentLocation && <span className="text-sm font-bold text-slate-800 dark:text-white truncate max-w-[160px]">{currentLocation.name}</span>}
+                    <div className="p-6 pb-2">
+                        <div className="flex justify-between items-center mb-3">
+                            <div className="flex items-center gap-2">
+                                <img src="/logo.png" alt="Norvexis Core" className="w-6 h-6 object-contain" />
+                                <span className="text-xs font-black text-slate-400 dark:text-slate-500 tracking-tight">Norvexis <span className="text-medical-500">Core</span></span>
+                            </div>
+                            <button onClick={() => setIsMobileMenuOpen(false)} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center">
+                                <i className="fa-solid fa-chevron-left"></i>
+                            </button>
                         </div>
-                        <button onClick={() => setIsMobileMenuOpen(false)} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center">
-                            <i className="fa-solid fa-chevron-left"></i>
-                        </button>
+                        <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30">
+                            {currentLocation?.logo_url ? (
+                                <img src={currentLocation.logo_url} alt="" className="w-9 h-9 rounded-xl object-contain" />
+                            ) : (
+                                <div className="w-9 h-9 rounded-xl bg-medical-500/10 flex items-center justify-center text-medical-500 font-black text-sm">{currentLocation?.name?.charAt(0) || 'N'}</div>
+                            )}
+                            <div className="overflow-hidden flex-1">
+                                {currentLocation && <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{currentLocation.name}</p>}
+                                {currentOrg && <p className="text-[10px] font-semibold text-slate-400 truncate">{currentOrg.name}</p>}
+                            </div>
+                        </div>
                     </div>
                     <div className="mx-6 my-4 p-4 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-800/50 flex items-center gap-3 shadow-inner">
                         <div className="w-10 h-10 rounded-full bg-medical-500 text-white flex items-center justify-center font-bold text-sm shadow-md">{user.username.charAt(0).toUpperCase()}</div>
@@ -137,18 +146,24 @@ export const Layout: React.FC<LayoutProps> = ({
             {/* === DESKTOP FLOATING DOCK SIDEBAR === */}
             <aside className={`hidden md:flex flex-col w-80 h-screen sticky top-0 z-40 transition-all duration-500 ${!isSidebarOpen ? '-ml-80 opacity-0' : ''}`}>
                 <div className="h-[96%] m-4 rounded-[2.5rem] bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl border border-white/40 dark:border-slate-800/60 shadow-glass flex flex-col relative overflow-hidden ring-1 ring-white/50 dark:ring-white/5">
-                    <div className="p-8 pb-4 flex items-center gap-3 z-10">
-                        {currentLocation?.logo_url ? (
-                            <img src={currentLocation.logo_url} alt={currentLocation.name} className="w-10 h-10 rounded-xl object-contain" />
-                        ) : (
-                            <Logo className="w-10 h-10" classNameText="text-2xl" />
-                        )}
-                        {currentLocation && (
-                            <div className="overflow-hidden">
-                                <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{currentLocation.name}</p>
-                                {currentOrg && <p className="text-[10px] font-semibold text-slate-400 truncate">{currentOrg.name}</p>}
-                            </div>
-                        )}
+                    <div className="p-8 pb-4 z-10">
+                        <div className="flex items-center gap-2 mb-4">
+                            <img src="/logo.png" alt="Norvexis Core" className="w-7 h-7 object-contain" />
+                            <span className="text-sm font-black text-slate-500 dark:text-slate-400 tracking-tight">Norvexis <span className="text-transparent bg-clip-text bg-gradient-to-r from-medical-500 to-blue-600">Core</span></span>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800">
+                            {currentLocation?.logo_url ? (
+                                <img src={currentLocation.logo_url} alt={currentLocation.name} className="w-10 h-10 rounded-xl object-contain" />
+                            ) : (
+                                <div className="w-10 h-10 rounded-xl bg-medical-500/10 flex items-center justify-center text-medical-500 font-black">{currentLocation?.name?.charAt(0) || 'N'}</div>
+                            )}
+                            {currentLocation && (
+                                <div className="overflow-hidden">
+                                    <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{currentLocation.name}</p>
+                                    {currentOrg && <p className="text-[10px] font-semibold text-slate-400 truncate">{currentOrg.name}</p>}
+                                </div>
+                            )}
+                        </div>
                     </div>
                     {renderNavContent()}
                     <div className="p-4 z-10">
