@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserRole, RoleConfig, Permission } from '../types';
-import { UserService, DBUser } from '../services/UserService'; // Use Service
+import { UserService, DBUser } from '../services/UserService';
 import { DataRepair } from './DataRepair';
+import { PlatformAdmin } from './PlatformAdmin';
 
 interface AdminProps {
     roleConfigs: RoleConfig[];
@@ -39,7 +40,7 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
     const [loading, setLoading] = useState(true);
     const [inviting, setInviting] = useState(false);
     const [inviteData, setInviteData] = useState({ email: '', full_name: '', role: UserRole.MA });
-    const [activeTab, setActiveTab] = useState<'users' | 'permissions' | 'maintenance'>('users');
+    const [activeTab, setActiveTab] = useState<'users' | 'permissions' | 'maintenance' | 'platform'>('users');
     const [searchQuery, setSearchQuery] = useState('');
     const [editingUser, setEditingUser] = useState<DBUser | null>(null);
     const [permissionMode, setPermissionMode] = useState<'role' | 'user'>('role');
@@ -232,6 +233,12 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                         className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'maintenance' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm scale-[1.02]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         <i className="fa-solid fa-wrench mr-2"></i> Maintenance
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('platform')}
+                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'platform' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm scale-[1.02]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    >
+                        <i className="fa-solid fa-server mr-2"></i> Platform
                     </button>
                 </div>
             </header>
@@ -609,11 +616,15 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                         </div>
                     </div>
                 </div>
-            ) : (
+            ) : activeTab === 'maintenance' ? (
                 <div className="animate-fade-in">
                     <DataRepair />
                 </div>
-            )}
+            ) : activeTab === 'platform' ? (
+                <div className="animate-fade-in">
+                    <PlatformAdmin />
+                </div>
+            ) : null}
         </div>
     );
 };

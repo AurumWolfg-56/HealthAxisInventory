@@ -14,7 +14,7 @@ const Logo: React.FC<LogoProps> = ({ className = "w-12 h-12", classNameText = "t
       <div className={`relative ${className} transition-transform duration-500 ease-out group-hover:scale-110 group-hover:rotate-2 flex items-center justify-center`}>
         <img
           src="/logo.png"
-          alt="HealthAxis Logo"
+          alt="Norvexis Core"
           className="w-full h-full object-contain filter drop-shadow-xl"
         />
 
@@ -25,8 +25,9 @@ const Logo: React.FC<LogoProps> = ({ className = "w-12 h-12", classNameText = "t
       {showText && (
         <div className="flex flex-col justify-center">
           <span className={`font-black tracking-tighter leading-none text-slate-900 dark:text-white ${classNameText}`}>
-            HEALTH<span className="text-transparent bg-clip-text bg-gradient-to-r from-medical-500 to-blue-600">AXIS</span>
+            NORV<span className="text-transparent bg-clip-text bg-gradient-to-r from-medical-500 to-blue-600">EXIS</span>
           </span>
+          <span className="text-[8px] font-bold uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500 mt-0.5">CORE</span>
         </div>
       )}
     </div>
