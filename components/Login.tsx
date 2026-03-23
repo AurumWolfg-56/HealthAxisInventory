@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserRole } from '../types';
 import { supabase } from '../src/lib/supabase';
 
@@ -9,20 +9,19 @@ interface LoginProps {
   forcePasswordUpdate?: boolean;
 }
 
-/* ─── Inline Norvexis "N" hexagon mark ─── */
-const NvLogo: React.FC<{ size?: number; className?: string }> = ({ size = 48, className = '' }) => (
-  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width={size} height={size} className={className}>
+/* ─── Norvexis "N" Hexagon SVG — Emerald variant ─── */
+const NvLogo: React.FC<{ size?: number }> = ({ size = 48 }) => (
+  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width={size} height={size}>
     <defs>
-      <linearGradient id="lg-hex" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#7c3aed" />
-        <stop offset="50%" stopColor="#6366f1" />
-        <stop offset="100%" stopColor="#3b82f6" />
+      <linearGradient id="lg-hex-e" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#059669" />
+        <stop offset="100%" stopColor="#10b981" />
       </linearGradient>
     </defs>
-    <path d="M32 2L58 17V47L32 62L6 47V17L32 2Z" fill="url(#lg-hex)" />
-    <path d="M32 2L58 17V32L32 2Z" fill="rgba(255,255,255,0.12)" />
+    <path d="M32 2L58 17V47L32 62L6 47V17L32 2Z" fill="url(#lg-hex-e)" />
+    <path d="M32 2L58 17V32L32 2Z" fill="rgba(255,255,255,0.1)" />
     <path d="M22 44V20H28L42 38V20H22Z" fill="white" opacity="0.95" />
-    <path d="M42 20V44H36L22 26V44H42Z" fill="white" opacity="0.65" />
+    <path d="M42 20V44H36L22 26V44H42Z" fill="white" opacity="0.6" />
   </svg>
 );
 
@@ -36,9 +35,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [loginState, setLoginState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Stagger mount animation
     requestAnimationFrame(() => setMounted(true));
 
     if (forcePasswordUpdate ||
@@ -55,11 +55,26 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
     return () => document.body.classList.remove('premium-auth-flow');
   }, [forcePasswordUpdate]);
 
+  // Clear error state after 4s
+  useEffect(() => {
+    if (loginState === 'error') {
+      const t = setTimeout(() => setLoginState('idle'), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [loginState]);
+
+  const triggerError = (msg: string) => {
+    setError(msg);
+    setLoginState('error');
+    setLoading(false);
+  };
+
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
 
     setLoading(true);
+    setLoginState('loading');
     setError(null);
     try {
       const { error: pwError } = await supabase.auth.updateUser({ password });
@@ -72,14 +87,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
       if (username) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ username })
-            .eq('id', user.id);
-
-          if (profileError) {
-            console.warn(`Username update failed: ${profileError.message}`);
-          }
+          await supabase.from('profiles').update({ username }).eq('id', user.id);
         }
       }
 
@@ -91,25 +99,20 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
       setPassword('');
       setUsername('');
       setEmail('');
+      setLoginState('idle');
     } catch (err: any) {
-      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
-        setError('Conexión interrumpida, pero la contraseña podría haberse guardado. Intenta recargar e iniciar sesión.');
-      } else {
-        setError(err.message);
-      }
+      triggerError(err.message);
     } finally {
-      if (document.body) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (authMode === 'update-password') {
-      return handleUpdatePassword(e);
-    }
+    if (authMode === 'update-password') return handleUpdatePassword(e);
+
     setLoading(true);
+    setLoginState('loading');
     setError(null);
     setSuccess(null);
 
@@ -121,350 +124,404 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
         });
         if (error) throw error;
         if (data.user) {
+          setLoginState('success');
           setSuccess(t('msg_login_success'));
-          setTimeout(() => onLogin(data.user), 500);
+          // Delay to show retina scan animation
+          setTimeout(() => onLogin(data.user), 2200);
         }
       } else if (authMode === 'signup') {
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            data: { full_name: email.split('@')[0] }
-          }
+          options: { data: { full_name: email.split('@')[0] } }
         });
         if (error) throw error;
         alert('Verification email sent!');
         setAuthMode('signin');
+        setLoginState('idle');
       } else if (authMode === 'forgot') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin,
         });
         if (error) throw error;
-        setSuccess('A recovery link has been sent to your email address.');
-        setTimeout(() => {
-          setAuthMode('signin');
-          setSuccess(null);
-        }, 4000);
+        setSuccess('Recovery link sent to your email.');
+        setLoginState('idle');
+        setTimeout(() => { setAuthMode('signin'); setSuccess(null); }, 4000);
       }
     } catch (err: any) {
-      setError(err.message);
+      triggerError(err.message);
     } finally {
-      setLoading(false);
+      if (loginState !== 'success') setLoading(false);
     }
   };
 
+  const borderColor = loginState === 'error'
+    ? 'rgba(220,38,38,0.6)'
+    : loginState === 'success'
+      ? 'rgba(16,185,129,0.6)'
+      : 'rgba(16,185,129,0.12)';
+
   return (
-    <div className="min-h-screen w-full flex relative overflow-hidden" style={{ background: '#050810' }}>
+    <div className="nv-login min-h-screen w-full flex items-center justify-center relative overflow-hidden">
 
-      {/* ─── Animated background ─── */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Gradient orbs — slow floating animation */}
-        <div className="nv-orb absolute top-[-15%] left-[5%] w-[500px] h-[500px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.25) 0%, transparent 65%)', animationDuration: '20s' }} />
-        <div className="nv-orb absolute bottom-[-15%] right-[0%] w-[600px] h-[600px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 65%)', animationDuration: '25s', animationDirection: 'reverse' }} />
-        <div className="nv-orb absolute top-[50%] left-[40%] w-[350px] h-[350px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 65%)', animationDuration: '18s', animationDelay: '5s' }} />
+      {/* ═══ BACKGROUND ═══ */}
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 40%, #0d1117 0%, #080b10 40%, #030507 100%)' }} />
 
-        {/* Subtle grid */}
-        <div className="absolute inset-0 opacity-[0.025]"
-          style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)', backgroundSize: '80px 80px' }} />
-      </div>
+      {/* Data mesh grid */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: `
+          linear-gradient(rgba(16,185,129,0.3) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(16,185,129,0.3) 1px, transparent 1px)`,
+        backgroundSize: '60px 60px'
+      }} />
 
-      {/* ─── Left panel: Branding ─── */}
-      <div className="hidden lg:flex lg:w-[44%] xl:w-[42%] relative z-10 flex-col justify-between p-12 xl:p-16">
+      {/* World map wireframe overlay — using dots pattern */}
+      <div className="absolute inset-0 opacity-[0.02]" style={{
+        backgroundImage: `radial-gradient(rgba(16,185,129,0.5) 1px, transparent 1px)`,
+        backgroundSize: '20px 20px'
+      }} />
 
-        {/* Logo + wordmark */}
-        <div className={`flex items-center gap-4 transition-all duration-700 ease-out ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-6'}`}>
-          <div className="w-11 h-11 rounded-[14px] bg-gradient-to-br from-violet-600/20 to-blue-600/20 border border-white/[0.06] flex items-center justify-center backdrop-blur-sm">
-            <NvLogo size={28} />
-          </div>
-          <span className="text-white/30 text-[11px] font-bold tracking-[0.2em] uppercase">Norvexis Core</span>
-        </div>
+      {/* Ambient orbs */}
+      <div className="nv-orb absolute top-[-10%] left-[10%] w-[500px] h-[500px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 65%)' }} />
+      <div className="nv-orb absolute bottom-[-10%] right-[5%] w-[600px] h-[600px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(5,150,105,0.06) 0%, transparent 65%)', animationDirection: 'reverse', animationDuration: '25s' }} />
 
-        {/* Hero text */}
-        <div className={`transition-all duration-1000 delay-200 ease-out ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <h1 className="text-[3.4rem] xl:text-[4rem] font-black text-white leading-[1.05] tracking-[-0.02em]">
-            Clinical
-            <br />
-            Operations
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-blue-400 to-cyan-300">
-              Reimagined.
-            </span>
-          </h1>
-          <p className="mt-7 text-white/40 text-[15px] leading-relaxed max-w-[380px] font-medium">
-            A unified platform for healthcare organizations. Manage inventory, billing, protocols, and analytics — all from one intelligent command center.
-          </p>
-
-          {/* Feature pills */}
-          <div className="flex flex-wrap gap-2.5 mt-9">
-            {[
-              { icon: 'fa-boxes-stacked', text: 'Inventory' },
-              { icon: 'fa-file-invoice-dollar', text: 'Billing' },
-              { icon: 'fa-chart-line', text: 'Analytics' },
-              { icon: 'fa-shield-halved', text: 'Secure' },
-            ].map((f, i) => (
-              <div key={f.text}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-full border text-[10px] font-bold uppercase tracking-widest transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-                style={{
-                  transitionDelay: `${600 + i * 100}ms`,
-                  background: 'rgba(255,255,255,0.02)',
-                  borderColor: 'rgba(255,255,255,0.06)',
-                  color: 'rgba(255,255,255,0.35)',
-                }}>
-                <i className={`fa-solid ${f.icon}`} style={{ color: 'rgba(139,92,246,0.6)' }}></i>
-                {f.text}
+      {/* ═══ RETINA SCAN OVERLAY (on success) ═══ */}
+      {loginState === 'success' && (
+        <div className="fixed inset-0 z-50 pointer-events-none">
+          {/* Scan line */}
+          <div className="nv-scan-line absolute left-0 right-0 h-[3px]"
+            style={{ background: 'linear-gradient(90deg, transparent, rgba(16,185,129,0.8), rgba(52,211,153,1), rgba(16,185,129,0.8), transparent)', boxShadow: '0 0 30px rgba(16,185,129,0.5), 0 0 60px rgba(16,185,129,0.3)' }} />
+          {/* Flash */}
+          <div className="nv-scan-flash absolute inset-0" style={{ background: 'rgba(16,185,129,0.03)' }} />
+          {/* Center reticle */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="nv-reticle w-32 h-32 rounded-full border-2 border-emerald-500/30 flex items-center justify-center">
+              <div className="w-20 h-20 rounded-full border border-emerald-400/40 flex items-center justify-center">
+                <div className="w-3 h-3 rounded-full bg-emerald-400 nv-pulse-dot" />
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className={`transition-all duration-700 delay-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-          <p className="text-white/10 text-[10px] font-bold tracking-[0.3em] uppercase">
-            &copy; {new Date().getFullYear()} Norvexis Core &middot; v1.0
-          </p>
-        </div>
-      </div>
-
-      {/* ─── Right panel: Login form ─── */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 lg:p-16 relative z-10">
-        <div className={`w-full max-w-[440px] transition-all duration-1000 delay-300 ease-out ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'}`}>
-
-          {/* Mobile logo */}
-          <div className="lg:hidden mb-12 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600/20 to-blue-600/20 border border-white/[0.06] mb-5">
-              <NvLogo size={40} />
             </div>
-            <h1 className="text-3xl font-black text-white tracking-tight">
-              Norvexis <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400">Core</span>
-            </h1>
-            <p className="text-white/20 text-[10px] font-bold tracking-[0.25em] uppercase mt-2">Clinical Operations Platform</p>
           </div>
+          {/* Access granted text */}
+          <div className="absolute inset-0 flex items-center justify-center mt-28">
+            <span className="nv-access-text text-emerald-400/80 text-xs font-bold tracking-[0.4em] uppercase">
+              Access Granted
+            </span>
+          </div>
+        </div>
+      )}
 
-          {/* ─── Glass card ─── */}
-          <div className="relative group/card">
-            {/* Glow ring — visible and alive */}
-            <div className="absolute -inset-[1px] rounded-[2.5rem] opacity-60 transition-opacity duration-500 group-hover/card:opacity-100"
-              style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.3), rgba(99,102,241,0.1) 40%, transparent 60%, rgba(59,130,246,0.2))' }} />
-            {/* Soft glow behind */}
-            <div className="absolute -inset-4 rounded-[3rem] blur-2xl opacity-40 transition-opacity duration-700 group-hover/card:opacity-60"
-              style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.15), transparent 50%, rgba(59,130,246,0.1))' }} />
+      {/* ═══ MAIN CONTAINER ═══ */}
+      <div className={`relative z-10 w-full max-w-md px-6 transition-all duration-1000 ease-out ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
 
-            <div className="relative rounded-[2.5rem] border border-white/[0.07] p-8 sm:p-10 overflow-hidden"
-              style={{ background: 'rgba(15,18,30,0.85)', backdropFilter: 'blur(40px)' }}>
+        {/* ── Logo + Brand ── */}
+        <div className={`text-center mb-10 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-6'}`}>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5 relative" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}>
+            <NvLogo size={38} />
+            {/* Pulse ring */}
+            <div className="absolute inset-0 rounded-2xl nv-logo-pulse" style={{ border: '1px solid rgba(16,185,129,0.2)' }} />
+          </div>
+          <h1 className="text-3xl font-black text-white tracking-tight leading-none">
+            Norvexis <span className="text-emerald-400">Core</span>
+          </h1>
+          <p className="text-[10px] font-bold tracking-[0.3em] uppercase mt-2.5" style={{ color: 'rgba(16,185,129,0.35)' }}>
+            Secure Access Terminal
+          </p>
+        </div>
 
-              {/* Inner shine line at top */}
-              <div className="absolute top-0 left-8 right-8 h-[1px]"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.08) 70%, transparent)' }} />
+        {/* ── Glass Card ── */}
+        <div ref={cardRef}
+          className={`nv-card relative rounded-[2rem] overflow-hidden transition-all duration-500
+            ${loginState === 'error' ? 'nv-shake nv-glitch' : ''}`}
+          style={{
+            background: 'rgba(13,17,23,0.8)',
+            backdropFilter: 'blur(40px)',
+            WebkitBackdropFilter: 'blur(40px)',
+            border: `1px solid ${borderColor}`,
+            boxShadow: loginState === 'error'
+              ? '0 0 40px rgba(220,38,38,0.1), inset 0 0 40px rgba(220,38,38,0.03)'
+              : loginState === 'success'
+                ? '0 0 60px rgba(16,185,129,0.15), inset 0 0 40px rgba(16,185,129,0.03)'
+                : '0 0 60px rgba(16,185,129,0.04), inset 0 1px 0 rgba(255,255,255,0.03)'
+          }}
+        >
+          {/* Top shine */}
+          <div className="absolute top-0 left-10 right-10 h-[1px]"
+            style={{ background: loginState === 'error'
+              ? 'linear-gradient(90deg, transparent, rgba(220,38,38,0.3), transparent)'
+              : 'linear-gradient(90deg, transparent, rgba(16,185,129,0.15), transparent)' }} />
 
-              {/* Form header */}
-              <div className="mb-8">
-                <h2 className="text-[1.65rem] font-black text-white tracking-tight leading-tight">
-                  {authMode === 'signin' && 'Welcome back'}
-                  {authMode === 'forgot' && 'Reset Password'}
-                  {authMode === 'update-password' && 'Set New Password'}
-                  {authMode === 'signup' && 'Create Account'}
-                </h2>
-                <p className="text-white/35 text-sm mt-2 font-medium leading-relaxed">
-                  {authMode === 'signin' && 'Sign in to access your workspace'}
-                  {authMode === 'forgot' && 'We\'ll send a recovery link to your email'}
-                  {authMode === 'update-password' && 'Choose a strong, secure password'}
-                  {authMode === 'signup' && 'Get started with Norvexis Core'}
-                </p>
+          {/* Corner accents */}
+          <div className="absolute top-4 left-4 w-3 h-3 border-t border-l rounded-tl-sm transition-colors duration-500"
+            style={{ borderColor: loginState === 'error' ? 'rgba(220,38,38,0.4)' : 'rgba(16,185,129,0.2)' }} />
+          <div className="absolute top-4 right-4 w-3 h-3 border-t border-r rounded-tr-sm transition-colors duration-500"
+            style={{ borderColor: loginState === 'error' ? 'rgba(220,38,38,0.4)' : 'rgba(16,185,129,0.2)' }} />
+          <div className="absolute bottom-4 left-4 w-3 h-3 border-b border-l rounded-bl-sm transition-colors duration-500"
+            style={{ borderColor: loginState === 'error' ? 'rgba(220,38,38,0.4)' : 'rgba(16,185,129,0.2)' }} />
+          <div className="absolute bottom-4 right-4 w-3 h-3 border-b border-r rounded-br-sm transition-colors duration-500"
+            style={{ borderColor: loginState === 'error' ? 'rgba(220,38,38,0.4)' : 'rgba(16,185,129,0.2)' }} />
+
+          <div className="p-8 sm:p-10">
+            {/* Header */}
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 nv-status-dot" />
+                <span className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: 'rgba(16,185,129,0.5)' }}>
+                  {authMode === 'signin' ? 'System Ready' : authMode === 'forgot' ? 'Recovery Mode' : authMode === 'update-password' ? 'Security Update' : 'New User'}
+                </span>
               </div>
+              <h2 className="text-2xl font-black text-white tracking-tight">
+                {authMode === 'signin' && 'Identity Verification'}
+                {authMode === 'forgot' && 'Password Recovery'}
+                {authMode === 'update-password' && 'Set New Password'}
+                {authMode === 'signup' && 'Create Account'}
+              </h2>
+              <p className="text-sm mt-1.5 font-medium" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                {authMode === 'signin' && 'Authenticate to access your workspace'}
+                {authMode === 'forgot' && 'We\'ll send a secure recovery link'}
+                {authMode === 'update-password' && 'Choose a strong password'}
+                {authMode === 'signup' && 'Initialize your account'}
+              </p>
+            </div>
 
-              {/* ── Error ── */}
-              {error && (
-                <div className="mb-6 p-4 rounded-2xl border flex items-start gap-3 animate-shake"
-                  style={{ background: 'rgba(239,68,68,0.06)', borderColor: 'rgba(239,68,68,0.15)' }}>
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-                    style={{ background: 'rgba(239,68,68,0.15)' }}>
-                    <i className="fa-solid fa-triangle-exclamation text-red-400 text-xs"></i>
+            {/* ── Error ── */}
+            {error && (
+              <div className="mb-6 p-3.5 rounded-xl flex items-start gap-3"
+                style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.15)' }}>
+                <i className="fa-solid fa-hexagon-exclamation text-red-400 text-sm mt-0.5"></i>
+                <span className="text-red-400/80 text-sm font-medium leading-relaxed">{error}</span>
+              </div>
+            )}
+
+            {/* ── Success ── */}
+            {success && loginState !== 'success' && (
+              <div className="mb-6 p-3.5 rounded-xl flex items-start gap-3"
+                style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}>
+                <i className="fa-solid fa-circle-check text-emerald-400 text-sm mt-0.5"></i>
+                <span className="text-emerald-400/80 text-sm font-medium leading-relaxed">{success}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleEmailAuth} className="space-y-5">
+
+              {/* ── Email ── */}
+              {authMode !== 'update-password' && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-medium tracking-[0.15em] uppercase ml-1"
+                    style={{ color: 'rgba(255,255,255,0.2)', fontFamily: "'Inter', sans-serif" }}>
+                    {t('lbl_email')}
+                  </label>
+                  <div className="relative">
+                    <i className="fa-solid fa-at absolute left-4 top-1/2 -translate-y-1/2 text-xs nv-input-icon" style={{ color: 'rgba(255,255,255,0.12)' }}></i>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="operator@clinic.com"
+                      autoComplete="email"
+                      className="nv-field w-full h-[3.2rem] pl-11 pr-4 rounded-xl text-white font-medium text-sm outline-none transition-all duration-400"
+                      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid transparent', fontFamily: "'Inter', sans-serif" }}
+                    />
                   </div>
-                  <span className="text-red-400/90 text-sm font-semibold leading-relaxed">{error}</span>
                 </div>
               )}
 
-              {/* ── Success ── */}
-              {success && (
-                <div className="mb-6 p-4 rounded-2xl border flex items-start gap-3"
-                  style={{ background: 'rgba(16,185,129,0.06)', borderColor: 'rgba(16,185,129,0.15)' }}>
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-                    style={{ background: 'rgba(16,185,129,0.15)' }}>
-                    <i className="fa-solid fa-circle-check text-emerald-400 text-xs"></i>
-                  </div>
-                  <span className="text-emerald-400/90 text-sm font-semibold leading-relaxed">{success}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleEmailAuth} className="space-y-5">
-
-                {/* ── Email ── */}
-                {authMode !== 'update-password' && (
-                  <div className="space-y-2.5">
-                    <label className="text-[10px] font-black uppercase tracking-[0.15em] ml-1"
-                      style={{ color: 'rgba(255,255,255,0.25)' }}>
-                      {t('lbl_email')}
-                    </label>
-                    <div className="relative group/input">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300"
-                        style={{ background: 'rgba(255,255,255,0.03)' }}>
-                        <i className="fa-solid fa-envelope text-xs transition-colors duration-300"
-                          style={{ color: 'rgba(255,255,255,0.15)' }}></i>
-                      </div>
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="name@clinic.com"
-                        autoComplete="email"
-                        className="nv-input w-full h-[3.5rem] pl-[3.5rem] pr-5 rounded-2xl border text-white font-semibold text-sm outline-none transition-all duration-300"
-                        style={{
-                          background: 'rgba(255,255,255,0.03)',
-                          borderColor: 'rgba(255,255,255,0.06)',
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Password ── */}
-                {authMode !== 'forgot' && (
-                  <div className="space-y-2.5">
-                    <label className="text-[10px] font-black uppercase tracking-[0.15em] ml-1"
-                      style={{ color: 'rgba(255,255,255,0.25)' }}>
-                      {authMode === 'update-password' ? t('lbl_new_password') : t('lbl_password')}
-                    </label>
-                    <div className="relative group/input">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300"
-                        style={{ background: 'rgba(255,255,255,0.03)' }}>
-                        <i className="fa-solid fa-lock text-xs transition-colors duration-300"
-                          style={{ color: 'rgba(255,255,255,0.15)' }}></i>
-                      </div>
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        autoComplete={authMode === 'update-password' ? 'new-password' : 'current-password'}
-                        className="nv-input w-full h-[3.5rem] pl-[3.5rem] pr-14 rounded-2xl border text-white font-semibold text-sm outline-none transition-all duration-300"
-                        style={{
-                          background: 'rgba(255,255,255,0.03)',
-                          borderColor: 'rgba(255,255,255,0.06)',
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200"
-                        style={{ color: 'rgba(255,255,255,0.2)' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.2)'; e.currentTarget.style.background = 'transparent'; }}
-                      >
-                        <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-xs`}></i>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Forgot password */}
-                {authMode === 'signin' && (
-                  <div className="flex justify-end -mt-1">
-                    <button
-                      type="button"
-                      onClick={() => { setAuthMode('forgot'); setError(null); setSuccess(null); }}
-                      className="text-[11px] font-semibold transition-colors duration-200"
-                      style={{ color: 'rgba(139,92,246,0.55)' }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(139,92,246,0.9)'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(139,92,246,0.55)'}
-                    >
-                      Forgot password?
+              {/* ── Password ── */}
+              {authMode !== 'forgot' && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-medium tracking-[0.15em] uppercase ml-1"
+                    style={{ color: 'rgba(255,255,255,0.2)', fontFamily: "'Inter', sans-serif" }}>
+                    {authMode === 'update-password' ? t('lbl_new_password') : t('lbl_password')}
+                  </label>
+                  <div className="relative">
+                    <i className="fa-solid fa-fingerprint absolute left-4 top-1/2 -translate-y-1/2 text-xs nv-input-icon" style={{ color: 'rgba(255,255,255,0.12)' }}></i>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••••"
+                      autoComplete={authMode === 'update-password' ? 'new-password' : 'current-password'}
+                      className="nv-field w-full h-[3.2rem] pl-11 pr-12 rounded-xl text-white font-medium text-sm outline-none transition-all duration-400"
+                      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid transparent', fontFamily: "'Inter', sans-serif" }}
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                      style={{ color: 'rgba(255,255,255,0.15)' }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(16,185,129,0.6)'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.15)'}>
+                      <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-xs`}></i>
                     </button>
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* ── Submit button ── */}
+              {/* Forgot */}
+              {authMode === 'signin' && (
+                <div className="flex justify-end -mt-1">
+                  <button type="button"
+                    onClick={() => { setAuthMode('forgot'); setError(null); setSuccess(null); setLoginState('idle'); }}
+                    className="text-[11px] font-medium transition-colors"
+                    style={{ color: 'rgba(16,185,129,0.35)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(16,185,129,0.7)'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(16,185,129,0.35)'}>
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+
+              {/* ── Tactical Submit Button ── */}
+              <div className="pt-2">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="nv-btn w-full h-[3.5rem] relative group/btn overflow-hidden rounded-2xl font-black text-sm tracking-wide text-white transition-all duration-300 disabled:opacity-50 mt-3 cursor-pointer"
+                  className={`nv-tactical-btn relative overflow-hidden rounded-xl font-bold text-sm tracking-wide transition-all duration-500 cursor-pointer
+                    ${loginState === 'loading' ? 'w-14 h-14 rounded-full mx-auto' : 'w-full h-[3.2rem]'}`}
+                  style={{
+                    background: loginState === 'loading' ? 'transparent' : 'rgba(16,185,129,1)',
+                    color: 'white',
+                    border: loginState === 'loading' ? '2px solid rgba(16,185,129,0.3)' : 'none',
+                    boxShadow: loginState === 'loading' ? 'none' : '0 0 30px rgba(16,185,129,0.2), 0 4px 20px rgba(16,185,129,0.3)',
+                  }}
                 >
-                  {/* Gradient bg */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 transition-all duration-500" />
-                  {/* Hover brighten */}
-                  <div className="absolute inset-0 bg-white/0 group-hover/btn:bg-white/[0.08] transition-all duration-300" />
-                  {/* Top shine line */}
-                  <div className="absolute top-0 left-6 right-6 h-[1px] bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                  {/* Shadow glow */}
-                  <div className="absolute -inset-2 bg-gradient-to-r from-violet-600 to-blue-600 rounded-2xl blur-xl opacity-0 group-hover/btn:opacity-25 transition-opacity duration-500 -z-10" />
-
-                  <span className="relative z-10 flex items-center justify-center gap-3">
-                    {loading ? (
-                      <i className="fa-solid fa-circle-notch fa-spin text-lg"></i>
-                    ) : (
-                      <>
-                        <span>
+                  {loginState === 'loading' ? (
+                    /* Orbital ring */
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="nv-orbital w-full h-full rounded-full" style={{
+                        border: '2px solid transparent',
+                        borderTopColor: 'rgba(16,185,129,0.9)',
+                        borderRightColor: 'rgba(16,185,129,0.3)',
+                      }} />
+                    </div>
+                  ) : (
+                    <>
+                      {/* Hover glow pulse */}
+                      <div className="absolute inset-0 bg-white/0 hover:bg-white/5 transition-all duration-300" />
+                      <div className="nv-btn-pulse absolute inset-0 rounded-xl" />
+                      <span className="relative z-10 flex items-center justify-center gap-2.5">
+                        <span style={{ fontFamily: "'Inter', sans-serif" }}>
                           {authMode === 'signin' ? t('btn_login')
-                            : authMode === 'forgot' ? 'Send Recovery Link'
-                            : authMode === 'signup' ? 'Create Account'
+                            : authMode === 'forgot' ? 'Send Link'
+                            : authMode === 'signup' ? 'Initialize'
                               : t('btn_save_password')}
                         </span>
-                        <i className={`fa-solid ${authMode === 'forgot' ? 'fa-paper-plane' : 'fa-arrow-right'} text-xs transition-transform duration-300 group-hover/btn:translate-x-1`}></i>
-                      </>
-                    )}
-                  </span>
+                        <i className={`fa-solid ${authMode === 'forgot' ? 'fa-paper-plane' : 'fa-arrow-right'} text-xs`}></i>
+                      </span>
+                    </>
+                  )}
                 </button>
+              </div>
 
-                {/* Back to Sign In */}
-                {(authMode === 'forgot' || authMode === 'update-password') && (
-                  <button
-                    type="button"
-                    onClick={() => { setAuthMode('signin'); setError(null); setSuccess(null); }}
-                    className="w-full text-center text-sm font-semibold transition-colors flex items-center justify-center gap-2 py-2"
-                    style={{ color: 'rgba(255,255,255,0.2)' }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
-                  >
-                    <i className="fa-solid fa-arrow-left text-xs"></i>
-                    Back to Sign In
-                  </button>
-                )}
-              </form>
-            </div>
+              {/* Back */}
+              {(authMode === 'forgot' || authMode === 'update-password') && (
+                <button type="button"
+                  onClick={() => { setAuthMode('signin'); setError(null); setSuccess(null); setLoginState('idle'); }}
+                  className="w-full text-center text-sm font-medium flex items-center justify-center gap-2 py-2 transition-colors"
+                  style={{ color: 'rgba(255,255,255,0.15)' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.15)'}>
+                  <i className="fa-solid fa-arrow-left text-xs"></i>
+                  Back to Terminal
+                </button>
+              )}
+            </form>
           </div>
+        </div>
 
-          {/* Mobile footer */}
-          <div className="lg:hidden mt-8 text-center">
-            <p className="text-white/10 text-[10px] font-bold tracking-[0.3em] uppercase">
-              &copy; {new Date().getFullYear()} Norvexis Core
-            </p>
-          </div>
+        {/* ── Footer ── */}
+        <div className={`mt-8 text-center transition-all duration-700 delay-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+          <p className="text-[9px] font-bold tracking-[0.35em] uppercase" style={{ color: 'rgba(255,255,255,0.06)' }}>
+            &copy; {new Date().getFullYear()} Norvexis Core &middot; Encrypted Channel
+          </p>
         </div>
       </div>
 
-      {/* ─── Scoped styles ─── */}
+      {/* ═══ SCOPED STYLES ═══ */}
       <style>{`
-        @keyframes nvFloat {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(25px, -35px) scale(1.03); }
-          66% { transform: translate(-15px, 20px) scale(0.97); }
-        }
-        .nv-orb { animation: nvFloat 20s ease-in-out infinite; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
 
-        .nv-input::placeholder { color: rgba(255,255,255,0.12); }
-        .nv-input:focus {
-          border-color: rgba(124,58,237,0.4) !important;
-          background: rgba(255,255,255,0.05) !important;
-          box-shadow: 0 0 0 4px rgba(124,58,237,0.08);
-        }
-        .nv-input:focus ~ .group\\/input > div:first-child,
-        .nv-input:focus + div { background: rgba(124,58,237,0.15) !important; }
+        /* ── Floating orbs ── */
+        @keyframes nvFloat { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(20px,-30px) scale(1.02)} 66%{transform:translate(-15px,15px) scale(0.98)} }
+        .nv-orb { animation: nvFloat 22s ease-in-out infinite; }
 
-        .nv-btn:active { transform: scale(0.97); }
+        /* ── Input fields: borderless → emerald glow on focus ── */
+        .nv-field::placeholder { color: rgba(255,255,255,0.08); font-family: 'Inter', sans-serif; }
+        .nv-field:focus {
+          background: rgba(16,185,129,0.04) !important;
+          border-color: rgba(16,185,129,0.35) !important;
+          box-shadow: 0 0 0 4px rgba(16,185,129,0.06), inset 0 0 20px rgba(16,185,129,0.03);
+        }
+        .nv-field:focus ~ .nv-input-icon,
+        .nv-field:focus + .nv-input-icon { color: rgba(16,185,129,0.6) !important; }
+
+        /* ── Status dot blink ── */
+        @keyframes nvBlink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .nv-status-dot { animation: nvBlink 2s ease-in-out infinite; }
+
+        /* ── Logo pulse ── */
+        @keyframes nvLogoPulse { 0%,100%{opacity:0.3;transform:scale(1)} 50%{opacity:0;transform:scale(1.3)} }
+        .nv-logo-pulse { animation: nvLogoPulse 3s ease-in-out infinite; }
+
+        /* ── Tactical button hover pulse ── */
+        @keyframes nvBtnPulse { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.3)} 50%{box-shadow:0 0 0 8px rgba(16,185,129,0)} }
+        .nv-tactical-btn:not(:disabled):hover .nv-btn-pulse { animation: nvBtnPulse 2s ease-in-out infinite; }
+        .nv-tactical-btn:active { transform: scale(0.97); }
+
+        /* ── Orbital loading spinner ── */
+        @keyframes nvOrbital { to { transform: rotate(360deg); } }
+        .nv-orbital { animation: nvOrbital 1s linear infinite; }
+
+        /* ── Shake + glitch (error) ── */
+        @keyframes nvShake {
+          0%,100% { transform: translateX(0); }
+          10%,30%,50%,70%,90% { transform: translateX(-4px); }
+          20%,40%,60%,80% { transform: translateX(4px); }
+        }
+        .nv-shake { animation: nvShake 0.6s ease-in-out; }
+
+        @keyframes nvGlitch {
+          0%,100% { clip-path: inset(0 0 0 0); filter: none; }
+          20% { clip-path: inset(5% 0 80% 0); filter: hue-rotate(90deg); }
+          40% { clip-path: inset(60% 0 5% 0); filter: hue-rotate(-90deg); }
+          60% { clip-path: inset(30% 0 40% 0); filter: saturate(3); }
+          80% { clip-path: inset(0 0 0 0); filter: none; }
+        }
+        .nv-glitch::before {
+          content: '';
+          position: absolute;
+          inset: -1px;
+          border-radius: 2rem;
+          border: 1px solid rgba(220,38,38,0.4);
+          animation: nvGlitch 0.3s linear 1;
+          pointer-events: none;
+        }
+
+        /* ── Retina scan line ── */
+        @keyframes nvScanLine {
+          0% { top: -5%; opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { top: 105%; opacity: 0; }
+        }
+        .nv-scan-line { animation: nvScanLine 1.8s ease-in-out 1; }
+
+        /* ── Scan flash ── */
+        @keyframes nvScanFlash { 0%{opacity:0} 30%{opacity:1} 100%{opacity:0} }
+        .nv-scan-flash { animation: nvScanFlash 2s ease-out 1; }
+
+        /* ── Reticle ── */
+        @keyframes nvReticle { 0%{transform:scale(0.5);opacity:0} 50%{transform:scale(1);opacity:1} 100%{transform:scale(1.2);opacity:0} }
+        .nv-reticle { animation: nvReticle 2s ease-out 1; }
+
+        /* ── Pulse dot ── */
+        @keyframes nvPulseDot { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(2);opacity:0.3} }
+        .nv-pulse-dot { animation: nvPulseDot 1s ease-in-out infinite; }
+
+        /* ── Access granted text ── */
+        @keyframes nvAccessText { 0%{opacity:0;letter-spacing:0.8em} 50%{opacity:1;letter-spacing:0.4em} 100%{opacity:0} }
+        .nv-access-text { animation: nvAccessText 2.2s ease-out 1; }
       `}</style>
     </div>
   );
