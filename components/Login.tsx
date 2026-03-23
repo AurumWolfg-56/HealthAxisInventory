@@ -25,7 +25,7 @@ const Constellation: React.FC = () => {
   const [visible, setVisible] = useState(false);
   useEffect(() => { const t = setTimeout(() => setVisible(true), 400); return () => clearTimeout(t); }, []);
 
-  const cx = 260, cy = 260, R = 170, r2 = 100;
+  const cx = 300, cy = 300, R = 200, r2 = 120;
 
   // Outer ring points
   const outer = nodes.map((n, i) => {
@@ -57,8 +57,15 @@ const Constellation: React.FC = () => {
 
   return (
     <div className={`nv-constellation ${visible ? 'is-vis' : ''}`}>
-      <svg viewBox="0 0 520 520" className="nv-geo-svg">
+      <svg viewBox="0 0 600 600" className="nv-geo-svg">
         <defs>
+          <linearGradient id="flowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgba(16,185,129,0)" />
+            <stop offset="40%" stopColor="rgba(16,185,129,0)" />
+            <stop offset="50%" stopColor="rgba(16,185,129,0.7)" />
+            <stop offset="60%" stopColor="rgba(16,185,129,0)" />
+            <stop offset="100%" stopColor="rgba(16,185,129,0)" />
+          </linearGradient>
           <radialGradient id="cg" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="rgba(16,185,129,0.15)" />
             <stop offset="100%" stopColor="rgba(16,185,129,0)" />
@@ -70,17 +77,21 @@ const Constellation: React.FC = () => {
         </defs>
 
         {/* Ambient center glow */}
-        <circle cx={cx} cy={cy} r="120" fill="url(#cg)" className="nv-center-glow" />
+        <circle cx={cx} cy={cy} r="150" fill="url(#cg)" className="nv-center-glow" />
 
         {/* Connection lines */}
         {lines.map((l, i) => (
-          <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-            className="nv-geo-line" style={{ animationDelay: `${0.5 + l.delay}s` }} />
+          <g key={i}>
+            <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
+              className="nv-geo-line" style={{ animationDelay: `${0.5 + l.delay}s` }} />
+            <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
+              className="nv-geo-flow" style={{ animationDelay: `${2 + i * 0.15}s` }} />
+          </g>
         ))}
 
         {/* Inner ring dots */}
         {inner.map((p, i) => (
-          <circle key={`in-${i}`} cx={p.x} cy={p.y} r="3"
+          <circle key={`in-${i}`} cx={p.x} cy={p.y} r="4"
             className="nv-inner-dot" style={{ animationDelay: `${1.2 + i * 0.08}s` }} />
         ))}
 
@@ -88,18 +99,18 @@ const Constellation: React.FC = () => {
         {outer.map((p, i) => {
           const labelAbove = p.y < cy - 20;
           const labelBelow = p.y > cy + 20;
-          const labelY = labelAbove ? p.y - 32 : labelBelow ? p.y + 38 : p.y;
+          const labelY = labelAbove ? p.y - 40 : labelBelow ? p.y + 46 : p.y;
           const textAnchor = p.x < cx - 40 ? 'end' : p.x > cx + 40 ? 'start' : 'middle';
-          const labelX = p.x < cx - 40 ? p.x - 4 : p.x > cx + 40 ? p.x + 4 : p.x;
+          const labelX = p.x < cx - 40 ? p.x - 6 : p.x > cx + 40 ? p.x + 6 : p.x;
 
           return (
             <g key={i} className="nv-node" style={{ animationDelay: `${0.8 + i * 0.12}s` }}>
               {/* Pulse ring */}
-              <circle cx={p.x} cy={p.y} r="24" className="nv-pulse-ring"
+              <circle cx={p.x} cy={p.y} r="28" className="nv-pulse-ring"
                 style={{ animationDelay: `${2 + i * 0.5}s` }} />
               {/* Node bg */}
-              <circle cx={p.x} cy={p.y} r="22" className="nv-node-bg" />
-              <circle cx={p.x} cy={p.y} r="22" className="nv-node-border" />
+              <circle cx={p.x} cy={p.y} r="28" className="nv-node-bg" />
+              <circle cx={p.x} cy={p.y} r="28" className="nv-node-border" />
               {/* Icon */}
               <text x={p.x} y={p.y + 1} textAnchor="middle" dominantBaseline="central"
                 className="nv-node-icon">{p.icon}</text>
@@ -113,12 +124,14 @@ const Constellation: React.FC = () => {
         })}
 
         {/* Center node — logo placeholder */}
-        <circle cx={cx} cy={cy} r="30" className="nv-center-ring" />
+        <circle cx={cx} cy={cy} r="36" className="nv-center-ring" />
         <circle cx={cx} cy={cy} r="6" className="nv-center-dot" />
       </svg>
 
       {/* Real logo overlaid at center */}
       <img src="/logo.png" alt="" className="nv-geo-logo" />
+      {/* Slow rotating outer ring */}
+      <div className="nv-orbit-ring" />
     </div>
   );
 };
@@ -234,14 +247,20 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
               </div>
             </div>
 
+            {/* Headline above constellation */}
+            <div className="nv-hero-headline">
+              <h2>Streamline your<br />clinical operations</h2>
+              <p>A unified platform built for modern healthcare teams.</p>
+            </div>
+
             {/* Constellation center */}
             <div className="nv-hero-mid">
               <Constellation />
             </div>
 
-            {/* Bottom headline */}
+            {/* Bottom trust */}
             <div className="nv-hero-bot">
-              <p className="nv-tagline">Streamline your clinical operations<br /><span>from a single, intelligent workspace.</span></p>
+              <div className="nv-trust"><span className="nv-tdot" /><span>Trusted by healthcare teams across multiple locations</span></div>
             </div>
           </div>
         </div>
@@ -336,16 +355,23 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
         .nv-hn span{color:#10b981}
         .nv-hs{font-size:10px;font-weight:500;color:rgba(255,255,255,.2);margin-top:1px}
 
-        .nv-hero-mid{flex:1;display:flex;align-items:center;justify-content:center;padding:20px 0}
+        .nv-hero-headline{text-align:center;padding:0 16px}
+        .nv-hero-headline h2{font-size:28px;font-weight:800;color:#fff;letter-spacing:-.03em;line-height:1.2;margin:0 0 8px}
+        .nv-hero-headline p{font-size:14px;font-weight:500;color:rgba(255,255,255,.25);margin:0;line-height:1.5}
+
+        .nv-hero-mid{flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0}
 
         .nv-hero-bot{text-align:center;padding-bottom:8px}
-        .nv-tagline{font-size:14px;font-weight:500;color:rgba(255,255,255,.2);line-height:1.6;margin:0}
-        .nv-tagline span{color:rgba(16,185,129,.4)}
+        .nv-trust{display:flex;align-items:center;justify-content:center;gap:8px}
+        .nv-tdot{width:6px;height:6px;border-radius:50%;background:#10b981;flex-shrink:0;animation:nvBlink 2.5s ease-in-out infinite}
+        @keyframes nvBlink{0%,100%{opacity:1}50%{opacity:.3}}
+        .nv-trust span:last-child{font-size:11px;font-weight:500;color:rgba(255,255,255,.15)}
 
         /* ── CONSTELLATION ── */
-        .nv-constellation{position:relative;width:100%;max-width:440px;aspect-ratio:1;opacity:0;transform:scale(.85);transition:all 1.2s cubic-bezier(.16,1,.3,1) .3s}
+        .nv-constellation{position:relative;width:100%;max-width:500px;aspect-ratio:1;opacity:0;transform:scale(.85);transition:all 1.2s cubic-bezier(.16,1,.3,1) .3s}
         .nv-constellation.is-vis{opacity:1;transform:scale(1)}
-        .nv-geo-svg{width:100%;height:100%}
+        .nv-geo-svg{width:100%;height:100%;animation:nvBreathe 8s ease-in-out infinite}
+        @keyframes nvBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}
 
         .nv-center-glow{animation:nvCGlow 4s ease-in-out infinite}
         @keyframes nvCGlow{0%,100%{opacity:.6}50%{opacity:1}}
@@ -353,7 +379,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
         .nv-geo-line{stroke:rgba(16,185,129,.12);stroke-width:1;stroke-dasharray:200;stroke-dashoffset:200;animation:nvLineDraw 1.2s ease forwards}
         @keyframes nvLineDraw{to{stroke-dashoffset:0}}
 
-        .nv-inner-dot{fill:rgba(16,185,129,.3);opacity:0;animation:nvDotIn .4s ease forwards}
+        .nv-geo-flow{stroke:url(#flowGrad);stroke-width:2;stroke-dasharray:30 200;stroke-dashoffset:230;opacity:0;animation:nvFlow 4s linear infinite}
+        @keyframes nvFlow{0%{stroke-dashoffset:230;opacity:0}10%{opacity:1}90%{opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+
+        .nv-inner-dot{fill:rgba(16,185,129,.4);opacity:0;animation:nvDotIn .4s ease forwards}
         @keyframes nvDotIn{to{opacity:1}}
 
         .nv-node{opacity:0;animation:nvNodeIn .6s ease forwards}
@@ -361,19 +390,20 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
 
         .nv-node-bg{fill:rgba(10,14,20,.9)}
         .nv-node-border{fill:none;stroke:rgba(16,185,129,.25);stroke-width:1.5}
-        .nv-node-icon{font-family:'Font Awesome 6 Free';font-weight:900;font-size:13px;fill:#10b981}
-        .nv-node-label{font-family:'Inter',sans-serif;font-size:11px;font-weight:600;fill:rgba(255,255,255,.5);opacity:0;animation:nvLabelIn .5s ease forwards}
+        .nv-node-icon{font-family:'Font Awesome 6 Free';font-weight:900;font-size:16px;fill:#10b981}
+        .nv-node-label{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;fill:rgba(255,255,255,.65);opacity:0;animation:nvLabelIn .5s ease forwards}
         @keyframes nvLabelIn{to{opacity:1}}
 
         .nv-pulse-ring{fill:none;stroke:rgba(16,185,129,.15);stroke-width:1;opacity:0;animation:nvPulse 3s ease-in-out infinite}
-        @keyframes nvPulse{0%{r:22;opacity:.4}100%{r:38;opacity:0}}
+        @keyframes nvPulse{0%{r:28;opacity:.4}100%{r:44;opacity:0}}
 
         .nv-center-ring{fill:none;stroke:rgba(16,185,129,.2);stroke-width:1.5;stroke-dasharray:4 4;animation:nvCRot 20s linear infinite}
         @keyframes nvCRot{to{stroke-dashoffset:-188.5}}
         .nv-center-dot{fill:#10b981;animation:nvCDot 2.5s ease-in-out infinite}
         @keyframes nvCDot{0%,100%{opacity:1;r:6}50%{opacity:.5;r:4}}
 
-        .nv-geo-logo{position:absolute;top:50%;left:50%;width:52px;height:52px;transform:translate(-50%,-50%);border-radius:14px;object-fit:cover;pointer-events:none}
+        .nv-geo-logo{position:absolute;top:50%;left:50%;width:60px;height:60px;transform:translate(-50%,-50%);border-radius:16px;object-fit:cover;pointer-events:none}
+        .nv-orbit-ring{position:absolute;top:50%;left:50%;width:80px;height:80px;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(16,185,129,.08);pointer-events:none}
 
         /* ── FORM SIDE ── */
         .nv-form-side{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 28px;opacity:0;transform:translateX(20px);transition:all .9s cubic-bezier(.16,1,.3,1) .15s}
