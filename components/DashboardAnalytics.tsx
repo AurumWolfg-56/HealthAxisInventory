@@ -18,7 +18,7 @@ interface DashboardAnalyticsProps {
     onNavigate: (route: any, subTab?: string) => void;
 }
 
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#6366f1', '#14b8a6'];
+const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#6366f1', '#06b6d4'];
 
 const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
     dailyReports, inventory, orders, users, t, onNavigate

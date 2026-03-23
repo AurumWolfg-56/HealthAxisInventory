@@ -264,7 +264,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
     }, [orders, budgetStats]);
 
     const trendVendors: string[] = [...new Set<string>(budgetStats.flatMap(b => b.vendors))];
-    const TREND_COLORS = ['#6366f1', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
+    const TREND_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
 
     // ──────────────────────────────────────────────────────────────
     // Export to PDF
@@ -378,7 +378,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                                 <Bar dataKey="Budget" fill="#818cf8" radius={[8, 8, 0, 0]} maxBarSize={50} />
                                 <Bar dataKey="Spent" radius={[8, 8, 0, 0]} maxBarSize={50}>
                                     {chartData.map((entry, i) => (
-                                        <Cell key={i} fill={entry.pct >= 90 ? '#ef4444' : entry.pct >= 75 ? '#f59e0b' : '#14b8a6'} />
+                                        <Cell key={i} fill={entry.pct >= 90 ? '#ef4444' : entry.pct >= 75 ? '#f59e0b' : '#10b981'} />
                                     ))}
                                 </Bar>
                                 <Legend wrapperStyle={{ fontWeight: 700, fontSize: 12 }} />

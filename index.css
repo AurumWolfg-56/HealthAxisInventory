@@ -14,16 +14,16 @@
     --text-primary: #0f172a;
     --text-secondary: #475569;
     --text-muted: #94a3b8;
-    --accent: #14b8a6;
-    --accent-light: rgba(20, 184, 166, 0.1);
+    --accent: #10b981;
+    --accent-light: rgba(16, 185, 129, 0.1);
     --danger: #ef4444;
     --warning: #f59e0b;
     --success: #22c55e;
 
     /* Scrollbar */
     --scroll-track: transparent;
-    --scroll-thumb: linear-gradient(180deg, rgba(20, 184, 166, 0.25) 0%, rgba(20, 184, 166, 0.1) 100%);
-    --scroll-thumb-hover: linear-gradient(180deg, rgba(20, 184, 166, 0.4) 0%, rgba(20, 184, 166, 0.2) 100%);
+    --scroll-thumb: linear-gradient(180deg, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.1) 100%);
+    --scroll-thumb-hover: linear-gradient(180deg, rgba(16, 185, 129, 0.4) 0%, rgba(16, 185, 129, 0.2) 100%);
   }
 
   .dark {
@@ -34,10 +34,10 @@
     --text-primary: #f1f5f9;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
-    --accent-light: rgba(20, 184, 166, 0.15);
+    --accent-light: rgba(16, 185, 129, 0.15);
 
-    --scroll-thumb: linear-gradient(180deg, rgba(20, 184, 166, 0.2) 0%, rgba(20, 184, 166, 0.08) 100%);
-    --scroll-thumb-hover: linear-gradient(180deg, rgba(20, 184, 166, 0.35) 0%, rgba(20, 184, 166, 0.15) 100%);
+    --scroll-thumb: linear-gradient(180deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.08) 100%);
+    --scroll-thumb-hover: linear-gradient(180deg, rgba(16, 185, 129, 0.35) 0%, rgba(16, 185, 129, 0.15) 100%);
   }
 
   html {
@@ -83,7 +83,7 @@
   /* Firefox scrollbar */
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(20, 184, 166, 0.25) transparent;
+    scrollbar-color: rgba(16, 185, 129, 0.25) transparent;
   }
 
   /* Compact scrollbar for nested containers */
@@ -93,7 +93,7 @@
 
   /* Selection styling */
   ::selection {
-    background: rgba(20, 184, 166, 0.2);
+    background: rgba(16, 185, 129, 0.2);
     color: inherit;
   }
 }

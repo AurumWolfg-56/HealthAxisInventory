@@ -79,17 +79,17 @@ const Scanner: React.FC<ScannerProps> = ({ onScanComplete, onCancel }) => {
         <div className={`relative w-72 h-72 border rounded-xl transition-all duration-300 z-30 ${
             isProcessing 
             ? 'border-white/60 shadow-[0_0_60px_rgba(255,255,255,0.4)] scale-105' 
-            : 'border-medical-500/30 shadow-[0_0_50px_rgba(20,184,166,0.15)]'
+            : 'border-medical-500/30 shadow-[0_0_50px_rgba(16,185,129,0.15)]'
         }`}>
              {/* Corner Brackets */}
-            <div className={`absolute -top-1 -left-1 w-8 h-8 border-l-4 border-t-4 rounded-tl-sm transition-all duration-300 ${isProcessing ? 'border-white shadow-[0_0_20px_white]' : 'border-medical-500 shadow-[0_0_15px_rgba(20,184,166,0.6)] animate-[pulse-glow_2s_ease-in-out_infinite]'}`}></div>
-            <div className={`absolute -top-1 -right-1 w-8 h-8 border-r-4 border-t-4 rounded-tr-sm transition-all duration-300 ${isProcessing ? 'border-white shadow-[0_0_20px_white]' : 'border-medical-500 shadow-[0_0_15px_rgba(20,184,166,0.6)] animate-[pulse-glow_2s_ease-in-out_infinite]'}`}></div>
-            <div className={`absolute -bottom-1 -left-1 w-8 h-8 border-l-4 border-b-4 rounded-bl-sm transition-all duration-300 ${isProcessing ? 'border-white shadow-[0_0_20px_white]' : 'border-medical-500 shadow-[0_0_15px_rgba(20,184,166,0.6)] animate-[pulse-glow_2s_ease-in-out_infinite]'}`}></div>
-            <div className={`absolute -bottom-1 -right-1 w-8 h-8 border-r-4 border-b-4 rounded-br-sm transition-all duration-300 ${isProcessing ? 'border-white shadow-[0_0_20px_white]' : 'border-medical-500 shadow-[0_0_15px_rgba(20,184,166,0.6)] animate-[pulse-glow_2s_ease-in-out_infinite]'}`}></div>
+            <div className={`absolute -top-1 -left-1 w-8 h-8 border-l-4 border-t-4 rounded-tl-sm transition-all duration-300 ${isProcessing ? 'border-white shadow-[0_0_20px_white]' : 'border-medical-500 shadow-[0_0_15px_rgba(16,185,129,0.6)] animate-[pulse-glow_2s_ease-in-out_infinite]'}`}></div>
+            <div className={`absolute -top-1 -right-1 w-8 h-8 border-r-4 border-t-4 rounded-tr-sm transition-all duration-300 ${isProcessing ? 'border-white shadow-[0_0_20px_white]' : 'border-medical-500 shadow-[0_0_15px_rgba(16,185,129,0.6)] animate-[pulse-glow_2s_ease-in-out_infinite]'}`}></div>
+            <div className={`absolute -bottom-1 -left-1 w-8 h-8 border-l-4 border-b-4 rounded-bl-sm transition-all duration-300 ${isProcessing ? 'border-white shadow-[0_0_20px_white]' : 'border-medical-500 shadow-[0_0_15px_rgba(16,185,129,0.6)] animate-[pulse-glow_2s_ease-in-out_infinite]'}`}></div>
+            <div className={`absolute -bottom-1 -right-1 w-8 h-8 border-r-4 border-b-4 rounded-br-sm transition-all duration-300 ${isProcessing ? 'border-white shadow-[0_0_20px_white]' : 'border-medical-500 shadow-[0_0_15px_rgba(16,185,129,0.6)] animate-[pulse-glow_2s_ease-in-out_infinite]'}`}></div>
             
             {/* Internal Scanning Animation (Standard) */}
             {!isProcessing && (
-                <div className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-medical-400 to-transparent shadow-[0_0_20px_rgba(20,184,166,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
+                <div className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-medical-400 to-transparent shadow-[0_0_20px_rgba(16,185,129,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
             )}
 
             {/* Processing State Internal Visuals */}
@@ -129,7 +129,7 @@ const Scanner: React.FC<ScannerProps> = ({ onScanComplete, onCancel }) => {
           className={`w-20 h-20 rounded-full p-1.5 border-2 transition-all duration-300 group shadow-[0_0_30px_rgba(255,255,255,0.1)] ${
               isProcessing 
               ? 'border-gray-600 opacity-50 cursor-not-allowed scale-90' 
-              : 'border-white/30 hover:border-medical-500 hover:scale-105 hover:shadow-[0_0_30px_rgba(20,184,166,0.4)]'
+              : 'border-white/30 hover:border-medical-500 hover:scale-105 hover:shadow-[0_0_30px_rgba(16,185,129,0.4)]'
           }`}
         >
           <div className={`w-full h-full rounded-full flex items-center justify-center transition-all ${isProcessing ? 'bg-gray-700' : 'bg-white group-active:scale-90'}`}>
@@ -160,8 +160,8 @@ const Scanner: React.FC<ScannerProps> = ({ onScanComplete, onCancel }) => {
           100% { top: 100%; opacity: 0; }
         }
         @keyframes pulse-glow {
-          0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 15px rgba(20,184,166,0.6); }
-          50% { opacity: 0.8; transform: scale(1.02); box-shadow: 0 0 25px rgba(20,184,166,0.9); }
+          0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 15px rgba(16,185,129,0.6); }
+          50% { opacity: 0.8; transform: scale(1.02); box-shadow: 0 0 25px rgba(16,185,129,0.9); }
         }
         .reverse { animation-direction: reverse; animation-duration: 3s; }
       `}</style>

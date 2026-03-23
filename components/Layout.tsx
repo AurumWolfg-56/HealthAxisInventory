@@ -119,7 +119,7 @@ export const Layout: React.FC<LayoutProps> = ({
                             <i className={`fa-solid ${item.icon} text-lg`}></i>
                         </div>
                         <span className="text-sm font-bold tracking-wide">{item.label}</span>
-                        {isActive && <div className="absolute right-0 h-8 w-1 bg-medical-500 rounded-l-full shadow-[0_0_10px_rgba(20,184,166,0.5)]"></div>}
+                        {isActive && <div className="absolute right-0 h-8 w-1 bg-medical-500 rounded-l-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>}
                     </button>
                 );
             })}
