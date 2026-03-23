@@ -247,12 +247,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
               </div>
             </div>
 
-            {/* Headline above constellation */}
-            <div className="nv-hero-headline">
-              <h2>Streamline your<br />clinical operations</h2>
-              <p>A unified platform built for modern healthcare teams.</p>
-            </div>
-
             {/* Constellation center */}
             <div className="nv-hero-mid">
               <Constellation />
@@ -354,10 +348,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
         .nv-hn{font-size:16px;font-weight:800;color:#fff;letter-spacing:-.02em}
         .nv-hn span{color:#10b981}
         .nv-hs{font-size:10px;font-weight:500;color:rgba(255,255,255,.2);margin-top:1px}
-
-        .nv-hero-headline{text-align:center;padding:0 16px}
-        .nv-hero-headline h2{font-size:28px;font-weight:800;color:#fff;letter-spacing:-.03em;line-height:1.2;margin:0 0 8px}
-        .nv-hero-headline p{font-size:14px;font-weight:500;color:rgba(255,255,255,.25);margin:0;line-height:1.5}
 
         .nv-hero-mid{flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0}
 
