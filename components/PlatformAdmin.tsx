@@ -43,7 +43,7 @@ interface EditingLocation {
     is_active: boolean;
 }
 
-export const PlatformAdmin: React.FC = () => {
+export const PlatformAdmin: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
     const { currentOrg, currentLocation, userLocations } = useTenant();
     const { accessToken } = useAuth();
     const [orgLocations, setOrgLocations] = useState<ClinicLocation[]>([]);
@@ -291,9 +291,8 @@ export const PlatformAdmin: React.FC = () => {
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{currentOrg.is_active ? 'Active' : 'Inactive'}</p>
                             </div>
                         </div>
-                        
-                        {!editingOrg ? (
-                            <button onClick={() => setEditingOrg({ name: currentOrg.name, logo_url: currentOrg.logo_url || '', primary_color: currentOrg.primary_color || '#0ea5e9' })}
+                                 {!editingOrg ? (
+                            !readOnly && <button onClick={() => setEditingOrg({ name: currentOrg.name, logo_url: currentOrg.logo_url || '', primary_color: currentOrg.primary_color || '#0ea5e9' })}
                                 className="px-6 py-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-black rounded-xl text-xs uppercase tracking-widest hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors">
                                 <i className="fa-solid fa-pen mr-2"></i>Edit Organization
                             </button>
@@ -302,25 +301,25 @@ export const PlatformAdmin: React.FC = () => {
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Organization Name</label>
                                     <input type="text" value={editingOrg.name} onChange={e => setEditingOrg({ ...editingOrg, name: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-sm outline-none focus:border-indigo-500 dark:text-white" />
+                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-sm outline-none focus:border-indigo-500 dark:text-white" disabled={readOnly} />
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Logo URL</label>
                                     <input type="text" value={editingOrg.logo_url} onChange={e => setEditingOrg({ ...editingOrg, logo_url: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-sm outline-none focus:border-indigo-500 dark:text-white" placeholder="/logo.png" />
+                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-sm outline-none focus:border-indigo-500 dark:text-white" placeholder="/logo.png" disabled={readOnly} />
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Primary Color</label>
                                     <div className="flex gap-3 items-center">
                                         <input type="color" value={editingOrg.primary_color} onChange={e => setEditingOrg({ ...editingOrg, primary_color: e.target.value })}
-                                            className="w-12 h-10 rounded-lg cursor-pointer border-0" />
+                                            className="w-12 h-10 rounded-lg cursor-pointer border-0" disabled={readOnly} />
                                         <input type="text" value={editingOrg.primary_color} onChange={e => setEditingOrg({ ...editingOrg, primary_color: e.target.value })}
-                                            className="flex-1 px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-sm outline-none dark:text-white" />
+                                            className="flex-1 px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-sm outline-none dark:text-white" disabled={readOnly} />
                                     </div>
                                 </div>
                                 <div className="flex gap-3 pt-2">
                                     <button onClick={() => setEditingOrg(null)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-black rounded-xl text-xs uppercase tracking-widest">Cancel</button>
-                                    <button onClick={saveOrg} disabled={saving} className="flex-1 py-3 bg-indigo-600 text-white font-black rounded-xl text-xs uppercase tracking-widest shadow-lg disabled:opacity-50">
+                                    <button onClick={saveOrg} disabled={saving || readOnly} className="flex-1 py-3 bg-indigo-600 text-white font-black rounded-xl text-xs uppercase tracking-widest shadow-lg disabled:opacity-50">
                                         {saving ? <i className="fa-solid fa-spinner fa-spin"></i> : 'Save'}
                                     </button>
                                 </div>
@@ -335,10 +334,10 @@ export const PlatformAdmin: React.FC = () => {
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                         <p className="text-xs font-bold text-slate-400">{orgLocations.length} location{orgLocations.length !== 1 ? 's' : ''} in {currentOrg?.name}</p>
-                        <button onClick={() => setEditingLoc(newLocation())}
+                        {!readOnly && <button onClick={() => setEditingLoc(newLocation())}
                             className="px-5 py-2.5 bg-indigo-600 text-white font-black rounded-xl text-xs uppercase tracking-widest shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-transform">
                             <i className="fa-solid fa-plus mr-2"></i>New Location
-                        </button>
+                        </button>}
                     </div>
 
                     {loading ? (
@@ -374,10 +373,10 @@ export const PlatformAdmin: React.FC = () => {
                                                 </span>
                                             </div>
                                         </div>
-                                        <button onClick={() => setEditingLoc(editLocation(loc))}
+                                        {!readOnly && <button onClick={() => setEditingLoc(editLocation(loc))}
                                             className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center shrink-0">
                                             <i className="fa-solid fa-pen-to-square"></i>
-                                        </button>
+                                        </button>}
                                     </div>
                                 </div>
                             ))}
@@ -405,6 +404,7 @@ export const PlatformAdmin: React.FC = () => {
                                 }
                             }}
                             className="px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-bold outline-none focus:ring-2 ring-indigo-500/20 dark:text-white min-w-[200px]"
+                            disabled={readOnly}
                         >
                             {orgLocations.map(l => (
                                 <option key={l.id} value={l.id}>{l.name}</option>
@@ -420,7 +420,7 @@ export const PlatformAdmin: React.FC = () => {
                                 const meta = FLAG_LABELS[key] || { label: key, icon: 'fa-puzzle-piece', desc: '' };
                                 const enabled = localFlags[key] ?? true;
                                 return (
-                                    <button key={key} onClick={() => toggleFlag(key)}
+                                    <button key={key} onClick={() => toggleFlag(key)} disabled={readOnly}
                                         className={`flex items-center gap-4 p-4 rounded-2xl border transition-all text-left group ${
                                             enabled
                                                 ? 'bg-white dark:bg-slate-800 border-emerald-200 dark:border-emerald-800/50 shadow-sm'
@@ -454,7 +454,7 @@ export const PlatformAdmin: React.FC = () => {
                                 const meta = FLAG_LABELS[key] || { label: key, icon: 'fa-puzzle-piece', desc: '' };
                                 const enabled = localFlags[key] ?? false;
                                 return (
-                                    <button key={key} onClick={() => toggleFlag(key)}
+                                    <button key={key} onClick={() => toggleFlag(key)} disabled={readOnly}
                                         className={`flex items-center gap-4 p-4 rounded-2xl border transition-all text-left ${
                                             enabled
                                                 ? 'bg-white dark:bg-slate-800 border-purple-200 dark:border-purple-800/50 shadow-sm'
@@ -480,11 +480,11 @@ export const PlatformAdmin: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Save Flags */}
-                    <button onClick={saveFlags} disabled={saving}
+                                       {/* Save Flags */}
+                    {!readOnly && <button onClick={saveFlags} disabled={saving}
                         className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black rounded-2xl uppercase text-xs tracking-widest shadow-xl hover:shadow-indigo-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50">
                         {saving ? <><i className="fa-solid fa-spinner fa-spin mr-2"></i>Saving...</> : <><i className="fa-solid fa-floppy-disk mr-2"></i>Save Feature Flags</>}
-                    </button>
+                    </button>}
                 </div>
             )}
 
@@ -505,7 +505,7 @@ export const PlatformAdmin: React.FC = () => {
                                 { key: 'address', label: 'Address', placeholder: '123 Main St, Orlando, FL', type: 'text' },
                                 { key: 'phone', label: 'Phone', placeholder: '(407) 555-0123', type: 'tel' },
                                 { key: 'email', label: 'Email', placeholder: 'contact@clinic.com', type: 'email' },
-                                { key: 'logo_url', label: 'Logo URL', placeholder: '/icp-logo.png or https://...', type: 'text' },
+                                { key: 'logo_url', label: 'Logo URL', placeholder: 'icon:NAME:COLOR for CSS icons, /logos/filename.png for images', type: 'text' },
                                 { key: 'timezone', label: 'Timezone', placeholder: 'America/New_York', type: 'text' },
                             ].map(field => (
                                 <div key={field.key} className="space-y-1">

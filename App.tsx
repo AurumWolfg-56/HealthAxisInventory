@@ -1164,7 +1164,7 @@ const App: React.FC = () => {
                     )}
                     {currentRoute === AppRoute.SETTINGS && <Settings user={user} onUpdateUser={updateUser} isDarkMode={isDarkMode} toggleTheme={toggleTheme} onResetData={() => { }} language={language} setLanguage={setLanguage} t={t} />}
                     {currentRoute === AppRoute.ADMIN && hasPermission('admin.access') && <Admin roleConfigs={roleConfigs} onUpdateRoleConfig={updateRoleConfig} currentUser={user} t={t} />}
-                    {currentRoute === AppRoute.PLATFORM && hasPermission('admin.access') && (
+                    {currentRoute === AppRoute.PLATFORM && user?.platformRole && (
                         <div className="max-w-none -mx-4 md:-mx-8">
                             <div className="px-4 md:px-8 py-6">
                                 <div className="flex items-center gap-3 mb-6">
@@ -1173,10 +1173,10 @@ const App: React.FC = () => {
                                     </div>
                                     <div>
                                         <h1 className="text-2xl font-black text-slate-900 dark:text-white">Command Center</h1>
-                                        <p className="text-xs font-semibold text-slate-400">Norvexis Core — Platform Administration</p>
+                                        <p className="text-xs font-semibold text-slate-400">Norvexis Core — Platform Administration{user.platformRole === 'platform_viewer' ? ' (Read Only)' : ''}</p>
                                     </div>
                                 </div>
-                                <PlatformAdmin />
+                                <PlatformAdmin readOnly={user.platformRole === 'platform_viewer'} />
                             </div>
                         </div>
                     )}

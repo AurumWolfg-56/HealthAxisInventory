@@ -23,7 +23,7 @@ export const Layout: React.FC<LayoutProps> = ({
     toggleTheme,
     t
 }) => {
-    const { user, hasPermission, signOut } = useAuth();
+    const { user, hasPermission, signOut, hasPlatformAccess } = useAuth();
     const { currentLocation, currentOrg, userLocations, switchLocation, isFeatureEnabled } = useTenant();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -184,8 +184,8 @@ export const Layout: React.FC<LayoutProps> = ({
                         </div>
                     </div>
                     {renderNavContent()}
-                    {/* Command Center button for OWNER/MANAGER */}
-                    {(user.role === 'OWNER' || user.role === 'MANAGER') && (
+                    {/* Command Center button — platform users only */}
+                    {hasPlatformAccess && (
                         <div className="px-4 pb-2 z-10">
                             <button
                                 onClick={() => handleNavigateWrapper(AppRoute.PLATFORM)}

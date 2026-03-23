@@ -8,6 +8,8 @@ interface AuthContextType {
     accessToken: string | null;
     isLoading: boolean;
     isAdmin: boolean;
+    isPlatformAdmin: boolean;
+    hasPlatformAccess: boolean;
     hasPermission: (permission: Permission) => boolean;
     roleConfigs: RoleConfig[];
     updateRoleConfig: (role: UserRole, permission: Permission) => void;
@@ -195,7 +197,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     try {
                         const { data: profile, error } = await supabase
                             .from('profiles')
-                            .select('id, full_name, user_location_assignments(role_id, location_id), permissions')
+                            .select('id, full_name, platform_role, user_location_assignments(role_id, location_id), permissions')
                             .eq('id', user.id)
                             .single();
 
@@ -208,8 +210,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             setUser(prev => ({
                                 ...prev!,
                                 role: dbRole || prev!.role,
-                                permissions: dbPermissions || [],  // Force empty array if null, never use cache
-                                username: dbUsername || prev!.username
+                                permissions: dbPermissions || [],
+                                username: dbUsername || prev!.username,
+                                platformRole: profile.platform_role || prev!.platformRole || null
                             }));
                             console.log('[AuthContext] Profile updated with fresh DB permissions:', dbPermissions || []);
                         }
@@ -235,7 +238,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             try {
                 // Use REST API with the ACTUAL session token (not supabase client internal auth)
-                const url = `${SUPABASE_URL}/rest/v1/profiles?select=id,full_name,user_location_assignments(role_id,location_id),permissions&id=eq.${sessionUser.id}`;
+                const url = `${SUPABASE_URL}/rest/v1/profiles?select=id,full_name,platform_role,user_location_assignments(role_id,location_id),permissions&id=eq.${sessionUser.id}`;
                 const response = await fetch(url, {
                     headers: {
                         'apikey': SUPABASE_KEY,
@@ -262,7 +265,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         email: sessionUser.email,
                         username: dbUsername || sessionUser.email?.split('@')[0] || 'User',
                         role: dbRole || UserRole.FRONT_DESK,
-                        permissions: dbPermissions || []
+                        permissions: dbPermissions || [],
+                        platformRole: profile.platform_role || null
                     });
                 } else {
                     console.warn('[AuthContext] No profile found in DB, using session fallback');
@@ -449,6 +453,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         accessToken,
         isLoading,
         isAdmin: hasPermission('admin.access'),
+        isPlatformAdmin: user?.platformRole === 'platform_admin',
+        hasPlatformAccess: user?.platformRole === 'platform_admin' || user?.platformRole === 'platform_viewer',
         hasPermission,
         roleConfigs,
         updateRoleConfig,
