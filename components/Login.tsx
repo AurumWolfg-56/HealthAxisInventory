@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserRole } from '../types';
 import { supabase } from '../src/lib/supabase';
 
@@ -18,14 +18,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
   const [authMode, setAuthMode] = useState<'signin' | 'signup' | 'forgot' | 'update-password'>('signin');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const [ready, setReady] = useState(false);
   const [phase, setPhase] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [emailFocused, setEmailFocused] = useState(false);
-  const [passFocused, setPassFocused] = useState(false);
 
   useEffect(() => {
-    const raf = requestAnimationFrame(() => setMounted(true));
-
+    requestAnimationFrame(() => setReady(true));
     if (forcePasswordUpdate ||
       window.location.hash.includes('type=recovery') ||
       window.location.hash.includes('type=invite') ||
@@ -35,34 +32,25 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
         setAuthMode('update-password');
       }
     }
-    return () => cancelAnimationFrame(raf);
   }, [forcePasswordUpdate]);
 
   useEffect(() => {
     if (phase === 'error') {
-      const timer = setTimeout(() => setPhase('idle'), 4000);
+      const timer = setTimeout(() => setPhase('idle'), 3500);
       return () => clearTimeout(timer);
     }
   }, [phase]);
 
-  const triggerError = (msg: string) => {
-    setError(msg);
-    setPhase('error');
-    setLoading(false);
-  };
+  const fail = (msg: string) => { setError(msg); setPhase('error'); setLoading(false); };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
-    setLoading(true);
-    setPhase('loading');
-    setError(null);
+    setLoading(true); setPhase('loading'); setError(null);
     try {
-      const { error: pwError } = await supabase.auth.updateUser({ password });
-      if (pwError) throw pwError;
-      if (window.location.hash) {
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      }
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      if (window.location.hash) window.history.replaceState(null, '', window.location.pathname + window.location.search);
       if (username) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) await supabase.from('profiles').update({ username }).eq('id', user.id);
@@ -70,46 +58,27 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
       await supabase.auth.signOut();
       alert('Contraseña guardada exitosamente. Por favor, inicia sesión con tu nueva contraseña.');
       if (onPasswordSet) onPasswordSet();
-      setAuthMode('signin');
-      setPassword('');
-      setUsername('');
-      setEmail('');
-      setPhase('idle');
-    } catch (err: any) {
-      triggerError(err.message);
-    } finally {
-      setLoading(false);
-    }
+      setAuthMode('signin'); setPassword(''); setUsername(''); setEmail(''); setPhase('idle');
+    } catch (err: any) { fail(err.message); }
+    finally { setLoading(false); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (authMode === 'update-password') return handleUpdatePassword(e);
-    setLoading(true);
-    setPhase('loading');
-    setError(null);
-    setSuccess(null);
+    setLoading(true); setPhase('loading'); setError(null); setSuccess(null);
     try {
       if (authMode === 'signin') {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.includes('@') ? email : `${username}@healthaxis.com`,
-          password
+          email: email.includes('@') ? email : `${username}@healthaxis.com`, password
         });
         if (error) throw error;
-        if (data.user) {
-          setPhase('success');
-          setSuccess(t('msg_login_success'));
-          setTimeout(() => onLogin(data.user), 2400);
-        }
+        if (data.user) { setPhase('success'); setTimeout(() => onLogin(data.user), 1600); }
       } else if (authMode === 'signup') {
-        const { error } = await supabase.auth.signUp({
-          email, password,
-          options: { data: { full_name: email.split('@')[0] } }
-        });
+        const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: email.split('@')[0] } } });
         if (error) throw error;
         alert('Verification email sent!');
-        setAuthMode('signin');
-        setPhase('idle');
+        setAuthMode('signin'); setPhase('idle');
       } else if (authMode === 'forgot') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
         if (error) throw error;
@@ -117,257 +86,132 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
         setPhase('idle');
         setTimeout(() => { setAuthMode('signin'); setSuccess(null); }, 4000);
       }
-    } catch (err: any) {
-      triggerError(err.message);
-    } finally {
-      if (phase !== 'success') setLoading(false);
-    }
+    } catch (err: any) { fail(err.message); }
+    finally { if (phase !== 'success') setLoading(false); }
   };
 
-  // Dynamic border color based on state
-  const cardBorder = phase === 'error' ? 'rgba(239,68,68,0.5)' : phase === 'success' ? 'rgba(16,185,129,0.5)' : 'rgba(16,185,129,0.1)';
-  const cardShadow = phase === 'error'
-    ? '0 0 80px rgba(239,68,68,0.08), inset 0 0 60px rgba(239,68,68,0.02)'
-    : phase === 'success'
-      ? '0 0 80px rgba(16,185,129,0.12), inset 0 0 60px rgba(16,185,129,0.03)'
-      : '0 0 80px rgba(16,185,129,0.03)';
+  const modeConfig: Record<string, { title: string; subtitle: string }> = {
+    'signin': { title: 'Welcome back', subtitle: 'Sign in to continue to your workspace' },
+    'forgot': { title: 'Reset password', subtitle: 'Enter your email and we\'ll send a recovery link' },
+    'update-password': { title: 'Set new password', subtitle: 'Choose a strong password for your account' },
+    'signup': { title: 'Create account', subtitle: 'Get started with Norvexis Core' },
+  };
+
+  const { title, subtitle } = modeConfig[authMode];
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden" style={{ background: '#040608' }}>
+    <div className="nv-login-root">
+      {/* Background */}
+      <div className="nv-bg" />
+      <div className="nv-bg-glow" />
 
-      {/* ═══════════ BACKGROUND LAYERS ═══════════ */}
-      {/* Radial gradient base */}
-      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 35%, #0c1018 0%, #060a0f 45%, #030507 100%)' }} />
-
-      {/* Data mesh — subtle emerald grid */}
-      <div className="absolute inset-0" style={{
-        backgroundImage: 'linear-gradient(rgba(16,185,129,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.04) 1px, transparent 1px)',
-        backgroundSize: '64px 64px',
-        maskImage: 'radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 70%)',
-        WebkitMaskImage: 'radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 70%)',
-      }} />
-
-      {/* Floating ambient light */}
-      <div className="nv-float absolute w-[500px] h-[500px] rounded-full" style={{ top: '-8%', left: '15%', background: 'radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 65%)' }} />
-      <div className="nv-float absolute w-[400px] h-[400px] rounded-full" style={{ bottom: '0%', right: '10%', background: 'radial-gradient(circle, rgba(5,150,105,0.05) 0%, transparent 65%)', animationDelay: '8s', animationDirection: 'reverse' }} />
-
-      {/* ═══════════ RETINA SCAN OVERLAY (success) ═══════════ */}
+      {/* Success overlay */}
       {phase === 'success' && (
-        <div className="fixed inset-0 z-50 pointer-events-none">
-          <div className="nv-scanline absolute left-0 right-0 h-[2px]"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(16,185,129,0.6), rgba(52,211,153,0.9), rgba(16,185,129,0.6), transparent)', boxShadow: '0 0 40px 8px rgba(16,185,129,0.15)' }} />
-          <div className="nv-scanflash absolute inset-0" style={{ background: 'rgba(16,185,129,0.02)' }} />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="nv-reticle w-28 h-28 rounded-full" style={{ border: '1.5px solid rgba(16,185,129,0.25)' }}>
-              <div className="w-full h-full rounded-full flex items-center justify-center" style={{ border: '1px solid rgba(16,185,129,0.15)' }}>
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 nv-pulse-dot" />
-              </div>
-            </div>
+        <div className="nv-success-overlay">
+          <div className="nv-success-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" className="nv-check-path" />
+            </svg>
           </div>
-          <div className="absolute inset-0 flex items-center justify-center" style={{ paddingTop: '140px' }}>
-            <span className="nv-granted text-emerald-400/70 text-[11px] font-bold tracking-[0.5em] uppercase">
-              Access Granted
-            </span>
-          </div>
+          <p className="nv-success-text">Signing you in…</p>
         </div>
       )}
 
-      {/* ═══════════ MAIN CONTENT ═══════════ */}
-      <div className={`relative z-10 w-full max-w-[420px] px-5 transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-14'}`}>
+      {/* Main content */}
+      <div className={`nv-container ${ready ? 'nv-in' : ''}`}>
 
-        {/* ── BRANDING ── */}
-        <div className={`text-center mb-10 transition-all duration-700 delay-100 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-          {/* Logo — prominently displayed with glow ring */}
-          <div className="relative inline-block mb-6">
-            <div className="w-20 h-20 rounded-[1.4rem] flex items-center justify-center relative overflow-hidden"
-              style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(5,150,105,0.06) 100%)', border: '1px solid rgba(16,185,129,0.15)' }}>
-              <img src="/logo.png" alt="Norvexis Core" className="w-14 h-14 object-contain relative z-10" />
-            </div>
-            {/* Pulse ring behind logo */}
-            <div className="absolute inset-0 rounded-[1.4rem] nv-logo-ring" style={{ border: '1px solid rgba(16,185,129,0.15)' }} />
-            {/* Subtle glow */}
-            <div className="absolute -inset-3 rounded-[1.8rem] blur-xl" style={{ background: 'rgba(16,185,129,0.06)' }} />
-          </div>
-          <h1 className="text-[1.75rem] font-black text-white tracking-tight leading-none">
-            Norvexis <span className="text-emerald-400">Core</span>
-          </h1>
-          <p className="text-[10px] font-semibold tracking-[0.25em] uppercase mt-2" style={{ color: 'rgba(16,185,129,0.3)' }}>
-            Secure Access Terminal
-          </p>
+        {/* Logo */}
+        <div className="nv-logo-wrap">
+          <img src="/logo.png" alt="Norvexis Core" className="nv-logo" />
         </div>
 
-        {/* ── GLASS CARD ── */}
-        <div className={`nv-card relative rounded-[1.75rem] overflow-hidden transition-all duration-500 ${phase === 'error' ? 'nv-shake nv-glitch' : ''}`}
-          style={{ background: 'rgba(10,14,20,0.85)', backdropFilter: 'blur(40px)', border: `1px solid ${cardBorder}`, boxShadow: cardShadow }}>
+        {/* Brand */}
+        <h1 className="nv-brand">
+          Norvexis <span>Core</span>
+        </h1>
 
-          {/* Card inner highlight line */}
-          <div className="absolute top-0 left-12 right-12 h-px" style={{
-            background: phase === 'error'
-              ? 'linear-gradient(90deg, transparent, rgba(239,68,68,0.25), transparent)'
-              : 'linear-gradient(90deg, transparent, rgba(16,185,129,0.12), transparent)'
-          }} />
-
-          {/* Tactical corner brackets */}
-          <div className="absolute top-3.5 left-3.5 w-2.5 h-2.5 transition-colors duration-500" style={{ borderTop: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}`, borderLeft: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}` }} />
-          <div className="absolute top-3.5 right-3.5 w-2.5 h-2.5 transition-colors duration-500" style={{ borderTop: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}`, borderRight: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}` }} />
-          <div className="absolute bottom-3.5 left-3.5 w-2.5 h-2.5 transition-colors duration-500" style={{ borderBottom: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}`, borderLeft: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}` }} />
-          <div className="absolute bottom-3.5 right-3.5 w-2.5 h-2.5 transition-colors duration-500" style={{ borderBottom: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}`, borderRight: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}` }} />
-
-          <div className="p-7 sm:p-9">
-            {/* Status + Title */}
-            <div className="mb-7">
-              <div className="flex items-center gap-2 mb-2.5">
-                <div className="w-1.5 h-1.5 rounded-full nv-blink" style={{ background: phase === 'error' ? '#ef4444' : '#10b981' }} />
-                <span className="text-[9px] font-bold tracking-[0.2em] uppercase" style={{ color: phase === 'error' ? 'rgba(239,68,68,0.5)' : 'rgba(16,185,129,0.4)' }}>
-                  {phase === 'error' ? 'Authentication Failed' : authMode === 'signin' ? 'System Online' : authMode === 'forgot' ? 'Recovery Mode' : authMode === 'update-password' ? 'Security Update' : 'Registration'}
-                </span>
-              </div>
-              <h2 className="text-[1.5rem] font-black text-white tracking-tight leading-snug">
-                {authMode === 'signin' && 'Identity Verification'}
-                {authMode === 'forgot' && 'Password Recovery'}
-                {authMode === 'update-password' && 'Set New Password'}
-                {authMode === 'signup' && 'Create Account'}
-              </h2>
-              <p className="text-[13px] mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                {authMode === 'signin' && 'Authenticate to access your workspace'}
-                {authMode === 'forgot' && 'We\'ll send a secure recovery link'}
-                {authMode === 'update-password' && 'Choose a strong, secure password'}
-                {authMode === 'signup' && 'Initialize your operator account'}
-              </p>
+        {/* Card */}
+        <div className={`nv-card ${phase === 'error' ? 'nv-shake' : ''}`}>
+          <div className="nv-card-inner">
+            {/* Header */}
+            <div className="nv-header">
+              <h2>{title}</h2>
+              <p>{subtitle}</p>
             </div>
 
-            {/* Error alert */}
+            {/* Error */}
             {error && (
-              <div className="mb-5 p-3 rounded-xl flex items-start gap-2.5" style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.12)' }}>
-                <i className="fa-solid fa-triangle-exclamation text-red-400/80 text-xs mt-0.5"></i>
-                <span className="text-red-400/80 text-[13px] font-medium leading-snug">{error}</span>
+              <div className="nv-alert nv-alert-error">
+                <i className="fa-solid fa-circle-exclamation"></i>
+                <span>{error}</span>
               </div>
             )}
 
-            {/* Success alert */}
+            {/* Success message */}
             {success && phase !== 'success' && (
-              <div className="mb-5 p-3 rounded-xl flex items-start gap-2.5" style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.12)' }}>
-                <i className="fa-solid fa-circle-check text-emerald-400/80 text-xs mt-0.5"></i>
-                <span className="text-emerald-400/80 text-[13px] font-medium leading-snug">{success}</span>
+              <div className="nv-alert nv-alert-ok">
+                <i className="fa-solid fa-circle-check"></i>
+                <span>{success}</span>
               </div>
             )}
 
-            {/* ── FORM ── */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Form */}
+            <form onSubmit={handleSubmit}>
 
-              {/* Email */}
               {authMode !== 'update-password' && (
-                <div>
-                  <label className="block text-[9px] font-bold tracking-[0.15em] uppercase mb-2 ml-0.5 transition-colors duration-300"
-                    style={{ color: emailFocused ? 'rgba(16,185,129,0.5)' : 'rgba(255,255,255,0.18)' }}>
-                    {t('lbl_email')}
-                  </label>
-                  <div className="relative">
-                    <i className={`fa-solid fa-at absolute left-3.5 top-1/2 -translate-y-1/2 text-[11px] transition-colors duration-300`}
-                      style={{ color: emailFocused ? 'rgba(16,185,129,0.6)' : 'rgba(255,255,255,0.1)' }} />
+                <div className="nv-field">
+                  <label>{t('lbl_email')}</label>
+                  <div className="nv-input-wrap">
+                    <i className="fa-solid fa-envelope nv-icon"></i>
                     <input type="email" required value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      onFocus={() => setEmailFocused(true)}
-                      onBlur={() => setEmailFocused(false)}
-                      placeholder="operator@clinic.com"
-                      autoComplete="email"
-                      className="nv-input w-full h-12 pl-10 pr-4 rounded-xl text-white text-[13px] font-medium outline-none transition-all duration-300"
-                      style={{
-                        background: emailFocused ? 'rgba(16,185,129,0.04)' : 'rgba(255,255,255,0.02)',
-                        border: emailFocused ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.04)',
-                        boxShadow: emailFocused ? '0 0 0 3px rgba(16,185,129,0.06), inset 0 0 20px rgba(16,185,129,0.02)' : 'none',
-                      }} />
+                      placeholder="you@company.com" autoComplete="email" />
                   </div>
                 </div>
               )}
 
-              {/* Password */}
               {authMode !== 'forgot' && (
-                <div>
-                  <label className="block text-[9px] font-bold tracking-[0.15em] uppercase mb-2 ml-0.5 transition-colors duration-300"
-                    style={{ color: passFocused ? 'rgba(16,185,129,0.5)' : 'rgba(255,255,255,0.18)' }}>
-                    {authMode === 'update-password' ? t('lbl_new_password') : t('lbl_password')}
-                  </label>
-                  <div className="relative">
-                    <i className={`fa-solid fa-fingerprint absolute left-3.5 top-1/2 -translate-y-1/2 text-[11px] transition-colors duration-300`}
-                      style={{ color: passFocused ? 'rgba(16,185,129,0.6)' : 'rgba(255,255,255,0.1)' }} />
+                <div className="nv-field">
+                  <label>{authMode === 'update-password' ? t('lbl_new_password') : t('lbl_password')}</label>
+                  <div className="nv-input-wrap">
+                    <i className="fa-solid fa-lock nv-icon"></i>
                     <input type={showPassword ? 'text' : 'password'} required value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      onFocus={() => setPassFocused(true)}
-                      onBlur={() => setPassFocused(false)}
-                      placeholder="••••••••••"
-                      autoComplete={authMode === 'update-password' ? 'new-password' : 'current-password'}
-                      className="nv-input w-full h-12 pl-10 pr-12 rounded-xl text-white text-[13px] font-medium outline-none transition-all duration-300"
-                      style={{
-                        background: passFocused ? 'rgba(16,185,129,0.04)' : 'rgba(255,255,255,0.02)',
-                        border: passFocused ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.04)',
-                        boxShadow: passFocused ? '0 0 0 3px rgba(16,185,129,0.06), inset 0 0 20px rgba(16,185,129,0.02)' : 'none',
-                      }} />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-white/[0.04]"
-                      style={{ color: 'rgba(255,255,255,0.12)' }}>
-                      <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-[11px]`}></i>
+                      placeholder="Enter your password"
+                      autoComplete={authMode === 'update-password' ? 'new-password' : 'current-password'} />
+                    <button type="button" className="nv-eye" onClick={() => setShowPassword(!showPassword)}>
+                      <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Forgot password link */}
               {authMode === 'signin' && (
-                <div className="flex justify-end -mt-1">
-                  <button type="button"
-                    onClick={() => { setAuthMode('forgot'); setError(null); setSuccess(null); setPhase('idle'); }}
-                    className="text-[11px] font-medium transition-colors duration-200 hover:text-emerald-400/70"
-                    style={{ color: 'rgba(16,185,129,0.3)' }}>
+                <div className="nv-forgot-row">
+                  <button type="button" className="nv-link"
+                    onClick={() => { setAuthMode('forgot'); setError(null); setSuccess(null); setPhase('idle'); }}>
                     Forgot password?
                   </button>
                 </div>
               )}
 
-              {/* ── TACTICAL SUBMIT BUTTON ── */}
-              <div className="pt-1">
-                <button type="submit" disabled={loading}
-                  className={`nv-btn relative overflow-hidden rounded-xl font-bold text-[13px] tracking-wide text-white transition-all duration-500 cursor-pointer disabled:cursor-not-allowed
-                    ${phase === 'loading' ? 'w-12 h-12 rounded-full mx-auto p-0' : 'w-full h-12'}`}
-                  style={{
-                    background: phase === 'loading' ? 'transparent' : '#10b981',
-                    border: phase === 'loading' ? '2px solid rgba(16,185,129,0.25)' : '1px solid rgba(16,185,129,0.3)',
-                    boxShadow: phase === 'loading' ? 'none' : '0 0 25px rgba(16,185,129,0.15), 0 4px 15px rgba(16,185,129,0.2)',
-                    opacity: loading && phase !== 'loading' ? 0.6 : 1,
-                  }}>
-                  {phase === 'loading' ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="nv-orbital w-full h-full rounded-full"
-                        style={{ border: '2px solid transparent', borderTopColor: '#10b981', borderRightColor: 'rgba(16,185,129,0.2)' }} />
-                    </div>
-                  ) : (
-                    <>
-                      {/* Hover glow */}
-                      <div className="absolute inset-0 bg-white/0 hover:bg-white/[0.06] transition-all duration-300" />
-                      {/* Pulse on hover */}
-                      <div className="nv-btn-glow absolute inset-0 rounded-xl" />
-                      {/* Top shine */}
-                      <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                      <span className="relative z-10 flex items-center justify-center gap-2">
-                        {authMode === 'signin' ? t('btn_login')
-                          : authMode === 'forgot' ? 'Send Recovery Link'
-                          : authMode === 'signup' ? 'Create Account'
-                          : t('btn_save_password')}
-                        <i className={`fa-solid ${authMode === 'forgot' ? 'fa-paper-plane' : 'fa-arrow-right'} text-[10px] transition-transform duration-300 group-hover:translate-x-1`}></i>
-                      </span>
-                    </>
-                  )}
-                </button>
-              </div>
+              {/* Submit */}
+              <button type="submit" disabled={loading} className={`nv-submit ${phase === 'loading' ? 'is-loading' : ''}`}>
+                {phase === 'loading' ? (
+                  <div className="nv-spinner" />
+                ) : (
+                  <>
+                    {authMode === 'signin' ? t('btn_login') : authMode === 'forgot' ? 'Send link' : authMode === 'signup' ? 'Create account' : t('btn_save_password')}
+                    <i className={`fa-solid ${authMode === 'forgot' ? 'fa-paper-plane' : 'fa-arrow-right'} nv-arrow`}></i>
+                  </>
+                )}
+              </button>
 
-              {/* Back link */}
+              {/* Back */}
               {(authMode === 'forgot' || authMode === 'update-password') && (
-                <button type="button"
-                  onClick={() => { setAuthMode('signin'); setError(null); setSuccess(null); setPhase('idle'); }}
-                  className="w-full text-center text-[13px] font-medium flex items-center justify-center gap-2 py-1.5 transition-colors hover:text-white/40"
-                  style={{ color: 'rgba(255,255,255,0.15)' }}>
-                  <i className="fa-solid fa-arrow-left text-[10px]"></i>
-                  Back to Sign In
+                <button type="button" className="nv-back"
+                  onClick={() => { setAuthMode('signin'); setError(null); setSuccess(null); setPhase('idle'); }}>
+                  <i className="fa-solid fa-arrow-left"></i> Back to sign in
                 </button>
               )}
             </form>
@@ -375,59 +219,206 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
         </div>
 
         {/* Footer */}
-        <div className={`mt-8 text-center transition-all duration-700 delay-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-          <p className="text-[8px] font-semibold tracking-[0.35em] uppercase" style={{ color: 'rgba(255,255,255,0.05)' }}>
-            &copy; {new Date().getFullYear()} Norvexis Core &middot; Encrypted Channel
-          </p>
-        </div>
+        <p className="nv-footer">&copy; {new Date().getFullYear()} Norvexis Core</p>
       </div>
 
-      {/* ═══════════ STYLES ═══════════ */}
       <style>{`
-        @keyframes nvFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(20px,-25px) scale(1.02)}66%{transform:translate(-12px,15px) scale(0.98)}}
-        .nv-float{animation:nvFloat 22s ease-in-out infinite}
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-        .nv-input::placeholder{color:rgba(255,255,255,0.07)}
-
-        @keyframes nvBlink{0%,100%{opacity:1}50%{opacity:0.2}}
-        .nv-blink{animation:nvBlink 2.5s ease-in-out infinite}
-
-        @keyframes nvLogoRing{0%,100%{opacity:0.2;transform:scale(1)}50%{opacity:0;transform:scale(1.25)}}
-        .nv-logo-ring{animation:nvLogoRing 3.5s ease-in-out infinite}
-
-        .nv-btn:not(:disabled):hover .nv-btn-glow{animation:nvBtnGlow 2s ease-in-out infinite}
-        @keyframes nvBtnGlow{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.25)}50%{box-shadow:0 0 0 6px rgba(16,185,129,0)}}
-        .nv-btn:active:not(:disabled){transform:scale(0.97)}
-
-        @keyframes nvOrbital{to{transform:rotate(360deg)}}
-        .nv-orbital{animation:nvOrbital 0.9s linear infinite}
-
-        @keyframes nvShake{0%,100%{transform:translateX(0)}15%,45%,75%{transform:translateX(-3px)}30%,60%,90%{transform:translateX(3px)}}
-        .nv-shake{animation:nvShake 0.5s ease-in-out}
-
-        .nv-glitch::after{content:'';position:absolute;inset:-1px;border-radius:1.75rem;pointer-events:none;animation:nvGlitchBorder 0.3s linear 1}
-        @keyframes nvGlitchBorder{
-          0%,100%{border:1px solid transparent;clip-path:inset(0)}
-          20%{border:1px solid rgba(239,68,68,0.4);clip-path:inset(8% 0 75% 0)}
-          40%{border:1px solid rgba(59,130,246,0.3);clip-path:inset(55% 0 10% 0)}
-          60%{border:1px solid rgba(239,68,68,0.3);clip-path:inset(25% 0 40% 0)}
-          80%{border:1px solid transparent;clip-path:inset(0)}
+        /* ── ROOT ── */
+        .nv-login-root {
+          min-height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center;
+          position: relative; overflow: hidden; font-family: 'Inter', system-ui, sans-serif;
         }
 
-        @keyframes nvScanLine{0%{top:-3%;opacity:0}8%{opacity:1}92%{opacity:1}100%{top:103%;opacity:0}}
-        .nv-scanline{animation:nvScanLine 1.6s ease-in-out 1 forwards}
+        /* ── BACKGROUND ── */
+        .nv-bg {
+          position: absolute; inset: 0;
+          background: linear-gradient(145deg, #080c12 0%, #0a0f18 40%, #060a10 100%);
+        }
+        .nv-bg-glow {
+          position: absolute; width: 600px; height: 600px; top: -15%; left: 50%; transform: translateX(-50%);
+          background: radial-gradient(circle, rgba(16,185,129,0.07) 0%, transparent 60%);
+          pointer-events: none;
+        }
 
-        @keyframes nvScanFlash{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
-        .nv-scanflash{animation:nvScanFlash 2s ease-out 1}
+        /* ── CONTAINER ── */
+        .nv-container {
+          position: relative; z-index: 1; width: 100%; max-width: 400px; padding: 0 20px;
+          display: flex; flex-direction: column; align-items: center;
+          opacity: 0; transform: translateY(24px);
+          transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
+        }
+        .nv-container.nv-in { opacity: 1; transform: translateY(0); }
 
-        @keyframes nvReticle{0%{transform:scale(0.4);opacity:0}40%{transform:scale(1);opacity:1}100%{transform:scale(1.15);opacity:0}}
-        .nv-reticle{animation:nvReticle 2s ease-out 1}
+        /* ── LOGO ── */
+        .nv-logo-wrap {
+          width: 72px; height: 72px; border-radius: 20px; margin-bottom: 20px;
+          display: flex; align-items: center; justify-content: center; overflow: hidden;
+          box-shadow: 0 0 0 1px rgba(16,185,129,0.1), 0 8px 32px rgba(0,0,0,0.4);
+        }
+        .nv-logo { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; }
 
-        @keyframes nvPulseDot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.8);opacity:0.2}}
-        .nv-pulse-dot{animation:nvPulseDot 1.2s ease-in-out infinite}
+        /* ── BRAND ── */
+        .nv-brand {
+          font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -0.02em;
+          margin-bottom: 32px; text-align: center;
+        }
+        .nv-brand span { color: #10b981; }
 
-        @keyframes nvGranted{0%{opacity:0;letter-spacing:0.8em}40%{opacity:1;letter-spacing:0.5em}100%{opacity:0;letter-spacing:0.4em}}
-        .nv-granted{animation:nvGranted 2.4s ease-out 1}
+        /* ── CARD ── */
+        .nv-card {
+          width: 100%; border-radius: 20px; overflow: hidden;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.06);
+          box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 16px 40px rgba(0,0,0,0.15);
+          transition: border-color 0.4s, box-shadow 0.4s;
+        }
+        .nv-card:hover { border-color: rgba(16,185,129,0.12); }
+        .nv-card-inner { padding: 32px; }
+        @media (max-width: 480px) { .nv-card-inner { padding: 24px; } }
+
+        /* ── HEADER ── */
+        .nv-header { margin-bottom: 28px; }
+        .nv-header h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 6px; letter-spacing: -0.01em; }
+        .nv-header p { font-size: 13px; color: rgba(255,255,255,0.35); margin: 0; font-weight: 400; line-height: 1.5; }
+
+        /* ── ALERTS ── */
+        .nv-alert {
+          display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
+          border-radius: 12px; margin-bottom: 20px; font-size: 13px; font-weight: 500; line-height: 1.45;
+        }
+        .nv-alert i { font-size: 13px; margin-top: 2px; flex-shrink: 0; }
+        .nv-alert-error { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.12); color: #f87171; }
+        .nv-alert-ok { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.12); color: #34d399; }
+
+        /* ── FIELDS ── */
+        .nv-field { margin-bottom: 20px; }
+        .nv-field label {
+          display: block; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.4);
+          margin-bottom: 8px; letter-spacing: 0.01em;
+        }
+        .nv-input-wrap {
+          position: relative; display: flex; align-items: center;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 12px; transition: all 0.25s ease;
+        }
+        .nv-input-wrap:focus-within {
+          border-color: rgba(16,185,129,0.4);
+          box-shadow: 0 0 0 3px rgba(16,185,129,0.08);
+          background: rgba(16,185,129,0.03);
+        }
+        .nv-icon {
+          position: absolute; left: 14px; font-size: 12px;
+          color: rgba(255,255,255,0.15);
+          transition: color 0.25s;
+        }
+        .nv-input-wrap:focus-within .nv-icon { color: rgba(16,185,129,0.6); }
+        .nv-input-wrap input {
+          width: 100%; height: 48px; padding: 0 42px 0 40px;
+          background: transparent; border: none; outline: none;
+          color: #fff; font-size: 14px; font-weight: 500; font-family: inherit;
+        }
+        .nv-input-wrap input::placeholder { color: rgba(255,255,255,0.12); }
+
+        .nv-eye {
+          position: absolute; right: 8px; width: 32px; height: 32px;
+          display: flex; align-items: center; justify-content: center;
+          border-radius: 8px; border: none; background: transparent;
+          color: rgba(255,255,255,0.15); cursor: pointer; transition: all 0.2s;
+        }
+        .nv-eye:hover { color: rgba(16,185,129,0.6); background: rgba(255,255,255,0.04); }
+
+        /* ── FORGOT ── */
+        .nv-forgot-row { display: flex; justify-content: flex-end; margin: -8px 0 4px; }
+        .nv-link {
+          font-size: 12px; font-weight: 500; color: rgba(16,185,129,0.5); background: none;
+          border: none; cursor: pointer; padding: 4px 0; transition: color 0.2s; font-family: inherit;
+        }
+        .nv-link:hover { color: #10b981; }
+
+        /* ── SUBMIT BUTTON ── */
+        .nv-submit {
+          width: 100%; height: 48px; border-radius: 12px; border: none;
+          background: #10b981; color: #fff; font-size: 14px; font-weight: 600;
+          font-family: inherit; cursor: pointer; position: relative; overflow: hidden;
+          display: flex; align-items: center; justify-content: center; gap: 8px;
+          transition: all 0.25s ease; margin-top: 8px;
+          box-shadow: 0 1px 2px rgba(16,185,129,0.2), 0 4px 12px rgba(16,185,129,0.15);
+        }
+        .nv-submit:hover:not(:disabled) {
+          background: #059669;
+          box-shadow: 0 1px 2px rgba(16,185,129,0.3), 0 8px 24px rgba(16,185,129,0.2);
+          transform: translateY(-1px);
+        }
+        .nv-submit:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+        .nv-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+        .nv-submit .nv-arrow { font-size: 11px; transition: transform 0.2s; }
+        .nv-submit:hover .nv-arrow { transform: translateX(3px); }
+        .nv-submit.is-loading { pointer-events: none; }
+
+        /* ── SPINNER ── */
+        .nv-spinner {
+          width: 22px; height: 22px; border-radius: 50%;
+          border: 2.5px solid rgba(255,255,255,0.25);
+          border-top-color: #fff;
+          animation: nvSpin 0.7s linear infinite;
+        }
+
+        /* ── BACK ── */
+        .nv-back {
+          width: 100%; height: 40px; display: flex; align-items: center; justify-content: center;
+          gap: 8px; margin-top: 12px; border-radius: 10px; border: none;
+          background: transparent; color: rgba(255,255,255,0.2); font-size: 13px;
+          font-weight: 500; cursor: pointer; transition: color 0.2s; font-family: inherit;
+        }
+        .nv-back i { font-size: 11px; }
+        .nv-back:hover { color: rgba(255,255,255,0.5); }
+
+        /* ── FOOTER ── */
+        .nv-footer {
+          margin-top: 32px; font-size: 11px; font-weight: 500;
+          color: rgba(255,255,255,0.07); text-align: center; letter-spacing: 0.02em;
+        }
+
+        /* ── SUCCESS OVERLAY ── */
+        .nv-success-overlay {
+          position: fixed; inset: 0; z-index: 50;
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          background: rgba(6,10,16,0.92); backdrop-filter: blur(8px);
+          animation: nvFadeIn 0.4s ease;
+        }
+        .nv-success-check {
+          width: 64px; height: 64px; border-radius: 50%;
+          background: rgba(16,185,129,0.1); border: 2px solid rgba(16,185,129,0.3);
+          display: flex; align-items: center; justify-content: center;
+          color: #10b981; animation: nvScaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .nv-success-check svg { width: 28px; height: 28px; }
+        .nv-check-path {
+          stroke-dasharray: 24; stroke-dashoffset: 24;
+          animation: nvDrawCheck 0.4s ease 0.3s forwards;
+        }
+        .nv-success-text {
+          margin-top: 20px; font-size: 15px; font-weight: 600;
+          color: rgba(255,255,255,0.5);
+          animation: nvFadeIn 0.4s ease 0.4s both;
+        }
+
+        /* ── SHAKE ── */
+        @keyframes nvShake {
+          0%,100% { transform: translateX(0); }
+          20%,60% { transform: translateX(-4px); }
+          40%,80% { transform: translateX(4px); }
+        }
+        .nv-shake { animation: nvShake 0.4s ease-in-out; }
+
+        /* ── ANIMATIONS ── */
+        @keyframes nvSpin { to { transform: rotate(360deg); } }
+        @keyframes nvFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes nvScaleIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes nvDrawCheck { to { stroke-dashoffset: 0; } }
       `}</style>
     </div>
   );
