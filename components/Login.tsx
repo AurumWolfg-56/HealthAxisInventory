@@ -9,11 +9,6 @@ interface LoginProps {
   forcePasswordUpdate?: boolean;
 }
 
-/* ─── Norvexis Logo (Real PNG) ─── */
-const NvLogo: React.FC<{ size?: number }> = ({ size = 48 }) => (
-  <img src="/logo.png" alt="Norvexis Core" width={size} height={size} className="object-contain" />
-);
-
 const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordUpdate }) => {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -24,71 +19,62 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [loginState, setLoginState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const cardRef = useRef<HTMLDivElement>(null);
+  const [phase, setPhase] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passFocused, setPassFocused] = useState(false);
 
   useEffect(() => {
-    requestAnimationFrame(() => setMounted(true));
+    const raf = requestAnimationFrame(() => setMounted(true));
 
     if (forcePasswordUpdate ||
       window.location.hash.includes('type=recovery') ||
       window.location.hash.includes('type=invite') ||
       window.location.hash.includes('type=signup') ||
-      (window.location.hash.includes('error=access_denied&error_code=403') === false && window.location.hash.includes('access_token='))) {
+      (!window.location.hash.includes('error=access_denied&error_code=403') && window.location.hash.includes('access_token='))) {
       if (forcePasswordUpdate || window.location.hash.includes('type=')) {
         setAuthMode('update-password');
       }
     }
-
-    document.body.classList.add('premium-auth-flow');
-    return () => document.body.classList.remove('premium-auth-flow');
+    return () => cancelAnimationFrame(raf);
   }, [forcePasswordUpdate]);
 
-  // Clear error state after 4s
   useEffect(() => {
-    if (loginState === 'error') {
-      const t = setTimeout(() => setLoginState('idle'), 4000);
-      return () => clearTimeout(t);
+    if (phase === 'error') {
+      const timer = setTimeout(() => setPhase('idle'), 4000);
+      return () => clearTimeout(timer);
     }
-  }, [loginState]);
+  }, [phase]);
 
   const triggerError = (msg: string) => {
     setError(msg);
-    setLoginState('error');
+    setPhase('error');
     setLoading(false);
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
-
     setLoading(true);
-    setLoginState('loading');
+    setPhase('loading');
     setError(null);
     try {
       const { error: pwError } = await supabase.auth.updateUser({ password });
       if (pwError) throw pwError;
-
       if (window.location.hash) {
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }
-
       if (username) {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from('profiles').update({ username }).eq('id', user.id);
-        }
+        if (user) await supabase.from('profiles').update({ username }).eq('id', user.id);
       }
-
       await supabase.auth.signOut();
       alert('Contraseña guardada exitosamente. Por favor, inicia sesión con tu nueva contraseña.');
-
       if (onPasswordSet) onPasswordSet();
       setAuthMode('signin');
       setPassword('');
       setUsername('');
       setEmail('');
-      setLoginState('idle');
+      setPhase('idle');
     } catch (err: any) {
       triggerError(err.message);
     } finally {
@@ -96,15 +82,13 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
     }
   };
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (authMode === 'update-password') return handleUpdatePassword(e);
-
     setLoading(true);
-    setLoginState('loading');
+    setPhase('loading');
     setError(null);
     setSuccess(null);
-
     try {
       if (authMode === 'signin') {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -113,404 +97,337 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
         });
         if (error) throw error;
         if (data.user) {
-          setLoginState('success');
+          setPhase('success');
           setSuccess(t('msg_login_success'));
-          // Delay to show retina scan animation
-          setTimeout(() => onLogin(data.user), 2200);
+          setTimeout(() => onLogin(data.user), 2400);
         }
       } else if (authMode === 'signup') {
         const { error } = await supabase.auth.signUp({
-          email,
-          password,
+          email, password,
           options: { data: { full_name: email.split('@')[0] } }
         });
         if (error) throw error;
         alert('Verification email sent!');
         setAuthMode('signin');
-        setLoginState('idle');
+        setPhase('idle');
       } else if (authMode === 'forgot') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.origin,
-        });
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
         if (error) throw error;
         setSuccess('Recovery link sent to your email.');
-        setLoginState('idle');
+        setPhase('idle');
         setTimeout(() => { setAuthMode('signin'); setSuccess(null); }, 4000);
       }
     } catch (err: any) {
       triggerError(err.message);
     } finally {
-      if (loginState !== 'success') setLoading(false);
+      if (phase !== 'success') setLoading(false);
     }
   };
 
-  const borderColor = loginState === 'error'
-    ? 'rgba(220,38,38,0.6)'
-    : loginState === 'success'
-      ? 'rgba(16,185,129,0.6)'
-      : 'rgba(16,185,129,0.12)';
+  // Dynamic border color based on state
+  const cardBorder = phase === 'error' ? 'rgba(239,68,68,0.5)' : phase === 'success' ? 'rgba(16,185,129,0.5)' : 'rgba(16,185,129,0.1)';
+  const cardShadow = phase === 'error'
+    ? '0 0 80px rgba(239,68,68,0.08), inset 0 0 60px rgba(239,68,68,0.02)'
+    : phase === 'success'
+      ? '0 0 80px rgba(16,185,129,0.12), inset 0 0 60px rgba(16,185,129,0.03)'
+      : '0 0 80px rgba(16,185,129,0.03)';
 
   return (
-    <div className="nv-login min-h-screen w-full flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden" style={{ background: '#040608' }}>
 
-      {/* ═══ BACKGROUND ═══ */}
-      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 40%, #0d1117 0%, #080b10 40%, #030507 100%)' }} />
+      {/* ═══════════ BACKGROUND LAYERS ═══════════ */}
+      {/* Radial gradient base */}
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 35%, #0c1018 0%, #060a0f 45%, #030507 100%)' }} />
 
-      {/* Data mesh grid */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: `
-          linear-gradient(rgba(16,185,129,0.3) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(16,185,129,0.3) 1px, transparent 1px)`,
-        backgroundSize: '60px 60px'
+      {/* Data mesh — subtle emerald grid */}
+      <div className="absolute inset-0" style={{
+        backgroundImage: 'linear-gradient(rgba(16,185,129,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.04) 1px, transparent 1px)',
+        backgroundSize: '64px 64px',
+        maskImage: 'radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 70%)',
+        WebkitMaskImage: 'radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 70%)',
       }} />
 
-      {/* World map wireframe overlay — using dots pattern */}
-      <div className="absolute inset-0 opacity-[0.02]" style={{
-        backgroundImage: `radial-gradient(rgba(16,185,129,0.5) 1px, transparent 1px)`,
-        backgroundSize: '20px 20px'
-      }} />
+      {/* Floating ambient light */}
+      <div className="nv-float absolute w-[500px] h-[500px] rounded-full" style={{ top: '-8%', left: '15%', background: 'radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 65%)' }} />
+      <div className="nv-float absolute w-[400px] h-[400px] rounded-full" style={{ bottom: '0%', right: '10%', background: 'radial-gradient(circle, rgba(5,150,105,0.05) 0%, transparent 65%)', animationDelay: '8s', animationDirection: 'reverse' }} />
 
-      {/* Ambient orbs */}
-      <div className="nv-orb absolute top-[-10%] left-[10%] w-[500px] h-[500px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 65%)' }} />
-      <div className="nv-orb absolute bottom-[-10%] right-[5%] w-[600px] h-[600px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(5,150,105,0.06) 0%, transparent 65%)', animationDirection: 'reverse', animationDuration: '25s' }} />
-
-      {/* ═══ RETINA SCAN OVERLAY (on success) ═══ */}
-      {loginState === 'success' && (
+      {/* ═══════════ RETINA SCAN OVERLAY (success) ═══════════ */}
+      {phase === 'success' && (
         <div className="fixed inset-0 z-50 pointer-events-none">
-          {/* Scan line */}
-          <div className="nv-scan-line absolute left-0 right-0 h-[3px]"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(16,185,129,0.8), rgba(52,211,153,1), rgba(16,185,129,0.8), transparent)', boxShadow: '0 0 30px rgba(16,185,129,0.5), 0 0 60px rgba(16,185,129,0.3)' }} />
-          {/* Flash */}
-          <div className="nv-scan-flash absolute inset-0" style={{ background: 'rgba(16,185,129,0.03)' }} />
-          {/* Center reticle */}
+          <div className="nv-scanline absolute left-0 right-0 h-[2px]"
+            style={{ background: 'linear-gradient(90deg, transparent, rgba(16,185,129,0.6), rgba(52,211,153,0.9), rgba(16,185,129,0.6), transparent)', boxShadow: '0 0 40px 8px rgba(16,185,129,0.15)' }} />
+          <div className="nv-scanflash absolute inset-0" style={{ background: 'rgba(16,185,129,0.02)' }} />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="nv-reticle w-32 h-32 rounded-full border-2 border-emerald-500/30 flex items-center justify-center">
-              <div className="w-20 h-20 rounded-full border border-emerald-400/40 flex items-center justify-center">
-                <div className="w-3 h-3 rounded-full bg-emerald-400 nv-pulse-dot" />
+            <div className="nv-reticle w-28 h-28 rounded-full" style={{ border: '1.5px solid rgba(16,185,129,0.25)' }}>
+              <div className="w-full h-full rounded-full flex items-center justify-center" style={{ border: '1px solid rgba(16,185,129,0.15)' }}>
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 nv-pulse-dot" />
               </div>
             </div>
           </div>
-          {/* Access granted text */}
-          <div className="absolute inset-0 flex items-center justify-center mt-28">
-            <span className="nv-access-text text-emerald-400/80 text-xs font-bold tracking-[0.4em] uppercase">
+          <div className="absolute inset-0 flex items-center justify-center" style={{ paddingTop: '140px' }}>
+            <span className="nv-granted text-emerald-400/70 text-[11px] font-bold tracking-[0.5em] uppercase">
               Access Granted
             </span>
           </div>
         </div>
       )}
 
-      {/* ═══ MAIN CONTAINER ═══ */}
-      <div className={`relative z-10 w-full max-w-md px-6 transition-all duration-1000 ease-out ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+      {/* ═══════════ MAIN CONTENT ═══════════ */}
+      <div className={`relative z-10 w-full max-w-[420px] px-5 transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-14'}`}>
 
-        {/* ── Logo + Brand ── */}
-        <div className={`text-center mb-10 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-6'}`}>
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5 relative" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}>
-            <NvLogo size={38} />
-            {/* Pulse ring */}
-            <div className="absolute inset-0 rounded-2xl nv-logo-pulse" style={{ border: '1px solid rgba(16,185,129,0.2)' }} />
+        {/* ── BRANDING ── */}
+        <div className={`text-center mb-10 transition-all duration-700 delay-100 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+          {/* Logo — prominently displayed with glow ring */}
+          <div className="relative inline-block mb-6">
+            <div className="w-20 h-20 rounded-[1.4rem] flex items-center justify-center relative overflow-hidden"
+              style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(5,150,105,0.06) 100%)', border: '1px solid rgba(16,185,129,0.15)' }}>
+              <img src="/logo.png" alt="Norvexis Core" className="w-14 h-14 object-contain relative z-10" />
+            </div>
+            {/* Pulse ring behind logo */}
+            <div className="absolute inset-0 rounded-[1.4rem] nv-logo-ring" style={{ border: '1px solid rgba(16,185,129,0.15)' }} />
+            {/* Subtle glow */}
+            <div className="absolute -inset-3 rounded-[1.8rem] blur-xl" style={{ background: 'rgba(16,185,129,0.06)' }} />
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tight leading-none">
+          <h1 className="text-[1.75rem] font-black text-white tracking-tight leading-none">
             Norvexis <span className="text-emerald-400">Core</span>
           </h1>
-          <p className="text-[10px] font-bold tracking-[0.3em] uppercase mt-2.5" style={{ color: 'rgba(16,185,129,0.35)' }}>
+          <p className="text-[10px] font-semibold tracking-[0.25em] uppercase mt-2" style={{ color: 'rgba(16,185,129,0.3)' }}>
             Secure Access Terminal
           </p>
         </div>
 
-        {/* ── Glass Card ── */}
-        <div ref={cardRef}
-          className={`nv-card relative rounded-[2rem] overflow-hidden transition-all duration-500
-            ${loginState === 'error' ? 'nv-shake nv-glitch' : ''}`}
-          style={{
-            background: 'rgba(13,17,23,0.8)',
-            backdropFilter: 'blur(40px)',
-            WebkitBackdropFilter: 'blur(40px)',
-            border: `1px solid ${borderColor}`,
-            boxShadow: loginState === 'error'
-              ? '0 0 40px rgba(220,38,38,0.1), inset 0 0 40px rgba(220,38,38,0.03)'
-              : loginState === 'success'
-                ? '0 0 60px rgba(16,185,129,0.15), inset 0 0 40px rgba(16,185,129,0.03)'
-                : '0 0 60px rgba(16,185,129,0.04), inset 0 1px 0 rgba(255,255,255,0.03)'
-          }}
-        >
-          {/* Top shine */}
-          <div className="absolute top-0 left-10 right-10 h-[1px]"
-            style={{ background: loginState === 'error'
-              ? 'linear-gradient(90deg, transparent, rgba(220,38,38,0.3), transparent)'
-              : 'linear-gradient(90deg, transparent, rgba(16,185,129,0.15), transparent)' }} />
+        {/* ── GLASS CARD ── */}
+        <div className={`nv-card relative rounded-[1.75rem] overflow-hidden transition-all duration-500 ${phase === 'error' ? 'nv-shake nv-glitch' : ''}`}
+          style={{ background: 'rgba(10,14,20,0.85)', backdropFilter: 'blur(40px)', border: `1px solid ${cardBorder}`, boxShadow: cardShadow }}>
 
-          {/* Corner accents */}
-          <div className="absolute top-4 left-4 w-3 h-3 border-t border-l rounded-tl-sm transition-colors duration-500"
-            style={{ borderColor: loginState === 'error' ? 'rgba(220,38,38,0.4)' : 'rgba(16,185,129,0.2)' }} />
-          <div className="absolute top-4 right-4 w-3 h-3 border-t border-r rounded-tr-sm transition-colors duration-500"
-            style={{ borderColor: loginState === 'error' ? 'rgba(220,38,38,0.4)' : 'rgba(16,185,129,0.2)' }} />
-          <div className="absolute bottom-4 left-4 w-3 h-3 border-b border-l rounded-bl-sm transition-colors duration-500"
-            style={{ borderColor: loginState === 'error' ? 'rgba(220,38,38,0.4)' : 'rgba(16,185,129,0.2)' }} />
-          <div className="absolute bottom-4 right-4 w-3 h-3 border-b border-r rounded-br-sm transition-colors duration-500"
-            style={{ borderColor: loginState === 'error' ? 'rgba(220,38,38,0.4)' : 'rgba(16,185,129,0.2)' }} />
+          {/* Card inner highlight line */}
+          <div className="absolute top-0 left-12 right-12 h-px" style={{
+            background: phase === 'error'
+              ? 'linear-gradient(90deg, transparent, rgba(239,68,68,0.25), transparent)'
+              : 'linear-gradient(90deg, transparent, rgba(16,185,129,0.12), transparent)'
+          }} />
 
-          <div className="p-8 sm:p-10">
-            {/* Header */}
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 nv-status-dot" />
-                <span className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: 'rgba(16,185,129,0.5)' }}>
-                  {authMode === 'signin' ? 'System Ready' : authMode === 'forgot' ? 'Recovery Mode' : authMode === 'update-password' ? 'Security Update' : 'New User'}
+          {/* Tactical corner brackets */}
+          <div className="absolute top-3.5 left-3.5 w-2.5 h-2.5 transition-colors duration-500" style={{ borderTop: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}`, borderLeft: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}` }} />
+          <div className="absolute top-3.5 right-3.5 w-2.5 h-2.5 transition-colors duration-500" style={{ borderTop: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}`, borderRight: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}` }} />
+          <div className="absolute bottom-3.5 left-3.5 w-2.5 h-2.5 transition-colors duration-500" style={{ borderBottom: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}`, borderLeft: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}` }} />
+          <div className="absolute bottom-3.5 right-3.5 w-2.5 h-2.5 transition-colors duration-500" style={{ borderBottom: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}`, borderRight: `1px solid ${phase === 'error' ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.18)'}` }} />
+
+          <div className="p-7 sm:p-9">
+            {/* Status + Title */}
+            <div className="mb-7">
+              <div className="flex items-center gap-2 mb-2.5">
+                <div className="w-1.5 h-1.5 rounded-full nv-blink" style={{ background: phase === 'error' ? '#ef4444' : '#10b981' }} />
+                <span className="text-[9px] font-bold tracking-[0.2em] uppercase" style={{ color: phase === 'error' ? 'rgba(239,68,68,0.5)' : 'rgba(16,185,129,0.4)' }}>
+                  {phase === 'error' ? 'Authentication Failed' : authMode === 'signin' ? 'System Online' : authMode === 'forgot' ? 'Recovery Mode' : authMode === 'update-password' ? 'Security Update' : 'Registration'}
                 </span>
               </div>
-              <h2 className="text-2xl font-black text-white tracking-tight">
+              <h2 className="text-[1.5rem] font-black text-white tracking-tight leading-snug">
                 {authMode === 'signin' && 'Identity Verification'}
                 {authMode === 'forgot' && 'Password Recovery'}
                 {authMode === 'update-password' && 'Set New Password'}
                 {authMode === 'signup' && 'Create Account'}
               </h2>
-              <p className="text-sm mt-1.5 font-medium" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              <p className="text-[13px] mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
                 {authMode === 'signin' && 'Authenticate to access your workspace'}
                 {authMode === 'forgot' && 'We\'ll send a secure recovery link'}
-                {authMode === 'update-password' && 'Choose a strong password'}
-                {authMode === 'signup' && 'Initialize your account'}
+                {authMode === 'update-password' && 'Choose a strong, secure password'}
+                {authMode === 'signup' && 'Initialize your operator account'}
               </p>
             </div>
 
-            {/* ── Error ── */}
+            {/* Error alert */}
             {error && (
-              <div className="mb-6 p-3.5 rounded-xl flex items-start gap-3"
-                style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.15)' }}>
-                <i className="fa-solid fa-hexagon-exclamation text-red-400 text-sm mt-0.5"></i>
-                <span className="text-red-400/80 text-sm font-medium leading-relaxed">{error}</span>
+              <div className="mb-5 p-3 rounded-xl flex items-start gap-2.5" style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.12)' }}>
+                <i className="fa-solid fa-triangle-exclamation text-red-400/80 text-xs mt-0.5"></i>
+                <span className="text-red-400/80 text-[13px] font-medium leading-snug">{error}</span>
               </div>
             )}
 
-            {/* ── Success ── */}
-            {success && loginState !== 'success' && (
-              <div className="mb-6 p-3.5 rounded-xl flex items-start gap-3"
-                style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}>
-                <i className="fa-solid fa-circle-check text-emerald-400 text-sm mt-0.5"></i>
-                <span className="text-emerald-400/80 text-sm font-medium leading-relaxed">{success}</span>
+            {/* Success alert */}
+            {success && phase !== 'success' && (
+              <div className="mb-5 p-3 rounded-xl flex items-start gap-2.5" style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.12)' }}>
+                <i className="fa-solid fa-circle-check text-emerald-400/80 text-xs mt-0.5"></i>
+                <span className="text-emerald-400/80 text-[13px] font-medium leading-snug">{success}</span>
               </div>
             )}
 
-            <form onSubmit={handleEmailAuth} className="space-y-5">
+            {/* ── FORM ── */}
+            <form onSubmit={handleSubmit} className="space-y-4">
 
-              {/* ── Email ── */}
+              {/* Email */}
               {authMode !== 'update-password' && (
-                <div className="space-y-2">
-                  <label className="text-[10px] font-medium tracking-[0.15em] uppercase ml-1"
-                    style={{ color: 'rgba(255,255,255,0.2)', fontFamily: "'Inter', sans-serif" }}>
+                <div>
+                  <label className="block text-[9px] font-bold tracking-[0.15em] uppercase mb-2 ml-0.5 transition-colors duration-300"
+                    style={{ color: emailFocused ? 'rgba(16,185,129,0.5)' : 'rgba(255,255,255,0.18)' }}>
                     {t('lbl_email')}
                   </label>
                   <div className="relative">
-                    <i className="fa-solid fa-at absolute left-4 top-1/2 -translate-y-1/2 text-xs nv-input-icon" style={{ color: 'rgba(255,255,255,0.12)' }}></i>
-                    <input
-                      type="email"
-                      required
-                      value={email}
+                    <i className={`fa-solid fa-at absolute left-3.5 top-1/2 -translate-y-1/2 text-[11px] transition-colors duration-300`}
+                      style={{ color: emailFocused ? 'rgba(16,185,129,0.6)' : 'rgba(255,255,255,0.1)' }} />
+                    <input type="email" required value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      onFocus={() => setEmailFocused(true)}
+                      onBlur={() => setEmailFocused(false)}
                       placeholder="operator@clinic.com"
                       autoComplete="email"
-                      className="nv-field w-full h-[3.2rem] pl-11 pr-4 rounded-xl text-white font-medium text-sm outline-none transition-all duration-400"
-                      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid transparent', fontFamily: "'Inter', sans-serif" }}
-                    />
+                      className="nv-input w-full h-12 pl-10 pr-4 rounded-xl text-white text-[13px] font-medium outline-none transition-all duration-300"
+                      style={{
+                        background: emailFocused ? 'rgba(16,185,129,0.04)' : 'rgba(255,255,255,0.02)',
+                        border: emailFocused ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.04)',
+                        boxShadow: emailFocused ? '0 0 0 3px rgba(16,185,129,0.06), inset 0 0 20px rgba(16,185,129,0.02)' : 'none',
+                      }} />
                   </div>
                 </div>
               )}
 
-              {/* ── Password ── */}
+              {/* Password */}
               {authMode !== 'forgot' && (
-                <div className="space-y-2">
-                  <label className="text-[10px] font-medium tracking-[0.15em] uppercase ml-1"
-                    style={{ color: 'rgba(255,255,255,0.2)', fontFamily: "'Inter', sans-serif" }}>
+                <div>
+                  <label className="block text-[9px] font-bold tracking-[0.15em] uppercase mb-2 ml-0.5 transition-colors duration-300"
+                    style={{ color: passFocused ? 'rgba(16,185,129,0.5)' : 'rgba(255,255,255,0.18)' }}>
                     {authMode === 'update-password' ? t('lbl_new_password') : t('lbl_password')}
                   </label>
                   <div className="relative">
-                    <i className="fa-solid fa-fingerprint absolute left-4 top-1/2 -translate-y-1/2 text-xs nv-input-icon" style={{ color: 'rgba(255,255,255,0.12)' }}></i>
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      value={password}
+                    <i className={`fa-solid fa-fingerprint absolute left-3.5 top-1/2 -translate-y-1/2 text-[11px] transition-colors duration-300`}
+                      style={{ color: passFocused ? 'rgba(16,185,129,0.6)' : 'rgba(255,255,255,0.1)' }} />
+                    <input type={showPassword ? 'text' : 'password'} required value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      onFocus={() => setPassFocused(true)}
+                      onBlur={() => setPassFocused(false)}
                       placeholder="••••••••••"
                       autoComplete={authMode === 'update-password' ? 'new-password' : 'current-password'}
-                      className="nv-field w-full h-[3.2rem] pl-11 pr-12 rounded-xl text-white font-medium text-sm outline-none transition-all duration-400"
-                      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid transparent', fontFamily: "'Inter', sans-serif" }}
-                    />
+                      className="nv-input w-full h-12 pl-10 pr-12 rounded-xl text-white text-[13px] font-medium outline-none transition-all duration-300"
+                      style={{
+                        background: passFocused ? 'rgba(16,185,129,0.04)' : 'rgba(255,255,255,0.02)',
+                        border: passFocused ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.04)',
+                        boxShadow: passFocused ? '0 0 0 3px rgba(16,185,129,0.06), inset 0 0 20px rgba(16,185,129,0.02)' : 'none',
+                      }} />
                     <button type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center transition-all"
-                      style={{ color: 'rgba(255,255,255,0.15)' }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(16,185,129,0.6)'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.15)'}>
-                      <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-xs`}></i>
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-white/[0.04]"
+                      style={{ color: 'rgba(255,255,255,0.12)' }}>
+                      <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-[11px]`}></i>
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Forgot */}
+              {/* Forgot password link */}
               {authMode === 'signin' && (
                 <div className="flex justify-end -mt-1">
                   <button type="button"
-                    onClick={() => { setAuthMode('forgot'); setError(null); setSuccess(null); setLoginState('idle'); }}
-                    className="text-[11px] font-medium transition-colors"
-                    style={{ color: 'rgba(16,185,129,0.35)' }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(16,185,129,0.7)'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(16,185,129,0.35)'}>
+                    onClick={() => { setAuthMode('forgot'); setError(null); setSuccess(null); setPhase('idle'); }}
+                    className="text-[11px] font-medium transition-colors duration-200 hover:text-emerald-400/70"
+                    style={{ color: 'rgba(16,185,129,0.3)' }}>
                     Forgot password?
                   </button>
                 </div>
               )}
 
-              {/* ── Tactical Submit Button ── */}
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className={`nv-tactical-btn relative overflow-hidden rounded-xl font-bold text-sm tracking-wide transition-all duration-500 cursor-pointer
-                    ${loginState === 'loading' ? 'w-14 h-14 rounded-full mx-auto' : 'w-full h-[3.2rem]'}`}
+              {/* ── TACTICAL SUBMIT BUTTON ── */}
+              <div className="pt-1">
+                <button type="submit" disabled={loading}
+                  className={`nv-btn relative overflow-hidden rounded-xl font-bold text-[13px] tracking-wide text-white transition-all duration-500 cursor-pointer disabled:cursor-not-allowed
+                    ${phase === 'loading' ? 'w-12 h-12 rounded-full mx-auto p-0' : 'w-full h-12'}`}
                   style={{
-                    background: loginState === 'loading' ? 'transparent' : 'rgba(16,185,129,1)',
-                    color: 'white',
-                    border: loginState === 'loading' ? '2px solid rgba(16,185,129,0.3)' : 'none',
-                    boxShadow: loginState === 'loading' ? 'none' : '0 0 30px rgba(16,185,129,0.2), 0 4px 20px rgba(16,185,129,0.3)',
-                  }}
-                >
-                  {loginState === 'loading' ? (
-                    /* Orbital ring */
+                    background: phase === 'loading' ? 'transparent' : '#10b981',
+                    border: phase === 'loading' ? '2px solid rgba(16,185,129,0.25)' : '1px solid rgba(16,185,129,0.3)',
+                    boxShadow: phase === 'loading' ? 'none' : '0 0 25px rgba(16,185,129,0.15), 0 4px 15px rgba(16,185,129,0.2)',
+                    opacity: loading && phase !== 'loading' ? 0.6 : 1,
+                  }}>
+                  {phase === 'loading' ? (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="nv-orbital w-full h-full rounded-full" style={{
-                        border: '2px solid transparent',
-                        borderTopColor: 'rgba(16,185,129,0.9)',
-                        borderRightColor: 'rgba(16,185,129,0.3)',
-                      }} />
+                      <div className="nv-orbital w-full h-full rounded-full"
+                        style={{ border: '2px solid transparent', borderTopColor: '#10b981', borderRightColor: 'rgba(16,185,129,0.2)' }} />
                     </div>
                   ) : (
                     <>
-                      {/* Hover glow pulse */}
-                      <div className="absolute inset-0 bg-white/0 hover:bg-white/5 transition-all duration-300" />
-                      <div className="nv-btn-pulse absolute inset-0 rounded-xl" />
-                      <span className="relative z-10 flex items-center justify-center gap-2.5">
-                        <span style={{ fontFamily: "'Inter', sans-serif" }}>
-                          {authMode === 'signin' ? t('btn_login')
-                            : authMode === 'forgot' ? 'Send Link'
-                            : authMode === 'signup' ? 'Initialize'
-                              : t('btn_save_password')}
-                        </span>
-                        <i className={`fa-solid ${authMode === 'forgot' ? 'fa-paper-plane' : 'fa-arrow-right'} text-xs`}></i>
+                      {/* Hover glow */}
+                      <div className="absolute inset-0 bg-white/0 hover:bg-white/[0.06] transition-all duration-300" />
+                      {/* Pulse on hover */}
+                      <div className="nv-btn-glow absolute inset-0 rounded-xl" />
+                      {/* Top shine */}
+                      <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                      <span className="relative z-10 flex items-center justify-center gap-2">
+                        {authMode === 'signin' ? t('btn_login')
+                          : authMode === 'forgot' ? 'Send Recovery Link'
+                          : authMode === 'signup' ? 'Create Account'
+                          : t('btn_save_password')}
+                        <i className={`fa-solid ${authMode === 'forgot' ? 'fa-paper-plane' : 'fa-arrow-right'} text-[10px] transition-transform duration-300 group-hover:translate-x-1`}></i>
                       </span>
                     </>
                   )}
                 </button>
               </div>
 
-              {/* Back */}
+              {/* Back link */}
               {(authMode === 'forgot' || authMode === 'update-password') && (
                 <button type="button"
-                  onClick={() => { setAuthMode('signin'); setError(null); setSuccess(null); setLoginState('idle'); }}
-                  className="w-full text-center text-sm font-medium flex items-center justify-center gap-2 py-2 transition-colors"
-                  style={{ color: 'rgba(255,255,255,0.15)' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.15)'}>
-                  <i className="fa-solid fa-arrow-left text-xs"></i>
-                  Back to Terminal
+                  onClick={() => { setAuthMode('signin'); setError(null); setSuccess(null); setPhase('idle'); }}
+                  className="w-full text-center text-[13px] font-medium flex items-center justify-center gap-2 py-1.5 transition-colors hover:text-white/40"
+                  style={{ color: 'rgba(255,255,255,0.15)' }}>
+                  <i className="fa-solid fa-arrow-left text-[10px]"></i>
+                  Back to Sign In
                 </button>
               )}
             </form>
           </div>
         </div>
 
-        {/* ── Footer ── */}
+        {/* Footer */}
         <div className={`mt-8 text-center transition-all duration-700 delay-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-          <p className="text-[9px] font-bold tracking-[0.35em] uppercase" style={{ color: 'rgba(255,255,255,0.06)' }}>
+          <p className="text-[8px] font-semibold tracking-[0.35em] uppercase" style={{ color: 'rgba(255,255,255,0.05)' }}>
             &copy; {new Date().getFullYear()} Norvexis Core &middot; Encrypted Channel
           </p>
         </div>
       </div>
 
-      {/* ═══ SCOPED STYLES ═══ */}
+      {/* ═══════════ STYLES ═══════════ */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+        @keyframes nvFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(20px,-25px) scale(1.02)}66%{transform:translate(-12px,15px) scale(0.98)}}
+        .nv-float{animation:nvFloat 22s ease-in-out infinite}
 
-        /* ── Floating orbs ── */
-        @keyframes nvFloat { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(20px,-30px) scale(1.02)} 66%{transform:translate(-15px,15px) scale(0.98)} }
-        .nv-orb { animation: nvFloat 22s ease-in-out infinite; }
+        .nv-input::placeholder{color:rgba(255,255,255,0.07)}
 
-        /* ── Input fields: borderless → emerald glow on focus ── */
-        .nv-field::placeholder { color: rgba(255,255,255,0.08); font-family: 'Inter', sans-serif; }
-        .nv-field:focus {
-          background: rgba(16,185,129,0.04) !important;
-          border-color: rgba(16,185,129,0.35) !important;
-          box-shadow: 0 0 0 4px rgba(16,185,129,0.06), inset 0 0 20px rgba(16,185,129,0.03);
-        }
-        .nv-field:focus ~ .nv-input-icon,
-        .nv-field:focus + .nv-input-icon { color: rgba(16,185,129,0.6) !important; }
+        @keyframes nvBlink{0%,100%{opacity:1}50%{opacity:0.2}}
+        .nv-blink{animation:nvBlink 2.5s ease-in-out infinite}
 
-        /* ── Status dot blink ── */
-        @keyframes nvBlink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-        .nv-status-dot { animation: nvBlink 2s ease-in-out infinite; }
+        @keyframes nvLogoRing{0%,100%{opacity:0.2;transform:scale(1)}50%{opacity:0;transform:scale(1.25)}}
+        .nv-logo-ring{animation:nvLogoRing 3.5s ease-in-out infinite}
 
-        /* ── Logo pulse ── */
-        @keyframes nvLogoPulse { 0%,100%{opacity:0.3;transform:scale(1)} 50%{opacity:0;transform:scale(1.3)} }
-        .nv-logo-pulse { animation: nvLogoPulse 3s ease-in-out infinite; }
+        .nv-btn:not(:disabled):hover .nv-btn-glow{animation:nvBtnGlow 2s ease-in-out infinite}
+        @keyframes nvBtnGlow{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.25)}50%{box-shadow:0 0 0 6px rgba(16,185,129,0)}}
+        .nv-btn:active:not(:disabled){transform:scale(0.97)}
 
-        /* ── Tactical button hover pulse ── */
-        @keyframes nvBtnPulse { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.3)} 50%{box-shadow:0 0 0 8px rgba(16,185,129,0)} }
-        .nv-tactical-btn:not(:disabled):hover .nv-btn-pulse { animation: nvBtnPulse 2s ease-in-out infinite; }
-        .nv-tactical-btn:active { transform: scale(0.97); }
+        @keyframes nvOrbital{to{transform:rotate(360deg)}}
+        .nv-orbital{animation:nvOrbital 0.9s linear infinite}
 
-        /* ── Orbital loading spinner ── */
-        @keyframes nvOrbital { to { transform: rotate(360deg); } }
-        .nv-orbital { animation: nvOrbital 1s linear infinite; }
+        @keyframes nvShake{0%,100%{transform:translateX(0)}15%,45%,75%{transform:translateX(-3px)}30%,60%,90%{transform:translateX(3px)}}
+        .nv-shake{animation:nvShake 0.5s ease-in-out}
 
-        /* ── Shake + glitch (error) ── */
-        @keyframes nvShake {
-          0%,100% { transform: translateX(0); }
-          10%,30%,50%,70%,90% { transform: translateX(-4px); }
-          20%,40%,60%,80% { transform: translateX(4px); }
-        }
-        .nv-shake { animation: nvShake 0.6s ease-in-out; }
-
-        @keyframes nvGlitch {
-          0%,100% { clip-path: inset(0 0 0 0); filter: none; }
-          20% { clip-path: inset(5% 0 80% 0); filter: hue-rotate(90deg); }
-          40% { clip-path: inset(60% 0 5% 0); filter: hue-rotate(-90deg); }
-          60% { clip-path: inset(30% 0 40% 0); filter: saturate(3); }
-          80% { clip-path: inset(0 0 0 0); filter: none; }
-        }
-        .nv-glitch::before {
-          content: '';
-          position: absolute;
-          inset: -1px;
-          border-radius: 2rem;
-          border: 1px solid rgba(220,38,38,0.4);
-          animation: nvGlitch 0.3s linear 1;
-          pointer-events: none;
+        .nv-glitch::after{content:'';position:absolute;inset:-1px;border-radius:1.75rem;pointer-events:none;animation:nvGlitchBorder 0.3s linear 1}
+        @keyframes nvGlitchBorder{
+          0%,100%{border:1px solid transparent;clip-path:inset(0)}
+          20%{border:1px solid rgba(239,68,68,0.4);clip-path:inset(8% 0 75% 0)}
+          40%{border:1px solid rgba(59,130,246,0.3);clip-path:inset(55% 0 10% 0)}
+          60%{border:1px solid rgba(239,68,68,0.3);clip-path:inset(25% 0 40% 0)}
+          80%{border:1px solid transparent;clip-path:inset(0)}
         }
 
-        /* ── Retina scan line ── */
-        @keyframes nvScanLine {
-          0% { top: -5%; opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { top: 105%; opacity: 0; }
-        }
-        .nv-scan-line { animation: nvScanLine 1.8s ease-in-out 1; }
+        @keyframes nvScanLine{0%{top:-3%;opacity:0}8%{opacity:1}92%{opacity:1}100%{top:103%;opacity:0}}
+        .nv-scanline{animation:nvScanLine 1.6s ease-in-out 1 forwards}
 
-        /* ── Scan flash ── */
-        @keyframes nvScanFlash { 0%{opacity:0} 30%{opacity:1} 100%{opacity:0} }
-        .nv-scan-flash { animation: nvScanFlash 2s ease-out 1; }
+        @keyframes nvScanFlash{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
+        .nv-scanflash{animation:nvScanFlash 2s ease-out 1}
 
-        /* ── Reticle ── */
-        @keyframes nvReticle { 0%{transform:scale(0.5);opacity:0} 50%{transform:scale(1);opacity:1} 100%{transform:scale(1.2);opacity:0} }
-        .nv-reticle { animation: nvReticle 2s ease-out 1; }
+        @keyframes nvReticle{0%{transform:scale(0.4);opacity:0}40%{transform:scale(1);opacity:1}100%{transform:scale(1.15);opacity:0}}
+        .nv-reticle{animation:nvReticle 2s ease-out 1}
 
-        /* ── Pulse dot ── */
-        @keyframes nvPulseDot { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(2);opacity:0.3} }
-        .nv-pulse-dot { animation: nvPulseDot 1s ease-in-out infinite; }
+        @keyframes nvPulseDot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.8);opacity:0.2}}
+        .nv-pulse-dot{animation:nvPulseDot 1.2s ease-in-out infinite}
 
-        /* ── Access granted text ── */
-        @keyframes nvAccessText { 0%{opacity:0;letter-spacing:0.8em} 50%{opacity:1;letter-spacing:0.4em} 100%{opacity:0} }
-        .nv-access-text { animation: nvAccessText 2.2s ease-out 1; }
+        @keyframes nvGranted{0%{opacity:0;letter-spacing:0.8em}40%{opacity:1;letter-spacing:0.5em}100%{opacity:0;letter-spacing:0.4em}}
+        .nv-granted{animation:nvGranted 2.4s ease-out 1}
       `}</style>
     </div>
   );
