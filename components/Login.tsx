@@ -9,20 +9,9 @@ interface LoginProps {
   forcePasswordUpdate?: boolean;
 }
 
-/* ─── Norvexis "N" Hexagon SVG — Emerald variant ─── */
+/* ─── Norvexis Logo (Real PNG) ─── */
 const NvLogo: React.FC<{ size?: number }> = ({ size = 48 }) => (
-  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width={size} height={size}>
-    <defs>
-      <linearGradient id="lg-hex-e" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#059669" />
-        <stop offset="100%" stopColor="#10b981" />
-      </linearGradient>
-    </defs>
-    <path d="M32 2L58 17V47L32 62L6 47V17L32 2Z" fill="url(#lg-hex-e)" />
-    <path d="M32 2L58 17V32L32 2Z" fill="rgba(255,255,255,0.1)" />
-    <path d="M22 44V20H28L42 38V20H22Z" fill="white" opacity="0.95" />
-    <path d="M42 20V44H36L22 26V44H42Z" fill="white" opacity="0.6" />
-  </svg>
+  <img src="/logo.png" alt="Norvexis Core" width={size} height={size} className="object-contain" />
 );
 
 const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordUpdate }) => {
