@@ -66,7 +66,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ currentRange, onRange
                         key={r}
                         onClick={() => handleBasicClick(r as DateRange)}
                         className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-sm font-medium transition-all capitalize ${currentRange === r
-                            ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                            ? 'bg-white dark:bg-medical-500/15 text-slate-900 dark:text-medical-400 shadow-sm ring-1 ring-medical-500/10'
                             : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                             }`}
                     >

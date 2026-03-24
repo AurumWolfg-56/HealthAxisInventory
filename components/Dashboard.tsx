@@ -55,16 +55,16 @@ const Dashboard: React.FC<DashboardProps> = ({ inventory, dailyReports, pettyCas
                 </div>
             </header>
 
-            {/* Quick Actions Moved to Top */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8 mb-8">
+            {/* Quick Actions — compact horizontal cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {quickActions.map(action => (
                     <button
                         key={action.route}
                         onClick={() => onNavigate(action.route)}
-                        className="flex flex-col items-center gap-4 p-5 rounded-3xl bg-white dark:bg-[#151b23] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 transition-all duration-300 group"
+                        className="flex items-center gap-3 p-4 rounded-2xl bg-white dark:bg-[#0c1511] border border-slate-200 dark:border-slate-800/60 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-medical-500/30 dark:hover:border-medical-500/20 transition-all duration-300 group"
                     >
-                        <div className={`w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center group-hover:scale-110 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-500/10 transition-all duration-300`}>
-                            <i className={`fa-solid ${action.icon} text-2xl ${action.color} group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors`}></i>
+                        <div className={`w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center group-hover:bg-medical-50 dark:group-hover:bg-medical-500/10 transition-all duration-300 flex-shrink-0`}>
+                            <i className={`fa-solid ${action.icon} text-lg ${action.color} group-hover:text-medical-600 dark:group-hover:text-medical-400 transition-colors`}></i>
                         </div>
                         <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{action.label}</span>
                     </button>

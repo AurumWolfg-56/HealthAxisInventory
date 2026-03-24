@@ -231,7 +231,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
         .filter(d => d.value > 0)
         .sort((a: { value: number }, b: { value: number }) => b.value - a.value);
 
-    console.log('[DashboardAnalytics] providerPatientData:', providerPatientData);
+
 
     const categoryValueData = Object.entries(valueByCategory)
         .map(([name, value]) => ({ name, value: value as number }))
@@ -243,7 +243,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
             return (
-                <div className="bg-white/95 dark:bg-[#151b23]/95 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800">
+                <div className="bg-white/95 dark:bg-[#0c1511]/95 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-slate-100 dark:border-emerald-900/30">
                     <p className="font-bold text-slate-800 dark:text-white mb-3 text-sm">{label}</p>
                     <div className="space-y-2">
                         {payload.map((entry: any, index: number) => (
@@ -333,6 +333,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                 <div className="glass-panel p-6">
                     <h3 className="section-title mb-6">
                         <span className="section-title-bar"></span>
+                        <i className="fa-solid fa-scale-balanced text-slate-400 dark:text-slate-500 text-sm"></i>
                         Income vs Expenses (Monthly)
                     </h3>
                     <div className="h-[350px] w-full">
@@ -348,7 +349,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                                         <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.3} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-emerald-900/30" opacity={0.5} />
                                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} dy={10} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} tickFormatter={(val) => `$${val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val}`} />
                                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99, 102, 241, 0.05)', radius: [8, 8, 0, 0] }} />
@@ -364,6 +365,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                 <div className="glass-panel p-6">
                     <h3 className="section-title mb-6">
                         <span className="section-title-bar"></span>
+                        <i className="fa-solid fa-chart-line text-slate-400 dark:text-slate-500 text-sm"></i>
                         Revenue & Patient Trend
                     </h3>
                     <div className="h-[350px] w-full">
@@ -379,7 +381,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                                         <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.4} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-emerald-900/30" opacity={0.5} />
                                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} dy={10} minTickGap={30} />
                                 <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} tickFormatter={(val) => `$${val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val}`} />
                                 <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 12 }} />
@@ -400,6 +402,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                 <div className="glass-panel p-6">
                     <h3 className="section-title mb-6">
                         <span className="section-title-bar"></span>
+                        <i className="fa-solid fa-wallet text-slate-400 dark:text-slate-500 text-sm"></i>
                         Collections (Methods)
                     </h3>
                     <div className="h-[250px] w-full flex flex-col items-center justify-center">
@@ -427,7 +430,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                     {/* Collection Breakdown Table */}
                     <div className="mt-2 grid grid-cols-2 gap-2 text-sm max-w-sm mx-auto">
                         {methodData.map((m, i) => (
-                            <div key={m.name} className="flex flex-col p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 hover:border-indigo-500/30 transition-colors">
+                            <div key={m.name} className="flex flex-col p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 hover:border-medical-500/30 transition-colors">
                                 <div className="flex items-center gap-2 mb-1">
                                     <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
                                     <span className="text-slate-500 dark:text-slate-400 font-medium text-xs uppercase tracking-wider">{m.name}</span>
@@ -442,12 +445,13 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                 <div className="glass-panel p-6">
                     <h3 className="section-title mb-6">
                         <span className="section-title-bar"></span>
+                        <i className="fa-solid fa-shield-heart text-slate-400 dark:text-slate-500 text-sm"></i>
                         Patients by Insurance
                     </h3>
                     <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart layout="vertical" data={insuranceData} margin={{ left: 20, right: 60 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.2} />
+                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="currentColor" className="text-slate-200 dark:text-emerald-900/30" opacity={0.5} />
                                 <XAxis type="number" hide />
                                 <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 13, fontWeight: 500, fill: '#64748B' }} axisLine={false} tickLine={false} />
                                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99, 102, 241, 0.05)', radius: 8 }} />
@@ -465,6 +469,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                 <div className="glass-panel p-6">
                     <h3 className="section-title mb-6">
                         <span className="section-title-bar"></span>
+                        <i className="fa-solid fa-user-doctor text-slate-400 dark:text-slate-500 text-sm"></i>
                         Visits by Provider
                     </h3>
                     <div className="h-[350px] w-full">
@@ -476,7 +481,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                                         <stop offset="100%" stopColor="#6366f1" stopOpacity={0.8} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-emerald-900/30" opacity={0.5} />
                                 <XAxis
                                     dataKey="name"
                                     interval={0}
@@ -509,6 +514,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                 <div className="glass-panel p-6">
                     <h3 className="section-title mb-4">
                         <span className="section-title-bar"></span>
+                        <i className="fa-solid fa-heartbeat text-slate-400 dark:text-slate-500 text-sm"></i>
                         Inventory Health
                     </h3>
                     <div className="space-y-4">
@@ -560,12 +566,13 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                 <div className="glass-panel p-6 lg:col-span-2">
                     <h3 className="section-title mb-6">
                         <span className="section-title-bar"></span>
+                        <i className="fa-solid fa-layer-group text-slate-400 dark:text-slate-500 text-sm"></i>
                         Asset Value by Category
                     </h3>
                     <div className="h-[400px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart layout="vertical" data={categoryValueData} margin={{ left: 40, right: 20 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.2} />
+                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="currentColor" className="text-slate-200 dark:text-emerald-900/30" opacity={0.5} />
                                 <XAxis type="number" tickFormatter={(val) => `$${val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val}`} axisLine={false} tickLine={false} />
                                 <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 13, fontWeight: 500, fill: '#64748B' }} axisLine={false} tickLine={false} />
                                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99, 102, 241, 0.05)', radius: 8 }} />
