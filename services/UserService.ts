@@ -45,8 +45,8 @@ export const UserService = {
         console.log('[UserService] Fetching users via REST...');
         try {
             // Fetch profiles with roles via PostgREST resource embedding
-            // Phase F: Read from user_location_assignments instead of deprecated user_roles
-            const url = `${SUPABASE_URL}/rest/v1/profiles?select=id,full_name,permissions,user_location_assignments(role_id,location_id)`;
+            // Phase F: Read from user_location_assignments, with user_roles as fallback
+            const url = `${SUPABASE_URL}/rest/v1/profiles?select=id,full_name,permissions,user_location_assignments(role_id,location_id),user_roles(role_id)`;
 
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 45000);
@@ -70,7 +70,7 @@ export const UserService = {
                 id: p.id,
                 full_name: p.full_name || 'Anonymous User',
                 email: 'N/A',
-                role: p.user_location_assignments?.[0]?.role_id || UserRole.FRONT_DESK,
+                role: p.user_location_assignments?.[0]?.role_id || p.user_roles?.[0]?.role_id || UserRole.FRONT_DESK,
                 permissions: p.permissions || undefined
             }));
 

@@ -525,20 +525,20 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
 
             {/* --- PREVIEW MODAL --- */}
             {showPreview && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm">
-                    <div className="bg-gray-100 rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-fade-in-up">
-                        <div className="p-4 bg-white border-b flex justify-between items-center">
-                            <h3 className="font-bold text-gray-900">Report Preview</h3>
-                            <button onClick={() => setShowPreview(false)} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"><i className="fa-solid fa-xmark"></i></button>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+                    <div className="bg-slate-100 rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-fade-in-up">
+                        <div className="p-4 bg-white border-b border-slate-200 flex justify-between items-center">
+                            <h3 className="font-bold text-slate-900">Report Preview</h3>
+                            <button onClick={() => setShowPreview(false)} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"><i className="fa-solid fa-xmark"></i></button>
                         </div>
-                        <div className="flex-1 overflow-auto p-8 bg-gray-200 flex justify-center">
+                        <div className="flex-1 overflow-auto p-8 bg-slate-200 flex justify-center">
                             <div className="shadow-2xl origin-top transform scale-75 md:scale-90 lg:scale-100 transition-transform">
                                 <DailyReportDocument report={getTempReport()} usersDb={usersDb} />
                             </div>
                         </div>
                         <div className="p-4 bg-white border-t flex justify-end gap-4">
-                            <button onClick={() => setShowPreview(false)} disabled={isSubmitting} className="px-6 py-2 rounded-lg font-bold text-gray-500 hover:bg-gray-100 disabled:opacity-50">Close</button>
-                            <button onClick={() => { handleSignAndGenerate(); }} disabled={isSubmitting} className="px-6 py-2 rounded-lg bg-medical-600 text-white font-bold shadow-lg hover:bg-medical-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <button onClick={() => setShowPreview(false)} disabled={isSubmitting} className="px-6 py-2 rounded-lg font-bold text-slate-500 hover:bg-slate-100 disabled:opacity-50">Close</button>
+                            <button onClick={() => { handleSignAndGenerate(); }} disabled={isSubmitting} className="px-6 py-2 rounded-lg bg-medical-600 text-white font-semibold shadow-lg hover:bg-medical-700 disabled:opacity-50 disabled:cursor-not-allowed">
                                 {isSubmitting ? 'Saving to Database...' : 'Sign & Generate PDF'}
                             </button>
                         </div>
@@ -550,7 +550,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
             <div className="mb-10">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
                             {initialData ? 'Edit Daily Report' : 'Daily Reconciliation'}
                         </h2>
                         {user.role === UserRole.MANAGER ? (
@@ -613,14 +613,14 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
 
             {/* STEP 1: FINANCIALS */}
             {state.step === 1 && (
-                <div className="relative overflow-hidden bg-white dark:bg-slate-900/80 backdrop-blur-xl p-8 rounded-[2rem] border border-slate-200/60 dark:border-slate-700/50 shadow-xl space-y-8">
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600"></div>
+                <div className="relative overflow-hidden bg-white dark:bg-slate-900/80 backdrop-blur-xl p-8 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-xl space-y-8">
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600"></div>
                     <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-3">
-                            <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white flex items-center justify-center text-sm shadow-lg shadow-emerald-500/20"><i className="fa-solid fa-dollar-sign"></i></span>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                            <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white flex items-center justify-center text-sm shadow-lg shadow-emerald-500/20"><i className="fa-solid fa-dollar-sign"></i></span>
                             Financial Reconciliation
                         </h3>
-                        <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 ${isFinBalanced ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/20 text-red-600 border border-red-200 dark:border-red-800'}`}>
+                        <div className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${isFinBalanced ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/20 text-red-600 border border-red-200 dark:border-red-800'}`}>
                             <i className={`fa-solid ${isFinBalanced ? 'fa-check-circle' : 'fa-exclamation-triangle'} text-[10px]`}></i>
                             {isFinBalanced ? 'Balanced' : `Off by $${finDiff.toFixed(2)}`}
                         </div>
@@ -628,24 +628,24 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                         <div className="space-y-4">
-                            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700 pb-2">Methods (Drawer)</div>
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700 pb-2">Methods (Drawer)</div>
                             {Object.entries(state.financials.methods).map(([key, val]) => (
                                 <div key={key} className="flex justify-between items-center">
-                                    <span className="capitalize font-medium text-gray-700 dark:text-gray-300">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                                    <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-lg pl-3 pr-1 py-1">
-                                        <span className="text-gray-400 text-xs">$</span>
+                                    <span className="capitalize font-medium text-slate-700 dark:text-slate-300">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                    <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 rounded-lg pl-3 pr-1 py-1">
+                                        <span className="text-slate-400 text-xs">$</span>
                                         <input
                                             type="number"
                                             min="0"
                                             step="0.01"
                                             value={val || ''}
                                             onChange={e => dispatch({ type: 'SET_FIN_METHOD', payload: { key: key as any, value: parseFloat(e.target.value) || 0 } })}
-                                            className="bg-transparent w-24 text-right font-mono font-bold outline-none text-gray-900 dark:text-white"
+                                            className="bg-transparent w-24 text-right font-mono font-bold outline-none text-slate-900 dark:text-white"
                                             placeholder="0.00"
                                         />
                                         <button
                                             onClick={() => openCalculator('methods', key, val as number)}
-                                            className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-400 hover:text-medical-500 shadow-sm flex items-center justify-center transition-colors"
+                                            className="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 text-slate-400 hover:text-medical-500 shadow-sm flex items-center justify-center transition-colors"
                                             title="Sum receipts"
                                         >
                                             <i className="fa-solid fa-calculator text-xs"></i>
@@ -653,31 +653,31 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                                     </div>
                                 </div>
                             ))}
-                            <div className="flex justify-between font-black text-gray-900 dark:text-white pt-2">
+                            <div className="flex justify-between font-bold tabular-nums text-slate-900 dark:text-white pt-2">
                                 <span>Total Drawer</span>
                                 <span>${totalMethods.toFixed(2)}</span>
                             </div>
                         </div>
 
                         <div className="space-y-4">
-                            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700 pb-2">Types (System)</div>
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700 pb-2">Types (System)</div>
                             {Object.entries(state.financials.types).map(([key, val]) => (
                                 <div key={key} className="flex justify-between items-center">
-                                    <span className="capitalize font-medium text-gray-700 dark:text-gray-300">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                                    <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-lg pl-3 pr-1 py-1">
-                                        <span className="text-gray-400 text-xs">$</span>
+                                    <span className="capitalize font-medium text-slate-700 dark:text-slate-300">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                    <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 rounded-lg pl-3 pr-1 py-1">
+                                        <span className="text-slate-400 text-xs">$</span>
                                         <input
                                             type="number"
                                             min="0"
                                             step="0.01"
                                             value={val || ''}
                                             onChange={e => dispatch({ type: 'SET_FIN_TYPE', payload: { key: key as any, value: parseFloat(e.target.value) || 0 } })}
-                                            className="bg-transparent w-24 text-right font-mono font-bold outline-none text-gray-900 dark:text-white"
+                                            className="bg-transparent w-24 text-right font-mono font-bold outline-none text-slate-900 dark:text-white"
                                             placeholder="0.00"
                                         />
                                         <button
                                             onClick={() => openCalculator('types', key, val as number)}
-                                            className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 text-gray-400 hover:text-medical-500 shadow-sm flex items-center justify-center transition-colors"
+                                            className="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 text-slate-400 hover:text-medical-500 shadow-sm flex items-center justify-center transition-colors"
                                             title="Sum receipts"
                                         >
                                             <i className="fa-solid fa-calculator text-xs"></i>
@@ -685,7 +685,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                                     </div>
                                 </div>
                             ))}
-                            <div className="flex justify-between font-black text-gray-900 dark:text-white pt-2">
+                            <div className="flex justify-between font-bold tabular-nums text-slate-900 dark:text-white pt-2">
                                 <span>Total Posted</span>
                                 <span>${totalTypes.toFixed(2)}</span>
                             </div>
@@ -696,14 +696,14 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
 
             {/* STEP 2: VOLUME */}
             {state.step === 2 && (
-                <div className="relative overflow-hidden bg-white dark:bg-slate-900/80 backdrop-blur-xl p-8 rounded-[2rem] border border-slate-200/60 dark:border-slate-700/50 shadow-xl space-y-8">
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-indigo-500 to-blue-600"></div>
+                <div className="relative overflow-hidden bg-white dark:bg-slate-900/80 backdrop-blur-xl p-8 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-xl space-y-8">
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-medical-400 via-medical-500 to-medical-600"></div>
                     <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-3">
-                            <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 text-white flex items-center justify-center text-sm shadow-lg shadow-blue-500/20"><i className="fa-solid fa-users"></i></span>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                            <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-medical-400 to-medical-600 text-white flex items-center justify-center text-sm shadow-lg shadow-medical-500/20"><i className="fa-solid fa-users"></i></span>
                             Patient Volume
                         </h3>
-                        <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 ${isVolBalanced ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/20 text-red-600 border border-red-200 dark:border-red-800'}`}>
+                        <div className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${isVolBalanced ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/20 text-red-600 border border-red-200 dark:border-red-800'}`}>
                             <i className={`fa-solid ${isVolBalanced ? 'fa-check-circle' : 'fa-exclamation-triangle'} text-[10px]`}></i>
                             {isVolBalanced ? 'Matched' : `Mismatch (${volDiff})`}
                         </div>
@@ -712,28 +712,28 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                         {/* Insurance Column */}
                         <div className="space-y-4">
-                            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700 pb-2">Insurance Breakdown</div>
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700 pb-2">Insurance Breakdown</div>
                             <div className="grid grid-cols-2 gap-3">
                                 {Object.entries(state.insurances).map(([key, val]) => (
-                                    <div key={key} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-2.5">
-                                        <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">{key.replace('_', ' ').replace('Comp', ' Comp')}</label>
+                                    <div key={key} className="bg-slate-50 dark:bg-slate-800 rounded-xl p-2.5">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">{key.replace('_', ' ').replace('Comp', ' Comp')}</label>
                                         <input
                                             type="number"
                                             min="0"
                                             value={val || ''}
                                             onChange={e => dispatch({ type: 'SET_INSURANCE', payload: { key: key as any, value: parseInt(e.target.value) || 0 } })}
-                                            className="w-full bg-transparent font-mono font-bold text-xl text-gray-900 dark:text-white outline-none"
+                                            className="w-full bg-transparent font-mono font-bold text-xl text-slate-900 dark:text-white outline-none"
                                             placeholder="0"
                                         />
                                     </div>
                                 ))}
                             </div>
-                            <div className="text-right font-black text-gray-900 dark:text-white mt-2">Total: {totalIns}</div>
+                            <div className="text-right font-bold tabular-nums text-slate-900 dark:text-white mt-2">Total: {totalIns}</div>
                         </div>
 
                         {/* Operations Column */}
                         <div className="space-y-4">
-                            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700 pb-2">Operational Split</div>
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700 pb-2">Operational Split</div>
 
                             <div className="bg-purple-50 dark:bg-purple-900/10 rounded-xl p-3 flex justify-between items-center border border-purple-100 dark:border-purple-900/30">
                                 <span className="font-bold text-purple-900 dark:text-purple-300">Nurse Visits</span>
@@ -748,14 +748,14 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-gray-400 uppercase">Provider Visits</label>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">Provider Visits</label>
 
                                 {/* List Added Providers */}
                                 {selectedProviderIds.map(id => {
                                     const provider = usersDb.find(u => u.id === id);
                                     if (!provider) return null;
                                     return (
-                                        <div key={id} className="flex justify-between items-center bg-gray-50 dark:bg-gray-800 rounded-xl p-3 animate-fade-in-up">
+                                        <div key={id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-800 rounded-xl p-3 animate-fade-in-up">
                                             <div className="flex items-center gap-3">
                                                 <button
                                                     onClick={() => dispatch({ type: 'REMOVE_OP_PROVIDER', payload: id })}
@@ -764,14 +764,14 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                                                 >
                                                     <i className="fa-solid fa-xmark text-xs"></i>
                                                 </button>
-                                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{provider.full_name || provider.username}</span>
+                                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{provider.full_name || provider.username}</span>
                                             </div>
                                             <input
                                                 type="number"
                                                 min="0"
                                                 value={state.operational?.providerVisits?.[id] || ''}
                                                 onChange={e => dispatch({ type: 'SET_OP_PROVIDER', payload: { id, value: parseInt(e.target.value) || 0 } })}
-                                                className="w-20 bg-transparent text-right font-mono font-bold text-lg text-gray-900 dark:text-white outline-none"
+                                                className="w-20 bg-transparent text-right font-mono font-bold text-lg text-slate-900 dark:text-white outline-none"
                                                 placeholder="0"
                                             />
                                         </div>
@@ -783,22 +783,22 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                                     <div className="relative mt-4">
                                         <button
                                             onClick={() => setIsProviderDropdownOpen(!isProviderDropdownOpen)}
-                                            className={`w-full h-14 flex items-center justify-between px-5 rounded-2xl border-2 transition-all duration-300 outline-none
+                                            className={`w-full h-12 flex items-center justify-between px-5 rounded-xl border-2 transition-all duration-300 outline-none
                                                 ${isProviderDropdownOpen
-                                                    ? 'bg-white dark:bg-slate-800 border-indigo-500 shadow-lg ring-4 ring-indigo-500/10'
-                                                    : 'bg-white dark:bg-slate-800/50 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                                    ? 'bg-white dark:bg-slate-800 border-medical-500 shadow-lg ring-4 ring-medical-500/10'
+                                                    : 'bg-white dark:bg-slate-800/50 border-dashed border-slate-300 dark:border-slate-700 hover:border-medical-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                                                 }`}
                                         >
-                                            <span className={`text-sm font-bold ${isProviderDropdownOpen ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500'}`}>
+                                            <span className={`text-sm font-bold ${isProviderDropdownOpen ? 'text-medical-600 dark:text-medical-400' : 'text-slate-500'}`}>
                                                 {isProviderDropdownOpen ? 'Select Personnel...' : '+ Add Provider Report'}
                                             </span>
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-300 ${isProviderDropdownOpen ? 'rotate-180 bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-300 ${isProviderDropdownOpen ? 'rotate-180 bg-medical-100 text-medical-600' : 'bg-slate-100 text-slate-400'}`}>
                                                 <i className="fa-solid fa-chevron-down text-xs"></i>
                                             </div>
                                         </button>
 
                                         {isProviderDropdownOpen && (
-                                            <div className="mt-3 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-fade-in-up mb-4">
+                                            <div className="mt-3 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-fade-in-up mb-4">
                                                 <div className="p-2 max-h-[300px] overflow-y-auto custom-scrollbar">
                                                     {availableProviders.map(p => (
                                                         <button
@@ -816,11 +816,11 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                                                                     {(p.full_name || p.username || '?').charAt(0).toUpperCase()}
                                                                 </div>
                                                                 <div>
-                                                                    <div className="font-bold text-slate-900 dark:text-white text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{p.full_name || p.username}</div>
-                                                                    <div className="text-[10px] uppercase font-black tracking-wider text-slate-400">{p.role === UserRole.OWNER ? 'Clinic Owner' : 'Provider'}</div>
+                                                                    <div className="font-bold text-slate-900 dark:text-white text-sm group-hover:text-medical-600 dark:group-hover:text-medical-400 transition-colors">{p.full_name || p.username}</div>
+                                                                    <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">{p.role === UserRole.OWNER ? 'Clinic Owner' : 'Provider'}</div>
                                                                 </div>
                                                             </div>
-                                                            <div className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-300 group-hover:border-indigo-500 group-hover:text-indigo-500 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 transition-all">
+                                                            <div className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-300 group-hover:border-medical-500 group-hover:text-medical-500 group-hover:bg-medical-50 dark:group-hover:bg-medical-900/20 transition-all">
                                                                 <i className="fa-solid fa-plus"></i>
                                                             </div>
                                                         </button>
@@ -836,7 +836,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                                     </div>
                                 )}
                             </div>
-                            <div className="text-right font-black text-gray-900 dark:text-white mt-2">Total Ops: {totalOps}</div>
+                            <div className="text-right font-bold tabular-nums text-slate-900 dark:text-white mt-2">Total Ops: {totalOps}</div>
                         </div>
                     </div>
                 </div>
@@ -844,14 +844,14 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
 
             {/* STEP 3: STATS & SIGN */}
             {state.step === 3 && (
-                <div className="relative overflow-hidden bg-white dark:bg-slate-900/80 backdrop-blur-xl p-8 rounded-[2rem] border border-slate-200/60 dark:border-slate-700/50 shadow-xl space-y-8">
+                <div className="relative overflow-hidden bg-white dark:bg-slate-900/80 backdrop-blur-xl p-8 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-xl space-y-8">
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-400 via-violet-500 to-purple-600"></div>
                     <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-3">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
                             <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-violet-600 text-white flex items-center justify-center text-sm shadow-lg shadow-purple-500/20"><i className="fa-solid fa-file-signature"></i></span>
                             Final Statistics & Sign
                         </h3>
-                        <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 ${isStatsBalanced ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/20 text-red-600 border border-red-200 dark:border-red-800'}`}>
+                        <div className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${isStatsBalanced ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-900/20 text-red-600 border border-red-200 dark:border-red-800'}`}>
                             <i className={`fa-solid ${isStatsBalanced ? 'fa-check-circle' : 'fa-exclamation-triangle'} text-[10px]`}></i>
                             {isStatsBalanced ? 'Matched' : `Mismatch (${statsDiff})`}
                         </div>
@@ -863,21 +863,21 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                             { key: 'estPts', label: 'Established' },
                             { key: 'xrays', label: 'X-Rays' }
                         ].map((stat) => (
-                            <div key={stat.key} className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 text-center">
-                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{stat.label}</label>
+                            <div key={stat.key} className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 text-center">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stat.label}</label>
                                 <input
                                     type="number"
                                     min="0"
                                     value={(state.stats as any)[stat.key] || ''}
                                     onChange={e => dispatch({ type: 'SET_STAT', payload: { key: stat.key as any, value: parseInt(e.target.value) || 0 } })}
-                                    className="w-full bg-transparent text-center font-black text-3xl outline-none mt-2 text-gray-900 dark:text-white"
+                                    className="w-full bg-transparent text-center font-bold tabular-nums text-2xl outline-none mt-2 text-slate-900 dark:text-white"
                                     placeholder="0"
                                 />
                             </div>
                         ))}
                     </div>
 
-                    <div className="flex justify-end text-sm font-bold text-gray-500">
+                    <div className="flex justify-end text-sm font-bold text-slate-500">
                         New + Est = {totalStatsPatients} / {totalIns} (Total Patients)
                     </div>
 
@@ -888,7 +888,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                             label="Notes / Discrepancies"
                             placeholder="Dictate notes regarding balance discrepancies or shift events..."
                             rows={4}
-                            className="bg-gray-50 dark:bg-gray-800 rounded-xl text-sm focus:ring-medical-500"
+                            className="bg-slate-50 dark:bg-slate-800 rounded-xl text-sm focus:ring-medical-500"
                         />
                     </div>
                 </div>
@@ -926,7 +926,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                             <button
                                 onClick={() => setShowPreview(true)}
                                 disabled={isSubmitting}
-                                className="px-5 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold text-sm border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-all flex items-center gap-2 disabled:opacity-50"
+                                className="px-5 h-12 rounded-xl bg-medical-50 dark:bg-medical-900/20 text-medical-600 dark:text-medical-400 font-semibold text-sm border border-medical-200 dark:border-medical-800 hover:bg-medical-100 dark:hover:bg-medical-900/30 transition-all flex items-center gap-2 disabled:opacity-50"
                             >
                                 <i className="fa-solid fa-eye text-xs"></i> Preview
                             </button>
