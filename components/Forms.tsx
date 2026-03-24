@@ -344,17 +344,17 @@ I, **{{patientName}}**, hereby authorize...
     // --- RENDER: EDITOR ---
     if (activeTab === 'manage' && editId) {
         return createPortal(
-            <div className="fixed inset-0 z-[100] bg-gray-900/95 backdrop-blur-sm flex items-center justify-center p-4">
-                <div className="bg-gray-900 border border-gray-700 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="fixed inset-0 z-[100] bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-slate-900 border border-slate-700 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                     {/* Editor Header */}
-                    <div className="p-6 border-b border-gray-800 flex justify-between items-start">
+                    <div className="p-6 border-b border-slate-800 flex justify-between items-start">
                         <div>
                             <h2 className="text-2xl font-bold text-white mb-1">
                                 {editId === 'new' ? 'Create Template' : 'Edit Consent Template'}
                             </h2>
-                            <p className="text-gray-400 text-sm">Update consent template details</p>
+                            <p className="text-slate-400 text-sm">Update consent template details</p>
                         </div>
-                        <button onClick={() => setEditId(null)} className="text-gray-400 hover:text-white transition-colors">
+                        <button onClick={() => setEditId(null)} className="text-slate-400 hover:text-white transition-colors">
                             <i className="fa-solid fa-xmark text-xl"></i>
                         </button>
                     </div>
@@ -364,20 +364,20 @@ I, **{{patientName}}**, hereby authorize...
                         {/* Row 1: Name & Slug */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-gray-300 text-sm font-bold">Template Name *</label>
+                                <label className="text-slate-300 text-sm font-bold">Template Name *</label>
                                 <input
                                     value={formData.title}
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                    className="w-full bg-gray-950 border border-blue-500/50 rounded-lg h-12 px-4 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                    className="w-full bg-slate-950 border border-medical-500/50 rounded-lg h-11 px-4 text-white focus:outline-none focus:border-medical-500 transition-colors text-sm"
                                     placeholder="e.g. TB Surveillance Form"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-gray-500 text-sm font-bold">Slug (Auto-generated)</label>
+                                <label className="text-slate-500 text-sm font-bold">Slug (Auto-generated)</label>
                                 <input
                                     value={formData.slug}
                                     onChange={e => setFormData({ ...formData, slug: e.target.value })}
-                                    className="w-full bg-gray-800 border border-gray-700 rounded-lg h-12 px-4 text-gray-400 focus:outline-none"
+                                    className="w-full bg-slate-800 border border-slate-700 rounded-lg h-11 px-4 text-slate-400 focus:outline-none text-sm"
                                     placeholder="tb-surveillance-form"
                                 />
                             </div>
@@ -386,30 +386,30 @@ I, **{{patientName}}**, hereby authorize...
                         {/* Row 2: Metadata */}
                         <div className="grid grid-cols-3 gap-6">
                             <div className="space-y-2">
-                                <label className="text-gray-300 text-sm font-bold">Version *</label>
+                                <label className="text-slate-300 text-sm font-bold">Version *</label>
                                 <input
                                     value={formData.version}
                                     onChange={e => setFormData({ ...formData, version: e.target.value })}
-                                    className="w-full bg-gray-950 border border-gray-700 rounded-lg h-12 px-4 text-white focus:outline-none focus:border-blue-500"
+                                    className="w-full bg-slate-950 border border-slate-700 rounded-lg h-11 px-4 text-white focus:outline-none focus:border-medical-500 text-sm"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-gray-300 text-sm font-bold">Language</label>
+                                <label className="text-slate-300 text-sm font-bold">Language</label>
                                 <select
                                     value={formData.language}
                                     onChange={e => setFormData({ ...formData, language: e.target.value as any })}
-                                    className="w-full bg-gray-950 border border-gray-700 rounded-lg h-12 px-4 text-white focus:outline-none focus:border-blue-500"
+                                    className="w-full bg-slate-950 border border-slate-700 rounded-lg h-11 px-4 text-white focus:outline-none focus:border-medical-500 text-sm"
                                 >
                                     <option value="English">English</option>
                                     <option value="Spanish">Spanish</option>
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-gray-300 text-sm font-bold">Status</label>
+                                <label className="text-slate-300 text-sm font-bold">Status</label>
                                 <select
                                     value={formData.status}
                                     onChange={e => setFormData({ ...formData, status: e.target.value as any })}
-                                    className="w-full bg-gray-950 border border-gray-700 rounded-lg h-12 px-4 text-white focus:outline-none focus:border-blue-500"
+                                    className="w-full bg-slate-950 border border-slate-700 rounded-lg h-11 px-4 text-white focus:outline-none focus:border-medical-500 text-sm"
                                 >
                                     <option value="Active">Active</option>
                                     <option value="Draft">Draft</option>
@@ -419,14 +419,14 @@ I, **{{patientName}}**, hereby authorize...
                         </div>
 
                         {/* Row 3: Letterhead Toggle */}
-                        <div className="border border-gray-700 rounded-xl p-4 flex items-center justify-between bg-gray-950/50">
+                        <div className="border border-slate-700 rounded-xl p-4 flex items-center justify-between bg-slate-950/50">
                             <div>
                                 <h4 className="text-white font-bold">Use System Letterhead</h4>
-                                <p className="text-gray-500 text-xs mt-1">Include clinic header and footer in PDF</p>
+                                <p className="text-slate-500 text-xs mt-1">Include clinic header and footer in PDF</p>
                             </div>
                             <button
                                 onClick={() => setFormData({ ...formData, useLetterhead: !formData.useLetterhead })}
-                                className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ${formData.useLetterhead ? 'bg-blue-600' : 'bg-gray-700'}`}
+                                className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ${formData.useLetterhead ? 'bg-medical-600' : 'bg-slate-700'}`}
                             >
                                 <div className={`w-6 h-6 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${formData.useLetterhead ? 'translate-x-6' : 'translate-x-0'}`}></div>
                             </button>
@@ -435,20 +435,20 @@ I, **{{patientName}}**, hereby authorize...
                         {/* Row 4: Content Editor with Smart Dictation */}
                         <div className="space-y-0">
                             <div className="flex justify-between items-center mb-2">
-                                <label className="text-gray-300 text-sm font-bold block">Content Editor</label>
-                                <div className="flex items-center gap-2 text-xs text-teal-400">
+                                <label className="text-slate-300 text-sm font-bold block">Content Editor</label>
+                                <div className="flex items-center gap-2 text-xs text-medical-400">
                                     <i className="fa-solid fa-microphone-lines"></i>
                                     <span className="font-bold uppercase tracking-wider">AI Dictation Ready</span>
                                 </div>
                             </div>
 
                             {/* Formatting Toolbar */}
-                            <div className="bg-gray-800 border-x border-t border-gray-700 rounded-t-xl p-2 flex flex-wrap gap-2 items-center">
-                                <div className="flex gap-1 border-r border-gray-700 pr-2 mr-1">
-                                    <button onClick={() => applyFormat('# ')} title="Heading" className="w-8 h-8 rounded hover:bg-gray-700 text-gray-300 font-bold flex items-center justify-center transition-colors">H</button>
-                                    <button onClick={() => applyFormat('**')} title="Bold" className="w-8 h-8 rounded hover:bg-gray-700 text-gray-300 font-bold flex items-center justify-center transition-colors">B</button>
-                                    <button onClick={() => applyFormat('*')} title="Italic" className="w-8 h-8 rounded hover:bg-gray-700 text-gray-300 italic flex items-center justify-center transition-colors">I</button>
-                                    <button onClick={() => applyFormat('__')} title="Underline" className="w-8 h-8 rounded hover:bg-gray-700 text-gray-300 underline flex items-center justify-center transition-colors">U</button>
+                            <div className="bg-slate-800 border-x border-t border-slate-700 rounded-t-xl p-2 flex flex-wrap gap-2 items-center">
+                                <div className="flex gap-1 border-r border-slate-700 pr-2 mr-1">
+                                    <button onClick={() => applyFormat('# ')} title="Heading" className="w-8 h-8 rounded hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center transition-colors">H</button>
+                                    <button onClick={() => applyFormat('**')} title="Bold" className="w-8 h-8 rounded hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center transition-colors">B</button>
+                                    <button onClick={() => applyFormat('*')} title="Italic" className="w-8 h-8 rounded hover:bg-slate-700 text-slate-300 italic flex items-center justify-center transition-colors">I</button>
+                                    <button onClick={() => applyFormat('__')} title="Underline" className="w-8 h-8 rounded hover:bg-slate-700 text-slate-300 underline flex items-center justify-center transition-colors">U</button>
                                 </div>
 
                                 <div className="flex gap-2 flex-wrap">
@@ -456,7 +456,7 @@ I, **{{patientName}}**, hereby authorize...
                                         <button
                                             key={v}
                                             onClick={() => insertVariable(v)}
-                                            className="text-[10px] bg-gray-900 hover:bg-black text-blue-400 border border-gray-700 px-2 py-1 rounded transition-colors"
+                                            className="text-[10px] bg-slate-900 hover:bg-black text-medical-400 border border-slate-700 px-2 py-1 rounded transition-colors"
                                         >
                                             {v}
                                         </button>
@@ -470,23 +470,23 @@ I, **{{patientName}}**, hereby authorize...
                                 onChange={(val) => setFormData({ ...formData, content: val })}
                                 rows={15}
                                 placeholder="Type or dictate document content here..."
-                                className="bg-gray-950 border-gray-700 rounded-b-xl rounded-t-none text-gray-300 font-mono text-sm leading-relaxed focus:ring-0 border-t-0"
+                                className="bg-slate-950 border-slate-700 rounded-b-xl rounded-t-none text-slate-300 font-mono text-sm leading-relaxed focus:ring-0 border-t-0"
                             />
                         </div>
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="p-6 border-t border-gray-800 bg-gray-900 flex justify-end gap-4">
+                    <div className="p-6 border-t border-slate-800 bg-slate-900 flex justify-end gap-4">
                         <button
                             onClick={() => setEditId(null)}
-                            className="px-6 py-3 rounded-xl border border-gray-700 text-gray-300 font-bold hover:bg-gray-800 transition-colors"
+                            className="px-6 h-11 rounded-xl border border-slate-700 text-slate-300 font-semibold hover:bg-slate-800 transition-colors text-sm"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={saveTemplate}
                             disabled={isSaving}
-                            className="px-6 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold transition-colors shadow-lg shadow-blue-500/20 flex items-center gap-2"
+                            className="px-6 h-11 rounded-xl bg-medical-500 hover:bg-medical-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold transition-colors shadow-lg shadow-medical-500/20 flex items-center gap-2 text-sm"
                         >
                             {isSaving && <i className="fa-solid fa-circle-notch fa-spin"></i>}
                             {isSaving ? 'Saving...' : (editId === 'new' ? 'Create Template' : 'Update Template')}
@@ -515,17 +515,17 @@ I, **{{patientName}}**, hereby authorize...
                 </div>
 
                 {/* Tab Switcher */}
-                <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl">
+                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
                     <button
                         onClick={() => setActiveTab('generate')}
-                        className={`px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'generate' ? 'bg-white dark:bg-gray-700 shadow-sm text-medical-600 dark:text-white' : 'text-gray-500'}`}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'generate' ? 'bg-white dark:bg-slate-700 shadow-sm text-medical-600 dark:text-white' : 'text-slate-500'}`}
                     >
                         <i className="fa-solid fa-print mr-2"></i> Generate
                     </button>
                     {hasPermission('forms.manage') && (
                         <button
                             onClick={() => setActiveTab('manage')}
-                            className={`px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'manage' ? 'bg-white dark:bg-gray-700 shadow-sm text-medical-600 dark:text-white' : 'text-gray-500'}`}
+                            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'manage' ? 'bg-white dark:bg-slate-700 shadow-sm text-medical-600 dark:text-white' : 'text-slate-500'}`}
                         >
                             <i className="fa-solid fa-pen-ruler mr-2"></i> Templates
                         </button>
@@ -538,14 +538,14 @@ I, **{{patientName}}**, hereby authorize...
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Left: Inputs */}
                     <div className="lg:col-span-1 space-y-6">
-                        <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-glass border border-gray-100 dark:border-gray-800 space-y-5">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-glass border border-slate-100 dark:border-slate-800 space-y-5">
 
-                            <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-800/30">
-                                <label className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-2 block">1. Select Provider</label>
+                            <div className="bg-medical-50 dark:bg-medical-900/10 p-4 rounded-xl border border-medical-100 dark:border-medical-800/30">
+                                <label className="text-[10px] font-bold text-medical-600 dark:text-medical-400 uppercase mb-2 block">1. Select Provider</label>
                                 <select
                                     value={selectedDoctorId}
                                     onChange={e => setSelectedDoctorId(e.target.value)}
-                                    className="w-full h-12 px-3 rounded-xl bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-800/30 font-bold text-sm focus:ring-2 focus:ring-blue-500/20 outline-none text-gray-900 dark:text-white"
+                                    className="w-full h-11 px-3 rounded-xl bg-white dark:bg-slate-800 border border-medical-200 dark:border-medical-800/30 font-bold text-sm focus:ring-2 focus:ring-medical-500/20 outline-none text-slate-900 dark:text-white"
                                 >
                                     <option value="">Select Provider</option>
                                     {providers.map(d => {
@@ -557,26 +557,26 @@ I, **{{patientName}}**, hereby authorize...
                                 </select>
                             </div>
 
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-3">2. Procedure Info</h3>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">2. Procedure Info</h3>
 
                             <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase">Procedure / Note (Optional)</label>
-                                <input type="text" value={procedure} onChange={e => setProcedure(e.target.value)} className="w-full h-12 px-4 rounded-xl bg-gray-50 dark:bg-gray-800 border-none font-bold text-base mt-1 focus:ring-2 focus:ring-medical-500/20" placeholder="e.g. Incision and Drainage" />
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">Procedure / Note (Optional)</label>
+                                <input type="text" value={procedure} onChange={e => setProcedure(e.target.value)} className="w-full h-11 px-4 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold text-sm mt-1 focus:ring-2 focus:ring-medical-500/20" placeholder="e.g. Incision and Drainage" />
                             </div>
 
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-3 pt-4">3. Select Form</h3>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3 pt-4">3. Select Form</h3>
                             <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
                                 {templates.filter(t => t.status === 'Active' || t.status === 'Draft').map(t => (
                                     <button
                                         key={t.id}
                                         onClick={() => setSelectedTemplateId(t.id)}
-                                        className={`w-full text-left p-4 rounded-xl border-2 transition-all flex items-center justify-between group ${selectedTemplateId === t.id ? 'border-medical-500 bg-medical-50 dark:bg-medical-900/20' : 'border-gray-100 dark:border-gray-800 hover:border-medical-300'}`}
+                                        className={`w-full text-left p-4 rounded-xl border-2 transition-all flex items-center justify-between group ${selectedTemplateId === t.id ? 'border-medical-500 bg-medical-50 dark:bg-medical-900/20' : 'border-slate-100 dark:border-slate-800 hover:border-medical-300'}`}
                                     >
                                         <div className="flex items-center gap-2">
-                                            <span className={`font-bold ${selectedTemplateId === t.id ? 'text-medical-700 dark:text-white' : 'text-gray-600 dark:text-gray-400'}`}>{t.title}</span>
-                                            {t.status === 'Draft' && <span className="text-[10px] font-bold bg-gray-200 dark:bg-gray-700 text-gray-500 px-2 py-0.5 rounded-md">DRAFT</span>}
+                                            <span className={`font-bold ${selectedTemplateId === t.id ? 'text-medical-700 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>{t.title}</span>
+                                            {t.status === 'Draft' && <span className="text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-500 px-2 py-0.5 rounded-md">DRAFT</span>}
                                         </div>
-                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedTemplateId === t.id ? 'border-medical-500 bg-medical-500' : 'border-gray-300'}`}>
+                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedTemplateId === t.id ? 'border-medical-500 bg-medical-500' : 'border-slate-300'}`}>
                                             {selectedTemplateId === t.id && <i className="fa-solid fa-check text-white text-xs"></i>}
                                         </div>
                                     </button>
@@ -587,10 +587,10 @@ I, **{{patientName}}**, hereby authorize...
                                 <button
                                     onClick={handleDownloadPDF}
                                     disabled={!selectedTemplateId || !selectedDoctorId}
-                                    className="w-full h-14 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all transform hover:scale-[1.02]"
+                                    className="w-full h-12 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-200 dark:text-slate-900 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl shadow-lg flex items-center justify-center gap-3 transition-all transform hover:scale-[1.02] text-sm"
                                 >
-                                    <i className="fa-solid fa-file-pdf text-xl"></i>
-                                    <span className="text-lg">Download PDF</span>
+                                    <i className="fa-solid fa-file-pdf"></i>
+                                    <span>Download PDF</span>
                                 </button>
 
                             </div>
@@ -599,7 +599,7 @@ I, **{{patientName}}**, hereby authorize...
 
                     {/* Right: Live Preview */}
                     <div className="lg:col-span-2">
-                        <div className="bg-gray-200 dark:bg-black/50 p-4 sm:p-8 rounded-3xl h-full flex items-center justify-center overflow-auto shadow-inner border border-gray-100 dark:border-gray-800">
+                        <div className="bg-slate-200 dark:bg-black/50 p-4 sm:p-8 rounded-2xl h-full flex items-center justify-center overflow-auto shadow-inner border border-slate-100 dark:border-slate-800">
                             {/* A4 Paper Simulation - Scaled down */}
                             <div className="bg-white w-[216mm] min-h-[279mm] shadow-2xl scale-[0.4] sm:scale-[0.5] md:scale-[0.6] lg:scale-[0.7] xl:scale-[0.8] origin-top transform transition-transform duration-500 relative">
 
@@ -614,7 +614,7 @@ I, **{{patientName}}**, hereby authorize...
                                             isPreview={true}
                                         />
                                     ) : (
-                                        <div className="h-[279mm] flex flex-col items-center justify-center text-gray-300 font-sans">
+                                        <div className="h-[279mm] flex flex-col items-center justify-center text-slate-300 font-sans">
                                             <i className="fa-regular fa-file-lines text-6xl mb-4"></i>
                                             <p className="font-bold text-xl uppercase tracking-widest text-center">Select Template<br />&<br />Enter Patient Info</p>
                                         </div>
@@ -630,39 +630,39 @@ I, **{{patientName}}**, hereby authorize...
             {activeTab === 'manage' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {templates.map(t => (
-                        <div key={t.id} className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-glass border border-gray-100 dark:border-gray-800 hover:-translate-y-1 transition-transform group relative overflow-hidden">
+                        <div key={t.id} className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-glass border border-slate-100 dark:border-slate-800 hover:-translate-y-1 transition-transform group relative overflow-hidden">
                             {/* Status Badge */}
                             <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-xl text-[10px] font-bold uppercase tracking-wider
-                        ${t.status === 'Active' ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'}
+                        ${t.status === 'Active' ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}
                       `}>
                                 {t.status}
                             </div>
 
                             <div className="flex justify-between items-start mb-4 mt-2">
-                                <div className="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300">
+                                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300">
                                     <i className="fa-solid fa-file-contract text-xl"></i>
                                 </div>
                             </div>
 
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 truncate">{t.title}</h3>
-                            <p className="text-xs text-gray-400 font-mono mb-4 truncate">{t.slug} • v{t.version}</p>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1 truncate">{t.title}</h3>
+                            <p className="text-xs text-slate-400 font-mono mb-4 truncate">{t.slug} • v{t.version}</p>
 
                             <div className="flex gap-2">
-                                <button onClick={() => handleEdit(t)} className="flex-1 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-blue-500 hover:text-white transition-colors flex items-center justify-center font-bold text-xs text-gray-600 dark:text-gray-400 truncate px-2">
+                                <button onClick={() => handleEdit(t)} className="flex-1 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-medical-500 hover:text-white transition-colors flex items-center justify-center font-bold text-xs text-slate-600 dark:text-slate-400 truncate px-2">
                                     Edit
                                 </button>
-                                <button onClick={() => { if (window.confirm('Delete template?')) onDeleteTemplate(t.id) }} className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center text-gray-400">
+                                <button onClick={() => { if (window.confirm('Delete template?')) onDeleteTemplate(t.id) }} className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center text-slate-400">
                                     <i className="fa-solid fa-trash text-xs"></i>
                                 </button>
                             </div>
                         </div>
                     ))}
 
-                    <button onClick={() => handleEdit()} className="bg-gray-50 dark:bg-gray-800/50 rounded-3xl p-6 border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-medical-500 hover:bg-medical-50 dark:hover:bg-medical-900/10 transition-all flex flex-col items-center justify-center gap-4 group min-h-[250px]">
-                        <div className="w-16 h-16 rounded-full bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center text-gray-300 group-hover:text-medical-500 group-hover:scale-110 transition-all">
+                    <button onClick={() => handleEdit()} className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-medical-500 hover:bg-medical-50 dark:hover:bg-medical-900/10 transition-all flex flex-col items-center justify-center gap-4 group min-h-[250px]">
+                        <div className="w-16 h-16 rounded-full bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center text-slate-300 group-hover:text-medical-500 group-hover:scale-110 transition-all">
                             <i className="fa-solid fa-plus text-2xl"></i>
                         </div>
-                        <span className="font-bold text-gray-500 group-hover:text-medical-500">Create New Form</span>
+                        <span className="font-bold text-slate-500 group-hover:text-medical-500">Create New Form</span>
                     </button>
                 </div>
             )}
