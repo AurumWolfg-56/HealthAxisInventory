@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, AppRoute, Permission } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useTenant } from '../contexts/TenantContext';
@@ -28,6 +28,22 @@ export const Layout: React.FC<LayoutProps> = ({
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [showLocationPicker, setShowLocationPicker] = useState(false);
+
+    // Collapsible sidebar sections
+    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
+        try {
+            const saved = localStorage.getItem('sidebar_sections');
+            return saved ? JSON.parse(saved) : { operations: true, clinical: false, management: false };
+        } catch { return { operations: true, clinical: false, management: false }; }
+    });
+
+    const toggleSection = useCallback((key: string) => {
+        setExpandedSections(prev => {
+            const next = { ...prev, [key]: !prev[key] };
+            localStorage.setItem('sidebar_sections', JSON.stringify(next));
+            return next;
+        });
+    }, []);
 
     // Helper: render location icon using CSS instead of unreliable PNGs
     const renderLocationIcon = (size: string = 'w-10 h-10', rounded: string = 'rounded-xl') => {
@@ -77,57 +93,134 @@ export const Layout: React.FC<LayoutProps> = ({
         setIsMobileMenuOpen(false);
     };
 
-    const NAV_ITEMS: { route?: AppRoute; icon?: string; label?: string; perm?: string; header?: string; moduleFlag?: FeatureFlagKey }[] = [
-        { route: AppRoute.DASHBOARD, icon: "fa-chart-pie", label: t('nav_dashboard'), perm: 'dashboard.view', moduleFlag: 'mod_dashboard' },
-        { route: AppRoute.PROTOCOLS, icon: "fa-book-medical", label: "Staff Hub", perm: 'protocols.view', moduleFlag: 'mod_protocols' },
-        { route: AppRoute.INVENTORY, icon: "fa-boxes-stacked", label: t('nav_inventory'), perm: 'inventory.view', moduleFlag: 'mod_inventory' },
-        { route: AppRoute.INTELLIGENCE, icon: "fa-brain", label: "Intelligence", perm: 'intelligence.view', moduleFlag: 'mod_intelligence' },
-        { route: AppRoute.ORDERS, icon: "fa-cart-shopping", label: t('nav_orders'), perm: 'orders.view', moduleFlag: 'mod_orders' },
-        { route: AppRoute.BUDGETS, icon: "fa-wallet", label: "Budgets", perm: 'finance.manage', moduleFlag: 'mod_budgets' },
-        { route: AppRoute.PRICELIST, icon: "fa-tags", label: t('nav_prices'), perm: 'prices.view', moduleFlag: 'mod_pricelist' },
-        { header: "Clinical" },
-        { route: AppRoute.BILLING_WIZARD, icon: "fa-file-invoice-dollar", label: t('nav_billing'), perm: 'billing.view', moduleFlag: 'mod_billing' },
-        { route: AppRoute.MEDICAL_CODES, icon: "fa-list-ol", label: "Medical Codes", perm: 'codes.view', moduleFlag: 'mod_medical_codes' },
-        { route: AppRoute.FORMS, icon: "fa-file-signature", label: "Forms", perm: 'forms.generate', moduleFlag: 'mod_forms' },
-        { route: AppRoute.VOICE_MEMOS, icon: "fa-microphone-lines", label: t('nav_voice'), perm: 'voice.dictate', moduleFlag: 'mod_voice_memos' },
-        { header: "Admin" },
-        { route: AppRoute.ADMIN, icon: "fa-shield-halved", label: t('nav_admin'), perm: 'admin.access' },
-        { route: AppRoute.REPORTS, icon: "fa-clipboard-list", label: t('nav_reports'), perm: 'reports.view', moduleFlag: 'mod_reports' },
-        { route: AppRoute.DAILY_HISTORY, icon: "fa-calendar-check", label: t('nav_daily'), perm: 'reports.create', moduleFlag: 'mod_daily_close' },
-        { route: AppRoute.PETTY_CASH, icon: "fa-vault", label: "Petty Cash", perm: 'finance.view', moduleFlag: 'mod_petty_cash' },
-        { route: AppRoute.SETTINGS, icon: "fa-gear", label: t('nav_settings') },
+    // Pinned item (always visible)
+    const PINNED_ITEM = { route: AppRoute.DASHBOARD, icon: "fa-chart-pie", label: t('nav_dashboard'), perm: 'dashboard.view' as const, moduleFlag: 'mod_dashboard' as FeatureFlagKey };
+
+    // Grouped nav sections
+    type NavItem = { route: AppRoute; icon: string; label: string; perm: string; moduleFlag?: FeatureFlagKey };
+    type NavSection = { key: string; label: string; icon: string; items: NavItem[] };
+
+    const NAV_SECTIONS: NavSection[] = [
+        {
+            key: 'operations', label: 'Operations', icon: 'fa-boxes-stacked',
+            items: [
+                { route: AppRoute.INVENTORY, icon: "fa-boxes-stacked", label: t('nav_inventory'), perm: 'inventory.view', moduleFlag: 'mod_inventory' as FeatureFlagKey },
+                { route: AppRoute.ORDERS, icon: "fa-cart-shopping", label: t('nav_orders'), perm: 'orders.view', moduleFlag: 'mod_orders' as FeatureFlagKey },
+                { route: AppRoute.BUDGETS, icon: "fa-wallet", label: "Budgets", perm: 'finance.manage', moduleFlag: 'mod_budgets' as FeatureFlagKey },
+                { route: AppRoute.PRICELIST, icon: "fa-tags", label: t('nav_prices'), perm: 'prices.view', moduleFlag: 'mod_pricelist' as FeatureFlagKey },
+            ]
+        },
+        {
+            key: 'clinical', label: 'Clinical', icon: 'fa-stethoscope',
+            items: [
+                { route: AppRoute.PROTOCOLS, icon: "fa-book-medical", label: "Staff Hub", perm: 'protocols.view', moduleFlag: 'mod_protocols' as FeatureFlagKey },
+                { route: AppRoute.BILLING_WIZARD, icon: "fa-file-invoice-dollar", label: t('nav_billing'), perm: 'billing.view', moduleFlag: 'mod_billing' as FeatureFlagKey },
+                { route: AppRoute.FORMS, icon: "fa-file-signature", label: "Forms", perm: 'forms.generate', moduleFlag: 'mod_forms' as FeatureFlagKey },
+                { route: AppRoute.MEDICAL_CODES, icon: "fa-list-ol", label: "Medical Codes", perm: 'codes.view', moduleFlag: 'mod_medical_codes' as FeatureFlagKey },
+                { route: AppRoute.VOICE_MEMOS, icon: "fa-microphone-lines", label: t('nav_voice'), perm: 'voice.dictate', moduleFlag: 'mod_voice_memos' as FeatureFlagKey },
+            ]
+        },
+        {
+            key: 'management', label: 'Management', icon: 'fa-chart-line',
+            items: [
+                { route: AppRoute.INTELLIGENCE, icon: "fa-brain", label: "Intelligence", perm: 'intelligence.view', moduleFlag: 'mod_intelligence' as FeatureFlagKey },
+                { route: AppRoute.REPORTS, icon: "fa-clipboard-list", label: t('nav_reports'), perm: 'reports.view', moduleFlag: 'mod_reports' as FeatureFlagKey },
+                { route: AppRoute.DAILY_HISTORY, icon: "fa-calendar-check", label: t('nav_daily'), perm: 'reports.create', moduleFlag: 'mod_daily_close' as FeatureFlagKey },
+                { route: AppRoute.PETTY_CASH, icon: "fa-vault", label: "Petty Cash", perm: 'finance.view', moduleFlag: 'mod_petty_cash' as FeatureFlagKey },
+                { route: AppRoute.ADMIN, icon: "fa-shield-halved", label: t('nav_admin'), perm: 'admin.access' },
+                { route: AppRoute.SETTINGS, icon: "fa-gear", label: t('nav_settings'), perm: '' },
+            ]
+        }
     ];
 
-    const renderNavContent = () => (
-        <nav className="flex-1 px-4 space-y-1.5 mt-2 custom-scrollbar overflow-y-auto pb-safe">
-            {NAV_ITEMS.map((item: any) => {
-                if (item.header) return <div key={`header-${item.header}`} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-6 py-2 mt-4 mb-1 opacity-70">{item.header}</div>;
-                if (item.perm && !hasPermission(item.perm as Permission)) return null;
-                if (item.moduleFlag && !isFeatureEnabled(item.moduleFlag)) return null;
+    // Auto-expand the section containing the active route
+    useEffect(() => {
+        for (const section of NAV_SECTIONS) {
+            if (section.items.some(i => i.route === currentRoute)) {
+                setExpandedSections(prev => {
+                    if (prev[section.key]) return prev;
+                    const next = { ...prev, [section.key]: true };
+                    localStorage.setItem('sidebar_sections', JSON.stringify(next));
+                    return next;
+                });
+                break;
+            }
+        }
+    }, [currentRoute]);
 
-                const isActive = currentRoute === item.route;
+    const renderNavItem = (item: NavItem, isActive: boolean) => (
+        <button
+            key={item.route}
+            onClick={() => handleNavigateWrapper(item.route)}
+            className={`group relative flex items-center gap-3 px-4 py-2.5 w-full rounded-xl transition-all duration-200 active:scale-[0.97] outline-none
+              ${isActive
+                    ? 'bg-medical-500/10 text-medical-500 dark:text-medical-400 font-semibold'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-medical-500/5 hover:text-slate-700 dark:hover:text-slate-200'}`}
+        >
+            {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-medical-500 rounded-r-full shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>}
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 ${isActive ? 'bg-medical-500 text-white shadow-md shadow-medical-500/25' : 'text-inherit'}`}>
+                <i className={`fa-solid ${item.icon} text-sm`}></i>
+            </div>
+            <span className="text-[13px] tracking-wide">{item.label}</span>
+        </button>
+    );
+
+    const renderNavContent = () => (
+        <nav className="flex-1 px-3 mt-2 custom-scrollbar overflow-y-auto pb-safe space-y-1">
+            {/* Pinned: Dashboard */}
+            {(!PINNED_ITEM.perm || hasPermission(PINNED_ITEM.perm as Permission)) && (
+                <div className="mb-2">
+                    {renderNavItem(PINNED_ITEM as NavItem, currentRoute === PINNED_ITEM.route)}
+                </div>
+            )}
+
+            {/* Collapsible Sections */}
+            {NAV_SECTIONS.map(section => {
+                const visibleItems = section.items.filter(i =>
+                    (!i.perm || hasPermission(i.perm as Permission)) &&
+                    (!i.moduleFlag || isFeatureEnabled(i.moduleFlag))
+                );
+                if (visibleItems.length === 0) return null;
+
+                const isExpanded = expandedSections[section.key] ?? false;
+                const hasActiveChild = visibleItems.some(i => i.route === currentRoute);
+
                 return (
-                    <button
-                        key={item.route}
-                        onClick={() => handleNavigateWrapper(item.route as AppRoute)}
-                        className={`group relative flex items-center gap-4 px-5 py-3.5 w-full rounded-2xl transition-all duration-300 active:scale-95 outline-none
-                          ${isActive
-                                ? 'bg-gradient-to-r from-medical-600/10 to-medical-500/5 text-medical-600 dark:text-medical-400 font-bold'
-                                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'}`}
-                    >
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${isActive ? 'bg-medical-500 text-white shadow-lg shadow-medical-500/30 scale-110' : 'bg-transparent group-hover:bg-slate-200 dark:group-hover:bg-slate-700'}`}>
-                            <i className={`fa-solid ${item.icon} text-lg`}></i>
+                    <div key={section.key} className="mb-1">
+                        {/* Section Header */}
+                        <button
+                            onClick={() => toggleSection(section.key)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group/header
+                                ${hasActiveChild && !isExpanded ? 'bg-medical-500/5' : 'hover:bg-slate-100/50 dark:hover:bg-slate-800/30'}`}
+                        >
+                            <div className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${
+                                hasActiveChild ? 'text-medical-500' : 'text-slate-400 dark:text-slate-500 group-hover/header:text-slate-600 dark:group-hover/header:text-slate-300'
+                            }`}>
+                                <i className={`fa-solid ${section.icon} text-xs`}></i>
+                            </div>
+                            <span className={`text-[11px] font-bold uppercase tracking-wider flex-1 text-left transition-colors ${
+                                hasActiveChild ? 'text-medical-500' : 'text-slate-400 dark:text-slate-500 group-hover/header:text-slate-600 dark:group-hover/header:text-slate-300'
+                            }`}>
+                                {section.label}
+                            </span>
+                            <span className="text-[10px] font-semibold text-slate-300 dark:text-slate-600 mr-1">{visibleItems.length}</span>
+                            <i className={`fa-solid fa-chevron-right text-[9px] text-slate-300 dark:text-slate-600 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}></i>
+                        </button>
+
+                        {/* Section Items */}
+                        <div className={`overflow-hidden transition-all duration-200 ease-out ${isExpanded ? 'max-h-96 opacity-100 mt-0.5' : 'max-h-0 opacity-0'}`}>
+                            <div className="ml-2 pl-3 border-l-2 border-slate-100 dark:border-slate-800/60 space-y-0.5">
+                                {visibleItems.map(item => renderNavItem(item, currentRoute === item.route))}
+                            </div>
                         </div>
-                        <span className="text-sm font-bold tracking-wide">{item.label}</span>
-                        {isActive && <div className="absolute right-0 h-8 w-1 bg-medical-500 rounded-l-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>}
-                    </button>
+                    </div>
                 );
             })}
         </nav>
     );
 
     return (
-        <div className={`min-h-screen flex transition-colors duration-500 font-sans selection:bg-medical-500/20 selection:text-medical-600 overflow-hidden relative bg-medical-50 dark:bg-[#0a0f18]`}>
+        <div className={`min-h-screen flex transition-colors duration-500 font-sans selection:bg-medical-500/20 selection:text-medical-600 overflow-hidden relative bg-medical-50 dark:bg-[#080d0b]`}>
             {/* === MOBILE SIDEBAR DRAWER === */}
             <div
                 className={`fixed inset-0 z-50 md:hidden transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
@@ -166,12 +259,12 @@ export const Layout: React.FC<LayoutProps> = ({
             </div>
 
             {/* === DESKTOP FLOATING DOCK SIDEBAR === */}
-            <aside className={`hidden md:flex flex-col w-80 h-screen sticky top-0 z-40 transition-all duration-500 ${!isSidebarOpen ? '-ml-80 opacity-0' : ''}`}>
-                <div className="h-[96%] m-4 rounded-[2.5rem] bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl border border-white/40 dark:border-slate-800/60 shadow-glass flex flex-col relative overflow-hidden ring-1 ring-white/50 dark:ring-white/5">
-                    <div className="p-8 pb-4 z-10">
+            <aside className={`hidden md:flex flex-col w-72 h-screen sticky top-0 z-40 transition-all duration-500 ${!isSidebarOpen ? '-ml-72 opacity-0' : ''}`}>
+                <div className="h-[96%] m-3 rounded-[2rem] bg-white/70 dark:bg-[#0c1511]/80 backdrop-blur-2xl border border-white/40 dark:border-medical-500/8 shadow-glass flex flex-col relative overflow-hidden ring-1 ring-white/50 dark:ring-medical-500/5">
+                    <div className="p-6 pb-3 z-10">
                         <div className="flex items-center gap-2 mb-4">
                             <img src="/logo.png" alt="Norvexis Core" className="w-7 h-7 object-contain" />
-                            <span className="text-sm font-black text-slate-500 dark:text-slate-400 tracking-tight">Norvexis <span className="text-transparent bg-clip-text bg-gradient-to-r from-medical-500 to-blue-600">Core</span></span>
+                            <span className="text-sm font-black text-slate-500 dark:text-slate-400 tracking-tight">Norvexis <span className="text-medical-500">Core</span></span>
                         </div>
                         <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800">
                             {renderLocationIcon('w-10 h-10', 'rounded-xl')}
@@ -202,20 +295,20 @@ export const Layout: React.FC<LayoutProps> = ({
                             </button>
                         </div>
                     )}
-                    <div className="p-4 z-10">
-                        <div className="p-4 rounded-[1.5rem] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800/50 border border-slate-200 dark:border-slate-700/50 shadow-sm relative overflow-hidden group">
-                            <div className="flex items-center gap-3 mb-3 relative z-10">
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-medical-500 to-teal-400 flex items-center justify-center text-white shadow-lg font-bold text-sm">
+                    <div className="px-4 pb-4 z-10">
+                        <div className="p-3 rounded-2xl bg-slate-50/50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-700/30">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-medical-500 to-medical-400 flex items-center justify-center text-white shadow-md font-bold text-sm flex-shrink-0">
                                     {user.username.charAt(0).toUpperCase()}
                                 </div>
-                                <div className="overflow-hidden">
+                                <div className="overflow-hidden flex-1 min-w-0">
                                     <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{user.username}</p>
-                                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">{user.role}</p>
+                                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">{user.role?.replace('_', ' ')}</p>
                                 </div>
+                                <button onClick={handleSignOut} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all flex-shrink-0" title={t('nav_signout')}>
+                                    <i className="fa-solid fa-right-from-bracket text-xs"></i>
+                                </button>
                             </div>
-                            <button onClick={handleSignOut} className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold text-red-500 hover:text-white hover:bg-red-500 rounded-xl transition-all relative z-10 active:scale-[0.99]">
-                                <i className="fa-solid fa-right-from-bracket"></i> {t('nav_signout')}
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -276,13 +369,6 @@ export const Layout: React.FC<LayoutProps> = ({
                             </div>
                         )}
 
-                        <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md rounded-full border border-white/40 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow cursor-default">
-                            <span className="relative flex h-2.5 w-2.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                            </span>
-                            <span className="text-xs font-bold text-slate-600 dark:text-slate-300 tracking-wide uppercase">{t('system_online')}</span>
-                        </div>
 
                         <button onClick={toggleTheme} className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 bg-white/40 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-700 backdrop-blur-md transition-all border border-white/40 dark:border-slate-700 shadow-sm hover:shadow-lg active:scale-90">
                             <i className={`fa-solid ${isDarkMode ? 'fa-sun text-amber-400' : 'fa-moon'} text-lg`}></i>
