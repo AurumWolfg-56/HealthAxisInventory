@@ -108,7 +108,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
             <div className="flex justify-end">
                 <button
                     onClick={generatePDF}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-medical-600 to-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:scale-105 transition-all"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-medical-600 to-medical-500 text-white rounded-xl font-semibold text-sm shadow-lg shadow-medical-500/30 hover:shadow-xl hover:scale-105 transition-all"
                 >
                     <i className="fa-solid fa-file-pdf"></i>
                     Export Professional Report
@@ -116,7 +116,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
             </div>
 
             {/* Main Interactive Dashboard (Screen Only) */}
-            <div id="analytics-dashboard" className="space-y-8 bg-slate-50 dark:bg-[#0a0f18] p-4 md:p-8 rounded-[2.5rem]">
+            <div id="analytics-dashboard" className="space-y-8 bg-slate-50 dark:bg-[#0c1511] p-4 md:p-8 rounded-2xl">
 
                 {/* Metrics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -128,7 +128,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                             </div>
                             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total Spend</h3>
                         </div>
-                        <div className="text-3xl font-black text-slate-900 dark:text-white">
+                        <div className="text-3xl font-bold tabular-nums text-slate-900 dark:text-white">
                             ${metrics.totalSpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                     </div>
@@ -141,7 +141,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                             </div>
                             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total Orders</h3>
                         </div>
-                        <div className="text-3xl font-black text-slate-900 dark:text-white">
+                        <div className="text-3xl font-bold tabular-nums text-slate-900 dark:text-white">
                             {metrics.totalOrders}
                         </div>
                     </div>
@@ -154,7 +154,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                             </div>
                             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Avg. Order Value</h3>
                         </div>
-                        <div className="text-3xl font-black text-slate-900 dark:text-white">
+                        <div className="text-3xl font-bold tabular-nums text-slate-900 dark:text-white">
                             ${metrics.averageOrderValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                     </div>
@@ -167,7 +167,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                             </div>
                             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Items Received</h3>
                         </div>
-                        <div className="text-3xl font-black text-slate-900 dark:text-white">
+                        <div className="text-3xl font-bold tabular-nums text-slate-900 dark:text-white">
                             {metrics.totalItemsOrdered}
                         </div>
                     </div>
@@ -176,8 +176,8 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                 {/* Charts Row 1 */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Vendor Spend Chart */}
-                    <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800">
-                        <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6">Spend by Vendor</h3>
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Spend by Vendor</h3>
                         <div className="h-[300px] w-full">
                             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={300}>
                                 <BarChart data={metrics.vendorData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -199,8 +199,8 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                     </div>
 
                     {/* Monthly Trend Chart (Moved Up) */}
-                    <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800">
-                        <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6">Spending Trend (Monthly)</h3>
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Spending Trend (Monthly)</h3>
                         <div className="h-[300px] w-full">
                             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={300}>
                                 <AreaChart data={metrics.trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>

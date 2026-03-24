@@ -97,29 +97,29 @@ const OrderDetailsModal: React.FC<{
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 animate-fade-in">
-            <div className="w-full max-w-3xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-slate-800 overflow-hidden flex flex-col">
+            <div className="w-full max-w-3xl max-h-[90vh] bg-white dark:bg-[#0c1511] rounded-2xl shadow-2xl border border-white/20 dark:border-slate-800 overflow-hidden flex flex-col">
 
                 {/* Header with Vendor Logo */}
                 <div className={`p-6 ${vendorInfo?.bgColor || 'bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900'}`}>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             {vendorInfo?.logo ? (
-                                <div className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-800 border border-white/50 dark:border-slate-700 p-2 shadow-xl flex items-center justify-center overflow-hidden">
+                                <div className="w-14 h-14 rounded-xl bg-white dark:bg-slate-800 border border-white/50 dark:border-slate-700 p-2 shadow-lg flex items-center justify-center overflow-hidden">
                                     <img src={vendorInfo.logo} alt={order.vendor} className="w-full h-full object-contain" />
                                 </div>
                             ) : (
-                                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${vendorInfo?.color || 'from-slate-400 to-slate-600'} flex items-center justify-center text-white text-2xl font-black shadow-xl border border-white/20`}>
+                                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${vendorInfo?.color || 'from-slate-400 to-slate-600'} flex items-center justify-center text-white text-xl font-bold shadow-xl border border-white/20`}>
                                     {vendorInfo?.initials || order.vendor.charAt(0).toUpperCase()}
                                 </div>
                             )}
                             <div>
-                                <h2 className="text-2xl font-black text-slate-900 dark:text-white">{order.vendor}</h2>
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white">{order.vendor}</h2>
                                 <div className="flex items-center gap-3 mt-1">
                                     <span className="text-sm font-mono text-slate-500 dark:text-slate-400">{order.poNumber}</span>
                                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${order.status === 'RECEIVED' ? 'bg-emerald-100 text-emerald-600' :
                                         order.status === 'PENDING' ? 'bg-orange-100 text-orange-600' :
                                             order.status === 'CANCELLED' ? 'bg-red-100 text-red-600' :
-                                                'bg-gray-100 text-gray-600'
+                                                'bg-slate-100 text-slate-600'
                                         }`}>
                                         {order.status}
                                     </span>
@@ -128,9 +128,9 @@ const OrderDetailsModal: React.FC<{
                         </div>
                         <button
                             onClick={onClose}
-                            className="w-12 h-12 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-lg flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all"
+                            className="w-10 h-10 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-md flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all"
                         >
-                            <i className="fa-solid fa-xmark text-xl"></i>
+                            <i className="fa-solid fa-xmark text-base"></i>
                         </button>
                     </div>
                 </div>
@@ -138,22 +138,22 @@ const OrderDetailsModal: React.FC<{
                 {/* Order Info Bar */}
                 <div className="grid grid-cols-3 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                     <div className="text-center">
-                        <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Order Date</div>
-                        <div className="text-lg font-extrabold text-slate-900 dark:text-white">{order.orderDate}</div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Order Date</div>
+                        <div className="text-base font-bold text-slate-900 dark:text-white">{order.orderDate}</div>
                     </div>
                     <div className="text-center">
-                        <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Expected</div>
-                        <div className="text-lg font-extrabold text-slate-900 dark:text-white">{order.expectedDate || '—'}</div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expected</div>
+                        <div className="text-base font-bold text-slate-900 dark:text-white">{order.expectedDate || '—'}</div>
                     </div>
                     <div className="text-center">
-                        <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Items</div>
-                        <div className="text-lg font-extrabold text-slate-900 dark:text-white">{order.items.length}</div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Items</div>
+                        <div className="text-base font-bold text-slate-900 dark:text-white">{order.items.length}</div>
                     </div>
                 </div>
 
                 {/* Items List */}
                 <div className="flex-1 overflow-y-auto p-6 scroll-smooth custom-scrollbar">
-                    <h3 className="text-sm font-extrabold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                         <i className="fa-solid fa-list text-medical-500"></i>
                         Line Items
                     </h3>
@@ -165,14 +165,14 @@ const OrderDetailsModal: React.FC<{
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-3">
-                                                <span className="w-7 h-7 rounded-lg bg-medical-50 dark:bg-medical-900/30 flex items-center justify-center text-xs font-extrabold text-medical-600">
+                                                <span className="w-7 h-7 rounded-lg bg-medical-50 dark:bg-medical-900/30 flex items-center justify-center text-xs font-bold text-medical-600">
                                                     {idx + 1}
                                                 </span>
-                                                <h4 className="font-extrabold text-slate-900 dark:text-white text-lg tracking-tight">{item.name}</h4>
+                                                <h4 className="font-bold text-slate-900 dark:text-white text-base tracking-tight">{item.name}</h4>
                                             </div>
                                             <div className="flex flex-wrap items-center gap-2 mt-2 ml-10">
                                                 {linkedItem && (
-                                                    <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 text-[10px] font-extrabold uppercase tracking-widest flex items-center gap-1.5 border border-emerald-100 dark:border-emerald-800/50">
+                                                    <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 border border-emerald-100 dark:border-emerald-800/50">
                                                         <i className="fa-solid fa-link"></i>
                                                         Linked
                                                     </span>
@@ -188,7 +188,7 @@ const OrderDetailsModal: React.FC<{
                                                 <span className="opacity-50">×</span>
                                                 <span className="text-slate-900 dark:text-slate-200">${item.unitCost.toFixed(2)}</span>
                                             </div>
-                                            <div className="text-xl font-extrabold text-medical-600 dark:text-medical-400 mt-1">
+                                            <div className="text-lg font-bold text-medical-600 dark:text-medical-400 mt-1 tabular-nums">
                                                 ${item.total.toFixed(2)}
                                             </div>
                                         </div>
@@ -203,26 +203,26 @@ const OrderDetailsModal: React.FC<{
                 <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 backdrop-blur-md">
                     <div className="grid grid-cols-4 gap-4">
                         <div className="text-center">
-                            <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Subtotal</div>
-                            <div className="text-lg font-bold text-slate-700 dark:text-slate-300">${order.subtotal.toFixed(2)}</div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Subtotal</div>
+                            <div className="text-base font-bold text-slate-700 dark:text-slate-300 tabular-nums">${order.subtotal.toFixed(2)}</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Tax</div>
-                            <div className="text-lg font-bold text-slate-700 dark:text-slate-300">${order.totalTax.toFixed(2)}</div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tax</div>
+                            <div className="text-base font-bold text-slate-700 dark:text-slate-300 tabular-nums">${order.totalTax.toFixed(2)}</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Shipping</div>
-                            <div className="text-lg font-bold text-slate-700 dark:text-slate-300">${order.shippingCost.toFixed(2)}</div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Shipping</div>
+                            <div className="text-base font-bold text-slate-700 dark:text-slate-300 tabular-nums">${order.shippingCost.toFixed(2)}</div>
                         </div>
-                        <div className="text-center p-3 rounded-2xl bg-gradient-to-br from-medical-600 to-teal-600 text-white shadow-xl shadow-medical-500/30">
-                            <div className="text-[10px] font-extrabold uppercase tracking-widest opacity-80">Total</div>
-                            <div className="text-2xl font-black">${order.grandTotal.toFixed(2)}</div>
+                        <div className="text-center p-3 rounded-xl bg-gradient-to-br from-medical-600 to-medical-500 text-white shadow-xl shadow-medical-500/30">
+                            <div className="text-[10px] font-bold uppercase tracking-widest opacity-80">Total</div>
+                            <div className="text-xl font-bold tabular-nums">${order.grandTotal.toFixed(2)}</div>
                         </div>
                     </div>
 
                     {order.notes && (
                         <div className="mt-4 p-4 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-800/50">
-                            <div className="text-[10px] font-extrabold text-amber-600 uppercase tracking-widest mb-1">Notes</div>
+                            <div className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">Notes</div>
                             <p className="text-sm font-medium text-amber-800 dark:text-amber-200 leading-relaxed">{order.notes}</p>
                         </div>
                     )}
@@ -297,11 +297,11 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case 'DRAFT': return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
+            case 'DRAFT': return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400';
             case 'PENDING': return 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400';
             case 'RECEIVED': return 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400';
             case 'CANCELLED': return 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400';
-            default: return 'bg-gray-100 text-gray-600';
+            default: return 'bg-slate-100 text-slate-600';
         }
     };
 
@@ -339,27 +339,27 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                     <div className="flex flex-wrap gap-3">
                         <button
                             onClick={() => setViewMode(viewMode === 'list' ? 'analytics' : 'list')}
-                            className={`h-14 px-6 rounded-2xl font-extrabold shadow-xl flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95 ${viewMode === 'analytics'
+                            className={`h-11 px-5 rounded-xl font-semibold text-sm shadow-lg flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95 ${viewMode === 'analytics'
                                 ? 'bg-white text-medical-600 shadow-medical-500/10 ring-2 ring-medical-500/30'
-                                : 'bg-gradient-to-r from-medical-600 to-teal-600 text-white shadow-medical-500/30'
+                                : 'bg-gradient-to-r from-medical-600 to-medical-500 text-white shadow-medical-500/30'
                                 }`}
                         >
-                            <i className={`fa-solid ${viewMode === 'list' ? 'fa-chart-pie' : 'fa-list'} text-lg`}></i>
+                            <i className={`fa-solid ${viewMode === 'list' ? 'fa-chart-pie' : 'fa-list'} text-base`}></i>
                             <span className="tracking-tight">{viewMode === 'list' ? 'Analytics' : 'Orders List'}</span>
                         </button>
                         <button
                             onClick={() => setShowScanner(true)}
-                            className="h-14 px-6 bg-gradient-to-r from-medical-50 to-teal-50 dark:from-medical-900/10 dark:to-teal-900/10 border-medical-200/40 dark:border-medical-800/40 text-medical-700 dark:text-medical-300 rounded-2xl font-extrabold shadow-xl flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95 group"
+                            className="h-11 px-5 bg-gradient-to-r from-medical-50 to-emerald-50 dark:from-medical-900/10 dark:to-emerald-900/10 border-medical-200/40 dark:border-medical-800/40 text-medical-700 dark:text-medical-300 rounded-xl font-semibold text-sm shadow-md flex items-center gap-2 transition-all transform hover:scale-105 hover:shadow-lg active:scale-95 group"
                             title="Scan Order"
                         >
-                            <i className="fa-solid fa-wand-magic-sparkles text-lg group-hover:rotate-12 transition-transform"></i>
+                            <i className="fa-solid fa-wand-magic-sparkles text-base group-hover:rotate-12 transition-transform"></i>
                             <span className="tracking-tight hidden sm:inline">Scan</span>
                         </button>
                         <button
                             onClick={handleCreate}
-                            className="h-14 px-8 bg-medical-600 text-white rounded-2xl font-extrabold shadow-2xl shadow-medical-500/40 flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95 group"
+                            className="h-11 px-6 bg-medical-600 text-white rounded-xl font-semibold text-sm shadow-xl shadow-medical-500/30 flex items-center gap-2 transition-all transform hover:scale-105 hover:shadow-2xl active:scale-95 group"
                         >
-                            <i className="fa-solid fa-plus text-lg group-hover:rotate-90 transition-transform"></i>
+                            <i className="fa-solid fa-plus text-base group-hover:rotate-90 transition-transform"></i>
                             <span className="tracking-tight">{t('btn_new_order')}</span>
                         </button>
                     </div>
@@ -373,16 +373,16 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                         {/* All Vendors Button */}
                         <button
                             onClick={() => setVendorFilter('All')}
-                            className={`group relative h-16 px-6 rounded-2xl font-extrabold text-sm transition-all duration-300 overflow-hidden ${vendorFilter === 'All'
-                                ? 'bg-gradient-to-r from-medical-600 to-teal-600 text-white shadow-2xl shadow-medical-500/50 scale-105 ring-2 ring-white/30'
-                                : 'glass-panel text-slate-700 dark:text-white hover:shadow-xl hover:scale-[1.02] border-slate-200 dark:border-slate-800'
+                            className={`group relative h-12 px-5 rounded-xl font-bold text-sm transition-all duration-300 overflow-hidden ${vendorFilter === 'All'
+                                ? 'bg-gradient-to-r from-medical-600 to-medical-500 text-white shadow-xl shadow-medical-500/40 scale-105 ring-2 ring-white/30'
+                                : 'glass-panel text-slate-700 dark:text-white hover:shadow-lg hover:scale-[1.02] border-slate-200 dark:border-slate-800'
                                 }`}
                         >
-                            <div className="flex items-center gap-3 relative z-10">
-                                <div className={`w-10 h-10 rounded-xl ${vendorFilter === 'All' ? 'bg-white/20' : 'bg-medical-500/10'} flex items-center justify-center transition-all`}>
-                                    <i className="fa-solid fa-boxes-stacked text-lg"></i>
+                            <div className="flex items-center gap-2.5 relative z-10">
+                                <div className={`w-8 h-8 rounded-lg ${vendorFilter === 'All' ? 'bg-white/20' : 'bg-medical-500/10'} flex items-center justify-center transition-all`}>
+                                    <i className="fa-solid fa-boxes-stacked text-base"></i>
                                 </div>
-                                <span className="font-extrabold">All Vendors</span>
+                                <span className="font-bold">All Vendors</span>
                             </div>
                             {vendorFilter === 'All' && (
                                 <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent animate-pulse"></div>
@@ -394,9 +394,9 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                             <button
                                 key={vendor.name}
                                 onClick={() => setVendorFilter(vendor.name)}
-                                className={`group relative h-16 px-5 rounded-2xl font-extrabold text-sm transition-all duration-300 flex items-center gap-3 overflow-hidden ${vendorFilter === vendor.name
-                                    ? `bg-gradient-to-r ${vendor.color} text-white shadow-2xl ${vendor.glowColor} scale-105 ring-2 ring-white/30`
-                                    : `${vendor.bgColor} ${vendor.textColor} hover:shadow-xl hover:scale-[1.02] border-2 ${vendor.borderActive} border-opacity-30 hover:border-opacity-100`
+                                className={`group relative h-12 px-4 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2.5 overflow-hidden ${vendorFilter === vendor.name
+                                    ? `bg-gradient-to-r ${vendor.color} text-white shadow-xl ${vendor.glowColor} scale-105 ring-2 ring-white/30`
+                                    : `${vendor.bgColor} ${vendor.textColor} hover:shadow-lg hover:scale-[1.02] border-2 ${vendor.borderActive} border-opacity-30 hover:border-opacity-100`
                                     }`}
                             >
                                 {vendor.logo ? (
@@ -411,13 +411,13 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                                         />
                                     </div>
                                 ) : (
-                                    <div className={`relative w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${vendor.color} text-white font-extrabold text-lg transition-all shadow-md group-hover:shadow-lg border border-white/10 ${vendorFilter === vendor.name ? 'ring-2 ring-white/50' : ''}`}>
+                                    <div className={`relative w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br ${vendor.color} text-white font-bold text-base transition-all shadow-md group-hover:shadow-lg border border-white/10 ${vendorFilter === vendor.name ? 'ring-2 ring-white/50' : ''}`}>
                                         {(vendor as any).initials || vendor.name.charAt(0).toUpperCase()}
                                     </div>
                                 )}
 
                                 {/* Vendor Name */}
-                                <span className="hidden sm:inline font-extrabold">{vendor.name}</span>
+                                <span className="hidden sm:inline font-bold">{vendor.name}</span>
 
                                 {/* Active Glow Effect */}
                                 {vendorFilter === vendor.name && (
@@ -428,9 +428,9 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                     </div>
 
                     {/* Date Filters - Glass Toolbar */}
-                    <div className="glass-panel p-4 rounded-[2.5rem] luxury-shadow flex flex-col md:flex-row gap-4 items-center sticky top-24 z-20 border-white/50 dark:border-slate-800/80">
+                    <div className="glass-panel p-2.5 rounded-2xl flex flex-col md:flex-row gap-2.5 items-center sticky top-24 z-20 border-white/50 dark:border-slate-800/80">
                         <div className="flex-1 relative group">
-                            <i className="fa-solid fa-calendar-day absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-medical-500 transition-colors z-10 pointer-events-none"></i>
+                            <i className="fa-solid fa-calendar-day absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm group-focus-within:text-medical-500 transition-colors z-10 pointer-events-none"></i>
                             <input
                                 type={startDate ? 'date' : 'text'}
                                 value={startDate}
@@ -440,11 +440,11 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                                     if (!e.target.value) e.target.type = 'text';
                                 }}
                                 onChange={(e) => setStartDate(e.target.value)}
-                                className="w-full h-14 pl-12 pr-6 bg-slate-50/50 dark:bg-slate-900/50 border-none rounded-2xl font-bold text-sm text-slate-700 dark:text-slate-200 focus:ring-4 ring-medical-500/10 transition-all outline-none placeholder:text-slate-400"
+                                className="w-full h-11 pl-10 pr-4 bg-slate-50/50 dark:bg-slate-900/50 border-none rounded-xl font-medium text-sm text-slate-700 dark:text-slate-200 focus:ring-4 ring-medical-500/10 transition-all outline-none placeholder:text-slate-400"
                             />
                         </div>
                         <div className="flex-1 relative group">
-                            <i className="fa-solid fa-calendar-check absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-medical-500 transition-colors z-10 pointer-events-none"></i>
+                            <i className="fa-solid fa-calendar-check absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm group-focus-within:text-medical-500 transition-colors z-10 pointer-events-none"></i>
                             <input
                                 type={endDate ? 'date' : 'text'}
                                 value={endDate}
@@ -454,15 +454,15 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                                     if (!e.target.value) e.target.type = 'text';
                                 }}
                                 onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full h-14 pl-12 pr-6 bg-slate-50/50 dark:bg-slate-900/50 border-none rounded-2xl font-bold text-sm text-slate-700 dark:text-slate-200 focus:ring-4 ring-medical-500/10 transition-all outline-none placeholder:text-slate-400"
+                                className="w-full h-11 pl-10 pr-4 bg-slate-50/50 dark:bg-slate-900/50 border-none rounded-xl font-medium text-sm text-slate-700 dark:text-slate-200 focus:ring-4 ring-medical-500/10 transition-all outline-none placeholder:text-slate-400"
                             />
                         </div>
                         {(vendorFilter !== 'All' || startDate || endDate) && (
                             <button
                                 onClick={clearFilters}
-                                className="h-14 px-8 rounded-2xl bg-red-50 dark:bg-red-900/20 text-red-500 font-extrabold text-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition-all flex items-center gap-2 shadow-sm hover:shadow-red-500/20"
+                                className="h-11 px-5 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-500 font-bold text-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition-all flex items-center gap-2 shadow-sm hover:shadow-red-500/20"
                             >
-                                <i className="fa-solid fa-xmark text-lg"></i>
+                                <i className="fa-solid fa-xmark text-base"></i>
                                 {t('btn_clear_filters')}
                             </button>
                         )}
@@ -471,21 +471,21 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                     {/* Orders List - Floating Cards Layout */}
                     <div className="mt-8 overflow-visible">
                         <div className="p-4 flex items-center justify-between">
-                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                                 {t('lbl_filtered_results')} • {filteredOrders.length}
                             </span>
                         </div>
                         <div className="overflow-visible">
                             <table className="w-full text-left border-separate border-spacing-y-4">
-                                <thead className="hidden md:table-header-group bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                                <thead className="hidden md:table-header-group bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                                     <tr>
-                                        <th className="p-6 text-xs font-extrabold text-gray-400 uppercase tracking-wider">{t('lbl_vendor')}</th>
-                                        <th className="p-6 text-xs font-extrabold text-gray-400 uppercase tracking-wider">{t('lbl_po')}</th>
-                                        <th className="p-6 text-xs font-extrabold text-gray-400 uppercase tracking-wider">{t('lbl_date')}</th>
-                                        <th className="p-6 text-xs font-extrabold text-gray-400 uppercase tracking-wider">Items</th>
-                                        <th className="p-6 text-xs font-extrabold text-gray-400 uppercase tracking-wider">{t('lbl_total')}</th>
-                                        <th className="p-6 text-xs font-extrabold text-gray-400 uppercase tracking-wider">{t('lbl_status')}</th>
-                                        <th className="p-6 text-xs font-extrabold text-gray-400 uppercase tracking-wider text-right">{t('th_controls')}</th>
+                                        <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('lbl_vendor')}</th>
+                                        <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('lbl_po')}</th>
+                                        <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('lbl_date')}</th>
+                                        <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Items</th>
+                                        <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('lbl_total')}</th>
+                                        <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('lbl_status')}</th>
+                                        <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">{t('th_controls')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="space-y-4 md:space-y-0 text-sm md:text-base">
@@ -506,42 +506,42 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                                                 onClick={() => setViewingOrder(order)}
                                             >
                                                 {/* Vendor */}
-                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y md:border-l border-white dark:border-slate-800 md:rounded-l-[1.5rem] md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-gray-50 dark:border-slate-800/50 md:border-b-0">
-                                                    <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">{t('lbl_vendor')}</div>
+                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y md:border-l border-white dark:border-slate-800 md:rounded-l-[1.5rem] md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-slate-50 dark:border-slate-800/50 md:border-b-0">
+                                                    <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('lbl_vendor')}</div>
                                                     <div className="flex items-center gap-4">
                                                         {vendorInfo?.logo ? (
-                                                            <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl ${(vendorInfo as any).logoBg || 'bg-white'} p-2 shadow-md flex items-center justify-center md:group-hover:scale-110 transition-transform`}>
+                                                            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl ${(vendorInfo as any).logoBg || 'bg-white'} p-2 shadow-md flex items-center justify-center md:group-hover:scale-105 transition-transform`}>
                                                                 <img src={vendorInfo.logo} alt={order.vendor} className="w-full h-full object-contain" />
                                                             </div>
                                                         ) : (
-                                                            <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br ${vendorInfo?.color || 'from-slate-400 to-slate-600'} flex items-center justify-center text-white font-extrabold text-xl shadow-md md:group-hover:scale-110 transition-transform border border-white/10`}>
+                                                            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br ${vendorInfo?.color || 'from-slate-400 to-slate-600'} flex items-center justify-center text-white font-bold text-lg shadow-md md:group-hover:scale-105 transition-transform border border-white/10`}>
                                                                 {(vendorInfo as any)?.initials || order.vendor.charAt(0).toUpperCase()}
                                                             </div>
                                                         )}
                                                         <div className="text-right md:text-left">
-                                                            <div className="font-extrabold text-slate-900 dark:text-slate-100 text-base md:text-lg group-hover:text-medical-600 transition-colors uppercase tracking-tight">{order.vendor}</div>
-                                                            <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-0.5">{order.items.length} items</div>
+                                                            <div className="font-bold text-slate-900 dark:text-slate-100 text-sm md:text-base group-hover:text-medical-600 transition-colors uppercase tracking-tight">{order.vendor}</div>
+                                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{order.items.length} items</div>
                                                         </div>
                                                     </div>
                                                 </td>
 
                                                 {/* PO Number */}
-                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-gray-50 dark:border-slate-800/50 md:border-b-0">
-                                                    <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">{t('lbl_po')}</div>
+                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-slate-50 dark:border-slate-800/50 md:border-b-0">
+                                                    <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('lbl_po')}</div>
                                                     <div className="font-mono font-extrabold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 px-3 py-1 rounded-lg inline-block text-[11px] md:text-xs border border-slate-100 dark:border-slate-700/50">
                                                         #{order.poNumber}
                                                     </div>
                                                 </td>
 
                                                 {/* Date */}
-                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-gray-50 dark:border-slate-800/50 md:border-b-0">
-                                                    <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">{t('lbl_date')}</div>
+                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-slate-50 dark:border-slate-800/50 md:border-b-0">
+                                                    <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('lbl_date')}</div>
                                                     <div className="text-right md:text-left">
-                                                        <div className="font-extrabold text-slate-700 dark:text-slate-300 text-sm">
+                                                        <div className="font-bold text-slate-700 dark:text-slate-300 text-sm">
                                                             {new Date(order.orderDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                                         </div>
                                                         {order.expectedDate && (
-                                                            <div className="text-[10px] font-extrabold text-medical-500 mt-1 uppercase tracking-widest">
+                                                            <div className="text-[10px] font-bold text-medical-500 mt-1 uppercase tracking-widest">
                                                                 ETA: {new Date(order.expectedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                                             </div>
                                                         )}
@@ -549,16 +549,16 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                                                 </td>
 
                                                 {/* Items */}
-                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-gray-50 dark:border-slate-800/50 md:border-b-0">
-                                                    <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Items Detail</div>
+                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-slate-50 dark:border-slate-800/50 md:border-b-0">
+                                                    <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">Items Detail</div>
                                                     <div className="flex -space-x-2.5 overflow-hidden py-1">
                                                         {order.items.slice(0, 3).map((item, i) => (
-                                                            <div key={i} className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-slate-50 dark:bg-slate-800 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-extrabold text-slate-600 shadow-sm z-10 hover:z-20 transform hover:scale-110 transition-transform" title={item.name}>
+                                                            <div key={i} className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-slate-50 dark:bg-slate-800 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-bold text-slate-600 shadow-sm z-10 hover:z-20 transform hover:scale-105 transition-transform" title={item.name}>
                                                                 {item.name.charAt(0)}
                                                             </div>
                                                         ))}
                                                         {order.items.length > 3 && (
-                                                            <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-medical-50 dark:bg-medical-900/30 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-extrabold text-medical-600 shadow-sm z-10">
+                                                            <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-medical-50 dark:bg-medical-900/30 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-bold text-medical-600 shadow-sm z-10">
                                                                 +{order.items.length - 3}
                                                             </div>
                                                         )}
@@ -566,27 +566,27 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                                                 </td>
 
                                                 {/* Total */}
-                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-gray-50 dark:border-slate-800/50 md:border-b-0">
-                                                    <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">{t('lbl_total')}</div>
-                                                    <div className="font-black text-slate-900 dark:text-slate-200 text-lg md:text-xl tracking-tight">
+                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-slate-50 dark:border-slate-800/50 md:border-b-0">
+                                                    <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('lbl_total')}</div>
+                                                    <div className="font-bold text-slate-900 dark:text-slate-200 text-lg tabular-nums tracking-tight">
                                                         ${order.grandTotal.toFixed(2)}
                                                     </div>
                                                 </td>
 
                                                 {/* Status */}
-                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-gray-50 dark:border-slate-800/50 md:border-b-0">
-                                                    <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">{t('lbl_status')}</div>
-                                                    <span className={`px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[10px] font-extrabold uppercase tracking-widest ${getStatusBadge(order.status)} transform md:group-hover:scale-110 transition-transform inline-block border border-white/20 shadow-sm`}>
+                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-slate-50 dark:border-slate-800/50 md:border-b-0">
+                                                    <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('lbl_status')}</div>
+                                                    <span className={`px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest ${getStatusBadge(order.status)} transform md:group-hover:scale-105 transition-transform inline-block border border-white/20 shadow-sm`}>
                                                         {order.status}
                                                     </span>
                                                 </td>
 
                                                 {/* Controls */}
-                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y md:border-r border-white dark:border-slate-800 md:rounded-r-[1.5rem] md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-blue-500/10 md:group-hover:border-blue-500/20 transition-all cursor-pointer text-right align-middle flex justify-center items-center md:table-cell bg-slate-50/50 dark:bg-slate-900/50 md:bg-transparent" onClick={(e) => e.stopPropagation()}>
+                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y md:border-r border-white dark:border-slate-800 md:rounded-r-[1.5rem] md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer text-right align-middle flex justify-center items-center md:table-cell bg-slate-50/50 dark:bg-slate-900/50 md:bg-transparent" onClick={(e) => e.stopPropagation()}>
                                                     <div className="flex justify-center md:justify-end gap-3 md:gap-2 w-full md:w-auto md:opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); setViewingOrder(order); }}
-                                                            className="flex-1 md:flex-none h-12 md:w-10 md:h-10 rounded-xl bg-white md:bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 md:border-transparent text-slate-600 hover:bg-blue-500 hover:text-white flex items-center justify-center transition-all shadow-sm hover:shadow-blue-500/30"
+                                                            className="flex-1 md:flex-none h-12 md:w-10 md:h-10 rounded-xl bg-white md:bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 md:border-transparent text-slate-600 hover:bg-medical-500 hover:text-white flex items-center justify-center transition-all shadow-sm hover:shadow-medical-500/30"
                                                             title="View Details"
                                                         >
                                                             <i className="fa-solid fa-eye"></i>
