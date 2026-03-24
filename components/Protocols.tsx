@@ -344,7 +344,7 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
                             <div className="text-xs font-medium text-slate-500 flex items-center gap-3">
                                 <span>Updated: {safeDate}</span>
                                 {protocol.targetRole && protocol.targetRole !== 'ALL_STAFF' && (
-                                    <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400">
+                                    <span className="px-2 py-0.5 rounded bg-medical-100 text-medical-700 dark:bg-medical-500/20 dark:text-medical-400">
                                         Target: {protocol.targetRole.replace('_', ' ')}
                                     </span>
                                 )}
@@ -353,7 +353,7 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
                             <div className="flex flex-wrap items-center gap-2">
                                 <button
                                     onClick={(e) => handlePrint(protocol, e)}
-                                    className="px-3 py-2 rounded-xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-indigo-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 transition-colors shadow-sm"
+                                    className="px-3 py-2 rounded-xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-medical-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 transition-colors shadow-sm"
                                     title="Export to PDF / Print"
                                 >
                                     <i className="fa-solid fa-print"></i>
@@ -362,7 +362,7 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
                                 {isManager && (
                                     <>
                                         {protocol.requiresAcknowledgment && (
-                                            <button onClick={(e) => { e.stopPropagation(); setViewingSignaturesFor(protocol); }} className="px-3 py-2 rounded-xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-indigo-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 transition-colors shadow-sm">
+                                            <button onClick={(e) => { e.stopPropagation(); setViewingSignaturesFor(protocol); }} className="px-3 py-2 rounded-xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-medical-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 transition-colors shadow-sm">
                                                 <i className="fa-solid fa-list-check"></i> Signatures
                                             </button>
                                         )}
@@ -412,7 +412,7 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
                             <i className={`fa-solid ${icon}`}></i>
                         </div>
                         <div className="text-left">
-                            <h2 className="text-xl font-black tracking-tight">{title}</h2>
+                            <h2 className="text-xl font-bold tracking-tight">{title}</h2>
                             <p className="text-sm font-semibold opacity-80">{protocols.length} Items</p>
                         </div>
                     </div>
@@ -435,7 +435,7 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
             {/* Header section */}
             <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">Clinic Protocols</h1>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Clinic Protocols</h1>
                     <p className="text-slate-500 dark:text-slate-400 max-w-2xl text-lg relative z-10 leading-relaxed font-medium">
                         Staff Hub for clinical rules, standards, and procedures.
                     </p>
@@ -453,13 +453,13 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
 
             {/* Critical Unread Banner */}
             {unreadCriticals.length > 0 && (
-                <div className="mb-8 p-5 sm:p-6 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-3xl shadow-xl shadow-red-500/20 flex flex-col sm:flex-row items-center justify-between gap-4 animate-scale-in border border-red-400/50">
+                <div className="mb-8 p-5 sm:p-6 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-2xl shadow-xl shadow-red-500/20 flex flex-col sm:flex-row items-center justify-between gap-4 animate-scale-in border border-red-400/50">
                     <div className="flex items-center gap-4">
                         <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 shadow-inner">
                             <i className="fa-solid fa-file-signature animate-wiggle"></i>
                         </div>
                         <div>
-                            <h3 className="text-xl font-black tracking-tight">Signatures Required</h3>
+                            <h3 className="text-xl font-bold tracking-tight">Signatures Required</h3>
                             <p className="font-medium text-white/90 text-sm mt-0.5">
                                 You have {unreadCriticals.length} mandatory protocol(s) that require your digital acknowledgment.
                             </p>
@@ -470,7 +470,7 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
             )}
 
             {/* Smart Search & Filters */}
-            <div className="bg-white dark:bg-[#1a2235] border border-slate-100 dark:border-slate-800 rounded-3xl p-4 sm:p-5 mb-8 shadow-sm">
+            <div className="bg-white dark:bg-[#1a2235] border border-slate-100 dark:border-slate-800 rounded-2xl p-4 sm:p-5 mb-8 shadow-sm">
                 <div className="flex flex-col lg:flex-row gap-3">
                     {/* Deep Text Search */}
                     <div className="flex-1 relative">
@@ -536,8 +536,8 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
 
                 <ProtocolFolder
                     title="HIPAA Privacy Rules"
-                    icon="fa-shield-halved text-indigo-600 dark:text-indigo-400"
-                    color="bg-indigo-100 text-indigo-900 border-indigo-300 dark:bg-indigo-900/50 dark:text-indigo-100 dark:border-indigo-500/50"
+                    icon="fa-shield-halved text-medical-600 dark:text-medical-400"
+                    color="bg-medical-100 text-medical-900 border-medical-300 dark:bg-medical-900/50 dark:text-medical-100 dark:border-medical-500/50"
                     protocols={groupedProtocols.HIPAA}
                     typeKey="HIPAA"
                 />
@@ -559,11 +559,11 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
                 />
 
                 {filteredProtocols.length === 0 && (
-                    <div className="py-16 flex flex-col items-center justify-center text-center bg-slate-50 dark:bg-[#1a2235] rounded-3xl border border-slate-200 dark:border-slate-800">
+                    <div className="py-16 flex flex-col items-center justify-center text-center bg-slate-50 dark:bg-[#1a2235] rounded-2xl border border-slate-200 dark:border-slate-800">
                         <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center mb-6">
                             <i className="fa-solid fa-folder-open text-3xl text-slate-300 dark:text-slate-600"></i>
                         </div>
-                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Folder is Empty</h3>
+                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Folder is Empty</h3>
                         <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto font-medium">
                             Adjust your smart search or filters to locate the correct protocol.
                         </p>

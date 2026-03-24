@@ -76,12 +76,12 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
     // --- RENDER HELPERS ---
 
     const SectionHeader = ({ title, icon, isValid }: { title: string, icon: string, isValid?: boolean }) => (
-        <div className="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
+        <div className="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-700 pb-4">
             <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg ${isValid === undefined ? 'bg-gray-500' : isValid ? 'bg-emerald-500' : 'bg-red-500'}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg ${isValid === undefined ? 'bg-slate-500' : isValid ? 'bg-emerald-500' : 'bg-red-500'}`}>
                     <i className={`fa-solid ${icon}`}></i>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h2>
             </div>
             {isValid !== undefined && (
                 <div className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${isValid ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
@@ -105,34 +105,34 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
                     </div>
                 </div>
                 <div className="text-right hidden md:block">
-                    <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Date</div>
-                    <div className="text-2xl font-mono font-bold text-gray-900 dark:text-white">{new Date().toLocaleDateString()}</div>
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Date</div>
+                    <div className="text-2xl font-mono font-bold text-slate-900 dark:text-white">{new Date().toLocaleDateString()}</div>
                 </div>
             </header>
 
             {/* --- PANEL A: FINANCIALS --- */}
-            <div className={`glass-panel p-8 rounded-[2rem] shadow-glass transition-all duration-300 border-l-8 ${isFinBalanced ? 'border-l-emerald-500' : 'border-l-red-500'}`}>
+            <div className={`glass-panel p-8 rounded-2xl shadow-glass transition-all duration-300 border-l-8 ${isFinBalanced ? 'border-l-emerald-500' : 'border-l-red-500'}`}>
                 <SectionHeader title="1. Financial Reconciliation" icon="fa-sack-dollar" isValid={isFinBalanced} />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                     {/* Drawer Inputs */}
                     <div className="space-y-4">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Collection Methods (Drawer)</h3>
+                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Collection Methods (Drawer)</h3>
                         <div className="space-y-3">
-                            <label className="flex justify-between items-center text-sm font-bold text-gray-700 dark:text-gray-300">
+                            <label className="flex justify-between items-center text-sm font-bold text-slate-700 dark:text-slate-300">
                                 <span>Cash</span>
-                                <input type="number" value={finMethods.cash || ''} onChange={e => setFinMethods({ ...finMethods, cash: parseFloat(e.target.value) || 0 })} className="w-32 bg-gray-50 dark:bg-gray-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
+                                <input type="number" value={finMethods.cash || ''} onChange={e => setFinMethods({ ...finMethods, cash: parseFloat(e.target.value) || 0 })} className="w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
                             </label>
-                            <label className="flex justify-between items-center text-sm font-bold text-gray-700 dark:text-gray-300">
+                            <label className="flex justify-between items-center text-sm font-bold text-slate-700 dark:text-slate-300">
                                 <span>Credit Cards</span>
-                                <input type="number" value={finMethods.cc || ''} onChange={e => setFinMethods({ ...finMethods, cc: parseFloat(e.target.value) || 0 })} className="w-32 bg-gray-50 dark:bg-gray-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
+                                <input type="number" value={finMethods.cc || ''} onChange={e => setFinMethods({ ...finMethods, cc: parseFloat(e.target.value) || 0 })} className="w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
                             </label>
-                            <label className="flex justify-between items-center text-sm font-bold text-gray-700 dark:text-gray-300">
+                            <label className="flex justify-between items-center text-sm font-bold text-slate-700 dark:text-slate-300">
                                 <span>Checks</span>
-                                <input type="number" value={finMethods.check || ''} onChange={e => setFinMethods({ ...finMethods, check: parseFloat(e.target.value) || 0 })} className="w-32 bg-gray-50 dark:bg-gray-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
+                                <input type="number" value={finMethods.check || ''} onChange={e => setFinMethods({ ...finMethods, check: parseFloat(e.target.value) || 0 })} className="w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
                             </label>
                         </div>
-                        <div className="pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between font-black text-gray-900 dark:text-white">
+                        <div className="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between font-bold text-slate-900 dark:text-white">
                             <span>Total Drawer</span>
                             <span>${totalMethods.toFixed(2)}</span>
                         </div>
@@ -140,22 +140,22 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
 
                     {/* System Inputs */}
                     <div className="space-y-4">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Payment Types (System)</h3>
+                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Payment Types (System)</h3>
                         <div className="space-y-3">
-                            <label className="flex justify-between items-center text-sm font-bold text-gray-700 dark:text-gray-300">
+                            <label className="flex justify-between items-center text-sm font-bold text-slate-700 dark:text-slate-300">
                                 <span>Bill Pay</span>
-                                <input type="number" value={finTypes.billPay || ''} onChange={e => setFinTypes({ ...finTypes, billPay: parseFloat(e.target.value) || 0 })} className="w-32 bg-gray-50 dark:bg-gray-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00" />
+                                <input type="number" value={finTypes.billPay || ''} onChange={e => setFinTypes({ ...finTypes, billPay: parseFloat(e.target.value) || 0 })} className="w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
                             </label>
-                            <label className="flex justify-between items-center text-sm font-bold text-gray-700 dark:text-gray-300">
+                            <label className="flex justify-between items-center text-sm font-bold text-slate-700 dark:text-slate-300">
                                 <span>Copay</span>
-                                <input type="number" value={finTypes.copay || ''} onChange={e => setFinTypes({ ...finTypes, copay: parseFloat(e.target.value) || 0 })} className="w-32 bg-gray-50 dark:bg-gray-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00" />
+                                <input type="number" value={finTypes.copay || ''} onChange={e => setFinTypes({ ...finTypes, copay: parseFloat(e.target.value) || 0 })} className="w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
                             </label>
-                            <label className="flex justify-between items-center text-sm font-bold text-gray-700 dark:text-gray-300">
+                            <label className="flex justify-between items-center text-sm font-bold text-slate-700 dark:text-slate-300">
                                 <span>Self Pay</span>
-                                <input type="number" value={finTypes.selfPay || ''} onChange={e => setFinTypes({ ...finTypes, selfPay: parseFloat(e.target.value) || 0 })} className="w-32 bg-gray-50 dark:bg-gray-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00" />
+                                <input type="number" value={finTypes.selfPay || ''} onChange={e => setFinTypes({ ...finTypes, selfPay: parseFloat(e.target.value) || 0 })} className="w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
                             </label>
                         </div>
-                        <div className="pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between font-black text-gray-900 dark:text-white">
+                        <div className="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between font-bold text-slate-900 dark:text-white">
                             <span>Total Posted</span>
                             <span>${totalTypes.toFixed(2)}</span>
                         </div>
@@ -170,23 +170,23 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
             </div>
 
             {/* --- PANEL B: VOLUME --- */}
-            <div className={`glass-panel p-8 rounded-[2rem] shadow-glass transition-all duration-300 border-l-8 ${isVolBalanced ? 'border-l-emerald-500' : 'border-l-red-500'}`}>
+            <div className={`glass-panel p-8 rounded-2xl shadow-glass transition-all duration-300 border-l-8 ${isVolBalanced ? 'border-l-emerald-500' : 'border-l-red-500'}`}>
                 <SectionHeader title="2. Patient Volume" icon="fa-users-medical" isValid={isVolBalanced} />
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                     {/* Insurance Breakdown */}
                     <div>
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Insurance Class (Counts)</h3>
+                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Insurance Class (Counts)</h3>
                         <div className="grid grid-cols-2 gap-4">
                             {['medicaid', 'bcbs_il', 'meridian', 'commercial', 'medicare', 'workers_comp'].map((key) => (
-                                <div key={key} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 flex flex-col">
-                                    <span className="text-[10px] font-bold uppercase text-gray-500 mb-1">{key.replace('_', ' ')}</span>
+                                <div key={key} className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 flex flex-col">
+                                    <span className="text-[10px] font-bold uppercase text-slate-500 mb-1">{key.replace('_', ' ')}</span>
                                     <input
                                         type="number"
                                         min="0"
                                         value={(insCounts as any)[key] || ''}
                                         onChange={e => setInsCounts({ ...insCounts, [key]: parseInt(e.target.value) || 0 })}
-                                        className="bg-transparent font-mono font-bold text-xl text-gray-900 dark:text-white outline-none w-full"
+                                        className="bg-transparent font-mono font-bold text-xl text-slate-900 dark:text-white outline-none w-full"
                                         placeholder="0"
                                     />
                                 </div>
@@ -203,14 +203,14 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
                                 />
                             </div>
                         </div>
-                        <div className="mt-4 text-right font-black text-gray-900 dark:text-white">
+                        <div className="mt-4 text-right font-bold text-slate-900 dark:text-white">
                             Total Insurance: {totalInsurance}
                         </div>
                     </div>
 
                     {/* Operations Breakdown */}
                     <div>
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Operational Split</h3>
+                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Operational Split</h3>
                         <div className="space-y-4">
                             <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/10 rounded-xl border border-purple-100 dark:border-purple-900/30">
                                 <span className="font-bold text-purple-900 dark:text-purple-300">Nurse Visits Only</span>
@@ -227,21 +227,21 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
                             <div className="space-y-2">
                                 <p className="text-xs font-bold text-gray-400 uppercase">Provider Visits</p>
                                 {activeProviders.map(prov => (
-                                    <div key={prov.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{prov.full_name || prov.username || 'Unknown'}</span>
+                                    <div key={prov.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{prov.full_name || prov.username || 'Unknown'}</span>
                                         <input
                                             type="number"
                                             min="0"
                                             value={providerVisits[prov.id] || ''}
                                             onChange={e => setProviderVisits({ ...providerVisits, [prov.id]: parseInt(e.target.value) || 0 })}
-                                            className="bg-transparent font-mono font-bold text-lg text-gray-900 dark:text-white outline-none w-16 text-right"
+                                            className="bg-transparent font-mono font-bold text-lg text-slate-900 dark:text-white outline-none w-16 text-right"
                                             placeholder="0"
                                         />
                                     </div>
                                 ))}
                             </div>
                         </div>
-                        <div className="mt-4 text-right font-black text-gray-900 dark:text-white">
+                        <div className="mt-4 text-right font-bold text-slate-900 dark:text-white">
                             Total Ops: {totalOps}
                         </div>
                     </div>
@@ -255,37 +255,37 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
             </div>
 
             {/* --- PANEL C: STATS --- */}
-            <div className="glass-panel p-8 rounded-[2rem] shadow-glass">
+            <div className="glass-panel p-8 rounded-2xl shadow-glass">
                 <SectionHeader title="3. Statistics" icon="fa-chart-simple" />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6 text-center">
-                        <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">New Patients</div>
-                        <input type="number" min="0" value={stats.newPts || ''} onChange={e => setStats({ ...stats, newPts: parseInt(e.target.value) || 0 })} className="w-full text-center bg-transparent font-black text-3xl outline-none" placeholder="0" />
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 text-center">
+                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">New Patients</div>
+                        <input type="number" min="0" value={stats.newPts || ''} onChange={e => setStats({ ...stats, newPts: parseInt(e.target.value) || 0 })} className="w-full text-center bg-transparent font-bold text-3xl outline-none" placeholder="0" />
                     </div>
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6 text-center">
-                        <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Established</div>
-                        <input type="number" min="0" value={stats.estPts || ''} onChange={e => setStats({ ...stats, estPts: parseInt(e.target.value) || 0 })} className="w-full text-center bg-transparent font-black text-3xl outline-none" placeholder="0" />
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 text-center">
+                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Established</div>
+                        <input type="number" min="0" value={stats.estPts || ''} onChange={e => setStats({ ...stats, estPts: parseInt(e.target.value) || 0 })} className="w-full text-center bg-transparent font-bold text-3xl outline-none" placeholder="0" />
                     </div>
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6 text-center">
-                        <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">X-Rays</div>
-                        <input type="number" min="0" value={stats.xrays || ''} onChange={e => setStats({ ...stats, xrays: parseInt(e.target.value) || 0 })} className="w-full text-center bg-transparent font-black text-3xl outline-none" placeholder="0" />
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 text-center">
+                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">X-Rays</div>
+                        <input type="number" min="0" value={stats.xrays || ''} onChange={e => setStats({ ...stats, xrays: parseInt(e.target.value) || 0 })} className="w-full text-center bg-transparent font-bold text-3xl outline-none" placeholder="0" />
                     </div>
                 </div>
                 <div className="mt-6">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Notes / Discrepancies</label>
-                    <textarea value={notes} onChange={e => setNotes(e.target.value)} className="w-full h-24 bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-sm font-medium focus:ring-2 focus:ring-medical-500 outline-none" placeholder="Explain any mismatches here..."></textarea>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 block">Notes / Discrepancies</label>
+                    <textarea value={notes} onChange={e => setNotes(e.target.value)} className="w-full h-24 bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-sm font-medium focus:ring-2 focus:ring-medical-500 outline-none" placeholder="Explain any mismatches here..."></textarea>
                 </div>
             </div>
 
             {/* --- ACTIONS --- */}
             <div className="flex gap-4">
-                <button onClick={onCancel} className="flex-1 h-16 rounded-2xl border-2 border-gray-200 dark:border-gray-700 font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
+                <button onClick={onCancel} className="flex-1 h-16 rounded-2xl border-2 border-slate-200 dark:border-slate-700 font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Cancel</button>
                 <button
                     onClick={handlePrintAndSave}
                     disabled={!isFinBalanced || !isVolBalanced}
                     className={`flex-1 h-16 rounded-2xl font-bold text-lg shadow-xl flex items-center justify-center gap-3 transition-all ${(!isFinBalanced || !isVolBalanced)
-                        ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
-                        : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:scale-[1.01]'
+                        ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                        : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:scale-[1.01]'
                         }`}
                 >
                     <i className={`fa-solid ${(!isFinBalanced || !isVolBalanced) ? 'fa-lock' : 'fa-file-signature'}`}></i>

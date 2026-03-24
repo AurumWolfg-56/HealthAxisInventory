@@ -218,25 +218,25 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                 <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl border border-slate-200 dark:border-slate-700">
                     <button
                         onClick={() => setActiveTab('users')}
-                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'users' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm scale-[1.02]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'users' ? 'bg-white dark:bg-slate-700 text-medical-600 dark:text-medical-400 shadow-sm scale-[1.02]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         <i className="fa-solid fa-users mr-2"></i> Personnel
                     </button>
                     <button
                         onClick={() => setActiveTab('permissions')}
-                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'permissions' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm scale-[1.02]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'permissions' ? 'bg-white dark:bg-slate-700 text-medical-600 dark:text-medical-400 shadow-sm scale-[1.02]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         <i className="fa-solid fa-shield-halved mr-2"></i> Permissions
                     </button>
                     <button
                         onClick={() => setActiveTab('maintenance')}
-                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'maintenance' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm scale-[1.02]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'maintenance' ? 'bg-white dark:bg-slate-700 text-medical-600 dark:text-medical-400 shadow-sm scale-[1.02]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         <i className="fa-solid fa-wrench mr-2"></i> Maintenance
                     </button>
                     <button
                         onClick={() => setActiveTab('platform')}
-                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'platform' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm scale-[1.02]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'platform' ? 'bg-white dark:bg-slate-700 text-medical-600 dark:text-medical-400 shadow-sm scale-[1.02]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         <i className="fa-solid fa-server mr-2"></i> Platform
                     </button>
@@ -247,7 +247,7 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     {/* User List Panel */}
                     <div className="lg:col-span-8 space-y-4">
-                        <div className="flex items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
+                        <div className="flex items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
                             <i className="fa-solid fa-magnifying-glass text-slate-400 ml-2"></i>
                             <input
                                 type="text"
@@ -258,25 +258,25 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                             />
                         </div>
 
-                        <div className="glass-panel rounded-[2.5rem] overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+                        <div className="glass-panel rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
                             <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
                                 <table className="w-full text-left">
                                     <thead className="bg-slate-50/50 dark:bg-slate-900/50 sticky top-0 z-10 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
                                         <tr>
-                                            <th className="p-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Personnel</th>
-                                            <th className="p-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Role & Status</th>
-                                            <th className="p-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Settings</th>
+                                            <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-slate-400">Personnel</th>
+                                            <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-slate-400">Role & Status</th>
+                                            <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Settings</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                                         {loading ? (
-                                            <tr><td colSpan={3} className="p-20 text-center"><i className="fa-solid fa-circle-notch fa-spin text-indigo-500 text-3xl"></i></td></tr>
+                                            <tr><td colSpan={3} className="p-20 text-center"><i className="fa-solid fa-circle-notch fa-spin text-medical-500 text-3xl"></i></td></tr>
                                         ) : error ? (
                                             <tr>
                                                 <td colSpan={3} className="p-20 text-center text-red-500 font-bold">
                                                     <i className="fa-solid fa-triangle-exclamation mr-2"></i>
                                                     {error}
-                                                    <button onClick={fetchUsers} className="block mx-auto mt-4 text-sm text-indigo-600 underline">Retry</button>
+                                                    <button onClick={fetchUsers} className="block mx-auto mt-4 text-sm text-medical-600 underline">Retry</button>
                                                 </td>
                                             </tr>
                                         ) : filteredUsers.length === 0 ? (
@@ -285,25 +285,25 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                                             <tr key={u.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-all">
                                                 <td className="p-6">
                                                     <div className="flex items-center gap-4">
-                                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg shadow-inner
+                                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg shadow-inner
                                                             ${u.role === UserRole.OWNER ? 'bg-red-50 text-red-600 dark:bg-red-900/20' :
-                                                                u.role === UserRole.MANAGER ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20' :
+                                                                u.role === UserRole.MANAGER ? 'bg-medical-50 text-medical-600 dark:bg-medical-900/20' :
                                                                     u.role === UserRole.DOCTOR ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20' :
                                                                         'bg-slate-50 text-slate-600 dark:bg-slate-800'}
                                                         `}>
                                                             {u.full_name.charAt(0)}
                                                         </div>
                                                         <div>
-                                                            <p className="font-black text-slate-900 dark:text-slate-100 leading-tight">{u.full_name}</p>
+                                                            <p className="font-bold text-slate-900 dark:text-slate-100 leading-tight">{u.full_name}</p>
                                                             <p className="text-xs font-mono text-slate-400 mt-1 uppercase tracking-tight">ID: {u.id.substring(0, 8)}</p>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td className="p-6">
                                                     <div className="flex flex-col gap-2">
-                                                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest w-fit
+                                                        <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest w-fit
                                                             ${u.role === UserRole.OWNER ? 'bg-red-500 text-white' :
-                                                                u.role === UserRole.MANAGER ? 'bg-blue-500 text-white' :
+                                                                u.role === UserRole.MANAGER ? 'bg-medical-500 text-white' :
                                                                     u.role === UserRole.DOCTOR ? 'bg-emerald-500 text-white' :
                                                                         'bg-slate-600 text-white'}
                                                         `}>
@@ -319,7 +319,7 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                                                     <div className="flex items-center justify-end gap-2">
                                                         <button
                                                             onClick={() => setEditingUser(u)}
-                                                            className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-indigo-500 hover:text-white transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0"
+                                                            className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-medical-500 hover:text-white transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0"
                                                         >
                                                             <i className="fa-solid fa-pen-to-square"></i>
                                                         </button>
@@ -343,9 +343,9 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                         {/* Edit User Modal */}
                         {editingUser && (
                             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-                                <div className="glass-panel w-full max-w-lg p-8 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-slate-700 animate-scale-in">
+                                <div className="glass-panel w-full max-w-lg p-8 rounded-2xl shadow-2xl border border-white/20 dark:border-slate-700 animate-scale-in">
                                     <div className="flex justify-between items-center mb-8">
-                                        <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Modify Personnel</h3>
+                                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Modify Personnel</h3>
                                         <button onClick={() => setEditingUser(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                                             <i className="fa-solid fa-xmark text-xl"></i>
                                         </button>
@@ -353,21 +353,21 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
 
                                     <div className="space-y-6">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
                                             <input
                                                 type="text"
                                                 value={editingUser.full_name}
                                                 onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })}
-                                                className="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 outline-none font-bold placeholder:text-slate-400 transition-all dark:text-white"
+                                                className="w-full px-5 py-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-medical-500 outline-none font-bold placeholder:text-slate-400 transition-all dark:text-white"
                                             />
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assigned Role</label>
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Assigned Role</label>
                                             <select
                                                 value={editingUser.role}
                                                 onChange={e => setEditingUser({ ...editingUser, role: e.target.value as UserRole })}
-                                                className="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 outline-none font-black transition-all appearance-none cursor-pointer dark:text-white"
+                                                className="w-full px-5 py-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-medical-500 outline-none font-bold transition-all appearance-none cursor-pointer dark:text-white"
                                             >
                                                 {Object.values(UserRole).map(r => (
                                                     <option key={r} value={r}>{r.replace('_', ' ')}</option>
@@ -378,13 +378,13 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                                         <div className="pt-4 flex gap-4">
                                             <button
                                                 onClick={() => setEditingUser(null)}
-                                                className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black rounded-2xl transition-all hover:bg-slate-200 dark:hover:bg-slate-700 uppercase text-xs tracking-widest"
+                                                className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl transition-all hover:bg-slate-200 dark:hover:bg-slate-700 uppercase text-xs tracking-widest"
                                             >
                                                 Discard
                                             </button>
                                             <button
                                                 onClick={() => handleUpdateUser(editingUser.id, { full_name: editingUser.full_name, role: editingUser.role })}
-                                                className="flex-1 py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase text-xs tracking-widest"
+                                                className="flex-1 py-4 bg-medical-600 text-white font-bold rounded-xl shadow-lg shadow-medical-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase text-xs tracking-widest"
                                             >
                                                 Save Changes
                                             </button>
@@ -397,7 +397,7 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                                                 setActiveTab('permissions');
                                                 setEditingUser(null);
                                             }}
-                                            className="w-full py-4 bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 font-black rounded-2xl flex items-center justify-center gap-2 transition-all hover:bg-emerald-100 dark:hover:bg-emerald-900/30 uppercase text-[10px] tracking-widest"
+                                            className="w-full py-4 bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 font-bold rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-emerald-100 dark:hover:bg-emerald-900/30 uppercase text-[10px] tracking-widest"
                                         >
                                             <i className="fa-solid fa-shield-halved"></i> Manage View/Edit Permissions
                                         </button>
@@ -409,41 +409,41 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
 
                     {/* Right Column: Info & Invite */}
                     <div className="lg:col-span-4 space-y-6">
-                        <div className="glass-panel p-8 rounded-[2.5rem] bg-gradient-to-br from-indigo-600 to-purple-700 text-white shadow-xl border-none relative overflow-hidden">
+                        <div className="glass-panel p-8 rounded-2xl bg-gradient-to-br from-medical-600 to-emerald-700 text-white shadow-xl border-none relative overflow-hidden">
                             <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                            <h4 className="font-black mb-6 uppercase tracking-widest text-xs flex items-center gap-2">
+                            <h4 className="font-bold mb-6 uppercase tracking-widest text-xs flex items-center gap-2">
                                 <i className="fa-solid fa-paper-plane animate-bounce"></i>
                                 New Personnel Invite
                             </h4>
                             <form onSubmit={handleInvite} className="space-y-4 group">
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-indigo-200 uppercase tracking-widest ml-1">Full Legal Name</label>
+                                    <label className="text-[10px] font-bold text-medical-200 uppercase tracking-widest ml-1">Full Legal Name</label>
                                     <input
                                         type="text"
                                         required
                                         value={inviteData.full_name}
                                         onChange={e => setInviteData({ ...inviteData, full_name: e.target.value })}
-                                        className="w-full px-5 py-4 rounded-2xl bg-white/10 border border-white/20 focus:bg-white/20 focus:border-white/40 outline-none font-bold text-sm placeholder:text-white/30 transition-all"
+                                        className="w-full px-5 py-4 rounded-xl bg-white/10 border border-white/20 focus:bg-white/20 focus:border-white/40 outline-none font-bold text-sm placeholder:text-white/30 transition-all"
                                         placeholder="e.g. John Doe"
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-indigo-200 uppercase tracking-widest ml-1">Professional Email</label>
+                                    <label className="text-[10px] font-bold text-medical-200 uppercase tracking-widest ml-1">Professional Email</label>
                                     <input
                                         type="email"
                                         required
                                         value={inviteData.email}
                                         onChange={e => setInviteData({ ...inviteData, email: e.target.value })}
-                                        className="w-full px-5 py-4 rounded-2xl bg-white/10 border border-white/20 focus:bg-white/20 focus:border-white/40 outline-none font-bold text-sm placeholder:text-white/30 transition-all"
+                                        className="w-full px-5 py-4 rounded-xl bg-white/10 border border-white/20 focus:bg-white/20 focus:border-white/40 outline-none font-bold text-sm placeholder:text-white/30 transition-all"
                                         placeholder="j.doe@clinic.com"
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-indigo-200 uppercase tracking-widest ml-1">Assigned Role</label>
+                                    <label className="text-[10px] font-bold text-medical-200 uppercase tracking-widest ml-1">Assigned Role</label>
                                     <select
                                         value={inviteData.role}
                                         onChange={e => setInviteData({ ...inviteData, role: e.target.value as UserRole })}
-                                        className="w-full px-5 py-4 rounded-2xl bg-white/10 border border-white/20 focus:bg-white/20 focus:border-white/40 outline-none font-black text-sm transition-all appearance-none cursor-pointer"
+                                        className="w-full px-5 py-4 rounded-xl bg-white/10 border border-white/20 focus:bg-white/20 focus:border-white/40 outline-none font-bold text-sm transition-all appearance-none cursor-pointer"
                                     >
                                         {Object.values(UserRole).map(r => (
                                             <option key={r} value={r} className="text-slate-900">{r.replace('_', ' ')}</option>
@@ -452,13 +452,13 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                                 </div>
                                 <button
                                     disabled={inviting}
-                                    className="w-full py-5 bg-white text-indigo-600 font-black rounded-2xl shadow-lg hover:shadow-indigo-500/20 transition-all active:scale-[0.97] mt-4 uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-2"
+                                    className="w-full py-5 bg-white text-medical-600 font-bold rounded-xl shadow-lg hover:shadow-medical-500/20 transition-all active:scale-[0.97] mt-4 uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-2"
                                 >
                                     {inviting ? <i className="fa-solid fa-spinner fa-spin"></i> : (
                                         <>Deploy Invitation <i className="fa-solid fa-bolt"></i></>
                                     )}
                                 </button>
-                                <p className="text-[10px] text-indigo-100/60 text-center mt-6 font-medium leading-relaxed">
+                                <p className="text-[10px] text-medical-100/60 text-center mt-6 font-medium leading-relaxed">
                                     Automated verification email will be dispatched immediately.
                                 </p>
                             </form>
@@ -469,12 +469,12 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                 </div>
             ) : activeTab === 'permissions' ? (
                 <div className="space-y-8 animate-fade-in-up">
-                    <div className="flex items-center gap-4 bg-indigo-50 dark:bg-indigo-900/10 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-900/30">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm">
+                    <div className="flex items-center gap-4 bg-medical-50 dark:bg-medical-900/10 p-6 rounded-2xl border border-medical-100 dark:border-medical-900/30">
+                        <div className="w-12 h-12 rounded-2xl bg-medical-100 dark:bg-medical-900/40 flex items-center justify-center text-medical-600 dark:text-medical-400 shadow-sm">
                             <i className="fa-solid fa-shield-check text-xl"></i>
                         </div>
                         <div>
-                            <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-tight">Access Control Matrix</h4>
+                            <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-tight">Access Control Matrix</h4>
                             <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Manage permissions either by broad roles or specific individual overrides.</p>
                         </div>
                     </div>
@@ -483,13 +483,13 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                         <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 w-full md:w-auto">
                             <button
                                 onClick={() => setPermissionMode('role')}
-                                className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${permissionMode === 'role' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${permissionMode === 'role' ? 'bg-white dark:bg-slate-700 text-medical-600 dark:text-medical-400 shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                             >
                                 <i className="fa-solid fa-users-gear mr-2"></i> Global Roles
                             </button>
                             <button
                                 onClick={() => setPermissionMode('user')}
-                                className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${permissionMode === 'user' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${permissionMode === 'user' ? 'bg-white dark:bg-slate-700 text-medical-600 dark:text-medical-400 shadow-md scale-[1.02]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                             >
                                 <i className="fa-solid fa-user-shield mr-2"></i> Individual Personnel
                             </button>
@@ -501,7 +501,7 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                                 <select
                                     value={selectedUserForPerms || ''}
                                     onChange={(e) => setSelectedUserForPerms(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 ring-indigo-500/20 transition-all appearance-none cursor-pointer"
+                                    className="w-full pl-12 pr-4 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 ring-medical-500/20 transition-all appearance-none cursor-pointer"
                                 >
                                     <option value="">Select personnel to manage...</option>
                                     {users.map(u => (
@@ -512,36 +512,36 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                         )}
                     </div>
 
-                    <div className="glass-panel p-1 rounded-[3rem] shadow-sm overflow-hidden border border-slate-100 dark:border-slate-800">
+                    <div className="glass-panel p-1 rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-slate-800">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead className="bg-slate-50/50 dark:bg-slate-900 sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
                                     <tr>
-                                        <th className="p-8 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] w-1/2">Module Permissions</th>
+                                        <th className="p-8 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] w-1/2">Module Permissions</th>
                                         {permissionMode === 'role' ? EDITABLE_ROLES.map(role => (
                                             <th key={role} className="p-8 text-center min-w-[140px]">
                                                 <div className="flex flex-col items-center gap-3">
-                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white text-lg font-black shadow-md
-                                                        ${role === UserRole.DOCTOR ? 'bg-emerald-500' : role === UserRole.MA ? 'bg-blue-500' : 'bg-purple-500'}
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white text-lg font-bold shadow-md
+                                                        ${role === UserRole.DOCTOR ? 'bg-emerald-500' : role === UserRole.MA ? 'bg-medical-500' : 'bg-slate-500'}
                                                     `}>
                                                         {role.charAt(0)}
                                                     </div>
-                                                    <span className="text-[10px] font-black text-slate-900 dark:text-slate-200 uppercase tracking-widest">{role.replace('_', ' ')}</span>
+                                                    <span className="text-[10px] font-bold text-slate-900 dark:text-slate-200 uppercase tracking-widest">{role.replace('_', ' ')}</span>
                                                 </div>
                                             </th>
                                         )) : (
                                             <th className="p-8 text-center min-w-[200px]">
                                                 {selectedUserForPerms ? (
                                                     <div className="flex flex-col items-center gap-3">
-                                                        <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white text-lg font-black shadow-md">
+                                                        <div className="w-12 h-12 rounded-2xl bg-medical-600 flex items-center justify-center text-white text-lg font-bold shadow-md">
                                                             {users.find(u => u.id === selectedUserForPerms)?.full_name.charAt(0)}
                                                         </div>
-                                                        <span className="text-[10px] font-black text-slate-900 dark:text-slate-200 uppercase tracking-widest">
+                                                        <span className="text-[10px] font-bold text-slate-900 dark:text-slate-200 uppercase tracking-widest">
                                                             Custom Access Overrides
                                                         </span>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No User Selected</span>
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No User Selected</span>
                                                 )}
                                             </th>
                                         )}
@@ -552,7 +552,7 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                                         <React.Fragment key={category}>
                                             <tr className="bg-slate-50 dark:bg-slate-800/20">
                                                 <td colSpan={EDITABLE_ROLES.length + 1} className="p-4 px-8">
-                                                    <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em]">{category}</span>
+                                                    <span className="text-[10px] font-bold text-medical-500 uppercase tracking-[0.3em]">{category}</span>
                                                 </td>
                                             </tr>
                                             {ALL_PERMISSIONS.filter(p => p.category === category).map((perm) => (
@@ -574,7 +574,7 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                                                                         checked={active}
                                                                         onChange={() => onUpdateRoleConfig(role, perm.id)}
                                                                     />
-                                                                    <div className="w-16 h-9 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-7 after:w-7 after:transition-all dark:border-slate-600 peer-checked:bg-gradient-to-r peer-checked:from-indigo-600 peer-checked:to-purple-600 shadow-inner"></div>
+                                                                    <div className="w-16 h-9 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-7 after:w-7 after:transition-all dark:border-slate-600 peer-checked:bg-gradient-to-r peer-checked:from-medical-600 peer-checked:to-emerald-600 shadow-inner"></div>
                                                                 </label>
                                                             </td>
                                                         );
@@ -604,12 +604,12 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                         </div>
                     </div>
 
-                    <div className="p-8 bg-slate-100 dark:bg-slate-800/30 border-t-4 border-slate-900 dark:border-white rounded-l-[3rem] rounded-r-[1rem] flex gap-6 items-center">
+                    <div className="p-8 bg-slate-100 dark:bg-slate-800/30 border-t-4 border-slate-900 dark:border-white rounded-l-2xl rounded-r-xl flex gap-6 items-center">
                         <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-700 flex items-center justify-center text-slate-900 dark:text-white shadow-lg shrink-0 text-xl">
                             <i className="fa-solid fa-crown"></i>
                         </div>
                         <div>
-                            <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-widest text-sm">Privileged Role Notice</h4>
+                            <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-widest text-sm">Privileged Role Notice</h4>
                             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium italic">
                                 OWNER and MANAGER accounts possess absolute authority and circumvent standard permission constraints.
                             </p>
