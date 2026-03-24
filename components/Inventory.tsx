@@ -181,9 +181,9 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
 
       {/* Header & Stats */}
       <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-6">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-medical-500 flex items-center justify-center shadow-lg shadow-medical-500/20">
-            <i className="fa-solid fa-box-open text-xl text-white"></i>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-medical-500 flex items-center justify-center shadow-lg shadow-medical-500/20">
+            <i className="fa-solid fa-box-open text-lg text-white"></i>
           </div>
           <div>
             <h2 className="text-display text-slate-900 dark:text-white">{t('inv_title')}</h2>
@@ -229,37 +229,37 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
           {hasPermission('inventory.audit') && (
             <button
               onClick={() => setIsAuditMode(!isAuditMode)}
-              className={`h-14 px-8 rounded-2xl font-bold shadow-xl flex items-center gap-4 transition-all active:scale-95 group relative overflow-hidden ${isAuditMode ? 'bg-medical-600 text-white shadow-medical-500/30' : 'glass-panel text-slate-900 dark:text-white'}`}
+              className={`h-11 px-6 rounded-xl font-semibold shadow-lg flex items-center gap-3 transition-all active:scale-95 group relative overflow-hidden ${isAuditMode ? 'bg-medical-600 text-white shadow-medical-500/30' : 'glass-panel text-slate-900 dark:text-white hover:shadow-xl'}`}
             >
-              <i className={`fa-solid ${isAuditMode ? 'fa-check-double' : 'fa-clipboard-check'} text-xl group-hover:rotate-12 transition-transform`}></i>
-              <span className="tracking-tight font-extrabold">{isAuditMode ? t('btn_exit_audit') : t('btn_audit_mode')}</span>
-              {isAuditMode && <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></span>}
+              <i className={`fa-solid ${isAuditMode ? 'fa-check-double' : 'fa-clipboard-check'} text-base group-hover:rotate-12 transition-transform`}></i>
+              <span className="tracking-tight font-bold text-sm">{isAuditMode ? t('btn_exit_audit') : t('btn_audit_mode')}</span>
+              {isAuditMode && <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></span>}
             </button>
           )}
 
           <div className="flex gap-2">
             {hasPermission('inventory.edit') && !isAuditMode && (
-              <button onClick={() => fileInputRef.current?.click()} className="w-14 h-14 glass-panel text-slate-900 dark:text-white rounded-2xl font-bold shadow-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95 hover:bg-slate-50 dark:hover:bg-slate-700" title={t('btn_import')}>
-                <i className="fa-solid fa-file-import text-xl text-medical-600"></i>
+              <button onClick={() => fileInputRef.current?.click()} className="w-11 h-11 glass-panel text-slate-900 dark:text-white rounded-xl shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 hover:shadow-lg" title={t('btn_import')}>
+                <i className="fa-solid fa-file-import text-base text-medical-600"></i>
               </button>
             )}
             {hasPermission('inventory.edit') && !isAuditMode && (
               <button
                 onClick={onScanClick}
-                className="h-14 px-6 glass-panel text-slate-900 dark:text-white rounded-2xl font-bold shadow-lg flex items-center gap-3 transition-all hover:scale-105 active:scale-95 group bg-gradient-to-r from-medical-50 to-teal-50 dark:from-medical-900/10 dark:to-teal-900/10 border-medical-200/40 dark:border-medical-800/40"
+                className="h-11 px-5 glass-panel text-slate-900 dark:text-white rounded-xl font-semibold shadow-md flex items-center gap-2.5 transition-all hover:scale-105 hover:shadow-lg active:scale-95 group bg-gradient-to-r from-medical-50 to-emerald-50 dark:from-medical-900/10 dark:to-emerald-900/10 border-medical-200/40 dark:border-medical-800/40"
                 title="AI Scan"
               >
-                <i className="fa-solid fa-wand-magic-sparkles text-xl text-medical-600 dark:text-medical-400 group-hover:rotate-12 transition-transform"></i>
-                <span className="tracking-tight font-extrabold hidden sm:inline text-medical-700 dark:text-medical-300">Scan</span>
+                <i className="fa-solid fa-wand-magic-sparkles text-base text-medical-600 dark:text-medical-400 group-hover:rotate-12 transition-transform"></i>
+                <span className="tracking-tight font-bold text-sm hidden sm:inline text-medical-700 dark:text-medical-300">Scan</span>
               </button>
             )}
             {hasPermission('inventory.edit') && !isAuditMode && (
               <button
                 onClick={onAddItem}
-                className="h-14 px-8 bg-medical-600 text-white rounded-2xl font-bold shadow-2xl shadow-medical-500/40 flex items-center gap-3 transition-all hover:scale-105 active:scale-95 group"
+                className="h-11 px-6 bg-medical-600 text-white rounded-xl font-semibold shadow-xl shadow-medical-500/30 flex items-center gap-2.5 transition-all hover:scale-105 hover:shadow-2xl active:scale-95 group"
               >
-                <i className="fa-solid fa-plus text-xl group-hover:rotate-90 transition-transform"></i>
-                <span className="tracking-tight font-extrabold">{t('btn_add')}</span>
+                <i className="fa-solid fa-plus text-base group-hover:rotate-90 transition-transform"></i>
+                <span className="tracking-tight font-bold text-sm">{t('btn_add')}</span>
               </button>
             )}
           </div>
@@ -292,47 +292,47 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
 
       {/* Search & Filter - Luxury Design */}
       < div className="sticky top-4 z-40 mx-[-1rem] px-4 md:mx-0 md:px-0" >
-        <div className="glass-panel p-3 rounded-[2.5rem] luxury-shadow flex flex-col md:flex-row gap-3 border-white/50 dark:border-slate-800/80">
+        <div className="glass-panel p-2.5 rounded-2xl flex flex-col md:flex-row gap-2.5 border-white/50 dark:border-slate-800/80">
           <div className="relative flex-1 group">
-            <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none transition-transform group-focus-within:scale-110">
-              <i className="fa-solid fa-magnifying-glass text-xl text-slate-400 group-focus-within:text-medical-500 transition-colors"></i>
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none transition-transform group-focus-within:scale-110">
+              <i className="fa-solid fa-magnifying-glass text-sm text-slate-400 group-focus-within:text-medical-500 transition-colors"></i>
             </div>
             <input
               type="text"
               placeholder={t('search_placeholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-16 pr-8 h-14 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none font-bold text-lg placeholder-slate-400 rounded-[1.5rem] border-none focus:ring-4 ring-medical-500/10 transition-all font-sans"
+              className="w-full pl-10 pr-4 h-11 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none font-medium text-sm placeholder-slate-400 rounded-xl border-none focus:ring-4 ring-medical-500/10 transition-all"
             />
           </div>
 
           <div className="flex gap-3 overflow-x-auto pb-1 md:pb-0 px-1 custom-scrollbar">
-            <div className="relative min-w-[180px]">
-              <i className="fa-solid fa-filter absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <div className="relative min-w-[160px]">
+              <i className="fa-solid fa-filter absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="w-full h-14 pl-12 pr-10 bg-slate-50/50 dark:bg-slate-900/50 border-none rounded-[1.5rem] text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer appearance-none ring-medical-500/10 focus:ring-4 transition-all"
+                className="w-full h-11 pl-10 pr-8 bg-slate-50/50 dark:bg-slate-900/50 border-none rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer appearance-none ring-medical-500/10 focus:ring-4 transition-all"
               >
                 <option value="All">{t('cat_all')}</option>
                 {categories.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <i className="fa-solid fa-chevron-down absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[10px]"></i>
+              <i className="fa-solid fa-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[10px]"></i>
             </div>
 
-            <div className="relative min-w-[180px]">
-              <i className="fa-solid fa-sort absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <div className="relative min-w-[160px]">
+              <i className="fa-solid fa-sort absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="w-full h-14 pl-12 pr-10 bg-slate-50/50 dark:bg-slate-900/50 border-none rounded-[1.5rem] text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer appearance-none ring-medical-500/10 focus:ring-4 transition-all"
+                className="w-full h-11 pl-10 pr-8 bg-slate-50/50 dark:bg-slate-900/50 border-none rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer appearance-none ring-medical-500/10 focus:ring-4 transition-all"
               >
                 <option value="name">Name (A-Z)</option>
                 <option value="stockAsc">Low Stock First</option>
                 <option value="stockDesc">High Stock First</option>
                 <option value="expiry">Expiry Date</option>
               </select>
-              <i className="fa-solid fa-chevron-down absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[10px]"></i>
+              <i className="fa-solid fa-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[10px]"></i>
             </div>
           </div>
         </div>
@@ -366,7 +366,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
               {sortedItems.map((item, idx) => (
                 <tr
                   key={item.id}
-                  className={`group hover:bg-white/70 dark:hover:bg-slate-800/40 transition-all duration-300 ${editingRowId === item.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''} ${selectedItemIds.has(item.id) ? 'bg-medical-50/30 dark:bg-medical-900/10' : ''}`}
+                  className={`group hover:bg-white/70 dark:hover:bg-slate-800/40 transition-all duration-300 ${editingRowId === item.id ? 'bg-medical-50/50 dark:bg-medical-900/20' : ''} ${selectedItemIds.has(item.id) ? 'bg-medical-50/30 dark:bg-medical-900/10' : ''}`}
                   style={{ animationDelay: `${idx * 30}ms` }}
                 >
                   {isAuditMode && (
@@ -421,7 +421,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                       <select
                         value={editForm.category || ''}
                         onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                        className="w-full px-4 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-xs font-bold focus:ring-2 focus:ring-indigo-500 appearance-none"
+                        className="w-full px-4 py-2 rounded-xl border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-xs font-bold focus:ring-2 focus:ring-medical-500 appearance-none"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -438,7 +438,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                         type="text"
                         value={editForm.batchNumber || ''}
                         onChange={(e) => setEditForm({ ...editForm, batchNumber: e.target.value })}
-                        className="w-full px-4 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-xs font-mono font-bold focus:ring-2 focus:ring-indigo-500"
+                        className="w-full px-4 py-2 rounded-xl border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-xs font-mono font-bold focus:ring-2 focus:ring-medical-500"
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
@@ -453,7 +453,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                         type="date"
                         value={editForm.expiryDate ? new Date(editForm.expiryDate).toISOString().split('T')[0] : ''}
                         onChange={(e) => setEditForm({ ...editForm, expiryDate: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-[10px] font-bold focus:ring-2 focus:ring-indigo-500"
+                        className="w-full px-3 py-2 rounded-xl border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-[10px] font-bold focus:ring-2 focus:ring-medical-500"
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : item.expiryDate ? (
@@ -471,14 +471,14 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                         type="number"
                         value={editForm.stock || 0}
                         onChange={(e) => setEditForm({ ...editForm, stock: parseInt(e.target.value) || 0 })}
-                        className="w-24 px-4 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-800 text-center text-lg font-black focus:ring-2 focus:ring-indigo-500 shadow-inner"
+                        className="w-24 px-4 py-2 rounded-xl border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-center text-lg font-bold focus:ring-2 focus:ring-medical-500 shadow-inner"
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
                       <div className="flex flex-col items-center gap-2 group/stock">
-                        <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-[1.5rem] border shadow-sm transition-all group-hover/stock:scale-110 ${getStatusColor(item)}`}>
-                          <span className="font-black text-2xl leading-none tracking-tighter">{item.stock}</span>
-                          <span className="text-[10px] uppercase font-black tracking-widest opacity-60">{t(item.unit || 'unit_each')}</span>
+                        <div className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-xl border shadow-sm transition-all group-hover/stock:scale-105 ${getStatusColor(item)}`}>
+                          <span className="font-bold text-xl leading-none tabular-nums">{item.stock}</span>
+                          <span className="text-[10px] uppercase font-semibold tracking-wider opacity-60">{t(item.unit || 'unit_each')}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className={`w-2.5 h-2.5 rounded-full ${getStockStatus(item) === 'critical' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.6)] animate-pulse' : getStockStatus(item) === 'warning' ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'}`}></div>
@@ -522,7 +522,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                               {hasPermission('inventory.edit') && (
                                 <button
                                   onClick={() => onEditItem(item)}
-                                  className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white flex items-center justify-center transition-all text-sm active:scale-90"
+                                  className="w-10 h-10 rounded-xl bg-medical-50 dark:bg-medical-900/30 text-medical-600 dark:text-medical-400 hover:bg-medical-600 hover:text-white flex items-center justify-center transition-all text-sm active:scale-90"
                                   title="Edit Item"
                                 >
                                   <i className="fa-solid fa-pen-to-square"></i>
@@ -543,7 +543,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                                   </div>
                                   <button
                                     onClick={() => onAuditItem(item.id)}
-                                    className="text-[9px] font-black text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest flex items-center gap-1.5 px-2 active:scale-95"
+                                    className="text-[9px] font-bold text-slate-400 hover:text-medical-600 transition-colors uppercase tracking-widest flex items-center gap-1.5 px-2 active:scale-95"
                                   >
                                     <i className="fa-solid fa-rotate-right text-[8px]"></i>
                                     {t('btn_reverify')}
@@ -553,7 +553,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                                 <button
                                   onClick={() => handleAsyncAction(item.id, async () => onAuditItem(item.id))}
                                   disabled={loadingItemIds.has(item.id)}
-                                  className={`h-11 px-5 text-white rounded-xl text-[11px] font-black shadow-lg active:scale-95 transition-all flex items-center gap-2 relative overflow-hidden group/auditbtn ${getStockStatus(item) === 'critical' ? 'bg-red-600 hover:bg-red-700 shadow-red-500/30' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'} ${loadingItemIds.has(item.id) ? 'opacity-75 cursor-wait' : ''}`}
+                                  className={`h-10 px-4 text-white rounded-xl text-[11px] font-bold shadow-lg active:scale-95 transition-all flex items-center gap-2 relative overflow-hidden group/auditbtn ${getStockStatus(item) === 'critical' ? 'bg-red-600 hover:bg-red-700 shadow-red-500/30' : 'bg-medical-600 hover:bg-medical-700 shadow-medical-500/20'} ${loadingItemIds.has(item.id) ? 'opacity-75 cursor-wait' : ''}`}
                                 >
                                   {loadingItemIds.has(item.id) ? (
                                     <i className="fa-solid fa-circle-notch fa-spin text-base"></i>
@@ -587,7 +587,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                             {hasPermission('inventory.edit') && (
                               <button
                                 onClick={() => onEditItem(item)}
-                                className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white flex items-center justify-center transition-all text-sm active:scale-90 ml-1"
+                                className="w-10 h-10 rounded-xl bg-medical-50 dark:bg-medical-900/30 text-medical-600 dark:text-medical-400 hover:bg-medical-600 hover:text-white flex items-center justify-center transition-all text-sm active:scale-90 ml-1"
                               >
                                 <i className="fa-solid fa-pen-to-square"></i>
                               </button>
@@ -636,7 +636,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                       <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-[9px] font-black uppercase tracking-wider text-slate-500 rounded-lg border border-slate-200/50 dark:border-slate-700/50">
                         {item.category}
                       </span>
-                      <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/20 text-[9px] font-black uppercase tracking-wider text-indigo-500 rounded-lg border border-indigo-100 dark:border-indigo-900/50">
+                      <span className="px-3 py-1 bg-medical-50 dark:bg-medical-900/20 text-[9px] font-bold uppercase tracking-wider text-medical-500 rounded-lg border border-medical-100 dark:border-medical-900/50">
                         <i className="fa-solid fa-location-dot mr-1"></i> {item.location}
                       </span>
                     </div>
@@ -645,7 +645,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                 {hasPermission('inventory.edit') && (
                   <button
                     onClick={() => onEditItem(item)}
-                    className="w-10 h-10 glass-panel rounded-xl flex items-center justify-center text-slate-400 hover:text-indigo-500 transition-all active:scale-95"
+                    className="w-10 h-10 glass-panel rounded-xl flex items-center justify-center text-slate-400 hover:text-medical-500 transition-all active:scale-95"
                   >
                     <i className={`fa-solid ${isAuditMode ? 'fa-pen-to-square' : 'fa-ellipsis-vertical'}`}></i>
                   </button>
@@ -715,7 +715,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                     <button
                       onClick={() => handleAsyncAction(item.id, async () => onAuditItem(item.id))}
                       disabled={loadingItemIds.has(item.id)}
-                      className={`w-full h-16 text-white rounded-3xl font-black text-base shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-4 relative overflow-hidden group/mbaudit ${getStockStatus(item) === 'critical' ? 'bg-red-600 shadow-red-500/40' : 'bg-indigo-600 shadow-indigo-500/40'} ${loadingItemIds.has(item.id) ? 'opacity-75 cursor-wait' : ''}`}
+                      className={`w-full h-14 text-white rounded-2xl font-bold text-sm shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 relative overflow-hidden group/mbaudit ${getStockStatus(item) === 'critical' ? 'bg-red-600 shadow-red-500/40' : 'bg-medical-600 shadow-medical-500/40'} ${loadingItemIds.has(item.id) ? 'opacity-75 cursor-wait' : ''}`}
                     >
                       {loadingItemIds.has(item.id) ? (
                         <i className="fa-solid fa-circle-notch fa-spin text-xl"></i>
