@@ -398,7 +398,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                         <select
                           value={editForm.location || ''}
                           onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                          className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-extrabold focus:ring-2 focus:ring-medical-500 appearance-none"
+                          className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-bold focus:ring-2 focus:ring-medical-500 appearance-none"
                           onClick={(e) => e.stopPropagation()}
                         >
                           {LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
@@ -408,8 +408,8 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                       <div className="flex items-center gap-4">
                         <div className={`w-2 h-12 rounded-full ${getStockStatus(item) === 'critical' ? 'bg-red-500' : getStockStatus(item) === 'warning' ? 'bg-amber-500' : 'bg-emerald-500'} opacity-20 group-hover:opacity-100 transition-opacity`}></div>
                         <div>
-                          <div className="font-extrabold text-slate-900 dark:text-white text-lg tracking-tight group-hover:text-medical-600 transition-colors">{item.name}</div>
-                          <div className="text-[10px] font-extrabold text-slate-400 mt-1 uppercase tracking-widest flex items-center gap-1.5 pt-1">
+                          <div className="font-bold text-slate-900 dark:text-white text-lg tracking-tight group-hover:text-medical-600 transition-colors">{item.name}</div>
+                          <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest flex items-center gap-1.5 pt-1">
                             <i className="fa-solid fa-location-dot text-medical-500/60"></i> {item.location}
                           </div>
                         </div>

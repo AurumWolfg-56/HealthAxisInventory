@@ -145,17 +145,17 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-xl md:p-4 animate-fade-in">
-            <div className="w-full h-[100dvh] md:h-auto md:max-h-[95vh] max-w-2xl flex flex-col bg-white dark:bg-slate-900 md:rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-slate-800 overflow-hidden">
+            <div className="w-full h-[100dvh] md:h-auto md:max-h-[95vh] max-w-2xl flex flex-col bg-white dark:bg-slate-900 md:rounded-2xl shadow-2xl border border-white/20 dark:border-slate-800 overflow-hidden">
 
                 {/* Header */}
-                <div className="shrink-0 z-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-4 md:p-6 border-b border-slate-100 dark:border-slate-800 md:rounded-t-[2.5rem]">
+                <div className="shrink-0 z-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-4 md:p-6 border-b border-slate-100 dark:border-slate-800 md:rounded-t-2xl">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-xl shadow-indigo-500/30">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-medical-500 to-emerald-600 flex items-center justify-center shadow-xl shadow-medical-500/30">
                                 <i className="fa-solid fa-wand-magic-sparkles text-2xl text-white"></i>
                             </div>
                             <div>
-                                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">AI Item Scanner</h2>
+                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">AI Item Scanner</h2>
                                 <p className="text-sm text-slate-500">Powered by Gemini 2.0 Flash</p>
                             </div>
                         </div>
@@ -173,26 +173,26 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <button
                                 onClick={startCamera}
-                                className="group p-8 rounded-3xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-2 border-dashed border-indigo-200 dark:border-indigo-800 hover:border-indigo-400 transition-all flex flex-col items-center gap-4"
+                                className="group p-8 rounded-2xl bg-gradient-to-br from-medical-50 to-emerald-50 dark:from-medical-900/20 dark:to-emerald-900/20 border-2 border-dashed border-medical-200 dark:border-medical-800 hover:border-medical-400 transition-all flex flex-col items-center gap-4"
                             >
-                                <div className="w-20 h-20 rounded-2xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <i className="fa-solid fa-camera text-3xl text-indigo-600"></i>
+                                <div className="w-20 h-20 rounded-2xl bg-medical-100 dark:bg-medical-900/50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <i className="fa-solid fa-camera text-3xl text-medical-600"></i>
                                 </div>
                                 <div className="text-center">
-                                    <h3 className="text-lg font-black text-slate-900 dark:text-white">Take Photo</h3>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Take Photo</h3>
                                     <p className="text-sm text-slate-500 mt-1">Use your camera to scan a label</p>
                                 </div>
                             </button>
 
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="group p-8 rounded-3xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-2 border-dashed border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 transition-all flex flex-col items-center gap-4"
+                                className="group p-8 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-2 border-dashed border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 transition-all flex flex-col items-center gap-4"
                             >
                                 <div className="w-20 h-20 rounded-2xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <i className="fa-solid fa-cloud-arrow-up text-3xl text-emerald-600"></i>
                                 </div>
                                 <div className="text-center">
-                                    <h3 className="text-lg font-black text-slate-900 dark:text-white">Upload Image</h3>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Upload Image</h3>
                                     <p className="text-sm text-slate-500 mt-1">Select a photo from your device</p>
                                 </div>
                             </button>
@@ -228,7 +228,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                                 </button>
                                 <button
                                     onClick={capturePhoto}
-                                    className="px-8 py-4 rounded-2xl bg-indigo-600 text-white font-black shadow-xl shadow-indigo-500/30 hover:bg-indigo-700 transition-all flex items-center gap-3"
+                                    className="px-8 py-4 rounded-2xl bg-medical-600 text-white font-bold shadow-xl shadow-medical-500/30 hover:bg-medical-700 transition-all flex items-center gap-3"
                                 >
                                     <i className="fa-solid fa-camera text-xl"></i> Capture
                                 </button>
@@ -241,13 +241,13 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                     {state === 'processing' && (
                         <div className="py-16 flex flex-col items-center gap-6">
                             <div className="relative">
-                                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center animate-pulse">
+                                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-medical-500 to-emerald-600 flex items-center justify-center animate-pulse">
                                     <i className="fa-solid fa-brain text-4xl text-white"></i>
                                 </div>
-                                <div className="absolute inset-0 rounded-full border-4 border-indigo-300 border-t-transparent animate-spin"></div>
+                                <div className="absolute inset-0 rounded-full border-4 border-medical-300 border-t-transparent animate-spin"></div>
                             </div>
                             <div className="text-center">
-                                <h3 className="text-xl font-black text-slate-900 dark:text-white">Analyzing Image...</h3>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Analyzing Image...</h3>
                                 <p className="text-slate-500 mt-2">Gemini 2.0 is extracting item data</p>
                             </div>
                             {capturedImage && (
@@ -263,12 +263,12 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                                 <i className="fa-solid fa-triangle-exclamation text-4xl text-red-500"></i>
                             </div>
                             <div className="text-center">
-                                <h3 className="text-xl font-black text-slate-900 dark:text-white">Scan Failed</h3>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Scan Failed</h3>
                                 <p className="text-slate-500 mt-2 max-w-sm">{errorMessage}</p>
                             </div>
                             <button
                                 onClick={handleRetry}
-                                className="px-8 py-4 rounded-2xl bg-indigo-600 text-white font-black shadow-xl hover:bg-indigo-700 transition-all"
+                                className="px-8 py-4 rounded-2xl bg-medical-600 text-white font-bold shadow-xl hover:bg-medical-700 transition-all"
                             >
                                 <i className="fa-solid fa-rotate-right mr-2"></i> Try Again
                             </button>
@@ -287,7 +287,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                                         <p className="text-xs text-slate-400">Review and edit if needed</p>
                                     </div>
                                 </div>
-                                <div className={`px-4 py-2 rounded-full font-black text-sm ${scannedData.confidence >= 80 ? 'bg-emerald-100 text-emerald-700' :
+                                <div className={`px-4 py-2 rounded-full font-bold text-sm ${scannedData.confidence >= 80 ? 'bg-emerald-100 text-emerald-700' :
                                     scannedData.confidence >= 50 ? 'bg-amber-100 text-amber-700' :
                                         'bg-red-100 text-red-700'
                                     }`}>
@@ -299,12 +299,12 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {/* Name */}
                                 <div className="sm:col-span-2">
-                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Product Name *</label>
+                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Product Name *</label>
                                     <input
                                         type="text"
                                         value={editedData.name || ''}
                                         onChange={(e) => setEditedData(prev => ({ ...prev, name: e.target.value }))}
-                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-lg font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-lg font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 focus:border-transparent transition-all"
                                     />
                                 </div>
 
@@ -314,7 +314,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                                     <select
                                         value={editedData.category || ''}
                                         onChange={(e) => setEditedData(prev => ({ ...prev, category: e.target.value }))}
-                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 transition-all"
                                     >
                                         {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                     </select>
@@ -340,7 +340,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                                         min="0"
                                         value={editedData.stock || 0}
                                         onChange={(e) => setEditedData(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
-                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-lg font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-lg font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 transition-all"
                                     />
                                 </div>
 
@@ -350,7 +350,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                                     <select
                                         value={editedData.unit || 'each'}
                                         onChange={(e) => setEditedData(prev => ({ ...prev, unit: e.target.value }))}
-                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 transition-all"
                                     >
                                         {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                                     </select>
@@ -363,7 +363,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                                         type="text"
                                         value={editedData.batchNumber || ''}
                                         onChange={(e) => setEditedData(prev => ({ ...prev, batchNumber: e.target.value }))}
-                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 transition-all"
                                         placeholder="LOT12345"
                                     />
                                 </div>
@@ -375,7 +375,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                                         type="date"
                                         value={editedData.expiryDate || ''}
                                         onChange={(e) => setEditedData(prev => ({ ...prev, expiryDate: e.target.value }))}
-                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 transition-all"
                                     />
                                 </div>
 
@@ -387,7 +387,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                                         min="0"
                                         value={editedData.minStock || 0}
                                         onChange={(e) => setEditedData(prev => ({ ...prev, minStock: parseInt(e.target.value) || 0 }))}
-                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-lg font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-lg font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 transition-all"
                                     />
                                 </div>
 
@@ -399,7 +399,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                                         min="0"
                                         value={editedData.maxStock || 0}
                                         onChange={(e) => setEditedData(prev => ({ ...prev, maxStock: parseInt(e.target.value) || 0 }))}
-                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-lg font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-lg font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 transition-all"
                                     />
                                 </div>
 
@@ -412,7 +412,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                                         step="0.01"
                                         value={editedData.averageCost || 0}
                                         onChange={(e) => setEditedData(prev => ({ ...prev, averageCost: parseFloat(e.target.value) || 0 }))}
-                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-lg font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-lg font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 transition-all"
                                     />
                                 </div>
                             </div>
@@ -432,7 +432,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                         <button
                             onClick={handleSave}
                             disabled={!editedData.name}
-                            className="flex-1 h-14 rounded-[1.25rem] bg-emerald-600 text-white font-black shadow-xl shadow-emerald-500/30 hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                            className="flex-1 h-14 rounded-[1.25rem] bg-emerald-600 text-white font-bold shadow-xl shadow-emerald-500/30 hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                         >
                             <i className="fa-solid fa-check text-xl"></i> Add to Inventory
                         </button>

@@ -315,7 +315,7 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
             <canvas ref={canvasRef} className="hidden" />
             <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept="image/*" />
 
-            <div className="w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-slate-800 overflow-hidden flex flex-col">
+            <div className="w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-white/20 dark:border-slate-800 overflow-hidden flex flex-col">
 
                 {/* Header */}
                 <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-medical-50 to-teal-50 dark:from-medical-900/10 dark:to-teal-900/10">
@@ -325,10 +325,10 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                                 <i className="fa-solid fa-wand-magic-sparkles text-3xl text-white"></i>
                             </div>
                             <div>
-                                <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-none">
+                                <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">
                                     AI Vision Transcribe
                                 </h2>
-                                <p className="text-sm font-extrabold text-slate-500 mt-2">
+                                <p className="text-sm font-bold text-slate-500 mt-2">
                                     {state === 'idle' && 'Intelligent invoice data extraction'}
                                     {state === 'camera' && 'Syncing camera lens...'}
                                     {state === 'processing' && 'Neural pattern analysis...'}
@@ -350,10 +350,10 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                     {state === 'idle' && (
                         <div className="p-8 flex flex-col items-center justify-center min-h-[400px] gap-8">
                             <div className="text-center">
-                                <div className="w-24 h-24 rounded-3xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mx-auto mb-6">
-                                    <i className="fa-solid fa-receipt text-5xl text-indigo-500"></i>
+                                <div className="w-24 h-24 rounded-2xl bg-medical-100 dark:bg-medical-900/30 flex items-center justify-center mx-auto mb-6">
+                                    <i className="fa-solid fa-receipt text-5xl text-medical-500"></i>
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-900 dark:text-white">Scan Your Order</h3>
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Scan Your Order</h3>
                                 <p className="text-slate-500 mt-2 max-w-md">
                                     Take a photo or upload an image of your order confirmation, invoice, or packing slip
                                 </p>
@@ -362,7 +362,7 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                             <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
                                 <button
                                     onClick={startCamera}
-                                    className="flex-1 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white font-bold shadow-xl shadow-indigo-500/30 flex items-center justify-center gap-3 hover:scale-105 transition-all"
+                                    className="flex-1 h-16 rounded-2xl bg-gradient-to-br from-medical-600 to-emerald-600 text-white font-bold shadow-xl shadow-medical-500/30 flex items-center justify-center gap-3 hover:scale-105 transition-all"
                                 >
                                     <i className="fa-solid fa-camera text-xl"></i>
                                     Take Photo
@@ -371,7 +371,7 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                                     onClick={() => fileInputRef.current?.click()}
                                     className="flex-1 h-16 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-3 hover:scale-105 transition-all"
                                 >
-                                    <i className="fa-solid fa-image text-xl text-indigo-500"></i>
+                                    <i className="fa-solid fa-image text-xl text-medical-500"></i>
                                     Upload Image
                                 </button>
                             </div>
@@ -391,7 +391,7 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                                     <i className="fa-solid fa-xmark text-2xl"></i>
                                 </button>
                                 <button onClick={capturePhoto} className="w-20 h-20 rounded-full bg-white shadow-2xl flex items-center justify-center hover:scale-110 transition-transform">
-                                    <div className="w-16 h-16 rounded-full bg-indigo-600"></div>
+                                    <div className="w-16 h-16 rounded-full bg-medical-600"></div>
                                 </button>
                                 <button onClick={() => fileInputRef.current?.click()} className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md text-white flex items-center justify-center">
                                     <i className="fa-solid fa-image text-xl"></i>
@@ -404,16 +404,16 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                     {state === 'processing' && (
                         <div className="p-8 flex flex-col items-center justify-center min-h-[400px]">
                             <div className="relative">
-                                <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center animate-pulse">
+                                <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-medical-500 to-emerald-600 flex items-center justify-center animate-pulse">
                                     <i className="fa-solid fa-wand-magic-sparkles text-5xl text-white"></i>
                                 </div>
-                                <div className="absolute -inset-4 rounded-[2rem] border-4 border-indigo-500/30 animate-ping"></div>
+                                <div className="absolute -inset-4 rounded-2xl border-4 border-medical-500/30 animate-ping"></div>
                             </div>
-                            <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-8">Analyzing Order...</h3>
+                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-8">Analyzing Order...</h3>
                             <p className="text-slate-500 mt-2">AI is extracting order details</p>
                             <div className="flex gap-2 mt-6">
                                 {[0, 1, 2].map(i => (
-                                    <div key={i} className="w-3 h-3 rounded-full bg-indigo-500 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }}></div>
+                                    <div key={i} className="w-3 h-3 rounded-full bg-medical-500 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }}></div>
                                 ))}
                             </div>
                         </div>
@@ -422,10 +422,10 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                     {/* Error State */}
                     {state === 'error' && (
                         <div className="p-8 flex flex-col items-center justify-center min-h-[400px]">
-                            <div className="w-24 h-24 rounded-3xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-6">
+                            <div className="w-24 h-24 rounded-2xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-6">
                                 <i className="fa-solid fa-triangle-exclamation text-5xl text-red-500"></i>
                             </div>
-                            <h3 className="text-2xl font-black text-slate-900 dark:text-white">Extraction Failed</h3>
+                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Extraction Failed</h3>
                             <p className="text-slate-500 mt-2 text-center max-w-md">{errorMessage}</p>
                             <button
                                 onClick={resetState}
@@ -443,7 +443,7 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                             {/* Order Details */}
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Vendor</label>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Vendor</label>
                                     <input
                                         type="text"
                                         value={orderDetails.vendor}
@@ -452,7 +452,7 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">PO Number</label>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">PO Number</label>
                                     <input
                                         type="text"
                                         value={orderDetails.poNumber}
@@ -461,7 +461,7 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Order Date</label>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Order Date</label>
                                     <input
                                         type="date"
                                         value={orderDetails.orderDate}
@@ -476,16 +476,16 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                                                 'bg-red-50 text-red-700 border-red-100'
                                             }`}>
                                             <i className="fa-solid fa-microchip text-xs"></i>
-                                            <span className="font-extrabold text-[10px] uppercase tracking-widest">{scannedData.confidence}% Accuracy</span>
+                                            <span className="font-bold text-[10px] uppercase tracking-widest">{scannedData.confidence}% Accuracy</span>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
                             {/* Items Table */}
-                            <div className="border border-slate-100 dark:border-slate-800 rounded-[2rem] overflow-hidden luxury-shadow">
+                            <div className="border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden luxury-shadow">
                                 <div className="bg-slate-50/50 dark:bg-slate-800/50 px-6 py-4 border-b border-slate-100 dark:border-slate-800 backdrop-blur-xl">
-                                    <h4 className="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-widest">
+                                    <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-widest">
                                         <i className="fa-solid fa-list-check text-medical-600"></i>
                                         Transcription Layer ({extractedItems.length} units)
                                     </h4>
@@ -508,22 +508,22 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                                                         type="text"
                                                         value={item.name}
                                                         onChange={(e) => updateItemField(item.id, 'name', e.target.value)}
-                                                        className="w-full font-extrabold text-lg text-slate-900 dark:text-white bg-transparent border-none focus:ring-0 p-0 tracking-tight"
+                                                        className="w-full font-bold text-lg text-slate-900 dark:text-white bg-transparent border-none focus:ring-0 p-0 tracking-tight"
                                                     />
                                                     <div className="flex flex-wrap items-center gap-3 mt-1.5">
                                                         {item.sku && (
-                                                            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-mono font-extrabold text-slate-500 uppercase tracking-tight shadow-sm">
+                                                            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-mono font-bold text-slate-500 uppercase tracking-tight shadow-sm">
                                                                 #{item.sku}
                                                             </span>
                                                         )}
-                                                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">{item.packSize}</span>
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.packSize}</span>
                                                         {item.isNew && (
-                                                            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 text-[9px] font-extrabold uppercase tracking-[0.15em] border border-amber-200/50">
+                                                            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 text-[9px] font-bold uppercase tracking-[0.15em] border border-amber-200/50">
                                                                 Unknown Entity
                                                             </span>
                                                         )}
                                                         {!item.isNew && (
-                                                            <span className="px-3 py-1 rounded-full bg-medical-100 text-medical-700 dark:bg-medical-900/50 dark:text-medical-300 text-[9px] font-extrabold uppercase tracking-[0.15em] border border-medical-200/50">
+                                                            <span className="px-3 py-1 rounded-full bg-medical-100 text-medical-700 dark:bg-medical-900/50 dark:text-medical-300 text-[9px] font-bold uppercase tracking-[0.15em] border border-medical-200/50">
                                                                 Manifest Verified
                                                             </span>
                                                         )}
@@ -538,24 +538,24 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                                                             min="1"
                                                             value={item.quantity}
                                                             onChange={(e) => updateItemField(item.id, 'quantity', parseInt(e.target.value) || 1)}
-                                                            className="w-14 h-10 text-center bg-transparent font-extrabold text-slate-900 dark:text-white border-none focus:ring-0"
+                                                            className="w-14 h-10 text-center bg-transparent font-bold text-slate-900 dark:text-white border-none focus:ring-0"
                                                         />
-                                                        <span className="text-slate-400 font-extrabold px-1">×</span>
+                                                        <span className="text-slate-400 font-bold px-1">×</span>
                                                         <div className="relative">
-                                                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-extrabold">$</span>
+                                                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
                                                             <input
                                                                 type="number"
                                                                 min="0"
                                                                 step="0.01"
                                                                 value={item.unitCost}
                                                                 onChange={(e) => updateItemField(item.id, 'unitCost', parseFloat(e.target.value) || 0)}
-                                                                className="w-24 h-10 text-right pr-4 pl-6 bg-transparent font-extrabold text-slate-900 dark:text-white border-none focus:ring-0"
+                                                                className="w-24 h-10 text-right pr-4 pl-6 bg-transparent font-bold text-slate-900 dark:text-white border-none focus:ring-0"
                                                             />
                                                         </div>
                                                     </div>
 
                                                     <div className="w-28 text-right">
-                                                        <div className="text-xl font-extrabold text-medical-600 dark:text-medical-400 tracking-tight">
+                                                        <div className="text-xl font-bold text-medical-600 dark:text-medical-400 tracking-tight">
                                                             ${item.total.toFixed(2)}
                                                         </div>
                                                     </div>
@@ -590,51 +590,51 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
 
                             {/* Totals */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-4">
-                                <div className="p-5 rounded-[2rem] bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 shadow-inner group">
-                                    <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Subtotal</div>
+                                <div className="p-5 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 shadow-inner group">
+                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Subtotal</div>
                                     <div className="relative">
-                                        <span className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-900 dark:text-white font-extrabold text-2xl">$</span>
+                                        <span className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-900 dark:text-white font-bold text-2xl">$</span>
                                         <input
                                             type="number"
                                             min="0"
                                             step="0.01"
                                             value={orderDetails.subtotal}
                                             onChange={(e) => setOrderDetails(prev => ({ ...prev, subtotal: parseFloat(e.target.value) || 0 }))}
-                                            className="w-full h-10 pl-6 pr-2 rounded-xl border-none bg-transparent text-2xl text-slate-900 dark:text-white font-extrabold focus:ring-0 p-0 tracking-tight"
+                                            className="w-full h-10 pl-6 pr-2 rounded-xl border-none bg-transparent text-2xl text-slate-900 dark:text-white font-bold focus:ring-0 p-0 tracking-tight"
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-2 group">
-                                    <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Taxation</label>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Taxation</label>
                                     <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-extrabold">$</span>
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
                                         <input
                                             type="number"
                                             min="0"
                                             step="0.01"
                                             value={orderDetails.totalTax}
                                             onChange={(e) => setOrderDetails(prev => ({ ...prev, totalTax: parseFloat(e.target.value) || 0 }))}
-                                            className="w-full h-14 pl-10 pr-6 rounded-2xl border-none bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-extrabold focus:ring-4 ring-medical-500/10 transition-all outline-none"
+                                            className="w-full h-14 pl-10 pr-6 rounded-2xl border-none bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-bold focus:ring-4 ring-medical-500/10 transition-all outline-none"
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-2 group">
-                                    <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Logistics</label>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Logistics</label>
                                     <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-extrabold">$</span>
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
                                         <input
                                             type="number"
                                             min="0"
                                             step="0.01"
                                             value={orderDetails.shippingCost}
                                             onChange={(e) => setOrderDetails(prev => ({ ...prev, shippingCost: parseFloat(e.target.value) || 0 }))}
-                                            className="w-full h-14 pl-10 pr-6 rounded-2xl border-none bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-extrabold focus:ring-4 ring-medical-500/10 transition-all outline-none"
+                                            className="w-full h-14 pl-10 pr-6 rounded-2xl border-none bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-bold focus:ring-4 ring-medical-500/10 transition-all outline-none"
                                         />
                                     </div>
                                 </div>
-                                <div className="p-5 rounded-[2rem] bg-gradient-to-br from-medical-600 to-teal-600 shadow-2xl shadow-medical-500/30">
-                                    <div className="text-[10px] font-extrabold text-white/70 uppercase tracking-widest mb-1">Combined Total</div>
-                                    <div className="text-3xl font-extrabold text-white tracking-tighter">${grandTotal.toFixed(2)}</div>
+                                <div className="p-5 rounded-2xl bg-gradient-to-br from-medical-600 to-teal-600 shadow-2xl shadow-medical-500/30">
+                                    <div className="text-[10px] font-bold text-white/70 uppercase tracking-widest mb-1">Combined Total</div>
+                                    <div className="text-3xl font-bold text-white tracking-tighter">${grandTotal.toFixed(2)}</div>
                                 </div>
                             </div>
 
@@ -659,7 +659,7 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                     <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex gap-6">
                         <button
                             onClick={resetState}
-                            className="flex-1 h-16 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-extrabold text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center gap-3 tracking-tight"
+                            className="flex-1 h-16 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center gap-3 tracking-tight"
                         >
                             <i className="fa-solid fa-camera-rotate text-lg"></i>
                             Re-Scan Document
@@ -667,7 +667,7 @@ const OrderScannerModal: React.FC<OrderScannerModalProps> = ({
                         <button
                             onClick={handleCreateOrder}
                             disabled={extractedItems.length === 0 || isProcessing}
-                            className="flex-1 h-16 rounded-[1.25rem] bg-gradient-to-r from-medical-600 to-teal-600 text-white font-extrabold shadow-2xl shadow-medical-500/30 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-4 text-lg tracking-tight"
+                            className="flex-1 h-16 rounded-[1.25rem] bg-gradient-to-r from-medical-600 to-teal-600 text-white font-bold shadow-2xl shadow-medical-500/30 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-4 text-lg tracking-tight"
                         >
                             {isProcessing ? (
                                 <>

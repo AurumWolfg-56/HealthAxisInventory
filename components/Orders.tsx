@@ -528,7 +528,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                                                 {/* PO Number */}
                                                 <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y border-white dark:border-slate-800 md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer align-middle flex justify-between items-center md:table-cell border-b border-slate-50 dark:border-slate-800/50 md:border-b-0">
                                                     <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('lbl_po')}</div>
-                                                    <div className="font-mono font-extrabold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 px-3 py-1 rounded-lg inline-block text-[11px] md:text-xs border border-slate-100 dark:border-slate-700/50">
+                                                    <div className="font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 px-3 py-1 rounded-lg inline-block text-[11px] md:text-xs border border-slate-100 dark:border-slate-700/50">
                                                         #{order.poNumber}
                                                     </div>
                                                 </td>

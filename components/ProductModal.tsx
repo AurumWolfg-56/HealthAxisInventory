@@ -180,7 +180,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                 <div className="flex items-center justify-end px-2">
                   <div className="text-right">
                     <p className="text-[10px] uppercase font-semibold text-slate-400">Total Value</p>
-                    <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">
+                    <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
                       ${((formData.stock || 0) * (formData.averageCost || 0)).toFixed(2)}
                     </p>
                   </div>

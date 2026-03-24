@@ -68,7 +68,7 @@ const VoiceMemos: React.FC<VoiceMemosProps> = ({ user, t }) => {
       </header>
 
       {/* Input Area */}
-      <div className="glass-panel p-8 rounded-[2.5rem] shadow-glass border border-white/50 dark:border-slate-800">
+      <div className="glass-panel p-8 rounded-2xl shadow-glass border border-white/50 dark:border-slate-800">
         <div className="mb-6 flex justify-between items-center">
           <label className="text-sm font-bold text-slate-500 uppercase tracking-widest ml-2">New Memo</label>
           <span className="inline-flex items-center gap-2 text-xs text-teal-700 bg-teal-100 px-3 py-1 rounded-full font-bold uppercase tracking-wider border border-teal-200">
@@ -80,7 +80,7 @@ const VoiceMemos: React.FC<VoiceMemosProps> = ({ user, t }) => {
           onChange={setCurrentNote}
           placeholder="Tap the microphone to dictate clinical notes, reminders, or observations..."
           rows={6}
-          className="text-xl leading-relaxed bg-slate-50 dark:bg-slate-900/50 rounded-3xl border-transparent focus:ring-4 focus:ring-teal-500/20 p-6 placeholder:text-slate-400"
+          className="text-xl leading-relaxed bg-slate-50 dark:bg-slate-900/50 rounded-2xl border-transparent focus:ring-4 focus:ring-teal-500/20 p-6 placeholder:text-slate-400"
         />
         <div className="flex justify-end mt-6">
           <button
@@ -105,7 +105,7 @@ const VoiceMemos: React.FC<VoiceMemosProps> = ({ user, t }) => {
           </div>
         ) : (
           memos.map(memo => (
-            <div key={memo.id} className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-float hover:shadow-xl transition-all duration-300 relative group flex flex-col hover:-translate-y-1">
+            <div key={memo.id} className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-float hover:shadow-xl transition-all duration-300 relative group flex flex-col hover:-translate-y-1">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-600 text-white flex items-center justify-center text-sm font-bold shadow-md">

@@ -121,7 +121,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                 {/* Metrics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {/* Total Spend */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800">
                         <div className="flex items-center gap-4 mb-2">
                             <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                                 <i className="fa-solid fa-sack-dollar text-xl"></i>
@@ -134,7 +134,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                     </div>
 
                     {/* Total Orders */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800">
                         <div className="flex items-center gap-4 mb-2">
                             <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                                 <i className="fa-solid fa-file-invoice text-xl"></i>
@@ -147,7 +147,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                     </div>
 
                     {/* Avg Order Value */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800">
                         <div className="flex items-center gap-4 mb-2">
                             <div className="w-12 h-12 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-600 dark:text-violet-400">
                                 <i className="fa-solid fa-scale-balanced text-xl"></i>
@@ -160,7 +160,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                     </div>
 
                     {/* Items Logged */}
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800">
                         <div className="flex items-center gap-4 mb-2">
                             <div className="w-12 h-12 rounded-2xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
                                 <i className="fa-solid fa-boxes-packing text-xl"></i>

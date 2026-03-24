@@ -226,8 +226,8 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                 <i className="fa-solid fa-list-check"></i>
                             </div>
                             <div>
-                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Services</div>
-                                <div className="text-lg font-black text-slate-900 dark:text-white leading-none">{stats.total}</div>
+                                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total Services</div>
+                                <div className="text-lg font-bold text-slate-900 dark:text-white leading-none">{stats.total}</div>
                             </div>
                         </div>
                         <div className="glass-panel px-6 py-3 rounded-2xl flex items-center gap-3 border shadow-sm group hover:scale-105 transition-transform">
@@ -235,8 +235,8 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                 <i className="fa-solid fa-layer-group"></i>
                             </div>
                             <div>
-                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Categories</div>
-                                <div className="text-lg font-black text-slate-900 dark:text-white leading-none">{stats.categories}</div>
+                                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Categories</div>
+                                <div className="text-lg font-bold text-slate-900 dark:text-white leading-none">{stats.categories}</div>
                             </div>
                         </div>
                         <div className="glass-panel px-6 py-3 rounded-2xl flex items-center gap-3 border shadow-sm group hover:scale-105 transition-transform">
@@ -244,8 +244,8 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                 <i className="fa-solid fa-chart-line"></i>
                             </div>
                             <div>
-                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Avg. Price</div>
-                                <div className="text-lg font-black text-slate-900 dark:text-white leading-none">${stats.avgPrice.toFixed(0)}</div>
+                                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Avg. Price</div>
+                                <div className="text-lg font-bold text-slate-900 dark:text-white leading-none">${stats.avgPrice.toFixed(0)}</div>
                             </div>
                         </div>
                     </div>
@@ -270,7 +270,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                         </button>
                         <button
                             onClick={handleAddNew}
-                            className={`h-14 px-8 text-white rounded-2xl font-black shadow-2xl flex items-center gap-3 transition-all hover:scale-105 active:scale-95 group ${priceTab === 'combo' ? 'bg-violet-600 shadow-violet-500/40' : 'bg-emerald-600 shadow-emerald-500/40'}`}
+                            className={`h-14 px-8 text-white rounded-2xl font-bold shadow-2xl flex items-center gap-3 transition-all hover:scale-105 active:scale-95 group ${priceTab === 'combo' ? 'bg-violet-600 shadow-violet-500/40' : 'bg-emerald-600 shadow-emerald-500/40'}`}
                         >
                             <i className="fa-solid fa-plus text-xl group-hover:rotate-90 transition-transform"></i>
                             <span className="tracking-tight">
@@ -354,7 +354,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                             <i className="fa-solid fa-star text-amber-500 text-lg"></i>
                         </div>
                         <div>
-                            <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
                                 {priceTab === 'individual' ? 'Quick Reference Services' : 'Quick Reference Packages'}
                             </h2>
                             <p className="text-xs text-slate-400 font-bold">{featuredPrices.length} pinned {priceTab === 'individual' ? 'services' : 'packages'}</p>
@@ -394,7 +394,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                                 <h3 className="text-white font-bold text-sm leading-tight line-clamp-2">{item.serviceName}</h3>
                                             </div>
                                             <div className="flex-shrink-0 text-right">
-                                                <div className="text-white font-black text-2xl tabular-nums leading-none">
+                                                <div className="text-white font-bold text-2xl tabular-nums leading-none">
                                                     ${item.price.toFixed(2)}
                                                 </div>
                                             </div>
@@ -431,10 +431,10 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                             <table className="w-full">
                                 <thead className="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 sticky top-0 backdrop-blur-xl z-10">
                                     <tr>
-                                        <th className="p-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Service</th>
-                                        <th className="p-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                                        <th className="p-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Price</th>
-                                        {canManage && <th className="p-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">Actions</th>}
+                                        <th className="p-6 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Service</th>
+                                        <th className="p-6 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category</th>
+                                        <th className="p-6 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Price</th>
+                                        {canManage && <th className="p-6 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest w-32">Actions</th>}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
@@ -464,7 +464,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                                             <i className={`fa-${item.isFeatured ? 'solid' : 'regular'} fa-star text-lg`}></i>
                                                         </button>
                                                     )}
-                                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black text-lg shadow-sm">
+                                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-lg shadow-sm">
                                                         {item.serviceName.charAt(0).toUpperCase()}
                                                     </div>
                                                     <div>
@@ -485,7 +485,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                                 </span>
                                             </td>
                                             <td className="p-6 text-right whitespace-nowrap">
-                                                <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
+                                                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
                                                     ${item.price.toFixed(2)}
                                                 </div>
                                             </td>
@@ -538,7 +538,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                                 <i className={`fa-${item.isFeatured ? 'solid' : 'regular'} fa-star`}></i>
                                             </button>
                                         )}
-                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black text-xl shadow-sm flex-shrink-0">
+                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-xl shadow-sm flex-shrink-0">
                                             {item.serviceName.charAt(0).toUpperCase()}
                                         </div>
                                         <div className="flex-1 min-w-0 pt-1">
@@ -554,7 +554,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                             </div>
                                         </div>
                                         <div className="text-right flex-shrink-0 whitespace-nowrap pl-2 pt-1">
-                                            <div className="text-xl font-black text-emerald-600 dark:text-emerald-400">
+                                            <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
                                                 ${item.price.toFixed(2)}
                                             </div>
                                         </div>
@@ -598,7 +598,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                         <i className={`fa-solid ${editingItem ? 'fa-pen-to-square' : 'fa-plus'} text-2xl text-white`}></i>
                                     </div>
                                     <div>
-                                        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
                                             {editingItem ? 'Edit Service' : 'New Service'}
                                         </h2>
                                         <p className="text-sm text-slate-500">
@@ -618,7 +618,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                         {/* Modal Body */}
                         <div className="p-6 space-y-5">
                             <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
                                     <i className="fa-solid fa-tag mr-2"></i>Service Name *
                                 </label>
                                 <input
@@ -633,7 +633,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
+                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
                                         <i className="fa-solid fa-dollar-sign mr-2"></i>Price *
                                     </label>
                                     <input
@@ -642,12 +642,12 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                         step="0.01"
                                         value={formData.price ?? ''}
                                         onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-lg font-black text-emerald-600 dark:text-emerald-400 focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                                        className="w-full h-14 px-5 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-lg font-bold text-emerald-600 dark:text-emerald-400 focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                                         placeholder="0.00"
                                     />
                                 </div>
                                 <div className="relative">
-                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
+                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
                                         <i className="fa-solid fa-folder mr-2"></i>Category
                                     </label>
                                     <input
@@ -701,7 +701,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                             </div>
 
                             <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
                                     <i className="fa-solid fa-barcode mr-2"></i>CPT Code (Optional)
                                 </label>
                                 <input
@@ -725,7 +725,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                             <button
                                 onClick={handleSave}
                                 disabled={(!formData.serviceName || formData.price === undefined || formData.price < 0) || localIsLoading}
-                                className="flex-1 h-14 rounded-2xl bg-emerald-600 text-white font-black shadow-xl shadow-emerald-500/30 hover:bg-emerald-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                                className="flex-1 h-14 rounded-2xl bg-emerald-600 text-white font-bold shadow-xl shadow-emerald-500/30 hover:bg-emerald-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                             >
                                 {localIsLoading ? <i className="fa-solid fa-spinner animate-spin text-xl"></i> : <i className={`fa-solid ${editingItem ? 'fa-check' : 'fa-plus'} text-xl`}></i>}
                                 {editingItem ? 'Save Changes' : 'Add Service'}

@@ -73,7 +73,7 @@ const ProtocolModal: React.FC<ProtocolModalProps> = ({ isOpen, onClose, onSave, 
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white dark:bg-[#1a2235] rounded-3xl w-full max-w-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] animate-scale-in">
+            <div className="bg-white dark:bg-[#1a2235] rounded-2xl w-full max-w-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] animate-scale-in">
 
                 {/* Header */}
                 <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/20">
@@ -205,10 +205,10 @@ const ProtocolModal: React.FC<ProtocolModalProps> = ({ isOpen, onClose, onSave, 
 
                             {/* Live Preview Box */}
                             {formData.content && formData.content.trim() !== '' && (
-                                <div className="mt-4 p-4 rounded-xl border border-indigo-100 dark:border-indigo-500/20 bg-indigo-50/50 dark:bg-indigo-900/10">
+                                <div className="mt-4 p-4 rounded-xl border border-medical-100 dark:border-medical-500/20 bg-medical-50/50 dark:bg-medical-900/10">
                                     <div className="flex items-center gap-2 mb-3">
-                                        <i className="fa-solid fa-eye text-indigo-500 text-sm"></i>
-                                        <span className="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase tracking-wider">Live Preview</span>
+                                        <i className="fa-solid fa-eye text-medical-500 text-sm"></i>
+                                        <span className="text-xs font-bold text-medical-800 dark:text-medical-400 uppercase tracking-wider">Live Preview</span>
                                     </div>
                                     <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm max-h-48 overflow-y-auto custom-scrollbar">
                                         <RichTextContent content={formData.content} />
@@ -233,7 +233,7 @@ const ProtocolModal: React.FC<ProtocolModalProps> = ({ isOpen, onClose, onSave, 
                                         checked={formData.requiresAcknowledgment}
                                         onChange={e => setFormData(prev => ({ ...prev, requiresAcknowledgment: e.target.checked }))}
                                     />
-                                    <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                                    <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
                                 </label>
                             </div>
 
@@ -252,7 +252,7 @@ const ProtocolModal: React.FC<ProtocolModalProps> = ({ isOpen, onClose, onSave, 
                                         checked={formData.isPinned}
                                         onChange={e => setFormData(prev => ({ ...prev, isPinned: e.target.checked }))}
                                     />
-                                    <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-500"></div>
+                                    <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-500"></div>
                                 </label>
                             </div>
                         </div>

@@ -52,12 +52,12 @@ const ProtocolSignaturesModal: React.FC<ProtocolSignaturesModalProps> = ({ isOpe
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white dark:bg-[#1a2235] rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[85vh] animate-scale-in">
+            <div className="bg-white dark:bg-[#1a2235] rounded-2xl w-full max-w-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[85vh] animate-scale-in">
 
                 {/* Header */}
                 <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/20">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                        <div className="w-10 h-10 rounded-xl bg-medical-500/10 flex items-center justify-center text-medical-600 dark:text-medical-400">
                             <i className="fa-solid fa-file-signature text-lg"></i>
                         </div>
                         <div>
@@ -81,7 +81,7 @@ const ProtocolSignaturesModal: React.FC<ProtocolSignaturesModalProps> = ({ isOpe
                         </div>
                         <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                             <div
-                                className={`h-full rounded-full transition-all duration-1000 ${progress === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                                className={`h-full rounded-full transition-all duration-1000 ${progress === 100 ? 'bg-emerald-500' : 'bg-medical-500'}`}
                                 style={{ width: `${progress}%` }}
                             ></div>
                         </div>

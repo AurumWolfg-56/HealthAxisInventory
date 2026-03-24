@@ -373,7 +373,7 @@ const MedicalCodesManager: React.FC<MedicalCodesManagerProps> = ({ codes, groups
                                 <div className="space-y-3 mt-auto">
                                     {/* CPT CODE */}
                                     <div className="flex justify-between items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50">
-                                        <span className="text-xs font-extrabold text-gray-400 uppercase tracking-wider">CPT Code</span>
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">CPT Code</span>
                                         <div className="flex items-center gap-2">
                                             <span className="font-mono font-bold tabular-nums text-lg text-slate-800 dark:text-slate-100">
                                                 {code.cptCode || <span className="text-slate-300 italic text-sm">N/A</span>}

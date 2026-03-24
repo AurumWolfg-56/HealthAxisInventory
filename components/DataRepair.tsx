@@ -86,21 +86,21 @@ export const DataRepair: React.FC = () => {
     };
 
     return (
-        <div className="p-6 border border-amber-200 rounded-3xl bg-amber-50 dark:bg-amber-900/10 space-y-4 animate-fade-in">
+        <div className="p-6 border border-amber-200 rounded-2xl bg-amber-50 dark:bg-amber-900/10 space-y-4 animate-fade-in">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
                         <i className="fa-solid fa-user-doctor"></i>
                     </div>
                     <div>
-                        <h3 className="font-black text-slate-900 dark:text-white uppercase tracking-tight">Provider Data Repair</h3>
+                        <h3 className="font-bold text-slate-900 dark:text-white uppercase tracking-tight">Provider Data Repair</h3>
                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Detect and fix missing user profiles for assigned roles</p>
                     </div>
                 </div>
                 <button
                     onClick={scan}
                     disabled={loading}
-                    className="px-5 py-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm hover:shadow-md transition-all active:scale-95 border border-slate-200 dark:border-slate-700 disabled:opacity-50"
+                    className="px-5 py-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold uppercase tracking-widest shadow-sm hover:shadow-md transition-all active:scale-95 border border-slate-200 dark:border-slate-700 disabled:opacity-50"
                 >
                     {loading ? <i className="fa-solid fa-spinner fa-spin mr-2"></i> : <i className="fa-solid fa-magnifying-glass mr-2"></i>}
                     {loading ? 'Scanning...' : 'Scan Database'}
@@ -116,11 +116,11 @@ export const DataRepair: React.FC = () => {
             {orphans.length > 0 && (
                 <div className="space-y-3 pt-2">
                     <div className="flex justify-between items-center">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-red-500">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-red-500">
                             <i className="fa-solid fa-triangle-exclamation mr-1"></i>
                             {orphans.length} Issues Found
                         </p>
-                        <button onClick={fixAll} className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:underline">
+                        <button onClick={fixAll} className="text-[10px] font-bold uppercase tracking-widest text-medical-600 hover:underline">
                             Fix All
                         </button>
                     </div>
@@ -130,7 +130,7 @@ export const DataRepair: React.FC = () => {
                             <div key={o.user_id} className="flex justify-between items-center bg-white dark:bg-slate-800 p-3 rounded-xl border border-amber-100 dark:border-amber-900/20 shadow-sm">
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${o.role_id === 'DOCTOR' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${o.role_id === 'DOCTOR' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
                                             {o.role_id}
                                         </span>
                                         <span className="text-xs font-mono text-slate-400">{o.user_id.substring(0, 8)}...</span>
@@ -138,7 +138,7 @@ export const DataRepair: React.FC = () => {
                                 </div>
                                 <button
                                     onClick={() => fixOrphan(o)}
-                                    className="text-[10px] bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg font-black hover:bg-indigo-100 dark:hover:bg-indigo-900/40 uppercase tracking-wide transition-colors"
+                                    className="text-[10px] bg-medical-50 dark:bg-medical-900/20 text-medical-600 dark:text-medical-400 px-3 py-1.5 rounded-lg font-bold hover:bg-medical-100 dark:hover:bg-medical-900/40 uppercase tracking-wide transition-colors"
                                 >
                                     Restore
                                 </button>
