@@ -256,11 +256,11 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                 {/* Left Column: Balance & Actions */}
                 <div className="space-y-8">
                     {/* Premium Balance Card */}
-                    <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-black dark:to-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden h-[340px] flex flex-col justify-between border border-white/10 group">
+                    <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-black dark:to-slate-900 rounded-2xl p-8 text-white shadow-2xl relative overflow-hidden h-[340px] flex flex-col justify-between border border-white/10 group">
 
                         {/* Holographic Effects */}
                         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-br from-emerald-500/20 to-blue-500/20 rounded-full blur-[100px] -mr-20 -mt-20 pointer-events-none group-hover:scale-110 transition-transform duration-1000"></div>
-                        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px] -ml-10 -mb-10 pointer-events-none"></div>
+                        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-medical-500/10 rounded-full blur-[80px] -ml-10 -mb-10 pointer-events-none"></div>
 
                         <div className="relative z-10 flex justify-between items-start">
                             <div className="flex gap-2 items-center">
@@ -269,11 +269,11 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                                 </div>
                                 <span className="text-sm font-bold tracking-widest uppercase text-white/60">Clinic Reserve</span>
                             </div>
-                            <span className="text-lg font-black tracking-widest text-white/80">ICP-CARE PC</span>
+                            <span className="text-lg font-bold tracking-widest text-white/80">ICP-CARE PC</span>
                         </div>
 
                         <div className="relative z-10 text-center py-6">
-                            <div className="text-6xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 drop-shadow-sm">
+                            <div className="text-6xl font-bold tabular-nums tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 drop-shadow-sm">
                                 ${balance.toFixed(2)}
                             </div>
                             <div className="text-sm font-medium text-emerald-400 mt-2 flex items-center justify-center gap-2">
@@ -285,13 +285,13 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                         <div className="relative z-10 grid grid-cols-2 gap-4">
                             <button
                                 onClick={() => { setFormAction('DEPOSIT'); setIsFormOpen(true); setEditId(null); setAmount(''); setReason(''); }}
-                                className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-3.5 rounded-2xl shadow-lg hover:shadow-emerald-500/40 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                                className="bg-emerald-500 hover:bg-emerald-400 text-white font-semibold py-3.5 rounded-xl shadow-lg hover:shadow-emerald-500/40 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 text-sm"
                             >
                                 <i className="fa-solid fa-plus"></i> Cash In
                             </button>
                             <button
                                 onClick={() => { setFormAction('WITHDRAWAL'); setIsFormOpen(true); setEditId(null); setAmount(''); setReason(''); }}
-                                className="bg-white/10 hover:bg-white/20 text-white font-bold py-3.5 rounded-2xl border border-white/10 backdrop-blur-md transition-all flex items-center justify-center gap-2"
+                                className="bg-white/10 hover:bg-white/20 text-white font-semibold py-3.5 rounded-xl border border-white/10 backdrop-blur-md transition-all flex items-center justify-center gap-2 text-sm"
                             >
                                 <i className="fa-solid fa-receipt"></i> Cash Out
                             </button>
@@ -300,8 +300,8 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
 
                     {/* Transaction Form Panel */}
                     {isFormOpen && (
-                        <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 shadow-glass border border-gray-100 dark:border-gray-800 animate-scale-in origin-top">
-                            <h3 className={`text-xl font-black mb-6 flex items-center gap-3 ${formAction === 'DEPOSIT' ? 'text-emerald-600' : 'text-red-500'}`}>
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 shadow-glass border border-slate-100 dark:border-slate-800 animate-scale-in origin-top">
+                            <h3 className={`text-xl font-bold mb-6 flex items-center gap-3 ${formAction === 'DEPOSIT' ? 'text-emerald-600' : 'text-red-500'}`}>
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formAction === 'DEPOSIT' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
                                     <i className={`fa-solid ${formAction === 'DEPOSIT' ? 'fa-arrow-down' : 'fa-arrow-up'}`}></i>
                                 </div>
@@ -310,9 +310,9 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
 
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div>
-                                    <label className="text-xs font-extrabold text-gray-400 uppercase tracking-wider ml-1 mb-2 block">Amount</label>
+                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1 mb-2 block">Amount</label>
                                     <div className="relative">
-                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xl">$</span>
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">$</span>
                                         <input
                                             autoFocus
                                             type="number"
@@ -321,38 +321,38 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                                             required
                                             value={amount}
                                             onChange={e => setAmount(e.target.value)}
-                                            className="w-full h-16 pl-10 pr-6 text-3xl font-black rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-4 focus:ring-emerald-500/20 text-gray-900 dark:text-white placeholder-gray-300"
+                                            className="w-full h-12 pl-10 pr-6 text-2xl font-bold tabular-nums rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none focus:ring-4 focus:ring-emerald-500/20 text-slate-900 dark:text-white placeholder-slate-300"
                                             placeholder="0.00"
                                         />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="text-xs font-extrabold text-gray-400 uppercase tracking-wider ml-1 mb-2 block">Description</label>
+                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1 mb-2 block">Description</label>
                                     <input
                                         type="text"
                                         required
                                         value={reason}
                                         onChange={e => setReason(e.target.value)}
-                                        className="w-full h-14 px-5 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-4 focus:ring-emerald-500/20 text-gray-900 dark:text-white font-bold text-lg"
+                                        className="w-full h-11 px-5 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none focus:ring-4 focus:ring-emerald-500/20 text-slate-900 dark:text-white font-bold text-sm"
                                         placeholder={formAction === 'DEPOSIT' ? "Source of funds..." : "What was purchased..."}
                                     />
                                 </div>
 
                                 {/* If editing, allow switching type */}
                                 {editId && (
-                                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-                                        <label className="text-xs font-extrabold text-gray-400 uppercase tracking-wider block mb-2">Transaction Type</label>
+                                    <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Transaction Type</label>
                                         <div className="flex gap-2">
                                             <button
                                                 type="button"
                                                 onClick={() => setFormAction('DEPOSIT')}
-                                                className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${formAction === 'DEPOSIT' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-white dark:bg-gray-700 text-gray-500'}`}
+                                                className={`flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${formAction === 'DEPOSIT' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-white dark:bg-slate-700 text-slate-500'}`}
                                             >Deposit</button>
                                             <button
                                                 type="button"
                                                 onClick={() => setFormAction('WITHDRAWAL')}
-                                                className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${formAction === 'WITHDRAWAL' ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-white dark:bg-gray-700 text-gray-500'}`}
+                                                className={`flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${formAction === 'WITHDRAWAL' ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-white dark:bg-slate-700 text-slate-500'}`}
                                             >Withdrawal</button>
                                         </div>
                                     </div>
@@ -362,13 +362,13 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                                     <button
                                         type="button"
                                         onClick={handleCancel}
-                                        className="px-6 h-14 font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-2xl transition-colors"
+                                        className="px-6 h-11 font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-sm"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
-                                        className={`flex-1 h-14 font-bold text-white text-lg rounded-2xl shadow-xl shadow-${formAction === 'DEPOSIT' ? 'emerald' : 'red'}-500/30 transition-transform hover:scale-[1.02] ${formAction === 'DEPOSIT' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-red-500 hover:bg-red-400'}`}
+                                        className={`flex-1 h-12 font-semibold text-white text-sm rounded-xl shadow-xl shadow-${formAction === 'DEPOSIT' ? 'emerald' : 'red'}-500/30 transition-transform hover:scale-[1.02] ${formAction === 'DEPOSIT' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-red-500 hover:bg-red-400'}`}
                                     >
                                         {editId ? 'Update Record' : 'Confirm'}
                                     </button>
@@ -382,30 +382,30 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                 <div className="lg:col-span-2 space-y-6">
 
                     {/* Filter Bar */}
-                    <div className="glass-panel p-4 rounded-[2rem] shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <div className="glass-panel p-4 rounded-2xl shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
                         <div className="flex gap-4 items-center w-full md:w-auto px-2">
-                            <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-xl px-4 py-2 border border-gray-100 dark:border-gray-700">
-                                <i className="fa-regular fa-calendar text-gray-400"></i>
+                            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl px-4 py-2 border border-slate-100 dark:border-slate-700">
+                                <i className="fa-regular fa-calendar text-slate-400"></i>
                                 <input
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="bg-transparent border-none h-8 text-sm font-bold text-gray-700 dark:text-white outline-none w-32"
+                                    className="bg-transparent border-none h-8 text-sm font-bold text-slate-700 dark:text-white outline-none w-32"
                                 />
                             </div>
-                            <span className="text-gray-300 font-bold">-</span>
-                            <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-xl px-4 py-2 border border-gray-100 dark:border-gray-700">
+                            <span className="text-slate-300 font-bold">-</span>
+                            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl px-4 py-2 border border-slate-100 dark:border-slate-700">
                                 <input
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    className="bg-transparent border-none h-8 text-sm font-bold text-gray-700 dark:text-white outline-none w-32"
+                                    className="bg-transparent border-none h-8 text-sm font-bold text-slate-700 dark:text-white outline-none w-32"
                                 />
                             </div>
                             {(startDate || endDate) && (
                                 <button
                                     onClick={() => { setStartDate(''); setEndDate(''); }}
-                                    className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-red-500 flex items-center justify-center transition-colors"
+                                    className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-red-500 flex items-center justify-center transition-colors"
                                 >
                                     <i className="fa-solid fa-xmark"></i>
                                 </button>
@@ -413,27 +413,27 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                         </div>
                         <button
                             onClick={handlePrint}
-                            className="h-12 px-6 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm border border-gray-100 dark:border-gray-700 w-full md:w-auto justify-center"
+                            className="h-11 px-6 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-sm border border-slate-100 dark:border-slate-700 w-full md:w-auto justify-center text-sm"
                         >
                             <i className="fa-solid fa-print"></i> Print Report
                         </button>
                     </div>
 
                     {/* Table Card */}
-                    <div className="glass-panel rounded-[2.5rem] shadow-glass overflow-hidden flex flex-col min-h-[500px]">
-                        <div className="p-8 border-b border-gray-100 dark:border-gray-800/50 flex justify-between items-center bg-white/50 dark:bg-gray-900/50 backdrop-blur-md">
-                            <h3 className="font-bold text-gray-900 dark:text-white text-lg flex items-center gap-3">
-                                <span className="w-1.5 h-6 bg-teal-500 rounded-full"></span>
+                    <div className="glass-panel rounded-2xl shadow-glass overflow-hidden flex flex-col min-h-[500px]">
+                        <div className="p-8 border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-md">
+                            <h3 className="font-bold text-slate-900 dark:text-white text-lg flex items-center gap-3">
+                                <span className="w-1.5 h-6 bg-medical-500 rounded-full"></span>
                                 Transaction History
                             </h3>
-                            <span className="text-xs font-bold text-gray-500 uppercase bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700">
+                            <span className="text-xs font-bold text-slate-500 uppercase bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
                                 {filteredHistory.length} Entries
                             </span>
                         </div>
 
                         <div className="overflow-x-auto flex-1">
                             <table className="w-full text-left border-collapse">
-                                <thead className="bg-gray-50/50 dark:bg-gray-800/30 text-xs uppercase text-gray-400 font-extrabold tracking-wider sticky top-0 backdrop-blur-sm z-10">
+                                <thead className="bg-slate-50/50 dark:bg-slate-800/30 text-xs uppercase text-slate-400 font-bold tracking-wider sticky top-0 backdrop-blur-sm z-10">
                                     <tr>
                                         <th className="p-6 pl-8">User / Date</th>
                                         <th className="p-6">Description</th>
@@ -443,24 +443,24 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                                         {canManage && <th className="p-6 text-center">Actions</th>}
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-gray-800/50">
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                                     {filteredHistory.map((tx) => (
-                                        <tr key={tx.id} className="group hover:bg-white/60 dark:hover:bg-gray-800/40 transition-colors">
+                                        <tr key={tx.id} className="group hover:bg-white/60 dark:hover:bg-slate-800/40 transition-colors">
                                             <td className="p-6 pl-8">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-slate-200 to-slate-100 dark:from-slate-700 dark:to-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-bold shadow-inner">
                                                         {getInitials(tx.userName)}
                                                     </div>
                                                     <div>
-                                                        <div className="text-sm font-bold text-gray-900 dark:text-white leading-tight">{tx.userName}</div>
-                                                        <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">
+                                                        <div className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{tx.userName}</div>
+                                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
                                                             {new Date(tx.timestamp).toLocaleDateString()} • {new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="p-6">
-                                                <span className="text-base font-medium text-gray-700 dark:text-gray-300">{tx.reason}</span>
+                                                <span className="text-base font-medium text-slate-700 dark:text-slate-300">{tx.reason}</span>
                                             </td>
                                             <td className="p-6 text-right">
                                                 {tx.action === 'WITHDRAWAL' && (
@@ -477,7 +477,7 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                                                 )}
                                             </td>
                                             <td className="p-6 text-right pr-8">
-                                                <span className="font-mono font-black text-slate-900 dark:text-white text-lg">
+                                                <span className="font-mono font-bold tabular-nums text-slate-900 dark:text-white text-lg">
                                                     ${Number(tx.runningBalance).toFixed(2)}
                                                 </span>
                                             </td>
@@ -487,7 +487,7 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                                                         <button
                                                             type="button"
                                                             onClick={(e) => handleEditClick(e, tx)}
-                                                            className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center justify-center transition-all"
+                                                            className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-medical-500 hover:bg-medical-50 dark:hover:bg-medical-900/30 flex items-center justify-center transition-all"
                                                             title="Edit"
                                                         >
                                                             <i className="fa-solid fa-pen text-sm"></i>
@@ -507,8 +507,8 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                                     ))}
                                     {filteredHistory.length === 0 && (
                                         <tr>
-                                            <td colSpan={canManage ? 6 : 5} className="p-16 text-center text-gray-400 font-medium">
-                                                <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <td colSpan={canManage ? 6 : 5} className="p-16 text-center text-slate-400 font-medium">
+                                                <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
                                                     <i className="fa-solid fa-receipt text-3xl opacity-20"></i>
                                                 </div>
                                                 No transactions found for this period.
