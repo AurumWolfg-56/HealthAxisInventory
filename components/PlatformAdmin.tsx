@@ -248,9 +248,9 @@ export const PlatformAdmin: React.FC<{ readOnly?: boolean }> = ({ readOnly = fal
                     <button
                         key={tab.key}
                         onClick={() => setActiveSection(tab.key as any)}
-                        className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                        className={`px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
                             activeSection === tab.key
-                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                                ? 'bg-medical-600 text-white shadow-lg shadow-medical-500/30'
                                 : 'bg-white dark:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-white border border-slate-200 dark:border-slate-700'
                         }`}
                     >
@@ -261,55 +261,55 @@ export const PlatformAdmin: React.FC<{ readOnly?: boolean }> = ({ readOnly = fal
 
             {/* ═══ SECTION A: Organization ═══ */}
             {activeSection === 'org' && currentOrg && (
-                <div className="glass-panel rounded-[2rem] overflow-hidden border border-slate-100 dark:border-slate-800">
-                    <div className="p-8 bg-gradient-to-r from-indigo-600 to-purple-700 text-white relative overflow-hidden">
+                <div className="glass-panel rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800">
+                    <div className="p-8 bg-gradient-to-r from-medical-600 to-emerald-700 text-white relative overflow-hidden">
                         <div className="absolute -top-20 -right-20 w-60 h-60 bg-white/5 rounded-full blur-3xl"></div>
                         <div className="flex items-center gap-5 relative z-10">
                             {currentOrg.logo_url ? (
                                 <img src={currentOrg.logo_url} alt="" className="w-16 h-16 rounded-2xl object-contain bg-white/10 p-2" />
                             ) : (
-                                <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-3xl font-black">{currentOrg.name.charAt(0)}</div>
+                                <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-3xl font-bold">{currentOrg.name.charAt(0)}</div>
                             )}
                             <div>
-                                <h3 className="text-2xl font-black tracking-tight">{currentOrg.name}</h3>
-                                <p className="text-indigo-200 text-sm font-mono mt-1">/{currentOrg.slug}</p>
+                                <h3 className="text-2xl font-bold tracking-tight">{currentOrg.name}</h3>
+                                <p className="text-medical-200 text-sm font-mono mt-1">/{currentOrg.slug}</p>
                             </div>
                         </div>
                     </div>
                     <div className="p-8 space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="text-center p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
-                                <p className="text-3xl font-black text-indigo-600">{orgLocations.length}</p>
+                                <p className="text-3xl font-bold tabular-nums text-medical-600">{orgLocations.length}</p>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Locations</p>
                             </div>
                             <div className="text-center p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
-                                <p className="text-3xl font-black text-emerald-600">{userLocations.length}</p>
+                                <p className="text-3xl font-bold tabular-nums text-emerald-600">{userLocations.length}</p>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">User Assignments</p>
                             </div>
                             <div className="text-center p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
-                                <p className="text-3xl font-black text-amber-600">{currentOrg.is_active ? '●' : '○'}</p>
+                                <p className="text-3xl font-bold text-amber-600">{currentOrg.is_active ? '●' : '○'}</p>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{currentOrg.is_active ? 'Active' : 'Inactive'}</p>
                             </div>
                         </div>
                                  {!editingOrg ? (
                             !readOnly && <button onClick={() => setEditingOrg({ name: currentOrg.name, logo_url: currentOrg.logo_url || '', primary_color: currentOrg.primary_color || '#0ea5e9' })}
-                                className="px-6 py-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-black rounded-xl text-xs uppercase tracking-widest hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors">
+                                className="px-6 py-3 bg-medical-50 dark:bg-medical-900/20 text-medical-600 dark:text-medical-400 font-bold rounded-xl text-xs uppercase tracking-widest hover:bg-medical-100 dark:hover:bg-medical-900/40 transition-colors">
                                 <i className="fa-solid fa-pen mr-2"></i>Edit Organization
                             </button>
                         ) : (
                             <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl space-y-4 border border-slate-200 dark:border-slate-700">
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Organization Name</label>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Organization Name</label>
                                     <input type="text" value={editingOrg.name} onChange={e => setEditingOrg({ ...editingOrg, name: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-sm outline-none focus:border-indigo-500 dark:text-white" disabled={readOnly} />
+                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-sm outline-none focus:border-medical-500 dark:text-white" disabled={readOnly} />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Logo URL</label>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Logo URL</label>
                                     <input type="text" value={editingOrg.logo_url} onChange={e => setEditingOrg({ ...editingOrg, logo_url: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-sm outline-none focus:border-indigo-500 dark:text-white" placeholder="/logo.png" disabled={readOnly} />
+                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-sm outline-none focus:border-medical-500 dark:text-white" placeholder="/logo.png" disabled={readOnly} />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Primary Color</label>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Primary Color</label>
                                     <div className="flex gap-3 items-center">
                                         <input type="color" value={editingOrg.primary_color} onChange={e => setEditingOrg({ ...editingOrg, primary_color: e.target.value })}
                                             className="w-12 h-10 rounded-lg cursor-pointer border-0" disabled={readOnly} />
@@ -318,8 +318,8 @@ export const PlatformAdmin: React.FC<{ readOnly?: boolean }> = ({ readOnly = fal
                                     </div>
                                 </div>
                                 <div className="flex gap-3 pt-2">
-                                    <button onClick={() => setEditingOrg(null)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-black rounded-xl text-xs uppercase tracking-widest">Cancel</button>
-                                    <button onClick={saveOrg} disabled={saving || readOnly} className="flex-1 py-3 bg-indigo-600 text-white font-black rounded-xl text-xs uppercase tracking-widest shadow-lg disabled:opacity-50">
+                                    <button onClick={() => setEditingOrg(null)} className="flex-1 py-3 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl text-xs uppercase tracking-widest">Cancel</button>
+                                    <button onClick={saveOrg} disabled={saving || readOnly} className="flex-1 py-3 bg-medical-600 text-white font-bold rounded-xl text-xs uppercase tracking-widest shadow-lg disabled:opacity-50">
                                         {saving ? <i className="fa-solid fa-spinner fa-spin"></i> : 'Save'}
                                     </button>
                                 </div>
@@ -335,30 +335,30 @@ export const PlatformAdmin: React.FC<{ readOnly?: boolean }> = ({ readOnly = fal
                     <div className="flex justify-between items-center">
                         <p className="text-xs font-bold text-slate-400">{orgLocations.length} location{orgLocations.length !== 1 ? 's' : ''} in {currentOrg?.name}</p>
                         {!readOnly && <button onClick={() => setEditingLoc(newLocation())}
-                            className="px-5 py-2.5 bg-indigo-600 text-white font-black rounded-xl text-xs uppercase tracking-widest shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-transform">
+                            className="px-5 py-2.5 bg-medical-600 text-white font-bold rounded-xl text-xs uppercase tracking-widest shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-transform">
                             <i className="fa-solid fa-plus mr-2"></i>New Location
                         </button>}
                     </div>
 
                     {loading ? (
-                        <div className="text-center py-20"><i className="fa-solid fa-spinner fa-spin text-indigo-500 text-3xl"></i></div>
+                        <div className="text-center py-20"><i className="fa-solid fa-spinner fa-spin text-medical-500 text-3xl"></i></div>
                     ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                             {orgLocations.map(loc => (
                                 <div key={loc.id} className={`glass-panel rounded-2xl p-6 border transition-all hover:shadow-md ${
-                                    currentLocation?.id === loc.id ? 'border-indigo-300 dark:border-indigo-600 ring-2 ring-indigo-500/10' : 'border-slate-100 dark:border-slate-800'
+                                    currentLocation?.id === loc.id ? 'border-medical-300 dark:border-medical-600 ring-2 ring-medical-500/10' : 'border-slate-100 dark:border-slate-800'
                                 } ${!loc.is_active ? 'opacity-50' : ''}`}>
                                     <div className="flex items-start gap-4">
                                         {loc.logo_url ? (
                                             <img src={loc.logo_url} alt="" className="w-12 h-12 rounded-xl object-contain bg-slate-50 dark:bg-slate-800 p-1" />
                                         ) : (
-                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-medical-500/20 to-blue-500/20 flex items-center justify-center text-medical-600 dark:text-medical-400 text-xl font-black">{loc.name.charAt(0)}</div>
+                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-medical-500/20 to-emerald-500/20 flex items-center justify-center text-medical-600 dark:text-medical-400 text-xl font-bold">{loc.name.charAt(0)}</div>
                                         )}
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
-                                                <h4 className="font-black text-slate-900 dark:text-white truncate">{loc.name}</h4>
+                                                <h4 className="font-bold text-slate-900 dark:text-white truncate">{loc.name}</h4>
                                                 {currentLocation?.id === loc.id && (
-                                                    <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[9px] font-black uppercase rounded-md">Active</span>
+                                                    <span className="px-2 py-0.5 bg-medical-100 dark:bg-medical-900/30 text-medical-600 dark:text-medical-400 text-[9px] font-bold uppercase rounded-md">Active</span>
                                                 )}
                                             </div>
                                             <p className="text-xs font-mono text-slate-400 mt-0.5">/{loc.slug}</p>
@@ -374,7 +374,7 @@ export const PlatformAdmin: React.FC<{ readOnly?: boolean }> = ({ readOnly = fal
                                             </div>
                                         </div>
                                         {!readOnly && <button onClick={() => setEditingLoc(editLocation(loc))}
-                                            className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center shrink-0">
+                                            className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-medical-500 hover:text-white transition-all flex items-center justify-center shrink-0">
                                             <i className="fa-solid fa-pen-to-square"></i>
                                         </button>}
                                     </div>
@@ -391,7 +391,7 @@ export const PlatformAdmin: React.FC<{ readOnly?: boolean }> = ({ readOnly = fal
                     {/* Location selector for flags */}
                     <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
                         <div>
-                            <h4 className="font-black text-slate-900 dark:text-white">Feature Flags</h4>
+                            <h4 className="font-bold text-slate-900 dark:text-white">Feature Flags</h4>
                             <p className="text-xs text-slate-500 mt-1">Toggle modules and features per location</p>
                         </div>
                         <select
@@ -403,7 +403,7 @@ export const PlatformAdmin: React.FC<{ readOnly?: boolean }> = ({ readOnly = fal
                                     setLocalFlags({ ...DEFAULT_FEATURE_FLAGS, ...(loc.feature_flags || {}) });
                                 }
                             }}
-                            className="px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-bold outline-none focus:ring-2 ring-indigo-500/20 dark:text-white min-w-[200px]"
+                            className="px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-bold outline-none focus:ring-2 ring-medical-500/20 dark:text-white min-w-[200px]"
                             disabled={readOnly}
                         >
                             {orgLocations.map(l => (
@@ -414,14 +414,14 @@ export const PlatformAdmin: React.FC<{ readOnly?: boolean }> = ({ readOnly = fal
 
                     {/* Module Flags Grid */}
                     <div>
-                        <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-3">Modules</p>
+                        <p className="text-[10px] font-bold text-medical-500 uppercase tracking-[0.3em] mb-3">Modules</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {moduleFlags.map(key => {
                                 const meta = FLAG_LABELS[key] || { label: key, icon: 'fa-puzzle-piece', desc: '' };
                                 const enabled = localFlags[key] ?? true;
                                 return (
                                     <button key={key} onClick={() => toggleFlag(key)} disabled={readOnly}
-                                        className={`flex items-center gap-4 p-4 rounded-2xl border transition-all text-left group ${
+                                        className={`flex items-center gap-4 p-4 rounded-xl border transition-all text-left group ${
                                             enabled
                                                 ? 'bg-white dark:bg-slate-800 border-emerald-200 dark:border-emerald-800/50 shadow-sm'
                                                 : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 opacity-60'
@@ -432,7 +432,7 @@ export const PlatformAdmin: React.FC<{ readOnly?: boolean }> = ({ readOnly = fal
                                             <i className={`fa-solid ${meta.icon}`}></i>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-black text-sm text-slate-800 dark:text-white truncate">{meta.label}</p>
+                                            <p className="font-bold text-sm text-slate-800 dark:text-white truncate">{meta.label}</p>
                                             <p className="text-[10px] text-slate-400 truncate">{meta.desc}</p>
                                         </div>
                                         <div className={`w-12 h-7 rounded-full flex items-center p-1 transition-all shrink-0 ${
@@ -448,29 +448,29 @@ export const PlatformAdmin: React.FC<{ readOnly?: boolean }> = ({ readOnly = fal
 
                     {/* Sub-Feature Flags */}
                     <div>
-                        <p className="text-[10px] font-black text-purple-500 uppercase tracking-[0.3em] mb-3">Sub-Features</p>
+                        <p className="text-[10px] font-bold text-medical-500 uppercase tracking-[0.3em] mb-3">Sub-Features</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {featureFlags.map(key => {
                                 const meta = FLAG_LABELS[key] || { label: key, icon: 'fa-puzzle-piece', desc: '' };
                                 const enabled = localFlags[key] ?? false;
                                 return (
                                     <button key={key} onClick={() => toggleFlag(key)} disabled={readOnly}
-                                        className={`flex items-center gap-4 p-4 rounded-2xl border transition-all text-left ${
+                                        className={`flex items-center gap-4 p-4 rounded-xl border transition-all text-left ${
                                             enabled
-                                                ? 'bg-white dark:bg-slate-800 border-purple-200 dark:border-purple-800/50 shadow-sm'
+                                                ? 'bg-white dark:bg-slate-800 border-medical-200 dark:border-medical-800/50 shadow-sm'
                                                 : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 opacity-60'
                                         }`}>
                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 ${
-                                            enabled ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'
+                                            enabled ? 'bg-medical-500 text-white shadow-lg shadow-medical-500/20' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'
                                         }`}>
                                             <i className={`fa-solid ${meta.icon}`}></i>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-black text-sm text-slate-800 dark:text-white truncate">{meta.label}</p>
+                                            <p className="font-bold text-sm text-slate-800 dark:text-white truncate">{meta.label}</p>
                                             <p className="text-[10px] text-slate-400 truncate">{meta.desc}</p>
                                         </div>
                                         <div className={`w-12 h-7 rounded-full flex items-center p-1 transition-all shrink-0 ${
-                                            enabled ? 'bg-purple-500 justify-end' : 'bg-slate-300 dark:bg-slate-600 justify-start'
+                                            enabled ? 'bg-medical-500 justify-end' : 'bg-slate-300 dark:bg-slate-600 justify-start'
                                         }`}>
                                             <div className="w-5 h-5 bg-white rounded-full shadow-md transition-all"></div>
                                         </div>
@@ -482,7 +482,7 @@ export const PlatformAdmin: React.FC<{ readOnly?: boolean }> = ({ readOnly = fal
 
                                        {/* Save Flags */}
                     {!readOnly && <button onClick={saveFlags} disabled={saving}
-                        className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black rounded-2xl uppercase text-xs tracking-widest shadow-xl hover:shadow-indigo-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50">
+                        className="px-8 py-4 bg-gradient-to-r from-medical-600 to-emerald-600 text-white font-bold rounded-xl uppercase text-xs tracking-widest shadow-xl hover:shadow-medical-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50">
                         {saving ? <><i className="fa-solid fa-spinner fa-spin mr-2"></i>Saving...</> : <><i className="fa-solid fa-floppy-disk mr-2"></i>Save Feature Flags</>}
                     </button>}
                 </div>
@@ -491,9 +491,9 @@ export const PlatformAdmin: React.FC<{ readOnly?: boolean }> = ({ readOnly = fal
             {/* ═══ EDIT LOCATION MODAL ═══ */}
             {editingLoc && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-                    <div className="glass-panel w-full max-w-lg p-8 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-slate-700 animate-scale-in max-h-[90vh] overflow-y-auto">
+                    <div className="glass-panel w-full max-w-lg p-8 rounded-2xl shadow-2xl border border-white/20 dark:border-slate-700 animate-scale-in max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white">{editingLoc.id ? 'Edit Location' : 'New Location'}</h3>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{editingLoc.id ? 'Edit Location' : 'New Location'}</h3>
                             <button onClick={() => setEditingLoc(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
                                 <i className="fa-solid fa-xmark text-xl"></i>
                             </button>
@@ -509,24 +509,24 @@ export const PlatformAdmin: React.FC<{ readOnly?: boolean }> = ({ readOnly = fal
                                 { key: 'timezone', label: 'Timezone', placeholder: 'America/New_York', type: 'text' },
                             ].map(field => (
                                 <div key={field.key} className="space-y-1">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{field.label}</label>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{field.label}</label>
                                     <input type={field.type} placeholder={field.placeholder}
                                         value={(editingLoc as any)[field.key]}
                                         onChange={e => setEditingLoc({ ...editingLoc, [field.key]: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-sm outline-none focus:border-indigo-500 dark:text-white" />
+                                        className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-sm outline-none focus:border-medical-500 dark:text-white" />
                                 </div>
                             ))}
                             <div className="flex items-center gap-3 pt-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active</label>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active</label>
                                 <button onClick={() => setEditingLoc({ ...editingLoc, is_active: !editingLoc.is_active })}
                                     className={`w-14 h-8 rounded-full flex items-center p-1 transition-all ${editingLoc.is_active ? 'bg-emerald-500 justify-end' : 'bg-slate-300 justify-start'}`}>
                                     <div className="w-6 h-6 bg-white rounded-full shadow-md"></div>
                                 </button>
                             </div>
                             <div className="flex gap-3 pt-4">
-                                <button onClick={() => setEditingLoc(null)} className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-black rounded-xl text-xs uppercase tracking-widest">Cancel</button>
+                                <button onClick={() => setEditingLoc(null)} className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl text-xs uppercase tracking-widest">Cancel</button>
                                 <button onClick={saveLoc} disabled={saving || !editingLoc.name || !editingLoc.slug}
-                                    className="flex-1 py-3.5 bg-indigo-600 text-white font-black rounded-xl text-xs uppercase tracking-widest shadow-lg disabled:opacity-50">
+                                    className="flex-1 py-3.5 bg-medical-600 text-white font-bold rounded-xl text-xs uppercase tracking-widest shadow-lg disabled:opacity-50">
                                     {saving ? <i className="fa-solid fa-spinner fa-spin"></i> : editingLoc.id ? 'Save Changes' : 'Create Location'}
                                 </button>
                             </div>

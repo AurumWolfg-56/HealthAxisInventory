@@ -231,8 +231,8 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                 <div className="glass-panel p-5 flex flex-col gap-3">
                     <div className="flex items-center justify-between">
                         <span className="text-label">Total Inventory Value</span>
-                        <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                            <i className="fa-solid fa-warehouse text-blue-500 text-xs"></i>
+                        <div className="w-8 h-8 rounded-lg bg-medical-500/10 flex items-center justify-center">
+                            <i className="fa-solid fa-warehouse text-medical-500 text-xs"></i>
                         </div>
                     </div>
                     <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(totalInventoryValue)}</p>
@@ -243,11 +243,11 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                 <div className="glass-panel p-5 flex flex-col gap-3">
                     <div className="flex items-center justify-between">
                         <span className="text-label">Capital at Risk</span>
-                        <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                            <i className="fa-solid fa-triangle-exclamation text-purple-500 text-xs"></i>
+                        <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                            <i className="fa-solid fa-triangle-exclamation text-amber-500 text-xs"></i>
                         </div>
                     </div>
-                    <p className="text-2xl font-bold text-purple-500">{formatCurrency(overstockValue)}</p>
+                    <p className="text-2xl font-bold text-amber-500">{formatCurrency(overstockValue)}</p>
                     <div className="flex items-center gap-2">
                         <span className="badge badge-neutral text-[10px]">Overstocked</span>
                         <p className="text-caption">Potential wasted capital</p>
@@ -336,14 +336,14 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                                         <tr key={m.itemId} className="block md:table-row bg-white dark:bg-slate-900 md:bg-transparent rounded-2xl shadow-sm md:shadow-none border border-slate-100 dark:border-slate-800 md:border-none p-4 md:p-0 md:hover:bg-slate-50/50 md:dark:hover:bg-slate-800/30 transition-colors group">
                                             {/* Item */}
                                             <td className="md:table-cell p-0 md:p-4 block mb-4 md:mb-0 border-b border-slate-100 dark:border-slate-800 md:border-none pb-4 md:pb-0">
-                                                <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-1">Item</div>
+                                                <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Item</div>
                                                 <div className="font-bold text-slate-900 dark:text-white text-base md:text-sm">{m.itemName}</div>
                                                 <div className="text-caption mt-0.5">Stock: {m.currentStock} units</div>
                                             </td>
 
                                             {/* Status */}
                                             <td className="md:table-cell p-0 md:p-4 flex justify-between items-center md:table-cell border-b border-slate-50 dark:border-slate-800/50 md:border-none py-2 md:py-0">
-                                                <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Status</div>
+                                                <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</div>
                                                 <div className="text-right md:text-left">
                                                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${statusCfg.badge}`}>
                                                         <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`}></span>
@@ -357,7 +357,7 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
 
                                             {/* Coverage */}
                                             <td className="md:table-cell p-0 md:p-4 flex justify-between items-center md:table-cell border-b border-slate-50 dark:border-slate-800/50 md:border-none py-2 md:py-0 text-sm text-slate-600 dark:text-slate-300 font-medium">
-                                                <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Coverage</div>
+                                                <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">Coverage</div>
                                                 {m.daysRemaining === Infinity ? (
                                                     <span className="text-slate-400">∞ days</span>
                                                 ) : (
@@ -367,7 +367,7 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
 
                                             {/* Confidence */}
                                             <td className="md:table-cell p-0 md:p-4 flex justify-between items-center md:table-cell border-b border-slate-50 dark:border-slate-800/50 md:border-none py-2 md:py-0 py-2 md:py-0">
-                                                <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Confidence</div>
+                                                <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">Confidence</div>
                                                 <div className="flex flex-col md:gap-1 text-right md:text-left">
                                                     <span className={`text-xs font-bold ${m.confidence === 'HIGH' ? 'text-emerald-500' :
                                                         m.confidence === 'MEDIUM' ? 'text-amber-500' :
@@ -383,7 +383,7 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
 
                                             {/* Reorder Qty */}
                                             <td className="md:table-cell p-0 md:p-4 block pt-3 md:pt-0">
-                                                <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-2">Reorder Qty</div>
+                                                <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Reorder Qty</div>
                                                 <div className="flex items-center gap-2">
                                                     <input
                                                         type="number"
@@ -415,7 +415,7 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                                             {/* Anomalies column */}
                                             {activeTab === 'anomalies' && (
                                                 <td className="md:table-cell p-0 md:p-4 flex justify-between items-center md:table-cell mt-3 md:mt-0 pt-3 md:pt-0 border-t border-slate-50 dark:border-slate-800/50 md:border-none">
-                                                    <div className="md:hidden text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Detected Issues</div>
+                                                    <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detected Issues</div>
                                                     <div className="flex flex-row md:flex-col gap-1.5 md:gap-1 text-right md:text-left justify-end md:justify-start">
                                                         {m.isVolatile && (
                                                             <span className="badge badge-warning">
