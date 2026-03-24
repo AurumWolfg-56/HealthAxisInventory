@@ -38,7 +38,7 @@ export const InventoryReportDocument: React.FC<InventoryReportDocumentProps> = (
             {/* Header Strip */}
             <div className="bg-slate-900 text-white px-12 py-8 flex justify-between items-center print-color-adjust" style={{ backgroundColor: '#0f172a', color: 'white', WebkitPrintColorAdjust: 'exact' }}>
                 <div>
-                    <h1 className="text-3xl font-black tracking-tight uppercase m-0 leading-none">
+                    <h1 className="text-3xl font-bold tracking-tight uppercase m-0 leading-none">
                         Health<span className="text-sky-400" style={{ color: '#38bdf8' }}>Axis</span> Inventory
                     </h1>
                     <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-slate-400 mt-2">
@@ -63,11 +63,11 @@ export const InventoryReportDocument: React.FC<InventoryReportDocumentProps> = (
                 <div className="flex justify-between gap-6 mb-10">
                     <div className="w-[32%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
                         <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total SKUs</div>
-                        <div className="text-3xl font-black text-slate-900 mt-1">{totalItems}</div>
+                        <div className="text-3xl font-bold text-slate-900 mt-1">{totalItems}</div>
                     </div>
                     <div className="w-[32%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
                         <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total Units</div>
-                        <div className="text-3xl font-black text-slate-900 mt-1">{totalStock}</div>
+                        <div className="text-3xl font-bold text-slate-900 mt-1">{totalStock}</div>
                     </div>
                     <div
                         className={`w-[32%] border rounded-lg p-4 flex flex-col justify-center ${lowStockCount > 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}
@@ -79,7 +79,7 @@ export const InventoryReportDocument: React.FC<InventoryReportDocumentProps> = (
                         <div className={`text-[10px] font-bold uppercase tracking-wider ${lowStockCount > 0 ? 'text-red-600' : 'text-emerald-600'}`} style={{ color: lowStockCount > 0 ? '#dc2626' : '#059669' }}>
                             Critical Alerts
                         </div>
-                        <div className={`text-xl font-black mt-1 flex items-center gap-2 ${lowStockCount > 0 ? 'text-red-700' : 'text-emerald-700'}`} style={{ color: lowStockCount > 0 ? '#b91c1c' : '#047857' }}>
+                        <div className={`text-xl font-bold mt-1 flex items-center gap-2 ${lowStockCount > 0 ? 'text-red-700' : 'text-emerald-700'}`} style={{ color: lowStockCount > 0 ? '#b91c1c' : '#047857' }}>
                             {lowStockCount} LOW STOCK
                         </div>
                     </div>
@@ -107,7 +107,7 @@ export const InventoryReportDocument: React.FC<InventoryReportDocumentProps> = (
                                     <td className="py-2 pr-4 font-bold text-slate-900">{item.name}</td>
                                     <td className="py-2 pr-4 text-slate-600">{item.category}</td>
                                     <td className="py-2 pr-4 font-mono text-slate-500">{item.batchNumber}</td>
-                                    <td className={`py-2 text-right font-black ${item.stock <= item.minStock ? 'text-red-600' : 'text-slate-900'}`}>{item.stock}</td>
+                                    <td className={`py-2 text-right font-bold ${item.stock <= item.minStock ? 'text-red-600' : 'text-slate-900'}`}>{item.stock}</td>
                                     <td className="py-2 text-right text-slate-400">{item.minStock}</td>
                                 </tr>
                             ))}

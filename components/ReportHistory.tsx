@@ -329,19 +329,19 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ reports, user, onEditRepo
         <div className="space-y-8 pb-20 animate-fade-in-up">
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">Report History</h2>
-                    <p className="text-gray-500 dark:text-gray-400 mt-2 text-lg">Daily Close Archive & Analytics</p>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Report History</h2>
+                    <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Daily Close Archive & Analytics</p>
                 </div>
                 <button
                     onClick={onCreateNew}
-                    className="h-14 px-6 bg-medical-600 hover:bg-medical-500 text-white rounded-2xl font-bold shadow-lg flex items-center gap-2 transition-all transform hover:scale-105"
+                    className="h-11 px-5 bg-medical-600 hover:bg-medical-500 text-white rounded-xl font-semibold text-sm shadow-lg flex items-center gap-2 transition-all transform hover:scale-105"
                 >
                     <i className="fa-solid fa-plus"></i> New Daily Close
                 </button>
             </header>
 
             {/* Control Bar */}
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col xl:flex-row xl:flex-wrap gap-6 items-center justify-between">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row xl:flex-wrap gap-6 items-center justify-between">
                 {/* Filters */}
                 <div className="flex flex-wrap gap-2">
                     {[
@@ -355,8 +355,8 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ reports, user, onEditRepo
                             key={f.id}
                             onClick={() => setFilterType(f.id as TimeFilter)}
                             className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${filterType === f.id
-                                ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                                : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200'
+                                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
+                                : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200'
                                 }`}
                         >
                             {f.label}
@@ -365,27 +365,27 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ reports, user, onEditRepo
                 </div>
 
                 {filterType === 'custom' && (
-                    <div className="flex gap-4 items-center bg-gray-50 dark:bg-gray-800 p-2 rounded-xl">
-                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-sm font-bold text-gray-700 dark:text-white outline-none" />
-                        <span className="text-gray-400">-</span>
-                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-sm font-bold text-gray-700 dark:text-white outline-none" />
+                    <div className="flex gap-4 items-center bg-slate-50 dark:bg-slate-800 p-2 rounded-xl">
+                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-sm font-bold text-slate-700 dark:text-white outline-none" />
+                        <span className="text-slate-400">-</span>
+                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-sm font-bold text-slate-700 dark:text-white outline-none" />
                     </div>
                 )}
 
                 {/* Aggregates & Action */}
-                <div className="flex gap-8 border-l border-gray-200 dark:border-gray-700 pl-8 items-center">
+                <div className="flex gap-8 border-l border-slate-200 dark:border-slate-700 pl-8 items-center">
                     <div>
-                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Revenue</div>
-                        <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Revenue</div>
+                        <div className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                     </div>
                     <div className="mr-4">
-                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Patients</div>
-                        <div className="text-2xl font-black text-blue-600 dark:text-blue-400">{totalPatients}</div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Patients</div>
+                        <div className="text-2xl font-bold tabular-nums text-medical-600 dark:text-medical-400">{totalPatients}</div>
                     </div>
 
                     <button
                         onClick={handleGenerateSummary}
-                        className="h-12 px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-md shadow-indigo-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5 whitespace-nowrap flex-shrink-0"
+                        className="h-11 px-5 bg-medical-600 hover:bg-medical-500 text-white rounded-xl font-semibold text-sm shadow-md shadow-medical-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5 whitespace-nowrap flex-shrink-0"
                         title="Generate summarized PDF for selected period"
                     >
                         <i className="fa-solid fa-file-invoice-dollar"></i> Generate Period Summary
@@ -394,62 +394,62 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ reports, user, onEditRepo
             </div>
 
             {/* Data Table */}
-            <div className="glass-panel rounded-[2.5rem] shadow-glass overflow-hidden">
+            <div className="glass-panel rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                        <thead className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                             <tr>
-                                <th className="p-6 text-xs font-extrabold text-gray-400 uppercase tracking-wider">Date / ID</th>
-                                <th className="p-6 text-xs font-extrabold text-gray-400 uppercase tracking-wider">Author</th>
-                                <th className="p-6 text-xs font-extrabold text-gray-400 uppercase tracking-wider">Financials</th>
-                                <th className="p-6 text-xs font-extrabold text-gray-400 uppercase tracking-wider">Patients</th>
-                                <th className="p-6 text-xs font-extrabold text-gray-400 uppercase tracking-wider text-right">Actions</th>
+                                <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Date / ID</th>
+                                <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Author</th>
+                                <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Financials</th>
+                                <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Patients</th>
+                                <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800/50">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                             {filteredReports.map(report => (
-                                <tr key={report.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
-                                    <td className="p-6">
-                                        <div className="font-bold text-gray-900 dark:text-white">
+                                <tr key={report.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                    <td className="p-4">
+                                        <div className="font-bold text-slate-900 dark:text-white">
                                             {formatDate(report.timestamp)}
                                         </div>
-                                        <div className="text-xs text-gray-400 font-mono mt-1">#{report.id.slice(-8)}</div>
+                                        <div className="text-xs text-slate-400 font-mono mt-1">#{report.id.slice(-8)}</div>
                                     </td>
-                                    <td className="p-6">
+                                    <td className="p-4">
                                         <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 flex items-center justify-center text-xs font-bold">
+                                            <div className="w-6 h-6 rounded-full bg-medical-100 text-medical-600 dark:bg-medical-900/30 dark:text-medical-400 flex items-center justify-center text-xs font-bold">
                                                 {report.author.charAt(0).toUpperCase()}
                                             </div>
-                                            <span className="text-sm font-bold text-gray-600 dark:text-gray-300">{report.author}</span>
+                                            <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{report.author}</span>
                                         </div>
                                     </td>
-                                    <td className="p-6">
+                                    <td className="p-4">
                                         <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
                                             ${report.totals.revenue.toFixed(2)}
                                         </span>
                                     </td>
-                                    <td className="p-6">
-                                        <span className="font-bold text-gray-700 dark:text-gray-300">{report.totals.patients}</span>
+                                    <td className="p-4">
+                                        <span className="font-bold text-slate-700 dark:text-slate-300">{report.totals.patients}</span>
                                     </td>
-                                    <td className="p-6 text-right">
+                                    <td className="p-4 text-right">
                                         <div className="flex justify-end gap-2">
                                             <button
                                                 onClick={() => onViewReport(report)}
-                                                className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-emerald-500 hover:text-white text-gray-500 transition-colors flex items-center justify-center"
+                                                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white text-slate-500 transition-colors flex items-center justify-center"
                                                 title="View PDF"
                                             >
                                                 <i className="fa-solid fa-file-pdf"></i>
                                             </button>
                                             <button
                                                 onClick={() => onEditReport(report)}
-                                                className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-blue-500 hover:text-white text-gray-500 transition-colors flex items-center justify-center"
+                                                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-medical-500 hover:text-white text-slate-500 transition-colors flex items-center justify-center"
                                                 title="Edit Details"
                                             >
                                                 <i className="fa-solid fa-pen-to-square"></i>
                                             </button>
                                             <button
                                                 onClick={() => { if (window.confirm('Delete this report history?')) onDeleteReport(report.id) }}
-                                                className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-red-500 hover:text-white text-gray-500 transition-colors flex items-center justify-center"
+                                                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-red-500 hover:text-white text-slate-500 transition-colors flex items-center justify-center"
                                                 title="Delete Report"
                                             >
                                                 <i className="fa-solid fa-trash"></i>
@@ -460,7 +460,7 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ reports, user, onEditRepo
                             ))}
                             {filteredReports.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="p-12 text-center text-gray-400 font-medium">
+                                    <td colSpan={5} className="p-12 text-center text-slate-400 font-medium">
                                         No reports found for this period.
                                     </td>
                                 </tr>
