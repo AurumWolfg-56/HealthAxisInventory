@@ -1,6 +1,6 @@
 """
 Norvexis Local Whisper Server
-Speech-to-text via faster-whisper with NVIDIA GPU acceleration.
+Speech-to-text via faster-whisper (CPU float32 for maximum accuracy).
 Exposes OpenAI-compatible /v1/audio/transcriptions endpoint.
 
 Usage:
@@ -21,10 +21,11 @@ import uvicorn
 
 # ─── Configuration ──────────────────────────────────────────────────────────
 MODEL_SIZE = "large-v3-turbo"  # Best quality with turbo speed
-DEVICE = "cpu"                 # CPU mode (stable, ~2-3s per 10s audio)
-COMPUTE_TYPE = "int8"          # int8 optimized for CPU
+DEVICE = "cpu"                 # CPU mode (CUDA requires full CUDA Toolkit install)
+COMPUTE_TYPE = "float32"       # float32 = maximum accuracy (slower than int8 but much better)
 HOST = "0.0.0.0"
 PORT = 8765
+CPU_THREADS = 8                # Use multiple CPU threads for speed
 
 # ─── Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -44,27 +45,28 @@ app.add_middleware(
 
 # ─── Load Model (once at startup) ──────────────────────────────────────────
 whisper_model = None
+actual_device = "unknown"
 
 @app.on_event("startup")
 async def load_model():
-    global whisper_model
+    global whisper_model, actual_device
     from faster_whisper import WhisperModel
 
     logger.info(f"Loading Whisper model '{MODEL_SIZE}' on {DEVICE} ({COMPUTE_TYPE})...")
     logger.info("This may take 30-60 seconds on first run (downloads model)...")
 
     try:
-        whisper_model = WhisperModel(MODEL_SIZE, device=DEVICE, compute_type=COMPUTE_TYPE)
-        logger.info("✅ Whisper model loaded successfully on GPU!")
+        whisper_model = WhisperModel(
+            MODEL_SIZE,
+            device=DEVICE,
+            compute_type=COMPUTE_TYPE,
+            cpu_threads=CPU_THREADS,
+        )
+        actual_device = DEVICE
+        logger.info(f"✅ Whisper model loaded on {DEVICE} ({COMPUTE_TYPE}, {CPU_THREADS} threads)")
     except Exception as e:
-        logger.warning(f"⚠️ GPU loading failed: {e}")
-        logger.info("Trying CPU fallback...")
-        try:
-            whisper_model = WhisperModel(MODEL_SIZE, device="cpu", compute_type="int8")
-            logger.info("✅ Whisper model loaded on CPU (slower but works)")
-        except Exception as e2:
-            logger.error(f"❌ CPU fallback also failed: {e2}")
-            sys.exit(1)
+        logger.error(f"❌ Failed to load model: {e}")
+        sys.exit(1)
 
     logger.info(f"🎤 Server ready at http://localhost:{PORT}")
     logger.info(f"📡 Endpoint: POST http://localhost:{PORT}/v1/audio/transcriptions")
@@ -72,7 +74,7 @@ async def load_model():
 # ─── Health Check ───────────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
-    return {"status": "ok", "model": MODEL_SIZE, "device": DEVICE}
+    return {"status": "ok", "model": MODEL_SIZE, "device": actual_device, "compute": COMPUTE_TYPE}
 
 # ─── OpenAI-Compatible Transcription Endpoint ──────────────────────────────
 @app.post("/v1/audio/transcriptions")
@@ -100,16 +102,20 @@ async def transcribe(
 
         logger.info(f"Transcribing {file.filename} ({len(content)} bytes)...")
 
-        # Transcribe with faster-whisper
+        # Transcribe with faster-whisper — tuned for accuracy
         segments, info = whisper_model.transcribe(
             tmp_path,
             language=language or None,
             initial_prompt=prompt or None,
             temperature=temperature or 0.0,
             beam_size=5,
+            best_of=5,                # Generate 5 candidates, pick best
+            patience=1.5,             # Wait longer for better results
+            condition_on_previous_text=True,  # Better context continuity
             vad_filter=True,
             vad_parameters=dict(
-                min_silence_duration_ms=500,
+                min_silence_duration_ms=300,   # Catch shorter pauses
+                speech_pad_ms=200,             # Pad speech segments
             ),
         )
 
@@ -120,8 +126,9 @@ async def transcribe(
 
         full_text = " ".join(text_parts)
 
-        logger.info(f"✅ Transcribed: \"{full_text[:80]}{'...' if len(full_text) > 80 else ''}\"")
+        logger.info(f"✅ Transcribed: \"{full_text[:100]}{'...' if len(full_text) > 100 else ''}\"")
         logger.info(f"   Language: {info.language} (prob: {info.language_probability:.2f})")
+        logger.info(f"   Duration: {info.duration:.1f}s")
 
         # Return OpenAI-compatible response
         return {"text": full_text}
@@ -142,7 +149,7 @@ if __name__ == "__main__":
     print("=" * 60)
     print("  🎤 Norvexis Local Whisper Server")
     print("  Model: whisper-large-v3-turbo")
-    print("  GPU:   NVIDIA RTX Studio (CUDA)")
+    print(f"  Mode:  CPU float32 ({CPU_THREADS} threads)")
     print(f"  URL:   http://localhost:{PORT}")
     print("=" * 60)
 
