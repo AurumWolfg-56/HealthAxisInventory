@@ -13,7 +13,17 @@ import os
 import sys
 import tempfile
 import logging
+import glob
 from typing import Optional
+
+# ─── Ensure CUDA DLLs are findable ─────────────────────────────────────────
+# Add CUDA Toolkit bin to PATH so cublas64_12.dll, cudnn, etc. are found
+cuda_paths = glob.glob(r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v*\bin")
+for p in cuda_paths:
+    if p not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = p + os.pathsep + os.environ.get("PATH", "")
+        print(f"[CUDA] Added to PATH: {p}")
+
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
