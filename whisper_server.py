@@ -21,8 +21,8 @@ import uvicorn
 
 # ─── Configuration ──────────────────────────────────────────────────────────
 MODEL_SIZE = "large-v3-turbo"  # Best quality with turbo speed
-DEVICE = "cpu"                 # CPU mode (CUDA requires full CUDA Toolkit install)
-COMPUTE_TYPE = "float32"       # float32 = maximum accuracy (slower than int8 but much better)
+DEVICE = "cuda"                # NVIDIA RTX 4050 GPU acceleration
+COMPUTE_TYPE = "float16"       # float16 on GPU = fastest + best quality
 HOST = "0.0.0.0"
 PORT = 8765
 CPU_THREADS = 8                # Use multiple CPU threads for speed
