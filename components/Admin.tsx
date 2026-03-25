@@ -35,6 +35,28 @@ const ALL_PERMISSIONS: { id: Permission; label: string; category: string }[] = [
 
 const EDITABLE_ROLES = [UserRole.DOCTOR, UserRole.MA, UserRole.FRONT_DESK];
 
+const ROLE_META: Record<string, { icon: string; color: string; bg: string; border: string }> = {
+    OWNER: { icon: 'fa-crown', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-500', border: 'border-l-red-500' },
+    MANAGER: { icon: 'fa-user-tie', color: 'text-medical-600 dark:text-medical-400', bg: 'bg-medical-500', border: 'border-l-medical-500' },
+    DOCTOR: { icon: 'fa-user-doctor', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500', border: 'border-l-emerald-500' },
+    MA: { icon: 'fa-clipboard-user', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500', border: 'border-l-blue-500' },
+    FRONT_DESK: { icon: 'fa-desktop', color: 'text-slate-500 dark:text-slate-400', bg: 'bg-slate-500', border: 'border-l-slate-500' },
+};
+
+const getRelativeTime = (dateStr?: string): string => {
+    if (!dateStr) return 'Never';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 30) return `${days}d ago`;
+    const months = Math.floor(days / 30);
+    return `${months}mo ago`;
+};
+
 const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentUser, t }) => {
     const [users, setUsers] = useState<DBUser[]>([]);
     const [loading, setLoading] = useState(true);
@@ -46,19 +68,16 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
     const [permissionMode, setPermissionMode] = useState<'role' | 'user'>('role');
     const [selectedUserForPerms, setSelectedUserForPerms] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [showInviteModal, setShowInviteModal] = useState(false);
 
-    useEffect(() => {
-        fetchUsers();
-    }, []);
+    useEffect(() => { fetchUsers(); }, []);
 
     const [error, setError] = useState<string | null>(null);
 
     const fetchUsers = async () => {
         setLoading(true);
         setError(null);
-
         try {
-            // Replaced supabase.from('profiles')... with UserService.getUsers()
             const fetchedUsers = await UserService.getUsers();
             setUsers(fetchedUsers);
         } catch (err: any) {
@@ -77,18 +96,19 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
         }
     }, [successMessage]);
 
+    const showToast = (msg: string) => setSuccessMessage(msg);
+
     const handleInvite = async (e: React.FormEvent) => {
         e.preventDefault();
         setInviting(true);
         try {
-            // Replaced supabase.functions.invoke with UserService.inviteUser
             await UserService.inviteUser(inviteData.email, inviteData.full_name, inviteData.role);
-
-            alert('User invited successfully!');
+            showToast(`Invitation sent to ${inviteData.email}`);
             setInviteData({ email: '', full_name: '', role: UserRole.MA });
+            setShowInviteModal(false);
             fetchUsers();
         } catch (err: any) {
-            alert('Error inviting user: ' + err.message);
+            showToast(`Error: ${err.message}`);
         } finally {
             setInviting(false);
         }
@@ -96,14 +116,12 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
 
     const handleUpdateUser = async (userId: string, updates: { full_name: string; role: UserRole }) => {
         try {
-            // Replaced supabase.from('profiles').update... with UserService.updateUser
             await UserService.updateUser(userId, updates);
-
             setEditingUser(null);
             fetchUsers();
-            alert('User updated successfully!');
+            showToast(`${updates.full_name} updated successfully`);
         } catch (err: any) {
-            alert('Error updating user: ' + err.message);
+            showToast(`Error: ${err.message}`);
         }
     };
 
@@ -124,49 +142,42 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
         }
 
         try {
-            // Replaced supabase.from('profiles').update({permissions...}) with UserService.updatePermissions
             await UserService.updatePermissions(userId, newPerms.length > 0 ? newPerms : null);
-
-            // Show success feedback
             const permLabel = permission.split('.').pop();
-            setSuccessMessage(`Permission "${permLabel}" ${actionType} for ${user.full_name}`);
-
+            showToast(`Permission "${permLabel}" ${actionType} for ${user.full_name}`);
             fetchUsers();
         } catch (err: any) {
             console.error('Error updating permissions:', err);
-            alert('Error updating permissions: ' + err.message);
+            showToast(`Error: ${err.message}`);
         }
     };
 
     const handleDeleteUser = async (userId: string) => {
         if (!confirm('Are you sure you want to delete this user? This action is irreversible.')) return;
         try {
-            // Replaced supabase.functions.invoke with UserService.deleteUser
             await UserService.deleteUser(userId);
-
             fetchUsers();
-            alert('User deleted successfully.');
+            showToast('User deleted successfully');
+            if (editingUser?.id === userId) setEditingUser(null);
         } catch (err: any) {
             console.error('Delete Error Detail:', err);
-            alert(`Error deleting user: ${err.message || 'Unknown error'}`);
+            showToast(`Error: ${err.message}`);
         }
     };
 
     const isChecked = (permId: Permission) => {
         if (permissionMode === 'role') {
-            const config = roleConfigs.find(c => c.role === (inviteData.role as UserRole)); // Fallback or selected role
+            const config = roleConfigs.find(c => c.role === (inviteData.role as UserRole));
             return config?.permissions.includes(permId) || false;
         } else if (permissionMode === 'user' && selectedUserForPerms) {
             const user = users.find(u => u.id === selectedUserForPerms);
             if (user?.permissions) return user.permissions.includes(permId);
-            // Fallback to role if no override
             const config = roleConfigs.find(c => c.role === user?.role);
             return config?.permissions.includes(permId) || false;
         }
         return false;
     };
 
-    // Helper for global role matrix (original behavior)
     const isRoleChecked = (role: UserRole, perm: Permission) => {
         const config = roleConfigs.find(c => c.role === role);
         return config?.permissions.includes(perm) || false;
@@ -174,23 +185,29 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
 
     const filteredUsers = users.filter(u =>
         u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         u.id.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const permissionCategories = Array.from(new Set(ALL_PERMISSIONS.map(p => p.category)));
+
+    // Stats
+    const roleStats = users.reduce((acc, u) => {
+        acc[u.role] = (acc[u.role] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
 
     return (
         <div className="space-y-8 pb-20 md:pb-10 animate-fade-in">
             {/* Success Toast Notification */}
             {successMessage && (
                 <div className="fixed top-6 right-6 z-50 animate-fade-in">
-                    <div className="bg-emerald-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 min-w-[300px]">
+                    <div className={`${successMessage.startsWith('Error') ? 'bg-red-500' : 'bg-emerald-500'} text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 min-w-[300px]`}>
                         <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                            <i className="fa-solid fa-check text-xl"></i>
+                            <i className={`fa-solid ${successMessage.startsWith('Error') ? 'fa-triangle-exclamation' : 'fa-check'} text-xl`}></i>
                         </div>
                         <div className="flex-1">
                             <p className="font-bold text-sm">{successMessage}</p>
-                            <p className="text-xs opacity-90 mt-0.5">Changes applied successfully</p>
                         </div>
                         <button
                             onClick={() => setSuccessMessage(null)}
@@ -244,89 +261,138 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
             </header>
 
             {activeTab === 'users' ? (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    {/* User List Panel */}
-                    <div className="lg:col-span-8 space-y-4">
-                        <div className="flex items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                            <i className="fa-solid fa-magnifying-glass text-slate-400 ml-2"></i>
+                <div className="space-y-6">
+                    {/* Team Stats Bar */}
+                    <div className="flex flex-wrap gap-3">
+                        <div className="glass-panel px-5 py-3 rounded-2xl flex items-center gap-3 border shadow-sm">
+                            <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500"><i className="fa-solid fa-users"></i></div>
+                            <div>
+                                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total</div>
+                                <div className="text-lg font-bold text-slate-900 dark:text-white leading-none">{users.length}</div>
+                            </div>
+                        </div>
+                        {Object.entries(roleStats).map(([role, count]) => {
+                            const meta = ROLE_META[role] || ROLE_META.FRONT_DESK;
+                            return (
+                                <div key={role} className="glass-panel px-5 py-3 rounded-2xl flex items-center gap-3 border shadow-sm">
+                                    <div className={`w-9 h-9 rounded-xl ${meta.bg} flex items-center justify-center text-white`}><i className={`fa-solid ${meta.icon} text-sm`}></i></div>
+                                    <div>
+                                        <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{role.replace('_', ' ')}</div>
+                                        <div className="text-lg font-bold text-slate-900 dark:text-white leading-none">{count}</div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Search + Invite Button */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        <div className="flex-1 flex items-center gap-3 glass-panel p-2.5 rounded-2xl border-white/50 dark:border-slate-800/80">
+                            <i className="fa-solid fa-magnifying-glass text-sm text-slate-400 ml-2"></i>
                             <input
                                 type="text"
-                                placeholder="Search personnel by name or ID..."
+                                placeholder="Search by name, email, or ID..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="bg-transparent border-none outline-none w-full font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
+                                className="flex-1 bg-transparent border-none outline-none font-medium text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
                             />
                         </div>
+                        <button
+                            onClick={() => setShowInviteModal(true)}
+                            className="h-11 px-6 bg-medical-600 text-white rounded-xl font-bold shadow-xl shadow-medical-500/30 flex items-center gap-2.5 transition-all hover:scale-105 hover:shadow-2xl active:scale-95 whitespace-nowrap text-sm"
+                        >
+                            <i className="fa-solid fa-paper-plane"></i> Invite Personnel
+                        </button>
+                    </div>
 
-                        <div className="glass-panel rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
-                            <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
-                                <table className="w-full text-left">
-                                    <thead className="bg-slate-50/50 dark:bg-slate-900/50 sticky top-0 z-10 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
+                    {/* Personnel Table */}
+                    <div className="glass-panel rounded-2xl luxury-shadow overflow-hidden border-white/40 dark:border-slate-800/50">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-separate border-spacing-0 min-w-[700px]">
+                                <thead className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-xl sticky top-0 z-10">
+                                    <tr className="border-b border-slate-200 dark:border-slate-800">
+                                        <th className="px-5 py-4">Personnel</th>
+                                        <th className="px-5 py-4">Role</th>
+                                        <th className="px-5 py-4">Email</th>
+                                        <th className="px-5 py-4 text-center">Last Active</th>
+                                        <th className="px-5 py-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {loading ? (
+                                        <tr><td colSpan={5} className="p-20 text-center"><i className="fa-solid fa-circle-notch fa-spin text-medical-500 text-3xl"></i></td></tr>
+                                    ) : error ? (
                                         <tr>
-                                            <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-slate-400">Personnel</th>
-                                            <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-slate-400">Role & Status</th>
-                                            <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Settings</th>
+                                            <td colSpan={5} className="p-20 text-center text-red-500 font-bold">
+                                                <i className="fa-solid fa-triangle-exclamation mr-2"></i>
+                                                {error}
+                                                <button onClick={fetchUsers} className="block mx-auto mt-4 text-sm text-medical-600 underline">Retry</button>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                                        {loading ? (
-                                            <tr><td colSpan={3} className="p-20 text-center"><i className="fa-solid fa-circle-notch fa-spin text-medical-500 text-3xl"></i></td></tr>
-                                        ) : error ? (
-                                            <tr>
-                                                <td colSpan={3} className="p-20 text-center text-red-500 font-bold">
-                                                    <i className="fa-solid fa-triangle-exclamation mr-2"></i>
-                                                    {error}
-                                                    <button onClick={fetchUsers} className="block mx-auto mt-4 text-sm text-medical-600 underline">Retry</button>
-                                                </td>
-                                            </tr>
-                                        ) : filteredUsers.length === 0 ? (
-                                            <tr><td colSpan={3} className="p-20 text-center text-slate-400 font-medium">No personnel found.</td></tr>
-                                        ) : filteredUsers.map(u => (
-                                            <tr key={u.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-all">
-                                                <td className="p-6">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg shadow-inner
-                                                            ${u.role === UserRole.OWNER ? 'bg-red-50 text-red-600 dark:bg-red-900/20' :
-                                                                u.role === UserRole.MANAGER ? 'bg-medical-50 text-medical-600 dark:bg-medical-900/20' :
-                                                                    u.role === UserRole.DOCTOR ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20' :
-                                                                        'bg-slate-50 text-slate-600 dark:bg-slate-800'}
-                                                        `}>
-                                                            {u.full_name.charAt(0)}
+                                    ) : filteredUsers.length === 0 ? (
+                                        <tr><td colSpan={5} className="p-20 text-center text-slate-400 font-medium">No personnel found.</td></tr>
+                                    ) : filteredUsers.map((u, idx) => {
+                                        const meta = ROLE_META[u.role] || ROLE_META.FRONT_DESK;
+                                        const isOnline = u.last_sign_in_at && (Date.now() - new Date(u.last_sign_in_at).getTime()) < 3600000; // 1hr
+                                        return (
+                                            <tr
+                                                key={u.id}
+                                                className={`group border-l-[3px] transition-all duration-200 ${meta.border} ${idx % 2 === 1 ? 'bg-slate-50/30 dark:bg-slate-800/20' : ''} hover:bg-medical-50/30 dark:hover:bg-medical-900/10`}
+                                            >
+                                                <td className="px-5 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="relative">
+                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base text-white shadow-md ${meta.bg}`}>
+                                                                {u.full_name.charAt(0)}
+                                                            </div>
+                                                            <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 ${isOnline ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
                                                         </div>
                                                         <div>
-                                                            <p className="font-bold text-slate-900 dark:text-slate-100 leading-tight">{u.full_name}</p>
-                                                            <p className="text-xs font-mono text-slate-400 mt-1 uppercase tracking-tight">ID: {u.id.substring(0, 8)}</p>
+                                                            <p className="font-bold text-sm text-slate-900 dark:text-white leading-tight">{u.full_name}</p>
+                                                            <p className="text-[10px] text-slate-400 mt-0.5">
+                                                                {u.created_at ? `Member since ${new Date(u.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}` : `ID: ${u.id.substring(0, 8)}`}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="p-6">
-                                                    <div className="flex flex-col gap-2">
-                                                        <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest w-fit
-                                                            ${u.role === UserRole.OWNER ? 'bg-red-500 text-white' :
-                                                                u.role === UserRole.MANAGER ? 'bg-medical-500 text-white' :
-                                                                    u.role === UserRole.DOCTOR ? 'bg-emerald-500 text-white' :
-                                                                        'bg-slate-600 text-white'}
-                                                        `}>
-                                                            {u.role.replace('_', ' ')}
-                                                        </span>
-                                                        <span className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-500 uppercase tracking-wide">
-                                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                                            Active Session
-                                                        </span>
+                                                <td className="px-5 py-4">
+                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest text-white ${meta.bg}`}>
+                                                        <i className={`fa-solid ${meta.icon} text-[9px]`}></i>
+                                                        {u.role.replace('_', ' ')}
+                                                    </span>
+                                                </td>
+                                                <td className="px-5 py-4">
+                                                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                                        {u.email !== 'N/A' ? u.email : <span className="italic text-slate-300 dark:text-slate-600">No email</span>}
+                                                    </span>
+                                                </td>
+                                                <td className="px-5 py-4 text-center">
+                                                    <div className="flex flex-col items-center gap-0.5">
+                                                        {isOnline ? (
+                                                            <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-1">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Online
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                                {getRelativeTime(u.last_sign_in_at)}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </td>
-                                                <td className="p-6 text-right">
-                                                    <div className="flex items-center justify-end gap-2">
+                                                <td className="px-5 py-4 text-right">
+                                                    <div className="flex items-center justify-end gap-1.5">
                                                         <button
-                                                            onClick={() => setEditingUser(u)}
-                                                            className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-medical-500 hover:text-white transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0"
+                                                            onClick={() => setEditingUser({...u})}
+                                                            className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-medical-500 hover:text-white transition-all flex items-center justify-center text-xs"
+                                                            title="Edit User"
                                                         >
                                                             <i className="fa-solid fa-pen-to-square"></i>
                                                         </button>
                                                         {u.id !== currentUser?.id && (
                                                             <button
                                                                 onClick={() => handleDeleteUser(u.id)}
-                                                                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-red-500 hover:text-white transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0"
+                                                                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center text-xs"
+                                                                title="Delete User"
                                                             >
                                                                 <i className="fa-solid fa-trash-can"></i>
                                                             </button>
@@ -334,137 +400,11 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                                                     </div>
                                                 </td>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
-
-                        {/* Edit User Modal */}
-                        {editingUser && (
-                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-                                <div className="glass-panel w-full max-w-lg p-8 rounded-2xl shadow-2xl border border-white/20 dark:border-slate-700 animate-scale-in">
-                                    <div className="flex justify-between items-center mb-8">
-                                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Modify Personnel</h3>
-                                        <button onClick={() => setEditingUser(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                                            <i className="fa-solid fa-xmark text-xl"></i>
-                                        </button>
-                                    </div>
-
-                                    <div className="space-y-6">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
-                                            <input
-                                                type="text"
-                                                value={editingUser.full_name}
-                                                onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })}
-                                                className="w-full px-5 py-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-medical-500 outline-none font-bold placeholder:text-slate-400 transition-all dark:text-white"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Assigned Role</label>
-                                            <select
-                                                value={editingUser.role}
-                                                onChange={e => setEditingUser({ ...editingUser, role: e.target.value as UserRole })}
-                                                className="w-full px-5 py-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-medical-500 outline-none font-bold transition-all appearance-none cursor-pointer dark:text-white"
-                                            >
-                                                {Object.values(UserRole).map(r => (
-                                                    <option key={r} value={r}>{r.replace('_', ' ')}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="pt-4 flex gap-4">
-                                            <button
-                                                onClick={() => setEditingUser(null)}
-                                                className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl transition-all hover:bg-slate-200 dark:hover:bg-slate-700 uppercase text-xs tracking-widest"
-                                            >
-                                                Discard
-                                            </button>
-                                            <button
-                                                onClick={() => handleUpdateUser(editingUser.id, { full_name: editingUser.full_name, role: editingUser.role })}
-                                                className="flex-1 py-4 bg-medical-600 text-white font-bold rounded-xl shadow-lg shadow-medical-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase text-xs tracking-widest"
-                                            >
-                                                Save Changes
-                                            </button>
-                                        </div>
-
-                                        <button
-                                            onClick={() => {
-                                                setPermissionMode('user');
-                                                setSelectedUserForPerms(editingUser.id);
-                                                setActiveTab('permissions');
-                                                setEditingUser(null);
-                                            }}
-                                            className="w-full py-4 bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 font-bold rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-emerald-100 dark:hover:bg-emerald-900/30 uppercase text-[10px] tracking-widest"
-                                        >
-                                            <i className="fa-solid fa-shield-halved"></i> Manage View/Edit Permissions
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Right Column: Info & Invite */}
-                    <div className="lg:col-span-4 space-y-6">
-                        <div className="glass-panel p-8 rounded-2xl bg-gradient-to-br from-medical-600 to-emerald-700 text-white shadow-xl border-none relative overflow-hidden">
-                            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                            <h4 className="font-bold mb-6 uppercase tracking-widest text-xs flex items-center gap-2">
-                                <i className="fa-solid fa-paper-plane animate-bounce"></i>
-                                New Personnel Invite
-                            </h4>
-                            <form onSubmit={handleInvite} className="space-y-4 group">
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-medical-200 uppercase tracking-widest ml-1">Full Legal Name</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={inviteData.full_name}
-                                        onChange={e => setInviteData({ ...inviteData, full_name: e.target.value })}
-                                        className="w-full px-5 py-4 rounded-xl bg-white/10 border border-white/20 focus:bg-white/20 focus:border-white/40 outline-none font-bold text-sm placeholder:text-white/30 transition-all"
-                                        placeholder="e.g. John Doe"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-medical-200 uppercase tracking-widest ml-1">Professional Email</label>
-                                    <input
-                                        type="email"
-                                        required
-                                        value={inviteData.email}
-                                        onChange={e => setInviteData({ ...inviteData, email: e.target.value })}
-                                        className="w-full px-5 py-4 rounded-xl bg-white/10 border border-white/20 focus:bg-white/20 focus:border-white/40 outline-none font-bold text-sm placeholder:text-white/30 transition-all"
-                                        placeholder="j.doe@clinic.com"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-medical-200 uppercase tracking-widest ml-1">Assigned Role</label>
-                                    <select
-                                        value={inviteData.role}
-                                        onChange={e => setInviteData({ ...inviteData, role: e.target.value as UserRole })}
-                                        className="w-full px-5 py-4 rounded-xl bg-white/10 border border-white/20 focus:bg-white/20 focus:border-white/40 outline-none font-bold text-sm transition-all appearance-none cursor-pointer"
-                                    >
-                                        {Object.values(UserRole).map(r => (
-                                            <option key={r} value={r} className="text-slate-900">{r.replace('_', ' ')}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <button
-                                    disabled={inviting}
-                                    className="w-full py-5 bg-white text-medical-600 font-bold rounded-xl shadow-lg hover:shadow-medical-500/20 transition-all active:scale-[0.97] mt-4 uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-2"
-                                >
-                                    {inviting ? <i className="fa-solid fa-spinner fa-spin"></i> : (
-                                        <>Deploy Invitation <i className="fa-solid fa-bolt"></i></>
-                                    )}
-                                </button>
-                                <p className="text-[10px] text-medical-100/60 text-center mt-6 font-medium leading-relaxed">
-                                    Automated verification email will be dispatched immediately.
-                                </p>
-                            </form>
-                        </div>
-
-
                     </div>
                 </div>
             ) : activeTab === 'permissions' ? (
@@ -521,10 +461,8 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                                         {permissionMode === 'role' ? EDITABLE_ROLES.map(role => (
                                             <th key={role} className="p-8 text-center min-w-[140px]">
                                                 <div className="flex flex-col items-center gap-3">
-                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white text-lg font-bold shadow-md
-                                                        ${role === UserRole.DOCTOR ? 'bg-emerald-500' : role === UserRole.MA ? 'bg-medical-500' : 'bg-slate-500'}
-                                                    `}>
-                                                        {role.charAt(0)}
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white text-lg font-bold shadow-md ${ROLE_META[role]?.bg || 'bg-slate-500'}`}>
+                                                        <i className={`fa-solid ${ROLE_META[role]?.icon || 'fa-user'}`}></i>
                                                     </div>
                                                     <span className="text-[10px] font-bold text-slate-900 dark:text-slate-200 uppercase tracking-widest">{role.replace('_', ' ')}</span>
                                                 </div>
@@ -568,12 +506,7 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                                                         return (
                                                             <td key={`${role}-${perm.id}`} className="p-8 text-center">
                                                                 <label className="relative inline-flex items-center cursor-pointer">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="sr-only peer"
-                                                                        checked={active}
-                                                                        onChange={() => onUpdateRoleConfig(role, perm.id)}
-                                                                    />
+                                                                    <input type="checkbox" className="sr-only peer" checked={active} onChange={() => onUpdateRoleConfig(role, perm.id)} />
                                                                     <div className="w-16 h-9 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-7 after:w-7 after:transition-all dark:border-slate-600 peer-checked:bg-gradient-to-r peer-checked:from-medical-600 peer-checked:to-emerald-600 shadow-inner"></div>
                                                                 </label>
                                                             </td>
@@ -582,12 +515,7 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                                                         <td className="p-8 text-center">
                                                             {selectedUserForPerms ? (
                                                                 <label className="relative inline-flex items-center cursor-pointer">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="sr-only peer"
-                                                                        checked={isChecked(perm.id)}
-                                                                        onChange={() => handleUpdateUserPermissions(selectedUserForPerms, perm.id)}
-                                                                    />
+                                                                    <input type="checkbox" className="sr-only peer" checked={isChecked(perm.id)} onChange={() => handleUpdateUserPermissions(selectedUserForPerms, perm.id)} />
                                                                     <div className="w-16 h-9 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-7 after:w-7 after:transition-all dark:border-slate-600 peer-checked:bg-gradient-to-r peer-checked:from-emerald-600 peer-checked:to-teal-600 shadow-inner"></div>
                                                                 </label>
                                                             ) : (
@@ -625,6 +553,182 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                     <PlatformAdmin />
                 </div>
             ) : null}
+
+            {/* ===== INVITE MODAL ===== */}
+            {showInviteModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowInviteModal(false)}>
+                    <div className="glass-panel w-full max-w-md p-8 rounded-2xl shadow-2xl border border-white/20 dark:border-slate-700 animate-scale-in bg-gradient-to-br from-medical-600 to-emerald-700 text-white relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
+                                <i className="fa-solid fa-paper-plane"></i> Invite Personnel
+                            </h3>
+                            <button onClick={() => setShowInviteModal(false)} className="w-8 h-8 rounded-lg hover:bg-white/20 flex items-center justify-center transition-colors">
+                                <i className="fa-solid fa-xmark text-lg"></i>
+                            </button>
+                        </div>
+                        <form onSubmit={handleInvite} className="space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-medical-200 uppercase tracking-widest ml-1">Full Legal Name</label>
+                                <input
+                                    type="text" required
+                                    value={inviteData.full_name}
+                                    onChange={e => setInviteData({ ...inviteData, full_name: e.target.value })}
+                                    className="w-full px-5 py-4 rounded-xl bg-white/10 border border-white/20 focus:bg-white/20 focus:border-white/40 outline-none font-bold text-sm placeholder:text-white/30 transition-all"
+                                    placeholder="e.g. John Doe"
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-medical-200 uppercase tracking-widest ml-1">Professional Email</label>
+                                <input
+                                    type="email" required
+                                    value={inviteData.email}
+                                    onChange={e => setInviteData({ ...inviteData, email: e.target.value })}
+                                    className="w-full px-5 py-4 rounded-xl bg-white/10 border border-white/20 focus:bg-white/20 focus:border-white/40 outline-none font-bold text-sm placeholder:text-white/30 transition-all"
+                                    placeholder="j.doe@clinic.com"
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-medical-200 uppercase tracking-widest ml-1">Assigned Role</label>
+                                <select
+                                    value={inviteData.role}
+                                    onChange={e => setInviteData({ ...inviteData, role: e.target.value as UserRole })}
+                                    className="w-full px-5 py-4 rounded-xl bg-white/10 border border-white/20 focus:bg-white/20 focus:border-white/40 outline-none font-bold text-sm transition-all appearance-none cursor-pointer"
+                                >
+                                    {Object.values(UserRole).map(r => (
+                                        <option key={r} value={r} className="text-slate-900">{r.replace('_', ' ')}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <button
+                                disabled={inviting}
+                                className="w-full py-5 bg-white text-medical-600 font-bold rounded-xl shadow-lg hover:shadow-medical-500/20 transition-all active:scale-[0.97] mt-4 uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-2"
+                            >
+                                {inviting ? <i className="fa-solid fa-spinner fa-spin"></i> : (
+                                    <>Deploy Invitation <i className="fa-solid fa-bolt"></i></>
+                                )}
+                            </button>
+                            <p className="text-[10px] text-medical-100/60 text-center mt-4 font-medium leading-relaxed">
+                                Automated verification email will be dispatched immediately.
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ===== EDIT USER MODAL (Expanded) ===== */}
+            {editingUser && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setEditingUser(null)}>
+                    <div className="glass-panel w-full max-w-lg p-8 rounded-2xl shadow-2xl border border-white/20 dark:border-slate-700 animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold shadow-md ${ROLE_META[editingUser.role]?.bg || 'bg-slate-500'}`}>
+                                    {editingUser.full_name.charAt(0)}
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Edit Personnel</h3>
+                                    <p className="text-xs text-slate-400">{editingUser.email !== 'N/A' ? editingUser.email : `ID: ${editingUser.id.substring(0, 8)}`}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setEditingUser(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                                <i className="fa-solid fa-xmark text-xl"></i>
+                            </button>
+                        </div>
+
+                        <div className="space-y-5">
+                            {/* Account Info */}
+                            <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
+                                <div>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Member Since</span>
+                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mt-0.5">
+                                        {editingUser.created_at ? new Date(editingUser.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : 'Unknown'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Last Login</span>
+                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mt-0.5">
+                                        {editingUser.last_sign_in_at ? getRelativeTime(editingUser.last_sign_in_at) : 'Never'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Editable Fields */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                                <input
+                                    type="text"
+                                    value={editingUser.full_name}
+                                    onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })}
+                                    className="w-full px-5 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-medical-500 outline-none font-bold placeholder:text-slate-400 transition-all dark:text-white text-sm"
+                                />
+                            </div>
+
+                            {editingUser.email !== 'N/A' && (
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email <span className="text-slate-300">(read-only)</span></label>
+                                    <div className="w-full px-5 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-sm font-medium text-slate-400 cursor-not-allowed">
+                                        {editingUser.email}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Assigned Role</label>
+                                <select
+                                    value={editingUser.role}
+                                    onChange={e => setEditingUser({ ...editingUser, role: e.target.value as UserRole })}
+                                    className="w-full px-5 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-medical-500 outline-none font-bold transition-all appearance-none cursor-pointer dark:text-white text-sm"
+                                >
+                                    {Object.values(UserRole).map(r => (
+                                        <option key={r} value={r}>{r.replace('_', ' ')}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="pt-2 flex gap-3">
+                                <button
+                                    onClick={() => setEditingUser(null)}
+                                    className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl transition-all hover:bg-slate-200 dark:hover:bg-slate-700 uppercase text-xs tracking-widest"
+                                >
+                                    Discard
+                                </button>
+                                <button
+                                    onClick={() => handleUpdateUser(editingUser.id, { full_name: editingUser.full_name, role: editingUser.role })}
+                                    className="flex-1 py-3.5 bg-medical-600 text-white font-bold rounded-xl shadow-lg shadow-medical-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase text-xs tracking-widest"
+                                >
+                                    Save Changes
+                                </button>
+                            </div>
+
+                            <button
+                                onClick={() => {
+                                    setPermissionMode('user');
+                                    setSelectedUserForPerms(editingUser.id);
+                                    setActiveTab('permissions');
+                                    setEditingUser(null);
+                                }}
+                                className="w-full py-3.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 font-bold rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-emerald-100 dark:hover:bg-emerald-900/30 uppercase text-[10px] tracking-widest"
+                            >
+                                <i className="fa-solid fa-shield-halved"></i> Manage View/Edit Permissions
+                            </button>
+
+                            {/* Danger Zone */}
+                            {editingUser.id !== currentUser?.id && (
+                                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 mt-3">
+                                    <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-3">Danger Zone</p>
+                                    <button
+                                        onClick={() => handleDeleteUser(editingUser.id)}
+                                        className="w-full py-3 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 border border-red-100 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all active:scale-[0.98]"
+                                    >
+                                        <i className="fa-solid fa-trash-can"></i> Delete This Account
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

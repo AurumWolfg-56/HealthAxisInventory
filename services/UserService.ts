@@ -29,6 +29,8 @@ export interface DBUser {
     email: string;
     role: UserRole;
     permissions?: Permission[];
+    created_at?: string;
+    last_sign_in_at?: string;
 }
 
 export const UserService = {
@@ -42,16 +44,14 @@ export const UserService = {
     },
 
     async getUsers(): Promise<DBUser[]> {
-        console.log('[UserService] Fetching users via REST...');
+        console.log('[UserService] Fetching users (hybrid approach)...');
         try {
-            // Fetch profiles with roles via PostgREST resource embedding
-            // Phase F: Read from user_location_assignments, with user_roles as fallback
-            const url = `${SUPABASE_URL}/rest/v1/profiles?select=id,full_name,permissions,user_location_assignments(role_id,location_id),user_roles(role_id)`;
-
+            // Step 1: Fetch profiles + roles via PostgREST (always works)
+            const profileUrl = `${SUPABASE_URL}/rest/v1/profiles?select=id,full_name,permissions,user_location_assignments(role_id,location_id),user_roles(role_id)`;
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-            const response = await fetch(url, {
+            const response = await fetch(profileUrl, {
                 method: 'GET',
                 headers: getHeaders(),
                 signal: controller.signal
@@ -64,15 +64,50 @@ export const UserService = {
                 throw new Error(`PostgREST error ${response.status}: ${errorBody}`);
             }
 
-            const data = await response.json();
+            const profileData = await response.json();
 
-            return (data || []).map((p: any) => ({
+            const users: DBUser[] = (profileData || []).map((p: any) => ({
                 id: p.id,
                 full_name: p.full_name || 'Anonymous User',
                 email: 'N/A',
                 role: p.user_location_assignments?.[0]?.role_id || p.user_roles?.[0]?.role_id || UserRole.FRONT_DESK,
-                permissions: p.permissions || undefined
+                permissions: p.permissions || undefined,
+                created_at: undefined,
+                last_sign_in_at: undefined
             }));
+
+            // Step 2: Try to enrich with auth metadata via Edge Function (optional)
+            try {
+                const fnUrl = `${SUPABASE_URL}/functions/v1/admin-api`;
+                const fnResp = await fetch(fnUrl, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ action: 'list_users' })
+                });
+
+                if (fnResp.ok) {
+                    const fnData = await fnResp.json();
+                    if (fnData.success && fnData.users) {
+                        // Merge auth data into profile data
+                        for (const user of users) {
+                            const authUser = fnData.users.find((au: any) => au.id === user.id);
+                            if (authUser) {
+                                user.email = authUser.email || user.email;
+                                user.last_sign_in_at = authUser.last_sign_in_at || undefined;
+                                if (!user.created_at && authUser.created_at) {
+                                    user.created_at = authUser.created_at;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    console.warn('[UserService] Auth metadata enrichment failed (non-critical):', fnResp.status);
+                }
+            } catch (enrichErr) {
+                console.warn('[UserService] Auth metadata enrichment failed (non-critical):', enrichErr);
+            }
+
+            return users;
 
         } catch (error: any) {
             console.error('[UserService] ❌ Error fetching users:', error);
