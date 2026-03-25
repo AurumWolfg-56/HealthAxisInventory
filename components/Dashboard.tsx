@@ -2,6 +2,7 @@ import React from 'react';
 import { InventoryItem, ActivityLog, AppRoute, PettyCashTransaction, Order, User, PriceItem } from '../types';
 import { DailyReport } from '../types/dailyReport';
 import DashboardAnalytics from './DashboardAnalytics';
+import AIBriefingCard from './dashboard/AIBriefing';
 
 interface DashboardProps {
     inventory: InventoryItem[];
@@ -54,6 +55,14 @@ const Dashboard: React.FC<DashboardProps> = ({ inventory, dailyReports, pettyCas
                     </button>
                 </div>
             </header>
+
+            {/* AI Morning Briefing */}
+            <AIBriefingCard
+                inventory={inventory}
+                dailyReports={dailyReports}
+                orders={orders}
+                pettyCash={pettyCashHistory}
+            />
 
             {/* Quick Actions — compact horizontal cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
