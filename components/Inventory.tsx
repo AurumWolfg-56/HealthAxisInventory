@@ -22,6 +22,7 @@ interface InventoryProps {
 import { CATEGORIES, LOCATIONS } from '../utils/constants';
 
 type SortOption = 'name' | 'stockAsc' | 'stockDesc' | 'expiry';
+const ITEMS_PER_PAGE = 50;
 
 const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAddItem, onEditItem, onUpdateItem, onDeleteItem, onAuditItem, onScanClick, onImport, onMergeDuplicates, searchOverride, t }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,6 +33,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
   const [editForm, setEditForm] = useState<Partial<InventoryItem>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Clear selection when exiting audit mode
   useEffect(() => {
@@ -88,9 +90,8 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
         next.delete(id);
         return next;
       });
-      // Optionally show toast here if we could import it, but cleaner to let logic handle it.
       console.error(`[Inventory] Action for ${id} timed out.`);
-    }, 10000); // 10s timeout safeguard
+    }, 10000);
 
     try {
       await action();
@@ -107,7 +108,6 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
   };
 
   useEffect(() => {
-    // Simple duplicate check logic
     const groups: Record<string, number> = {};
     items.forEach(item => {
       const key = `${item.name.toLowerCase()}-${item.batchNumber}`;
@@ -142,6 +142,13 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
     }
   });
 
+  // Pagination
+  const totalPages = Math.ceil(sortedItems.length / ITEMS_PER_PAGE);
+  const paginatedItems = sortedItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterCategory, sortBy]);
+
   const getStockStatus = (item: InventoryItem) => {
     if (item.stock <= item.minStock) return 'critical';
     if (item.stock <= item.minStock * 1.5) return 'warning';
@@ -153,6 +160,13 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
     if (status === 'critical') return 'bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800';
     if (status === 'warning') return 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800';
     return 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800';
+  };
+
+  const getStatusBorderColor = (item: InventoryItem) => {
+    const status = getStockStatus(item);
+    if (status === 'critical') return 'border-l-red-500';
+    if (status === 'warning') return 'border-l-amber-500';
+    return 'border-l-emerald-500';
   };
 
   const isCheckedToday = (lastChecked?: string) => {
@@ -169,10 +183,30 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
     }
   };
 
+  const handleExportExcel = () => {
+    const data = sortedItems.map(item => ({
+      Name: item.name,
+      Category: item.category,
+      Location: item.location,
+      'Batch #': item.batchNumber || '',
+      'Expiry Date': item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : '',
+      Stock: item.stock,
+      Unit: item.unit || 'each',
+      'Min Stock': item.minStock,
+      'Avg Cost': item.averageCost || 0,
+      'Value': ((item.stock || 0) * (item.averageCost || 0)).toFixed(2),
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
+    XLSX.writeFile(wb, `Inventory_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   const stats = {
     total: items.length,
     lowStock: items.filter(i => i.stock <= i.minStock).length,
-    expiring: items.filter(i => i.expiryDate && new Date(i.expiryDate).getTime() < new Date().getTime() + (30 * 24 * 60 * 60 * 1000)).length
+    expiring: items.filter(i => i.expiryDate && new Date(i.expiryDate).getTime() < new Date().getTime() + (30 * 24 * 60 * 60 * 1000)).length,
+    totalValue: items.reduce((sum, i) => sum + (i.stock || 0) * (i.averageCost || 0), 0)
   };
 
   return (
@@ -197,8 +231,8 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
               <i className="fa-solid fa-layer-group"></i>
             </div>
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Items</div>
-              <div className="text-lg font-black text-slate-900 dark:text-white leading-none">{stats.total}</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total Items</div>
+              <div className="text-lg font-bold text-slate-900 dark:text-white leading-none">{stats.total}</div>
             </div>
           </div>
           {stats.lowStock > 0 && (
@@ -207,8 +241,8 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                 <i className="fa-solid fa-triangle-exclamation"></i>
               </div>
               <div>
-                <div className="text-[10px] font-black uppercase tracking-widest text-amber-500">Low Stock</div>
-                <div className="text-lg font-black text-amber-600 dark:text-amber-400 leading-none">{stats.lowStock}</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-amber-500">Low Stock</div>
+                <div className="text-lg font-bold text-amber-600 dark:text-amber-400 leading-none">{stats.lowStock}</div>
               </div>
             </div>
           )}
@@ -218,11 +252,20 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                 <i className="fa-solid fa-clock-rotate-left"></i>
               </div>
               <div>
-                <div className="text-[10px] font-black uppercase tracking-widest text-red-500">Expiring Soon</div>
-                <div className="text-lg font-black text-red-600 dark:text-red-400 leading-none">{stats.expiring}</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-red-500">Expiring Soon</div>
+                <div className="text-lg font-bold text-red-600 dark:text-red-400 leading-none">{stats.expiring}</div>
               </div>
             </div>
           )}
+          <div className="glass-panel px-6 py-3 rounded-2xl flex items-center gap-3 border shadow-sm group hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <i className="fa-solid fa-sack-dollar"></i>
+            </div>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total Value</div>
+              <div className="text-lg font-bold tabular-nums text-emerald-600 dark:text-emerald-400 leading-none">${stats.totalValue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-4 items-center">
@@ -264,17 +307,17 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
             )}
           </div>
         </div>
-      </header >
+      </header>
 
       {/* Audit Mode Banner */}
       {isAuditMode && (
-        <div className="bg-medical-600/10 border border-medical-500/30 rounded-3xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 mt-[-1rem] mb-6 animate-fade-in shadow-inner">
+        <div className="bg-medical-600/10 border border-medical-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 mt-[-1rem] mb-6 animate-fade-in shadow-inner">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-medical-500 text-white flex items-center justify-center animate-pulse shadow-lg shadow-medical-500/30">
               <i className="fa-solid fa-clipboard-check text-xl"></i>
             </div>
             <div>
-              <h3 className="font-black text-medical-800 dark:text-medical-200 text-lg leading-tight uppercase tracking-widest">Audit Mode Active</h3>
+              <h3 className="font-bold text-medical-800 dark:text-medical-200 text-lg leading-tight uppercase tracking-widest">Audit Mode Active</h3>
               <p className="text-xs font-bold text-medical-600/70 dark:text-medical-400/70 tracking-tight">Select multiple items to verify them at once.</p>
             </div>
           </div>
@@ -282,7 +325,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
             <button
               onClick={handleBulkVerify}
               disabled={loadingItemIds.size > 0}
-              className="px-6 py-3 bg-medical-600 hover:bg-medical-700 text-white rounded-xl font-black shadow-lg shadow-medical-500/30 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+              className="px-6 py-3 bg-medical-600 hover:bg-medical-700 text-white rounded-xl font-bold shadow-lg shadow-medical-500/30 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
             >
               <i className="fa-solid fa-check-double"></i> Verify {selectedItemIds.size} Items
             </button>
@@ -290,8 +333,8 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
         </div>
       )}
 
-      {/* Search & Filter - Luxury Design */}
-      < div className="sticky top-4 z-40 mx-[-1rem] px-4 md:mx-0 md:px-0" >
+      {/* Search & Filter */}
+      <div className="sticky top-4 z-40 mx-[-1rem] px-4 md:mx-0 md:px-0">
         <div className="glass-panel p-2.5 rounded-2xl flex flex-col md:flex-row gap-2.5 border-white/50 dark:border-slate-800/80">
           <div className="relative flex-1 group">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none transition-transform group-focus-within:scale-110">
@@ -306,7 +349,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
             />
           </div>
 
-          <div className="flex gap-3 overflow-x-auto pb-1 md:pb-0 px-1 custom-scrollbar">
+          <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0 px-1 custom-scrollbar">
             <div className="relative min-w-[160px]">
               <i className="fa-solid fa-filter absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
               <select
@@ -334,18 +377,27 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
               </select>
               <i className="fa-solid fa-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[10px]"></i>
             </div>
+
+            <button
+              onClick={handleExportExcel}
+              className="h-11 px-4 bg-slate-50/50 dark:bg-slate-900/50 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 flex items-center gap-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all whitespace-nowrap"
+              title="Export to Excel"
+            >
+              <i className="fa-solid fa-file-excel"></i>
+              <span className="hidden lg:inline">Export</span>
+            </button>
           </div>
         </div>
-      </div >
+      </div>
 
-      {/* Desktop Table - Luxury Overhaul */}
-      < div className="hidden md:block glass-panel rounded-[2rem] luxury-shadow overflow-hidden border-white/40 dark:border-slate-800/50" >
+      {/* Desktop Table */}
+      <div className="hidden md:block glass-panel rounded-2xl luxury-shadow overflow-hidden border-white/40 dark:border-slate-800/50">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-separate border-spacing-0 min-w-[800px]">
-            <thead className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
-              <tr>
+            <thead className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-xl sticky top-0 z-10">
+              <tr className="border-b border-slate-200 dark:border-slate-800">
                 {isAuditMode && (
-                  <th className="px-6 py-6 w-12 text-center" title="Select All">
+                  <th className="px-4 py-4 w-12 text-center" title="Select All">
                     <input
                       type="checkbox"
                       checked={selectedItemIds.size > 0 && selectedItemIds.size === sortedItems.length}
@@ -354,23 +406,23 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                     />
                   </th>
                 )}
-                <th className="px-8 py-6">{t('th_details')}</th>
-                <th className="px-8 py-6">{t('th_category')}</th>
-                <th className="px-8 py-6">{t('th_batch')}</th>
-                <th className="px-8 py-6 text-center">{t('th_expiry')}</th>
-                <th className="px-8 py-6 text-center">{t('th_stock')}</th>
-                <th className="px-8 py-6 text-right">{isAuditMode ? t('th_status') : t('th_controls')}</th>
+                <th className="px-5 py-4">{t('th_details')}</th>
+                <th className="px-5 py-4">{t('th_category')}</th>
+                <th className="px-5 py-4">Lot / Expiry</th>
+                <th className="px-5 py-4 text-center">{t('th_stock')}</th>
+                <th className="px-5 py-4 text-right">Value</th>
+                <th className="px-5 py-4 text-right">{isAuditMode ? t('th_status') : t('th_controls')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-              {sortedItems.map((item, idx) => (
+            <tbody>
+              {paginatedItems.map((item, idx) => (
                 <tr
                   key={item.id}
-                  className={`group hover:bg-white/70 dark:hover:bg-slate-800/40 transition-all duration-300 ${editingRowId === item.id ? 'bg-medical-50/50 dark:bg-medical-900/20' : ''} ${selectedItemIds.has(item.id) ? 'bg-medical-50/30 dark:bg-medical-900/10' : ''}`}
-                  style={{ animationDelay: `${idx * 30}ms` }}
+                  className={`group border-l-[3px] transition-all duration-200 ${getStatusBorderColor(item)} ${idx % 2 === 1 ? 'bg-slate-50/30 dark:bg-slate-800/20' : ''} hover:bg-medical-50/30 dark:hover:bg-medical-900/10 ${editingRowId === item.id ? 'bg-medical-50/50 dark:bg-medical-900/20 !border-l-medical-500' : ''} ${selectedItemIds.has(item.id) ? 'bg-medical-50/30 dark:bg-medical-900/10' : ''}`}
+                  style={{ animationDelay: `${idx * 20}ms` }}
                 >
                   {isAuditMode && (
-                    <td className="px-6 py-6 text-center" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         checked={selectedItemIds.has(item.id)}
@@ -379,171 +431,170 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                       />
                     </td>
                   )}
-                  <td className="px-8 py-6 cursor-pointer" onClick={() => {
+                  {/* Item Details */}
+                  <td className="px-5 py-4 cursor-pointer max-w-[280px]" onClick={() => {
                     if (editingRowId !== item.id) {
                       setEditingRowId(item.id);
                       setEditForm({ ...item });
                     }
                   }}>
                     {editingRowId === item.id ? (
-                      <div className="space-y-2 max-w-[200px]">
+                      <div className="space-y-2 max-w-[240px]">
                         <input
                           type="text"
                           value={editForm.name || ''}
                           onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                          className="w-full px-4 py-2 rounded-xl border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-sm font-bold shadow-inner focus:ring-2 focus:ring-medical-500 transition-all"
+                          className="w-full px-3 py-2 rounded-lg border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-sm font-bold shadow-inner focus:ring-2 focus:ring-medical-500 transition-all"
                           autoFocus
                           onClick={(e) => e.stopPropagation()}
                         />
                         <select
                           value={editForm.location || ''}
                           onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                          className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-bold focus:ring-2 focus:ring-medical-500 appearance-none"
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-bold focus:ring-2 focus:ring-medical-500 appearance-none"
                           onClick={(e) => e.stopPropagation()}
                         >
                           {LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
                         </select>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-4">
-                        <div className={`w-2 h-12 rounded-full ${getStockStatus(item) === 'critical' ? 'bg-red-500' : getStockStatus(item) === 'warning' ? 'bg-amber-500' : 'bg-emerald-500'} opacity-20 group-hover:opacity-100 transition-opacity`}></div>
-                        <div>
-                          <div className="font-bold text-slate-900 dark:text-white text-lg tracking-tight group-hover:text-medical-600 transition-colors">{item.name}</div>
-                          <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest flex items-center gap-1.5 pt-1">
-                            <i className="fa-solid fa-location-dot text-medical-500/60"></i> {item.location}
-                          </div>
+                      <div>
+                        <div className="font-bold text-slate-900 dark:text-white text-sm leading-snug line-clamp-2 group-hover:text-medical-600 transition-colors" title={item.name}>{item.name}</div>
+                        <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest flex items-center gap-1.5">
+                          <i className="fa-solid fa-location-dot text-medical-500/60"></i> {item.location}
                         </div>
                       </div>
                     )}
                   </td>
-                  <td className="px-8 py-6">
+                  {/* Category */}
+                  <td className="px-5 py-4">
                     {editingRowId === item.id ? (
                       <select
                         value={editForm.category || ''}
                         onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                        className="w-full px-4 py-2 rounded-xl border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-xs font-bold focus:ring-2 focus:ring-medical-500 appearance-none"
+                        className="w-full px-3 py-1.5 rounded-lg border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-xs font-bold focus:ring-2 focus:ring-medical-500 appearance-none"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                       </select>
                     ) : (
-                      <span className="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-slate-700/50">
+                      <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-slate-700/50">
                         {item.category}
                       </span>
                     )}
                   </td>
-                  <td className="px-8 py-6">
+                  {/* Lot / Expiry (merged) */}
+                  <td className="px-5 py-4">
                     {editingRowId === item.id ? (
-                      <input
-                        type="text"
-                        value={editForm.batchNumber || ''}
-                        onChange={(e) => setEditForm({ ...editForm, batchNumber: e.target.value })}
-                        className="w-full px-4 py-2 rounded-xl border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-xs font-mono font-bold focus:ring-2 focus:ring-medical-500"
-                        onClick={(e) => e.stopPropagation()}
-                      />
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={editForm.batchNumber || ''}
+                          onChange={(e) => setEditForm({ ...editForm, batchNumber: e.target.value })}
+                          className="w-full px-3 py-1.5 rounded-lg border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-xs font-mono font-bold focus:ring-2 focus:ring-medical-500"
+                          placeholder="Batch #"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <input
+                          type="date"
+                          value={editForm.expiryDate ? new Date(editForm.expiryDate).toISOString().split('T')[0] : ''}
+                          onChange={(e) => setEditForm({ ...editForm, expiryDate: e.target.value })}
+                          className="w-full px-3 py-1.5 rounded-lg border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-[10px] font-bold focus:ring-2 focus:ring-medical-500"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
                     ) : (
-                      <span className="text-xs font-bold text-slate-400 font-mono tracking-tighter bg-slate-50 dark:bg-slate-900/50 px-3 py-1 rounded-lg border border-slate-100 dark:border-slate-800">
-                        {item.batchNumber}
-                      </span>
+                      <div className="flex flex-col gap-0.5">
+                        {item.batchNumber ? (
+                          <span className="text-xs font-bold text-slate-500 font-mono tracking-tighter">{item.batchNumber}</span>
+                        ) : (
+                          <span className="text-xs text-slate-300 dark:text-slate-600">—</span>
+                        )}
+                        {item.expiryDate ? (
+                          <span className={`text-[10px] font-bold ${new Date(item.expiryDate) < new Date() ? 'text-red-500' : 'text-slate-400'}`}>
+                            {new Date(item.expiryDate) < new Date() && <i className="fa-solid fa-circle-exclamation mr-1"></i>}
+                            {new Date(item.expiryDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-300 dark:text-slate-600">No expiry</span>
+                        )}
+                      </div>
                     )}
                   </td>
-                  <td className="px-8 py-6 text-center">
-                    {editingRowId === item.id ? (
-                      <input
-                        type="date"
-                        value={editForm.expiryDate ? new Date(editForm.expiryDate).toISOString().split('T')[0] : ''}
-                        onChange={(e) => setEditForm({ ...editForm, expiryDate: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-[10px] font-bold focus:ring-2 focus:ring-medical-500"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    ) : item.expiryDate ? (
-                      <div className="flex flex-col items-center gap-1">
-                        <span className={`text-[10px] font-black px-3 py-1.5 rounded-xl tracking-tighter uppercase ${new Date(item.expiryDate) < new Date() ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
-                          {new Date(item.expiryDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </span>
-                        {new Date(item.expiryDate) < new Date() && <span className="text-[8px] font-black text-red-500 uppercase tracking-widest animate-pulse">Expired</span>}
-                      </div>
-                    ) : <span className="text-slate-300">-</span>}
-                  </td>
-                  <td className="px-8 py-6 text-center">
+                  {/* Stock */}
+                  <td className="px-5 py-4 text-center">
                     {editingRowId === item.id ? (
                       <input
                         type="number"
                         value={editForm.stock || 0}
                         onChange={(e) => setEditForm({ ...editForm, stock: parseInt(e.target.value) || 0 })}
-                        className="w-24 px-4 py-2 rounded-xl border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-center text-lg font-bold focus:ring-2 focus:ring-medical-500 shadow-inner"
+                        className="w-20 px-3 py-1.5 rounded-lg border border-medical-200 dark:border-medical-800 bg-white dark:bg-slate-800 text-center text-base font-bold focus:ring-2 focus:ring-medical-500 shadow-inner"
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
-                      <div className="flex flex-col items-center gap-2 group/stock">
-                        <div className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-xl border shadow-sm transition-all group-hover/stock:scale-105 ${getStatusColor(item)}`}>
-                          <span className="font-bold text-xl leading-none tabular-nums">{item.stock}</span>
-                          <span className="text-[10px] uppercase font-semibold tracking-wider opacity-60">{t(item.unit || 'unit_each')}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2.5 h-2.5 rounded-full ${getStockStatus(item) === 'critical' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.6)] animate-pulse' : getStockStatus(item) === 'warning' ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'}`}></div>
-                          <span className={`text-[10px] font-black uppercase tracking-tighter ${getStockStatus(item) === 'critical' ? 'text-red-600' : getStockStatus(item) === 'warning' ? 'text-amber-600' : 'text-emerald-600'}`}>
-                            {getStockStatus(item) === 'critical' ? 'Critical' : getStockStatus(item) === 'warning' ? 'Low' : 'Healthy'}
-                          </span>
-                        </div>
+                      <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-all ${getStatusColor(item)}`}>
+                        <span className="font-bold tabular-nums">{item.stock}</span>
+                        <span className="text-[9px] uppercase font-semibold tracking-wider opacity-70">{t(item.unit || 'unit_each')}</span>
                       </div>
                     )}
                   </td>
-                  <td className="px-8 py-6 text-right">
-                    <div className="flex flex-col items-end gap-4">
+                  {/* Value */}
+                  <td className="px-5 py-4 text-right">
+                    <span className="font-mono font-bold tabular-nums text-sm text-emerald-600 dark:text-emerald-400">
+                      ${((item.stock || 0) * (item.averageCost || 0)).toFixed(2)}
+                    </span>
+                  </td>
+                  {/* Controls / Audit */}
+                  <td className="px-5 py-4 text-right">
+                    <div className="flex flex-col items-end gap-3">
                       {editingRowId === item.id ? (
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={async () => {
                               onUpdateItem(item.id, editForm);
-                              if (isAuditMode) {
-                                await onAuditItem(item.id);
-                              }
+                              if (isAuditMode) { await onAuditItem(item.id); }
                               setEditingRowId(null);
                             }}
-                            className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 shadow-xl shadow-emerald-500/30 transition-all hover:scale-110 active:scale-95"
+                            className="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 shadow-lg shadow-emerald-500/30 transition-all hover:scale-110 active:scale-95"
                             title={isAuditMode ? 'Save & Verify' : 'Save'}
                           >
-                            <i className="fa-solid fa-check text-lg"></i>
+                            <i className="fa-solid fa-check"></i>
                           </button>
                           <button
                             onClick={() => setEditingRowId(null)}
-                            className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center hover:bg-slate-200 transition-all active:scale-95"
+                            className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center hover:bg-slate-200 transition-all active:scale-95"
                           >
-                            <i className="fa-solid fa-xmark text-lg"></i>
+                            <i className="fa-solid fa-xmark"></i>
                           </button>
-                          {isAuditMode && <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest whitespace-nowrap">Save & Verify</span>}
+                          {isAuditMode && <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest whitespace-nowrap">Save & Verify</span>}
                         </div>
                       ) : (
-                        <div className="flex items-center justify-end gap-3">
+                        <div className="flex items-center justify-end gap-2">
                           {isAuditMode && (
                             <div className="flex items-center gap-2">
-                              {/* Modal edit button in audit mode */}
                               {hasPermission('inventory.edit') && (
                                 <button
                                   onClick={() => onEditItem(item)}
-                                  className="w-10 h-10 rounded-xl bg-medical-50 dark:bg-medical-900/30 text-medical-600 dark:text-medical-400 hover:bg-medical-600 hover:text-white flex items-center justify-center transition-all text-sm active:scale-90"
+                                  className="w-8 h-8 rounded-lg bg-medical-50 dark:bg-medical-900/30 text-medical-600 dark:text-medical-400 hover:bg-medical-600 hover:text-white flex items-center justify-center transition-all text-xs active:scale-90"
                                   title="Edit Item"
                                 >
                                   <i className="fa-solid fa-pen-to-square"></i>
                                 </button>
                               )}
-
-                              {/* Verify status / button */}
                               {item.lastChecked && isCheckedToday(item.lastChecked) && item.stock > item.minStock ? (
-                                <div className="flex flex-col items-end gap-2 group/audit">
-                                  <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm animate-fade-in">
-                                    <i className="fa-solid fa-check-double text-emerald-500 text-xs"></i>
+                                <div className="flex flex-col items-end gap-1.5">
+                                  <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 rounded-lg border border-emerald-100 dark:border-emerald-800 shadow-sm">
+                                    <i className="fa-solid fa-check-double text-emerald-500 text-[10px]"></i>
                                     <div className="text-right">
-                                      <div className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest leading-none">Verified</div>
-                                      <div className="text-[8px] font-bold text-slate-400 uppercase tracking-tight mt-0.5 whitespace-nowrap">
+                                      <div className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest leading-none">Verified</div>
+                                      <div className="text-[8px] font-bold text-slate-400 tracking-tight mt-0.5 whitespace-nowrap">
                                         {item.lastCheckedBy} @ {new Date(item.lastChecked).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                       </div>
                                     </div>
                                   </div>
                                   <button
                                     onClick={() => onAuditItem(item.id)}
-                                    className="text-[9px] font-bold text-slate-400 hover:text-medical-600 transition-colors uppercase tracking-widest flex items-center gap-1.5 px-2 active:scale-95"
+                                    className="text-[9px] font-bold text-slate-400 hover:text-medical-600 transition-colors uppercase tracking-widest flex items-center gap-1 px-1 active:scale-95"
                                   >
                                     <i className="fa-solid fa-rotate-right text-[8px]"></i>
                                     {t('btn_reverify')}
@@ -553,41 +604,38 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                                 <button
                                   onClick={() => handleAsyncAction(item.id, async () => onAuditItem(item.id))}
                                   disabled={loadingItemIds.has(item.id)}
-                                  className={`h-10 px-4 text-white rounded-xl text-[11px] font-bold shadow-lg active:scale-95 transition-all flex items-center gap-2 relative overflow-hidden group/auditbtn ${getStockStatus(item) === 'critical' ? 'bg-red-600 hover:bg-red-700 shadow-red-500/30' : 'bg-medical-600 hover:bg-medical-700 shadow-medical-500/20'} ${loadingItemIds.has(item.id) ? 'opacity-75 cursor-wait' : ''}`}
+                                  className={`h-8 px-3 text-white rounded-lg text-[10px] font-bold shadow-md active:scale-95 transition-all flex items-center gap-1.5 ${getStockStatus(item) === 'critical' ? 'bg-red-600 hover:bg-red-700 shadow-red-500/30' : 'bg-medical-600 hover:bg-medical-700 shadow-medical-500/20'} ${loadingItemIds.has(item.id) ? 'opacity-75 cursor-wait' : ''}`}
                                 >
                                   {loadingItemIds.has(item.id) ? (
-                                    <i className="fa-solid fa-circle-notch fa-spin text-base"></i>
+                                    <i className="fa-solid fa-circle-notch fa-spin"></i>
                                   ) : (
-                                    <>
-                                      <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover/auditbtn:translate-x-[100%] transition-transform duration-1000"></div>
-                                      <i className={`fa-solid ${getStockStatus(item) === 'critical' ? 'fa-triangle-exclamation animate-bounce' : 'fa-clipboard-check'} text-base`}></i>
-                                    </>
+                                    <i className={`fa-solid ${getStockStatus(item) === 'critical' ? 'fa-triangle-exclamation' : 'fa-clipboard-check'}`}></i>
                                   )}
-                                  <span className="tracking-widest uppercase">{loadingItemIds.has(item.id) ? 'Saving...' : (getStockStatus(item) === 'critical' ? 'Verify' : (t('btn_verify_now') || 'Verify'))}</span>
+                                  <span className="tracking-widest uppercase">{loadingItemIds.has(item.id) ? '...' : 'Verify'}</span>
                                 </button>
                               )}
                             </div>
                           )}
 
-                          <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/50 p-1.5 rounded-[1.5rem] border border-slate-100 dark:border-slate-800">
+                          <div className="flex items-center gap-0.5 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-100 dark:border-slate-800">
                             <button
                               onClick={() => handleAsyncAction(item.id, async () => onUpdateItem(item.id, { stock: Math.max(0, item.stock - 1) }))}
                               disabled={loadingItemIds.has(item.id)}
-                              className="w-10 h-10 rounded-xl hover:bg-red-500 hover:text-white flex items-center justify-center transition-all text-sm active:scale-90 disabled:opacity-50"
+                              className="w-8 h-8 rounded-lg hover:bg-red-500 hover:text-white flex items-center justify-center transition-all text-xs active:scale-90 disabled:opacity-50"
                             >
                               <i className="fa-solid fa-minus"></i>
                             </button>
                             <button
                               onClick={() => handleAsyncAction(item.id, async () => onUpdateItem(item.id, { stock: item.stock + 1 }))}
                               disabled={loadingItemIds.has(item.id)}
-                              className="w-10 h-10 rounded-xl hover:bg-emerald-500 hover:text-white flex items-center justify-center transition-all text-sm active:scale-90 disabled:opacity-50"
+                              className="w-8 h-8 rounded-lg hover:bg-emerald-500 hover:text-white flex items-center justify-center transition-all text-xs active:scale-90 disabled:opacity-50"
                             >
                               <i className="fa-solid fa-plus"></i>
                             </button>
                             {hasPermission('inventory.edit') && (
                               <button
                                 onClick={() => onEditItem(item)}
-                                className="w-10 h-10 rounded-xl bg-medical-50 dark:bg-medical-900/30 text-medical-600 dark:text-medical-400 hover:bg-medical-600 hover:text-white flex items-center justify-center transition-all text-sm active:scale-90 ml-1"
+                                className="w-8 h-8 rounded-lg bg-medical-50 dark:bg-medical-900/30 text-medical-600 dark:text-medical-400 hover:bg-medical-600 hover:text-white flex items-center justify-center transition-all text-xs active:scale-90 ml-0.5"
                               >
                                 <i className="fa-solid fa-pen-to-square"></i>
                               </button>
@@ -602,21 +650,55 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
             </tbody>
           </table>
         </div>
-      </div >
+
+        {/* Pagination Footer */}
+        {totalPages > 1 && (
+          <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-400">
+              Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, sortedItems.length)} of {sortedItems.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed text-xs"
+              >
+                <i className="fa-solid fa-chevron-left"></i>
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all ${page === currentPage ? 'bg-medical-600 text-white shadow-md shadow-medical-500/30' : 'text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed text-xs"
+              >
+                <i className="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Mobile Grid */}
-      < div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 pb-24" >
+      <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 pb-24">
         {
-          filteredItems.map((item, idx) => (
+          paginatedItems.map((item, idx) => (
             <div
               key={item.id}
-              className="glass-panel rounded-[2.5rem] luxury-shadow overflow-hidden border-white/50 dark:border-slate-800/60 p-6 flex flex-col gap-6 animate-fade-in"
+              className={`glass-panel rounded-2xl luxury-shadow overflow-hidden border-white/50 dark:border-slate-800/60 p-5 flex flex-col gap-4 animate-fade-in border-l-[3px] ${getStatusBorderColor(item)}`}
               style={{ animationDelay: `${idx * 50}ms` }}
             >
               <div className="flex justify-between items-start">
-                <div className="flex gap-5">
+                <div className="flex gap-4">
                   {isAuditMode && (
-                    <div className="pt-4" onClick={(e) => e.stopPropagation()}>
+                    <div className="pt-3" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         checked={selectedItemIds.has(item.id)}
@@ -625,18 +707,18 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                       />
                     </div>
                   )}
-                  <div className={`w-16 h-16 rounded-[2rem] flex flex-col items-center justify-center shrink-0 border-2 relative ${getStatusColor(item)}`}>
+                  <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0 border-2 relative ${getStatusColor(item)}`}>
                     <div className={`w-3 h-3 rounded-full absolute -top-1 -right-1 border-2 border-white dark:border-slate-900 ${getStockStatus(item) === 'critical' ? 'bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]' : getStockStatus(item) === 'warning' ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'}`}></div>
-                    <span className="text-2xl font-black leading-none tracking-tighter">{item.stock}</span>
-                    <span className="text-[9px] uppercase font-black opacity-60 mt-1 tracking-widest">{t(item.unit || 'unit_each').slice(0, 3)}</span>
+                    <span className="text-xl font-bold leading-none tracking-tighter">{item.stock}</span>
+                    <span className="text-[8px] uppercase font-bold opacity-60 mt-0.5 tracking-widest">{t(item.unit || 'unit_each').slice(0, 3)}</span>
                   </div>
-                  <div>
-                    <h3 className="text-xl font-black text-slate-800 dark:text-white leading-tight tracking-tight">{item.name}</h3>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-[9px] font-black uppercase tracking-wider text-slate-500 rounded-lg border border-slate-200/50 dark:border-slate-700/50">
+                  <div className="min-w-0">
+                    <h3 className="text-base font-bold text-slate-800 dark:text-white leading-tight tracking-tight line-clamp-2" title={item.name}>{item.name}</h3>
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-[9px] font-bold uppercase tracking-wider text-slate-500 rounded-md border border-slate-200/50 dark:border-slate-700/50">
                         {item.category}
                       </span>
-                      <span className="px-3 py-1 bg-medical-50 dark:bg-medical-900/20 text-[9px] font-bold uppercase tracking-wider text-medical-500 rounded-lg border border-medical-100 dark:border-medical-900/50">
+                      <span className="px-2 py-0.5 bg-medical-50 dark:bg-medical-900/20 text-[9px] font-bold uppercase tracking-wider text-medical-500 rounded-md border border-medical-100 dark:border-medical-900/50">
                         <i className="fa-solid fa-location-dot mr-1"></i> {item.location}
                       </span>
                     </div>
@@ -645,54 +727,59 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                 {hasPermission('inventory.edit') && (
                   <button
                     onClick={() => onEditItem(item)}
-                    className="w-10 h-10 glass-panel rounded-xl flex items-center justify-center text-slate-400 hover:text-medical-500 transition-all active:scale-95"
+                    className="w-9 h-9 glass-panel rounded-lg flex items-center justify-center text-slate-400 hover:text-medical-500 transition-all active:scale-95"
                   >
-                    <i className={`fa-solid ${isAuditMode ? 'fa-pen-to-square' : 'fa-ellipsis-vertical'}`}></i>
+                    <i className={`fa-solid ${isAuditMode ? 'fa-pen-to-square' : 'fa-ellipsis-vertical'} text-sm`}></i>
                   </button>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50/50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Batch #</span>
-                  <span className="text-xs font-black text-slate-700 dark:text-slate-300 font-mono italic">
-                    {item.batchNumber || 'N/A'}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-slate-50/50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Batch</span>
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 font-mono">
+                    {item.batchNumber || '—'}
                   </span>
                 </div>
-                <div className="bg-slate-50/50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Expiry</span>
-                  <span className={`text-xs font-black ${item.expiryDate && new Date(item.expiryDate) < new Date() ? 'text-red-500 animate-pulse' : 'text-slate-700 dark:text-slate-300'}`}>
-                    {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'N/A'}
+                <div className="bg-slate-50/50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Expiry</span>
+                  <span className={`text-[11px] font-bold ${item.expiryDate && new Date(item.expiryDate) < new Date() ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}`}>
+                    {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString(undefined, { month: 'short', year: '2-digit' }) : '—'}
+                  </span>
+                </div>
+                <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-3 rounded-xl border border-emerald-100 dark:border-emerald-800/50 flex flex-col">
+                  <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mb-0.5">Value</span>
+                  <span className="text-[11px] font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
+                    ${((item.stock || 0) * (item.averageCost || 0)).toFixed(0)}
                   </span>
                 </div>
               </div>
-
 
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => handleAsyncAction(item.id, async () => onUpdateItem(item.id, { stock: Math.max(0, item.stock - 1) }))}
                   disabled={loadingItemIds.has(item.id)}
-                  className="flex-1 h-14 bg-white dark:bg-slate-800 rounded-2xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all active:scale-95 flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-sm disabled:opacity-50"
+                  className="flex-1 h-12 bg-white dark:bg-slate-800 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all active:scale-95 flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-sm disabled:opacity-50"
                 >
-                  <i className="fa-solid fa-minus text-lg"></i>
+                  <i className="fa-solid fa-minus text-base"></i>
                 </button>
                 <button
                   onClick={() => handleAsyncAction(item.id, async () => onUpdateItem(item.id, { stock: item.stock + 1 }))}
                   disabled={loadingItemIds.has(item.id)}
-                  className="flex-1 h-14 bg-white dark:bg-slate-800 rounded-2xl text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 transition-all active:scale-95 flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-sm disabled:opacity-50"
+                  className="flex-1 h-12 bg-white dark:bg-slate-800 rounded-xl text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 transition-all active:scale-95 flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-sm disabled:opacity-50"
                 >
-                  <i className="fa-solid fa-plus text-lg"></i>
+                  <i className="fa-solid fa-plus text-base"></i>
                 </button>
               </div>
 
               {isAuditMode && (
-                <div className="pt-2">
+                <div className="pt-1">
                   {item.lastChecked && isCheckedToday(item.lastChecked) && item.stock > item.minStock ? (
-                    <div className="space-y-3">
-                      <div className="w-full py-5 flex flex-col items-center justify-center bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 rounded-3xl border border-emerald-100 dark:border-emerald-800 shadow-inner group/verified">
+                    <div className="space-y-2">
+                      <div className="w-full py-4 flex flex-col items-center justify-center bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-100 dark:border-emerald-800 shadow-inner">
                         <div className="flex items-center gap-2 mb-1">
-                          <i className="fa-solid fa-check-circle text-2xl animate-pulse"></i>
-                          <span className="font-black text-sm uppercase tracking-widest text-emerald-700 dark:text-emerald-300">Verified Today</span>
+                          <i className="fa-solid fa-check-circle text-xl animate-pulse"></i>
+                          <span className="font-bold text-sm uppercase tracking-widest text-emerald-700 dark:text-emerald-300">Verified Today</span>
                         </div>
                         <span className="text-[10px] font-bold opacity-80 italic">
                           {item.lastCheckedBy} at {new Date(item.lastChecked).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -701,7 +788,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                       <button
                         onClick={() => handleAsyncAction(item.id, async () => onAuditItem(item.id))}
                         disabled={loadingItemIds.has(item.id)}
-                        className="w-full h-12 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-2xl font-black text-xs flex items-center justify-center gap-3 hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-75 disabled:cursor-wait"
+                        className="w-full h-10 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-75 disabled:cursor-wait"
                       >
                         {loadingItemIds.has(item.id) ? (
                           <i className="fa-solid fa-circle-notch fa-spin"></i>
@@ -715,17 +802,17 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                     <button
                       onClick={() => handleAsyncAction(item.id, async () => onAuditItem(item.id))}
                       disabled={loadingItemIds.has(item.id)}
-                      className={`w-full h-14 text-white rounded-2xl font-bold text-sm shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 relative overflow-hidden group/mbaudit ${getStockStatus(item) === 'critical' ? 'bg-red-600 shadow-red-500/40' : 'bg-medical-600 shadow-medical-500/40'} ${loadingItemIds.has(item.id) ? 'opacity-75 cursor-wait' : ''}`}
+                      className={`w-full h-12 text-white rounded-xl font-bold text-sm shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 relative overflow-hidden group/mbaudit ${getStockStatus(item) === 'critical' ? 'bg-red-600 shadow-red-500/40' : 'bg-medical-600 shadow-medical-500/40'} ${loadingItemIds.has(item.id) ? 'opacity-75 cursor-wait' : ''}`}
                     >
                       {loadingItemIds.has(item.id) ? (
                         <i className="fa-solid fa-circle-notch fa-spin text-xl"></i>
                       ) : (
                         <>
                           <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/mbaudit:translate-x-[100%] transition-transform duration-1000"></div>
-                          <i className={`fa-solid ${getStockStatus(item) === 'critical' ? 'fa-triangle-exclamation animate-bounce text-xl' : 'fa-clipboard-check text-xl'}`}></i>
+                          <i className={`fa-solid ${getStockStatus(item) === 'critical' ? 'fa-triangle-exclamation animate-bounce text-lg' : 'fa-clipboard-check text-lg'}`}></i>
                         </>
                       )}
-                      <span className="uppercase tracking-widest">{loadingItemIds.has(item.id) ? 'Saving...' : (getStockStatus(item) === 'critical' ? 'Critical: Verify Now' : (t('btn_verify_now') || 'Mark Verified'))}</span>
+                      <span className="uppercase tracking-widest">{loadingItemIds.has(item.id) ? 'Saving...' : (getStockStatus(item) === 'critical' ? 'Critical: Verify' : (t('btn_verify_now') || 'Verify'))}</span>
                     </button>
                   )}
                 </div>
@@ -733,8 +820,33 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
             </div>
           ))
         }
-      </div >
-    </div >
+      </div>
+
+      {/* Mobile Pagination */}
+      {totalPages > 1 && (
+        <div className="md:hidden flex items-center justify-between px-2 pb-20">
+          <span className="text-xs font-bold text-slate-400">
+            Page {currentPage} of {totalPages}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="w-10 h-10 rounded-xl glass-panel flex items-center justify-center text-slate-500 transition-all disabled:opacity-30 text-sm"
+            >
+              <i className="fa-solid fa-chevron-left"></i>
+            </button>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="w-10 h-10 rounded-xl glass-panel flex items-center justify-center text-slate-500 transition-all disabled:opacity-30 text-sm"
+            >
+              <i className="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
