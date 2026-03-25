@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Order, OrderItem, InventoryItem } from '../types';
-import { parseInvoiceFromImage, ParsedOrderData, INVENTORY_CATEGORIES } from '../services/geminiService';
+import { parseInvoiceFromImage, ParsedOrderData, INVENTORY_CATEGORIES } from '../services/LocalAIService';
 
 interface OrderScannerModalProps {
     isOpen: boolean;

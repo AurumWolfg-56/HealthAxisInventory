@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { ScannedItemData, scanItemLabel } from '../services/geminiService';
+import { ScannedItemData, scanItemLabel } from '../services/LocalAIService';
 import { InventoryItem } from '../types';
 import { CATEGORIES, LOCATIONS, UNITS } from '../utils/constants';
 

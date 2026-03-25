@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { scanItemLabel } from '../services/geminiService';
+import { scanItemLabel } from '../services/LocalAIService';
 import { InventoryItem } from '../types';
 
 interface ProductModalProps {

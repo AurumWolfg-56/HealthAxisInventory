@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { transcribeAudio } from '@/services/whisper';
-import { processAudioCommand, processTextCommand } from '../services/geminiService';
+import { processAudioCommand, processTextCommand } from '../services/LocalAIService';
 
 interface VoiceAssistantProps {
   onCommand: (result: any) => void;

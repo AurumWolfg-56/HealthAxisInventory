@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Order, OrderItem, InventoryItem } from '../types';
-import { parseInvoiceFromImage, INVENTORY_CATEGORIES } from '../services/geminiService';
+import { parseInvoiceFromImage, INVENTORY_CATEGORIES } from '../services/LocalAIService';
 import Webcam from 'react-webcam';
 
 interface OrderFormProps {

@@ -1,7 +1,7 @@
 
 import React, { forwardRef } from 'react';
 import { useMedicalDictation } from '../../hooks/useMedicalDictation';
-import { refineClinicalNote } from '@/services/geminiService';
+import { refineClinicalNote } from '@/services/LocalAIService';
 import { playStartCue, playStopCue } from '@/services/audioService';
 import AudioVisualizer from './AudioVisualizer';
 

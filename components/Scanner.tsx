@@ -1,7 +1,7 @@
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import Webcam from 'react-webcam';
-import { identifyItemFromImage } from '../services/geminiService';
+import { identifyItemFromImage } from '../services/LocalAIService';
 
 interface ScannerProps {
   onScanComplete: (data: any) => void;
