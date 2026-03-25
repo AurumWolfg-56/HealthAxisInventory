@@ -21,8 +21,8 @@ import uvicorn
 
 # ─── Configuration ──────────────────────────────────────────────────────────
 MODEL_SIZE = "large-v3-turbo"  # Best quality with turbo speed
-DEVICE = "cuda"                # Use NVIDIA GPU (change to "cpu" if no GPU)
-COMPUTE_TYPE = "float16"       # float16 for GPU, int8 for CPU
+DEVICE = "cpu"                 # CPU mode (stable, ~2-3s per 10s audio)
+COMPUTE_TYPE = "int8"          # int8 optimized for CPU
 HOST = "0.0.0.0"
 PORT = 8765
 
