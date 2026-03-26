@@ -24,10 +24,11 @@ for p in cuda_paths:
         os.environ["PATH"] = p + os.pathsep + os.environ.get("PATH", "")
         print(f"[CUDA] Added to PATH: {p}")
 
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 import uvicorn
+import httpx
 
 # ─── Configuration ──────────────────────────────────────────────────────────
 MODEL_SIZE = "large-v3-turbo"  # Best quality with turbo speed
@@ -36,15 +37,16 @@ COMPUTE_TYPE = "float16"       # float16 on GPU = fastest + best quality
 HOST = "0.0.0.0"
 PORT = 8765
 CPU_THREADS = 8                # Use multiple CPU threads for speed
+LM_STUDIO_URL = "http://127.0.0.1:1234"  # LM Studio API
 
 # ─── Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("whisper-server")
 
 # ─── FastAPI App ────────────────────────────────────────────────────────────
-app = FastAPI(title="Norvexis Whisper Server", version="1.0.0")
+app = FastAPI(title="Norvexis Local AI Gateway", version="2.0.0")
 
-# Allow CORS from localhost (our PWA)
+# Allow CORS from any origin (production site + localhost)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -52,6 +54,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ─── HTTP client for LM Studio proxy ───────────────────────────────────────
+http_client = httpx.AsyncClient(base_url=LM_STUDIO_URL, timeout=120.0)
 
 # ─── Load Model (once at startup) ──────────────────────────────────────────
 whisper_model = None
@@ -79,12 +84,64 @@ async def load_model():
         sys.exit(1)
 
     logger.info(f"🎤 Server ready at http://localhost:{PORT}")
-    logger.info(f"📡 Endpoint: POST http://localhost:{PORT}/v1/audio/transcriptions")
+    logger.info(f"📡 Whisper:  POST http://localhost:{PORT}/v1/audio/transcriptions")
+    logger.info(f"🤖 LLM:     POST http://localhost:{PORT}/v1/chat/completions")
+    logger.info(f"📋 Models:  GET  http://localhost:{PORT}/v1/models")
 
 # ─── Health Check ───────────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
-    return {"status": "ok", "model": MODEL_SIZE, "device": actual_device, "compute": COMPUTE_TYPE}
+    # Also check LM Studio connectivity
+    lm_status = "unknown"
+    try:
+        r = await http_client.get("/v1/models")
+        lm_status = "connected" if r.status_code == 200 else f"error:{r.status_code}"
+    except:
+        lm_status = "offline"
+
+    return {
+        "status": "ok",
+        "whisper": {"model": MODEL_SIZE, "device": actual_device, "compute": COMPUTE_TYPE},
+        "lm_studio": lm_status,
+    }
+
+# ─── LM Studio Proxy: /v1/chat/completions ─────────────────────────────────
+@app.post("/v1/chat/completions")
+async def proxy_chat_completions(request: Request):
+    """Proxy chat completion requests to LM Studio."""
+    try:
+        body = await request.body()
+        logger.info(f"[LLM Proxy] Forwarding chat/completions ({len(body)} bytes)")
+
+        response = await http_client.post(
+            "/v1/chat/completions",
+            content=body,
+            headers={"Content-Type": "application/json"},
+        )
+
+        logger.info(f"[LLM Proxy] ✅ Response {response.status_code}")
+        return JSONResponse(
+            status_code=response.status_code,
+            content=response.json(),
+        )
+    except httpx.ConnectError:
+        logger.error("[LLM Proxy] ❌ Cannot connect to LM Studio")
+        return JSONResponse(status_code=502, content={"error": "LM Studio is not running at 127.0.0.1:1234"})
+    except Exception as e:
+        logger.error(f"[LLM Proxy] ❌ Error: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+# ─── LM Studio Proxy: /v1/models ───────────────────────────────────────────
+@app.get("/v1/models")
+async def proxy_models():
+    """Proxy model list from LM Studio."""
+    try:
+        response = await http_client.get("/v1/models")
+        return JSONResponse(status_code=response.status_code, content=response.json())
+    except httpx.ConnectError:
+        return JSONResponse(status_code=502, content={"error": "LM Studio is not running"})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 # ─── OpenAI-Compatible Transcription Endpoint ──────────────────────────────
 @app.post("/v1/audio/transcriptions")

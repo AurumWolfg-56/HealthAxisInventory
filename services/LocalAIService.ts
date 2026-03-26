@@ -11,7 +11,9 @@
  */
 
 // ─── Configuration ──────────────────────────────────────────────────────────
-const LM_STUDIO_URL = '/lmstudio/v1';
+// Uses the local AI gateway (whisper_server.py) which proxies to LM Studio
+// and provides CORS headers — works from both localhost and production
+const LM_STUDIO_URL = 'http://localhost:8765/v1';
 
 // Model identifiers (must match LM Studio model IDs)
 const MODELS = {
