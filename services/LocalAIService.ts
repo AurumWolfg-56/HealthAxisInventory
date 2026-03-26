@@ -71,7 +71,6 @@ const chatCompletion = async (
         messages,
         temperature,
         max_tokens: maxTokens,
-        ...(jsonMode && { response_format: { type: 'json_object' } }),
       }),
     });
 
