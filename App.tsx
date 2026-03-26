@@ -36,6 +36,7 @@ import Login from './components/Login';
 import Toast from './components/Toast';
 import Logo from './components/Logo';
 import { PlatformAdmin } from './components/PlatformAdmin';
+import AskNorvexis from './components/AskNorvexis';
 import * as XLSX from 'xlsx';
 import { translations, Language } from './utils/translations';
 import { medicalCodes as INITIAL_CODES } from './data/medicalCodes';
@@ -143,6 +144,7 @@ const App: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalItem, setModalItem] = useState<Partial<InventoryItem> | undefined>(undefined);
     const [voiceSearchTerm, setVoiceSearchTerm] = useState<string>("");
+    const [showAskNorvexis, setShowAskNorvexis] = useState(false);
 
     // --- INTELLIGENT ROUTING LOGIC ---
     useEffect(() => {
@@ -1183,12 +1185,34 @@ const App: React.FC = () => {
                 </div>
             </Layout>
 
-            {/* Floating Action Button (Minimal) */}
-            <div className="md:hidden fixed bottom-6 right-6 z-40 animate-scale-in">
-                <button onClick={() => setShowScanner(true)} className="w-16 h-16 rounded-full bg-gradient-to-br from-medical-500 to-medical-600 text-white shadow-glow flex items-center justify-center border-4 border-white dark:border-slate-800 active:scale-90 transition-transform">
-                    <i className="fa-solid fa-qrcode text-2xl"></i>
+            {/* Floating Action Buttons */}
+            <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3 animate-scale-in">
+                {/* Ask Norvexis AI Button */}
+                <button
+                    onClick={() => setShowAskNorvexis(true)}
+                    className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30 flex items-center justify-center border-4 border-white dark:border-slate-800 active:scale-90 transition-transform hover:shadow-xl hover:shadow-emerald-500/40"
+                    title="Ask Norvexis AI"
+                >
+                    <i className="fa-solid fa-robot text-xl md:text-2xl" />
+                </button>
+                {/* Scanner Button (mobile only) */}
+                <button
+                    onClick={() => setShowScanner(true)}
+                    className="md:hidden w-14 h-14 rounded-full bg-gradient-to-br from-medical-500 to-medical-600 text-white shadow-glow flex items-center justify-center border-4 border-white dark:border-slate-800 active:scale-90 transition-transform"
+                >
+                    <i className="fa-solid fa-qrcode text-xl" />
                 </button>
             </div>
+
+            {/* Ask Norvexis Chat Panel */}
+            <AskNorvexis
+                isOpen={showAskNorvexis}
+                onClose={() => setShowAskNorvexis(false)}
+                inventory={inventory}
+                orders={orders}
+                dailyReports={dailyReports}
+                pettyCash={pettyCashHistory}
+            />
 
             {viewingReport && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fade-in-up">
