@@ -11,7 +11,7 @@
  */
 
 // ─── Configuration ──────────────────────────────────────────────────────────
-const LM_STUDIO_URL = 'http://localhost:1234/v1';
+const LM_STUDIO_URL = '/lmstudio/v1';
 
 // Model identifiers (must match LM Studio model IDs)
 const MODELS = {

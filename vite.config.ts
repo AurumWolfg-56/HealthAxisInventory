@@ -9,6 +9,13 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3000,
       host: '0.0.0.0',
+      proxy: {
+        '/lmstudio': {
+          target: 'http://127.0.0.1:1234',
+          changeOrigin: true,
+          rewrite: (path: string) => path.replace(/^\/lmstudio/, ''),
+        },
+      },
     },
     plugins: [
       react()
