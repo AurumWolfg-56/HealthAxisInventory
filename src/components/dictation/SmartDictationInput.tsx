@@ -55,6 +55,7 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
   const [structuredNote, setStructuredNote] = React.useState<StructuredNote | null>(null);
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [showResults, setShowResults] = React.useState(false);
+  const [generateError, setGenerateError] = React.useState<string | null>(null);
 
   const handleMicClick = async () => {
     if (isRecording) {
@@ -72,8 +73,8 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
 
   const handleGenerate = async () => {
     if (!value || isGenerating) return;
-    setIsGenerating(true); setStructuredNote(null); setShowResults(true);
-    try { setStructuredNote(await generateStructuredNote(value)); } catch (err) { console.error('[NoteGen]', err); }
+    setIsGenerating(true); setStructuredNote(null); setGenerateError(null); setShowResults(true);
+    try { setStructuredNote(await generateStructuredNote(value)); } catch (err: any) { console.error('[NoteGen]', err); setGenerateError(err.message || 'Unknown error'); }
     setIsGenerating(false);
   };
 
@@ -256,9 +257,29 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
                   </div>
                 </>
               ) : (
-                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-                  <i className="fa-solid fa-triangle-exclamation text-3xl text-red-400 mb-2"></i>
-                  <p className="text-sm font-bold">Error generating note — check AI Gateway</p>
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400 max-w-sm mx-auto text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center mb-4">
+                    <i className="fa-solid fa-plug-circle-xmark text-2xl text-red-400"></i>
+                  </div>
+                  <p className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Local AI Gateway Unavailable</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                    {generateError || 'Could not connect to the AI gateway'}
+                  </p>
+                  <div className="text-left w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 space-y-1.5">
+                    <p className="text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wide mb-2">To enable AI notes:</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 flex items-start gap-2">
+                      <i className="fa-solid fa-circle-1 text-teal-500 mt-0.5 text-[10px] shrink-0"></i>
+                      Start <span className="font-mono font-bold text-gray-700 dark:text-gray-300">LM Studio</span> on localhost:1234
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 flex items-start gap-2">
+                      <i className="fa-solid fa-circle-2 text-teal-500 mt-0.5 text-[10px] shrink-0"></i>
+                      Run <span className="font-mono font-bold text-gray-700 dark:text-gray-300">whisper_server.py</span> on localhost:8765
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 flex items-start gap-2">
+                      <i className="fa-solid fa-circle-3 text-teal-500 mt-0.5 text-[10px] shrink-0"></i>
+                      Access from your <span className="font-bold text-gray-700 dark:text-gray-300">local network</span>
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
