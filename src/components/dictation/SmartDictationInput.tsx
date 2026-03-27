@@ -77,6 +77,7 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
     setIsGenerating(false);
   };
 
+  const closeModal = () => setShowResults(false);
   const handleUndo = () => { if (lastValue !== null) { onChange(lastValue); setLastValue(null); setShowUndo(false); } };
   const formatTime = (s: number) => `${Math.floor(s/60)}:${s%60 < 10 ? '0' : ''}${s%60}`;
 
@@ -85,6 +86,14 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
     if (cpt?.includes('99214') || cpt?.includes('99204')) return 'bg-amber-500';
     return 'bg-blue-500';
   };
+
+  // Close on Escape key
+  React.useEffect(() => {
+    if (!showResults) return;
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal(); };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [showResults]);
 
   return (
     <div className="w-full relative group">
@@ -133,25 +142,27 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════
-          RESULTS MODAL
+          RESULTS MODAL — Fixed layout: header + scrollable body + footer
          ═══════════════════════════════════════════════════════════════════ */}
       {showResults && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in"
-          style={{ padding: '0.5rem' }}
-          onClick={() => setShowResults(false)}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800"
-            style={{ maxHeight: 'calc(100vh - 1rem)' }}
-            onClick={(e) => e.stopPropagation()}>
-            
-            {/* Header — sticky so close button is always visible */}
-            <div className="sticky top-0 z-10 shrink-0 p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-gray-800 dark:to-gray-800">
+        <div
+          className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={closeModal}
+        >
+          {/* Modal container — centered with fixed dimensions */}
+          <div
+            className="absolute inset-2 sm:inset-4 md:inset-8 lg:inset-12 flex flex-col bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* ── FIXED HEADER ── */}
+            <div className="shrink-0 px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-gray-800 dark:to-gray-800">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-lg">
                   <i className="fa-solid fa-file-medical text-white text-sm"></i>
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-gray-900 dark:text-white">Structured Clinical Note</h3>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400">Copy each section into your EHR</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400">AI-generated suggestions — Copy each section into your EHR</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -160,14 +171,17 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
                     <span className="text-xs font-black">{structuredNote.suggestedCPT}</span>
                   </div>
                 )}
-                <button onClick={() => setShowResults(false)}
-                  className="w-8 h-8 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition-colors">
-                  <i className="fa-solid fa-xmark text-gray-500"></i>
+                <button
+                  onClick={closeModal}
+                  className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-red-100 dark:hover:bg-red-900/50 hover:text-red-600 flex items-center justify-center transition-colors text-gray-600 dark:text-gray-300"
+                  title="Close (Esc)"
+                >
+                  <i className="fa-solid fa-xmark text-base"></i>
                 </button>
               </div>
             </div>
 
-            {/* Content — scrollable */}
+            {/* ── SCROLLABLE CONTENT ── */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ minHeight: 0 }}>
               {isGenerating ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-4">
@@ -182,21 +196,17 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
               ) : structuredNote ? (
                 <>
                   {/* Disclaimer */}
-                  <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 flex items-start gap-2">
+                  <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 flex items-start gap-2">
                     <i className="fa-solid fa-info-circle text-amber-500 mt-0.5 text-xs"></i>
                     <p className="text-[11px] text-amber-700 dark:text-amber-300">
-                      <strong>AI-Generated Suggestions:</strong> All content below is generated by AI as a documentation aid. 
+                      <strong>AI-Generated Suggestions:</strong> All content below is generated by AI as a documentation aid.
                       The provider must review, modify, and approve all sections before use. This does not constitute medical advice.
                     </p>
                   </div>
 
-                  {/* CC */}
                   <NoteCard title="Chief Complaint" icon="fa-comment-medical" content={structuredNote.chiefComplaint} color="blue" />
-                  {/* HPI */}
                   <NoteCard title="History of Present Illness" icon="fa-notes-medical" content={structuredNote.hpi} color="teal" />
-                  {/* Diagnoses */}
                   <NoteCard title="Assessment / Diagnoses" icon="fa-stethoscope" content={structuredNote.diagnoses} color="amber" />
-                  {/* Plan */}
                   <NoteCard title="Plan" icon="fa-clipboard-list" content={structuredNote.plan} color="purple" />
 
                   {/* Conduct Alerts */}
@@ -218,55 +228,32 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
                     </div>
                   )}
 
-                  {/* Upcoding Suggestions — always show for 99213 */}
-                  {(() => {
-                    const tips = structuredNote.upcodingSuggestions?.length > 0
-                      ? structuredNote.upcodingSuggestions
-                      : structuredNote.suggestedCPT?.includes('99213') || structuredNote.suggestedCPT?.includes('99203')
-                        ? [
-                            'Document if patient has any chronic conditions (HTN, DM, asthma) and their current status',
-                            'If you reviewed outside records or prior visit notes, document that explicitly',
-                            'Document independent interpretation of any test results (e.g., "I personally reviewed the UA results")',
-                            'If you discussed the case with another provider, document that discussion',
-                            'Document prescription drug management if you prescribed or continued any Rx medications',
-                          ]
-                        : [];
-                    return tips.length > 0 ? (
-                      <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/20 overflow-hidden">
-                        <div className="px-4 py-2 bg-white/50 dark:bg-gray-800/50 border-b border-inherit">
-                          <h4 className="text-[11px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2">
-                            <i className="fa-solid fa-arrow-trend-up"></i> Documentation Opportunities → Reach 99214
-                          </h4>
-                        </div>
-                        <div className="p-3 space-y-2">
-                          {tips.map((sug, i) => (
-                            <div key={i} className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-300">
-                              <i className="fa-solid fa-lightbulb text-emerald-500 mt-0.5 text-xs shrink-0"></i>
-                              <span>{sug}</span>
-                            </div>
-                          ))}
-                        </div>
+                  {/* Upcoding Suggestions — case-specific */}
+                  {structuredNote.upcodingSuggestions && structuredNote.upcodingSuggestions.length > 0 && (
+                    <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/20 overflow-hidden">
+                      <div className="px-4 py-2 bg-white/50 dark:bg-gray-800/50 border-b border-inherit">
+                        <h4 className="text-[11px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2">
+                          <i className="fa-solid fa-arrow-trend-up"></i> Documentation Opportunities → Reach 99214
+                        </h4>
                       </div>
-                    ) : null;
-                  })()}
+                      <div className="p-3 space-y-2">
+                        {structuredNote.upcodingSuggestions.map((sug, i) => (
+                          <div key={i} className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-300">
+                            <i className="fa-solid fa-lightbulb text-emerald-500 mt-0.5 text-xs shrink-0"></i>
+                            <span>{sug}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                  {/* MDM Level info */}
+                  {/* MDM Level */}
                   <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 flex items-center gap-3">
                     <span className={`${getCPTColor(structuredNote.suggestedCPT)} text-white text-xs font-black px-2.5 py-1 rounded-lg`}>
                       {structuredNote.suggestedCPT}
                     </span>
                     <span className="text-xs text-gray-600 dark:text-gray-300">{structuredNote.mdmLevel}</span>
                   </div>
-
-                  {/* Copy All */}
-                  <button
-                    onClick={async () => {
-                      const full = `CHIEF COMPLAINT:\n${structuredNote.chiefComplaint}\n\nHISTORY OF PRESENT ILLNESS:\n${structuredNote.hpi}\n\nASSESSMENT / DIAGNOSES:\n${structuredNote.diagnoses}\n\nPLAN:\n${structuredNote.plan}`;
-                      await navigator.clipboard.writeText(full);
-                    }}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 text-white text-sm font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2">
-                    <i className="fa-solid fa-copy"></i> Copy Full Note (CC + HPI + Dx + Plan)
-                  </button>
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-gray-400">
@@ -275,6 +262,27 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
                 </div>
               )}
             </div>
+
+            {/* ── FIXED FOOTER ── */}
+            {structuredNote && (
+              <div className="shrink-0 px-4 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex items-center gap-3">
+                <button
+                  onClick={async () => {
+                    const full = `CHIEF COMPLAINT:\n${structuredNote.chiefComplaint}\n\nHISTORY OF PRESENT ILLNESS:\n${structuredNote.hpi}\n\nASSESSMENT / DIAGNOSES:\n${structuredNote.diagnoses}\n\nPLAN:\n${structuredNote.plan}`;
+                    await navigator.clipboard.writeText(full);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 text-white text-sm font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                >
+                  <i className="fa-solid fa-copy"></i> Copy Full Note
+                </button>
+                <button
+                  onClick={closeModal}
+                  className="px-5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
