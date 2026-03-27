@@ -151,7 +151,7 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
         >
           {/* Modal container — centered with fixed dimensions */}
           <div
-            className="absolute inset-2 sm:inset-4 md:inset-8 lg:inset-12 flex flex-col bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
+            className="absolute inset-2 sm:inset-3 flex flex-col bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* ── FIXED HEADER ── */}
