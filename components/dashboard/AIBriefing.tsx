@@ -17,9 +17,10 @@ const AIBriefingCard: React.FC<AIBriefingProps> = ({
   pettyCash,
 }) => {
   const [briefing, setBriefing] = useState<AIBriefingType | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const hasLoaded = React.useRef(false);
 
   const loadBriefing = useCallback(async (forceRefresh = false) => {
     setLoading(true);
@@ -58,11 +59,13 @@ const AIBriefingCard: React.FC<AIBriefingProps> = ({
     }
   }, [inventory, dailyReports, orders, pettyCash]);
 
+  // Trigger briefing when inventory data becomes available
   useEffect(() => {
-    if (inventory.length > 0) {
+    if (inventory.length > 0 && !hasLoaded.current) {
+      hasLoaded.current = true;
       loadBriefing();
     }
-  }, []);  // Only on mount
+  }, [inventory.length]);
 
   const handleRefresh = () => {
     clearBriefingCache();
