@@ -25,10 +25,34 @@ const AIBriefingCard: React.FC<AIBriefingProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const result = await generateBriefing(inventory, dailyReports, orders, pettyCash, forceRefresh);
+      // Race the actual briefing against a 6-second timeout
+      const TIMEOUT_MS = 6000;
+      const result = await Promise.race([
+        generateBriefing(inventory, dailyReports, orders, pettyCash, forceRefresh),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('AI Gateway timeout — running without AI')), TIMEOUT_MS)
+        ),
+      ]);
       setBriefing(result);
     } catch (err: any) {
-      setError(err.message || 'Failed to generate briefing');
+      console.warn('[AIBriefing] ⏭️ Fallback:', err.message);
+      // Show data-only briefing instead of an error
+      const lowStockCount = inventory.filter(i => i.stock <= i.minStock).length;
+      const expiringCount = inventory.filter(i => {
+        if (!i.expiryDate) return false;
+        const days = Math.ceil((new Date(i.expiryDate).getTime() - Date.now()) / (1000*60*60*24));
+        return days >= 0 && days <= 14;
+      }).length;
+      setBriefing({
+        summary: `📊 Your clinic has ${inventory.length} items tracked. ${lowStockCount > 0 ? `⚠️ ${lowStockCount} items are low on stock.` : '✅ All stock levels are healthy.'} ${expiringCount > 0 ? `⚠️ ${expiringCount} items expiring within 14 days.` : ''}`,
+        generatedAt: new Date().toISOString(),
+        dataPoints: {
+          expiringItems: expiringCount,
+          lowStockItems: lowStockCount,
+          todayRevenue: 0,
+          recentOrders: 0,
+        },
+      });
     } finally {
       setLoading(false);
     }
