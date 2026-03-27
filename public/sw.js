@@ -1,5 +1,5 @@
 // IMPORTANT: Increment this version whenever you deploy new code to force cache refresh
-const CACHE_VERSION = 'norvexis-v9-domain-update';
+const CACHE_VERSION = 'norvexis-v10-ai-fallback';
 const ASSETS_TO_CACHE = [
     '/logo.png',
     '/manifest.json'
@@ -44,10 +44,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // Bypass for external APIs
+    // Bypass for external APIs and local AI gateway
     if (url.hostname.includes('supabase.co') ||
         url.hostname.includes('googleapis.com') ||
-        url.hostname.includes('gstatic.com')) {
+        url.hostname.includes('gstatic.com') ||
+        url.hostname === 'localhost' ||
+        url.hostname === '127.0.0.1') {
         return;
     }
 
