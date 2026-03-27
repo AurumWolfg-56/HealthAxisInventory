@@ -137,12 +137,14 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
          ═══════════════════════════════════════════════════════════════════ */}
       {showResults && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in"
-          style={{ padding: '0.5rem' }}>
+          style={{ padding: '0.5rem' }}
+          onClick={() => setShowResults(false)}>
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800"
-            style={{ maxHeight: 'calc(100vh - 1rem)' }}>
+            style={{ maxHeight: 'calc(100vh - 1rem)' }}
+            onClick={(e) => e.stopPropagation()}>
             
-            {/* Header */}
-            <div className="shrink-0 p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-gray-800 dark:to-gray-800">
+            {/* Header — sticky so close button is always visible */}
+            <div className="sticky top-0 z-10 shrink-0 p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-gray-800 dark:to-gray-800">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-lg">
                   <i className="fa-solid fa-file-medical text-white text-sm"></i>
@@ -216,24 +218,37 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
                     </div>
                   )}
 
-                  {/* Upcoding Suggestions */}
-                  {structuredNote.upcodingSuggestions && structuredNote.upcodingSuggestions.length > 0 && (
-                    <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/20 overflow-hidden">
-                      <div className="px-4 py-2 bg-white/50 dark:bg-gray-800/50 border-b border-inherit">
-                        <h4 className="text-[11px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2">
-                          <i className="fa-solid fa-arrow-trend-up"></i> Documentation Opportunities → Reach Next E/M Level
-                        </h4>
+                  {/* Upcoding Suggestions — always show for 99213 */}
+                  {(() => {
+                    const tips = structuredNote.upcodingSuggestions?.length > 0
+                      ? structuredNote.upcodingSuggestions
+                      : structuredNote.suggestedCPT?.includes('99213') || structuredNote.suggestedCPT?.includes('99203')
+                        ? [
+                            'Document if patient has any chronic conditions (HTN, DM, asthma) and their current status',
+                            'If you reviewed outside records or prior visit notes, document that explicitly',
+                            'Document independent interpretation of any test results (e.g., "I personally reviewed the UA results")',
+                            'If you discussed the case with another provider, document that discussion',
+                            'Document prescription drug management if you prescribed or continued any Rx medications',
+                          ]
+                        : [];
+                    return tips.length > 0 ? (
+                      <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/20 overflow-hidden">
+                        <div className="px-4 py-2 bg-white/50 dark:bg-gray-800/50 border-b border-inherit">
+                          <h4 className="text-[11px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2">
+                            <i className="fa-solid fa-arrow-trend-up"></i> Documentation Opportunities → Reach 99214
+                          </h4>
+                        </div>
+                        <div className="p-3 space-y-2">
+                          {tips.map((sug, i) => (
+                            <div key={i} className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-300">
+                              <i className="fa-solid fa-lightbulb text-emerald-500 mt-0.5 text-xs shrink-0"></i>
+                              <span>{sug}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <div className="p-3 space-y-2">
-                        {structuredNote.upcodingSuggestions.map((sug, i) => (
-                          <div key={i} className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-300">
-                            <i className="fa-solid fa-lightbulb text-emerald-500 mt-0.5 text-xs shrink-0"></i>
-                            <span>{sug}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                    ) : null;
+                  })()}
 
                   {/* MDM Level info */}
                   <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 flex items-center gap-3">
