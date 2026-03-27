@@ -83,7 +83,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
         }
     }, []);
 
-    // Process image with Gemini
+    // Process image with Local AI Vision
     const processImage = async (imageData: string) => {
         setState('processing');
         setErrorMessage('');
@@ -156,7 +156,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                             </div>
                             <div>
                                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">AI Item Scanner</h2>
-                                <p className="text-sm text-slate-500">Powered by Gemini 2.0 Flash</p>
+                                <p className="text-sm text-slate-500">Powered by Local AI Vision</p>
                             </div>
                         </div>
                         <button onClick={handleClose} className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all">
@@ -248,7 +248,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                             </div>
                             <div className="text-center">
                                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">Analyzing Image...</h3>
-                                <p className="text-slate-500 mt-2">Gemini 2.0 is extracting item data</p>
+                                <p className="text-slate-500 mt-2">AI Vision is extracting item data</p>
                             </div>
                             {capturedImage && (
                                 <img src={capturedImage} alt="Captured" className="w-48 h-48 object-cover rounded-2xl opacity-50" />

@@ -4,7 +4,7 @@
  * Caches briefings for 4 hours to avoid redundant AI calls.
  */
 
-import { chat } from './LocalAIService';
+import { chat, checkConnection } from './LocalAIService';
 import { InventoryItem, Order, PettyCashTransaction } from '../types';
 import { DailyReport } from '../types/dailyReport';
 
@@ -169,6 +169,19 @@ Rules:
 - Be professional but conversational — like a trusted manager reporting to the owner`;
 
   try {
+    // Fast connection check: if AI gateway is unreachable, skip LLM call
+    const { connected } = await checkConnection();
+    if (!connected) {
+      console.log('[AIBriefing] ⏭️ AI gateway unreachable — returning data-only briefing');
+      const fallback: AIBriefing = {
+        summary: `📊 Your clinic has ${inventory.length} items tracked. ${dataPoints.lowStockItems > 0 ? `⚠️ ${dataPoints.lowStockItems} items are low on stock.` : '✅ All stock levels are healthy.'} ${dataPoints.expiringItems > 0 ? `⚠️ ${dataPoints.expiringItems} items expiring within 14 days.` : ''}`,
+        generatedAt: new Date().toISOString(),
+        dataPoints,
+      };
+      cacheBriefing(fallback);
+      return fallback;
+    }
+
     const summary = await chat(systemPrompt, prompt, {
       model: 'fast',
       temperature: 0.3,

@@ -4,7 +4,7 @@
  * Optimized for US insurance acceptance and E/M coding.
  */
 
-import { chat } from './LocalAIService';
+import { chat, checkConnection } from './LocalAIService';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -52,6 +52,12 @@ CRITICAL RULES:
 
 export async function generateStructuredNote(rawDictation: string): Promise<StructuredNote> {
   console.log('[NoteGen] Generating structured note...');
+
+  // Fast pre-check: fail immediately if AI gateway is unreachable
+  const { connected } = await checkConnection();
+  if (!connected) {
+    throw new Error('Cannot connect to Local AI Gateway. Ensure LM Studio and whisper_server.py are running.');
+  }
   
   const response = await chat(
     STRUCTURED_NOTE_PROMPT,

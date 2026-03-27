@@ -233,7 +233,7 @@ export const translations = {
     lbl_reset: "Factory Reset",
     desc_reset: "Permanently delete all local data.",
     btn_reset: "Reset System",
-    footer_version: "HealthAxis Inventory System v2.1.0",
+    footer_version: "Norvexis Core v2.1.0",
 
     // Login
     login_welcome: "Welcome Back",
@@ -242,7 +242,7 @@ export const translations = {
     ph_username: "Enter your Medical ID",
     lbl_select_role: "Select Role",
     btn_access: "Access System",
-    login_footer: "Protected by HealthAxis Enterprise Security.",
+    login_footer: "Protected by Norvexis Core Enterprise Security.",
     login_hero_title: "Next-Gen Inventory.",
     login_hero_sub: "Secure, AI-powered inventory management for modern clinical environments.",
 
@@ -483,7 +483,7 @@ export const translations = {
     lbl_reset: "Restablecer Fábrica",
     desc_reset: "Borrar permanentemente datos locales.",
     btn_reset: "Reiniciar Sistema",
-    footer_version: "Sistema HealthAxis v2.1.0",
+    footer_version: "Norvexis Core v2.1.0",
 
     // Login
     login_welcome: "Bienvenido",
@@ -492,7 +492,7 @@ export const translations = {
     ph_username: "Ingresa tu ID Médico",
     lbl_select_role: "Seleccionar Rol",
     btn_access: "Acceder al Sistema",
-    login_footer: "Protegido por Seguridad Enterprise HealthAxis.",
+    login_footer: "Protegido por Seguridad Enterprise Norvexis Core.",
     login_hero_title: "Inventario Next-Gen.",
     login_hero_sub: "Gestión segura con IA para entornos clínicos modernos.",
 
