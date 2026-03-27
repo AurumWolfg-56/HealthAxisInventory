@@ -28,7 +28,7 @@ OUTPUT — Return ONLY valid JSON:
 {
   "chiefComplaint": "Brief 1-2 sentence CC using patient's own words when possible",
   "hpi": "Start with patient demographics if mentioned (e.g., 'A 34-year-old male presents with...'). Follow OLDCARTS format: Onset, Location, Duration, Character, Aggravating factors, Relieving factors, Timing, Severity. Include pertinent positives AND negatives. Include ROS elements if mentioned. Use professional medical terminology. Include any exam findings or vitals mentioned.",
-  "diagnoses": "Numbered list of diagnoses (description only, NO ICD-10 codes). Format:\\n1. Primary diagnosis description\\n2. Secondary diagnosis description",
+  "diagnoses": "Numbered list of diagnoses WITH suggested ICD-10 codes. Format:\\n1. ICD-10 code - Diagnosis description\\n2. ICD-10 code - Diagnosis description\\nUse the most specific and appropriate ICD-10 code for each diagnosis.",
   "plan": "Comprehensive numbered plan organized BY DIAGNOSIS. For EACH diagnosis include:\\n\\n1. [Diagnosis Name - description only, no codes]\\n   a) Medications: drug, dose, route, frequency, duration with rationale\\n   b) Diagnostic workup: labs/imaging with medical necessity justification\\n   c) Non-pharmacological: lifestyle modifications, activity restrictions\\n   d) Patient education: warning signs, when to return to clinic/ER\\n   e) Follow-up: specific timeline and purpose\\n   f) [SUGGESTED] Additional evidence-based interventions commonly recommended for this specific condition that the provider may want to consider based on current clinical guidelines",
   "suggestedCPT": "99213, 99214, or 99215",
   "mdmLevel": "Brief explanation of why this E/M level",
@@ -39,8 +39,8 @@ OUTPUT — Return ONLY valid JSON:
 CRITICAL RULES:
 1. HPI MUST start with patient demographics (age, sex) if mentioned in dictation
 2. HPI must follow OLDCARTS — gold standard for US insurance
-3. Diagnoses section: description ONLY, NO ICD-10 codes
-4. Plan: use diagnosis DESCRIPTION only, no ICD codes
+3. Diagnoses section: INCLUDE suggested ICD-10 codes with each diagnosis
+4. Plan: use diagnosis DESCRIPTION only, NO ICD codes in the plan
 5. Plan must be organized BY DIAGNOSIS with complete sub-items
 6. For each diagnosis, include [SUGGESTED] items based on CURRENT clinical guidelines for THAT SPECIFIC condition
 7. Include pertinent negatives in HPI
