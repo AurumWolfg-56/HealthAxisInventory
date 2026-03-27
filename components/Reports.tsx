@@ -442,7 +442,7 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
               startDate: new Date(startDate).toLocaleDateString(),
               endDate: new Date(endDate).toLocaleDateString(),
               author: user.username,
-              facilityName: 'HealthAxis Medical Group'
+              facilityName: 'Norvexis Core'
             }}
           />
         </div>

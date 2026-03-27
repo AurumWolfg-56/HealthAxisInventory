@@ -1,5 +1,5 @@
 // IMPORTANT: Increment this version whenever you deploy new code to force cache refresh
-const CACHE_VERSION = 'healthaxis-v8-logout-fix';
+const CACHE_VERSION = 'norvexis-v9-domain-update';
 const ASSETS_TO_CACHE = [
     '/logo.png',
     '/manifest.json'

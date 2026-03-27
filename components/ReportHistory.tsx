@@ -191,7 +191,7 @@ const AggregateReportDocument: React.FC<{
                 </div>
 
                 <div className="mt-8 pt-8 border-t border-slate-200 text-[9px] text-center text-slate-400 font-medium uppercase tracking-wider">
-                    Confidential Internal Document • HealthAxis Inventory System
+                    Confidential Internal Document • Norvexis Core
                 </div>
             </div>
         </div>

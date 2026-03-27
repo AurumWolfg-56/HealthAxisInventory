@@ -1,6 +1,6 @@
 {
-  "name": "HealthAxis Inventory PWA",
-  "description": "A secure, multi-device inventory management system for clinical environments featuring AI scanning and responsive design.",
+  "name": "Norvexis Core",
+  "description": "Multi-tenant clinical operations platform for healthcare organizations. Inventory, billing, reporting, and practice management.",
   "requestFramePermissions": [
     "camera",
     "microphone"

@@ -249,7 +249,7 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
                         ${cleanedContent}
                     </div>
                     <div class="footer">
-                        Official Clinical Protocol | Updated: ${safeDate} | HealthAxis
+                        Official Clinical Protocol | Updated: ${safeDate} | Norvexis Core
                     </div>
                     <script>
                         window.onload = function() { window.print(); window.setTimeout(function(){ window.close(); }, 500); }

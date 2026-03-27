@@ -194,7 +194,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
     try {
       if (authMode === 'signin') {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.includes('@') ? email : `${username}@healthaxis.com`, password
+          email: email.includes('@') ? email : `${username}@norvexiscore.com`, password
         });
         if (error) throw error;
         if (data.user) { setPhase('success'); setTimeout(() => onLogin(data.user), 1600); }

@@ -87,7 +87,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
         const element = document.getElementById('professional-report');
         const opt = {
             margin: [10, 10, 10, 10], // top, left, bottom, right
-            filename: `HealthAxis_Orders_Report_${new Date().toISOString().split('T')[0]}.pdf`,
+            filename: `NervexisCore_Orders_Report_${new Date().toISOString().split('T')[0]}.pdf`,
             image: { type: 'jpeg', quality: 1.0 },
             html2canvas: { scale: 2, useCORS: true, logging: false },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -229,7 +229,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                 <div className="flex justify-between items-end border-b-2 border-gray-800 pb-4 mb-8">
                     <div>
                         <h1 className="text-4xl font-serif font-black tracking-tight text-gray-900">Orders Analytics Report</h1>
-                        <p className="text-sm text-gray-500 mt-1 uppercase tracking-widest font-bold">HealthAxis Inventory Management</p>
+                        <p className="text-sm text-gray-500 mt-1 uppercase tracking-widest font-bold">Norvexis Core Inventory Management</p>
                     </div>
                     <div className="text-right">
                         <div className="text-xs text-gray-500 uppercase font-bold">Date Generated</div>
@@ -334,7 +334,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
 
                 {/* Footer */}
                 <div className="text-center text-xs text-gray-400 pt-8 border-t border-gray-100 mt-auto">
-                    <p>Confidential Property of HealthAxis. Generated via HealthAxis Inventory PWA.</p>
+                    <p>Confidential Property of Norvexis Core. Generated via Norvexis Core PWA.</p>
                 </div>
             </div>
         </div>
