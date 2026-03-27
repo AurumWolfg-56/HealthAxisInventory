@@ -70,12 +70,17 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(
             fetch(event.request)
                 .then((response) => {
-                    // Don't cache HTML/JS - always use fresh version
                     return response;
                 })
-                .catch(() => {
+                .catch(async () => {
                     // If offline, try cache as fallback
-                    return caches.match(event.request);
+                    const cached = await caches.match(event.request);
+                    if (cached) return cached;
+                    // No cache available — return a basic offline page
+                    return new Response('<!DOCTYPE html><html><body><h1>Offline</h1><p>Please check your connection.</p></body></html>', {
+                        status: 503,
+                        headers: { 'Content-Type': 'text/html' }
+                    });
                 })
         );
         return;
