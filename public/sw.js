@@ -1,5 +1,5 @@
 // IMPORTANT: Increment this version whenever you deploy new code to force cache refresh
-const CACHE_VERSION = 'norvexis-v13-notegen-error';
+const CACHE_VERSION = 'norvexis-v14-dailyclose-fix';
 const ASSETS_TO_CACHE = [
     '/logo.png',
     '/manifest.json'

@@ -46,7 +46,7 @@ export const DailyReportService = {
     async createReport(report: DailyReport, userId: string): Promise<DailyReport | null> {
         console.log('[DailyReportService] Creating report...', { id: report.id, userId });
         try {
-            const dbPayload = {
+            const dbPayload: Record<string, any> = {
                 id: report.id,
                 user_id: userId,
                 timestamp: report.timestamp,
@@ -58,8 +58,15 @@ export const DailyReportService = {
                 card: report.financials.methods.credit,
                 is_balanced: report.isBalanced,
                 notes: report.notes,
-                patients: report.totals.patients
+                patients: report.totals.patients,
             };
+
+            // CRITICAL: location_id is required by RLS policies
+            if (_locationId) {
+                dbPayload.location_id = _locationId;
+            } else {
+                console.error('[DailyReportService] ❌ No location_id set! Report will fail RLS.');
+            }
 
             const url = `${SUPABASE_URL}/rest/v1/daily_reports`;
             const controller = new AbortController();
@@ -212,7 +219,7 @@ export const DailyReportService = {
                 if (!existing || existing.length === 0) {
                     const insertUrl = `${SUPABASE_URL}/rest/v1/daily_reports`;
 
-                    const dbPayload = {
+                    const dbPayload: Record<string, any> = {
                         id: report.id,
                         user_id: userIdOverride || null,
                         timestamp: report.timestamp,
@@ -223,8 +230,13 @@ export const DailyReportService = {
                         cash: report.financials.methods.cash,
                         card: report.financials.methods.credit,
                         is_balanced: report.isBalanced,
-                        notes: report.notes
+                        notes: report.notes,
                     };
+
+                    // CRITICAL: location_id required by RLS
+                    if (_locationId) {
+                        dbPayload.location_id = _locationId;
+                    }
 
                     const resp = await fetch(insertUrl, {
                         method: 'POST',
