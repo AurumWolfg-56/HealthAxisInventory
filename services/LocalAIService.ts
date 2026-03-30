@@ -3,23 +3,30 @@
  * Connects to LM Studio's OpenAI-compatible API at localhost:1234.
  * Replaces geminiService.ts — all AI processing stays local.
  *
- * Models (auto-loaded by LM Studio JIT):
+ * Models (loaded in LM Studio):
  * - Text:   bartowski/meta-llama-3.1-8b-instruct (fast intent extraction)
  * - Smart:  qwen2.5-14b-instruct (complex reasoning, reports)
- * - Vision: llava-v1.6-mistral-7b (image analysis — item scanning, invoices)
+ * - Vision: qwen2.5-vl-7b-instruct (OCR, invoice scanning, item labels)
  * - Embed:  text-embedding-nomic-embed-text-v1.5 (semantic search)
+ *
+ * Why Qwen2.5-VL over LLaVA for vision:
+ *   - Superior OCR and document understanding (tables, numbers, structured text)
+ *   - Better at extracting precise values from invoices/labels vs general descriptions
+ *   - Native multi-image support and higher resolution processing
  */
 
 // ─── Configuration ──────────────────────────────────────────────────────────
-// Uses the local AI gateway (whisper_server.py) which proxies to LM Studio
-// and provides CORS headers — works from both localhost and production
-const LM_STUDIO_URL = 'http://localhost:8765/v1';
+// Primary: LM Studio direct endpoint (both models loaded here)
+// Fallback: Local AI gateway (whisper_server.py) which proxies and adds CORS
+const LM_STUDIO_DIRECT_URL = 'http://127.0.0.1:1234/v1';
+const LM_STUDIO_GATEWAY_URL = 'http://localhost:8765/v1';
+let LM_STUDIO_URL = LM_STUDIO_DIRECT_URL;
 
-// Model identifiers (must match LM Studio model IDs)
+// Model identifiers (must match LM Studio model IDs exactly)
 const MODELS = {
   fast: 'bartowski/meta-llama-3.1-8b-instruct',
   smart: 'qwen2.5-14b-instruct',
-  vision: 'llava-v1.6-mistral-7b',
+  vision: 'qwen2.5-vl-7b-instruct',
   embed: 'text-embedding-nomic-embed-text-v1.5',
 } as const;
 
@@ -40,7 +47,8 @@ interface ChatOptions {
 
 /**
  * Send a chat completion request to LM Studio.
- * Handles timeouts, retries, and JSON extraction.
+ * Handles timeouts, endpoint fallback, and JSON extraction.
+ * Vision requests get a longer timeout since OCR processing is heavier.
  */
 const chatCompletion = async (
   messages: ChatMessage[],
@@ -55,46 +63,75 @@ const chatCompletion = async (
 
   // Resolve model ID
   const modelId = model in MODELS ? MODELS[model as keyof typeof MODELS] : model;
+  const isVision = model === 'vision' || modelId === MODELS.vision;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+  // Vision tasks need more time (OCR + structured extraction)
+  const timeoutMs = isVision ? 120000 : 60000;
 
-  try {
-    console.log(`[LocalAI] Request → ${modelId} (json=${jsonMode})`);
+  // Try primary endpoint first, then fallback
+  const endpoints = [LM_STUDIO_URL, LM_STUDIO_URL === LM_STUDIO_DIRECT_URL ? LM_STUDIO_GATEWAY_URL : LM_STUDIO_DIRECT_URL];
 
-    const response = await fetch(`${LM_STUDIO_URL}/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: modelId,
-        messages,
-        temperature,
-        max_tokens: maxTokens,
-      }),
-    });
+  let lastError: Error | null = null;
 
-    clearTimeout(timeoutId);
+  for (const endpoint of endpoints) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`LM Studio error ${response.status}: ${errText}`);
+    try {
+      console.log(`[LocalAI] Request → ${modelId} @ ${endpoint} (json=${jsonMode}, vision=${isVision})`);
+
+      const response = await fetch(`${endpoint}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: modelId,
+          messages,
+          temperature,
+          max_tokens: maxTokens,
+        }),
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`LM Studio error ${response.status}: ${errText}`);
+      }
+
+      const data = await response.json();
+      const text = data.choices?.[0]?.message?.content || '';
+      console.log(`[LocalAI] ✅ Response (${text.length} chars) from ${endpoint}`);
+
+      // Remember which endpoint worked
+      if (endpoint !== LM_STUDIO_URL) {
+        console.log(`[LocalAI] Switching primary endpoint to ${endpoint}`);
+        LM_STUDIO_URL = endpoint;
+      }
+
+      return text;
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      lastError = error;
+
+      if (error.name === 'AbortError') {
+        console.warn(`[LocalAI] ⏳ Timeout (${timeoutMs / 1000}s) at ${endpoint}`);
+        continue; // Try next endpoint
+      }
+      if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+        console.warn(`[LocalAI] 🔌 Connection failed at ${endpoint}, trying fallback...`);
+        continue; // Try next endpoint
+      }
+      // Non-network error — don't retry
+      throw error;
     }
-
-    const data = await response.json();
-    const text = data.choices?.[0]?.message?.content || '';
-    console.log(`[LocalAI] ✅ Response (${text.length} chars)`);
-    return text;
-  } catch (error: any) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      throw new Error('Local AI timed out (60s). Is LM Studio running?');
-    }
-    if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-      throw new Error('Cannot connect to LM Studio at localhost:1234. Is the server running?');
-    }
-    throw error;
   }
+
+  // All endpoints failed
+  if (lastError?.name === 'AbortError') {
+    throw new Error(`Local AI timed out (${timeoutMs / 1000}s). Is LM Studio running with ${modelId} loaded?`);
+  }
+  throw new Error('Cannot connect to LM Studio. Is the server running at 127.0.0.1:1234?');
 };
 
 // ─── Helper: Parse JSON from LLM response ──────────────────────────────────
@@ -230,8 +267,9 @@ export interface ScannedItemData {
 }
 
 /**
- * Scans an inventory item label using LLaVA vision model.
+ * Scans an inventory item label using Qwen2.5-VL vision model.
  * Extracts all relevant data for creating a new inventory entry.
+ * Qwen2.5-VL excels at OCR and reading text from packaging/labels.
  */
 export const scanItemLabel = async (base64Image: string): Promise<ScannedItemData> => {
   // Ensure proper data URL format
@@ -239,26 +277,29 @@ export const scanItemLabel = async (base64Image: string): Promise<ScannedItemDat
     ? base64Image
     : `data:image/jpeg;base64,${base64Image}`;
 
-  const prompt = `Analyze this image of a medical supply item label/packaging.
+  const systemPrompt = `You are a medical supply OCR system. You read product labels and packaging with high accuracy. You output ONLY valid JSON, no commentary.`;
 
-Extract and return a JSON object with these fields:
-- name: exact product name
-- category: choose from [${INVENTORY_CATEGORIES.join(', ')}]
-- stock: visible item count or pack size (e.g., "Box of 100" = 100)
-- unit: "each", "box", "pack", "case", "vial", "bottle", or "roll"
-- minStock: suggest based on criticality (life-saving=20, consumables=10, general=5)
-- maxStock: 3-5x the minStock
-- expiryDate: YYYY-MM-DD format or null
-- batchNumber: lot/batch number or null
-- location: suggest from [${INVENTORY_LOCATIONS.join(', ')}]
-- averageCost: estimated unit cost in USD
-- confidence: 0-100 extraction confidence
+  const prompt = `Read all text on this medical supply label/packaging image carefully.
 
-Return ONLY valid JSON.`;
+Extract a JSON object with exactly these fields:
+{
+  "name": "exact product name from label",
+  "category": "one of: ${INVENTORY_CATEGORIES.join(', ')}",
+  "stock": number (pack size, e.g. Box of 100 = 100, default 1),
+  "unit": "each|box|pack|case|vial|bottle|roll",
+  "minStock": number (life-saving=20, consumable=10, general=5),
+  "maxStock": number (3-5x minStock),
+  "expiryDate": "YYYY-MM-DD or null",
+  "batchNumber": "lot/batch number or null",
+  "location": "one of: ${INVENTORY_LOCATIONS.join(', ')}",
+  "averageCost": number (estimated USD unit cost),
+  "confidence": number (0-100)
+}`;
 
   try {
     const response = await chatCompletion(
       [
+        { role: 'system', content: systemPrompt },
         {
           role: 'user',
           content: [
@@ -267,7 +308,7 @@ Return ONLY valid JSON.`;
           ]
         }
       ],
-      { model: 'vision', jsonMode: true, maxTokens: 2048 }
+      { model: 'vision', jsonMode: true, maxTokens: 4096 }
     );
 
     return parseJsonResponse<ScannedItemData>(response);
@@ -283,7 +324,8 @@ Return ONLY valid JSON.`;
 export const identifyItemFromImage = scanItemLabel;
 
 /**
- * Parse invoice/purchase order images using LLaVA vision model.
+ * Parse invoice/purchase order images using Qwen2.5-VL vision model.
+ * Qwen2.5-VL is excellent at reading tabular data, numbers, and structured documents.
  */
 export interface ParsedOrderData {
   poNumber: string;
@@ -309,25 +351,42 @@ export const parseInvoiceFromImage = async (base64Image: string): Promise<Parsed
     ? base64Image
     : `data:image/jpeg;base64,${base64Image}`;
 
-  const prompt = `Analyze this order confirmation, invoice, or purchase order image.
+  const systemPrompt = `You are a document OCR system specialized in reading invoices, purchase orders, and order confirmations. You extract structured data with high accuracy. Read every number, product name, and price carefully. Output ONLY valid JSON.`;
 
-Extract and return a JSON object with:
-- vendor: supplier name (e.g., "Henry Schein", "McKesson")
-- poNumber: order/confirmation number
-- orderDate: YYYY-MM-DD format
-- items: array of {name, category, sku, quantity, unitCost, packSize}
-  - category: choose from [${INVENTORY_CATEGORIES.join(', ')}]
-- subtotal: before tax/shipping
-- totalTax: tax amount
-- shippingCost: shipping cost
-- grandTotal: final total
-- confidence: 0-100
+  const prompt = `Read this invoice/order document image carefully. Extract ALL text and numbers precisely.
 
-Extract ALL visible line items. Use 0 for unclear values. Return ONLY valid JSON.`;
+Return a JSON object with this exact structure:
+{
+  "vendor": "supplier company name",
+  "poNumber": "order/confirmation number",
+  "orderDate": "YYYY-MM-DD",
+  "items": [
+    {
+      "name": "full product description",
+      "category": "one of: ${INVENTORY_CATEGORIES.join(', ')}",
+      "sku": "product code or item number",
+      "quantity": number,
+      "unitCost": number (price per unit, NOT extended price),
+      "packSize": "pack description e.g. 25/BX, 100/CA, Each"
+    }
+  ],
+  "subtotal": number,
+  "totalTax": number (absolute amount, not percentage),
+  "shippingCost": number,
+  "grandTotal": number,
+  "confidence": number (0-100)
+}
+
+RULES:
+- Extract EVERY line item visible in the document
+- unitCost is the UNIT price, not quantity × price
+- Use 0 for any unclear numeric values
+- Read numbers exactly as printed (prices, quantities, totals)`;
 
   try {
     const response = await chatCompletion(
       [
+        { role: 'system', content: systemPrompt },
         {
           role: 'user',
           content: [
@@ -384,23 +443,37 @@ export const jsonChat = async <T>(
 };
 
 /**
- * Check if LM Studio is reachable.
+ * Check if LM Studio is reachable. Tries both direct and gateway endpoints.
+ * Reports loaded models and vision model availability.
  */
 export const checkConnection = async (): Promise<{
   connected: boolean;
   models: string[];
+  endpoint: string;
+  visionReady: boolean;
 }> => {
-  try {
-    const response = await fetch(`${LM_STUDIO_URL}/models`, {
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!response.ok) return { connected: false, models: [] };
-    const data = await response.json();
-    return {
-      connected: true,
-      models: data.data?.map((m: any) => m.id) || [],
-    };
-  } catch {
-    return { connected: false, models: [] };
+  const endpoints = [LM_STUDIO_DIRECT_URL, LM_STUDIO_GATEWAY_URL];
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(`${endpoint}/models`, {
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) continue;
+      const data = await response.json();
+      const models = data.data?.map((m: any) => m.id) || [];
+      const visionReady = models.some((m: string) =>
+        m.includes('qwen2.5-vl') || m.includes('llava') || m.includes('vision')
+      );
+
+      // Update primary URL to working endpoint
+      LM_STUDIO_URL = endpoint;
+
+      return { connected: true, models, endpoint, visionReady };
+    } catch {
+      continue;
+    }
   }
+
+  return { connected: false, models: [], endpoint: '', visionReady: false };
 };
