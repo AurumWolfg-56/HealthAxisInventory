@@ -253,6 +253,55 @@ Return ONLY the refined text. No preamble.`
 
 // ─── Public API: Vision Functions ───────────────────────────────────────────
 
+/**
+ * Optimizes an image for vision model processing.
+ * Resizes to max 1280px on longest side and compresses to JPEG.
+ * LM Studio's Qwen2.5-VL fails with "failed to process image" on very large images.
+ */
+const optimizeImageForVision = async (
+  base64Image: string,
+  maxDimension: number = 1280,
+  quality: number = 0.75
+): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      const originalSize = base64Image.length;
+
+      // Only resize if larger than maxDimension
+      if (width > maxDimension || height > maxDimension) {
+        const scale = maxDimension / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(base64Image); // Fallback: return original
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+      const optimized = canvas.toDataURL('image/jpeg', quality);
+
+      const newSize = optimized.length;
+      const savings = ((1 - newSize / originalSize) * 100).toFixed(0);
+      console.log(`[LocalAI] 🖼️ Image optimized: ${width}x${height}, ${(newSize/1024).toFixed(0)}KB (${savings}% smaller)`);
+
+      resolve(optimized);
+    };
+    img.onerror = () => {
+      console.warn('[LocalAI] Image optimization failed, using original');
+      resolve(base64Image);
+    };
+    img.src = base64Image.startsWith('data:') ? base64Image : `data:image/jpeg;base64,${base64Image}`;
+  });
+};
+
 export interface ScannedItemData {
   name: string;
   category: string;
@@ -273,10 +322,8 @@ export interface ScannedItemData {
  * Qwen2.5-VL excels at OCR and reading text from packaging/labels.
  */
 export const scanItemLabel = async (base64Image: string): Promise<ScannedItemData> => {
-  // Ensure proper data URL format
-  const imageUrl = base64Image.startsWith('data:')
-    ? base64Image
-    : `data:image/jpeg;base64,${base64Image}`;
+  // Optimize image for vision model (resize + compress)
+  const imageUrl = await optimizeImageForVision(base64Image);
 
   const systemPrompt = `You are a medical supply OCR system. You read product labels and packaging with high accuracy. You output ONLY valid JSON, no commentary.`;
 
@@ -348,9 +395,8 @@ export interface ParsedOrderData {
 }
 
 export const parseInvoiceFromImage = async (base64Image: string): Promise<ParsedOrderData | null> => {
-  const imageUrl = base64Image.startsWith('data:')
-    ? base64Image
-    : `data:image/jpeg;base64,${base64Image}`;
+  // Optimize image for vision model (resize + compress to prevent LM Studio 400 errors)
+  const imageUrl = await optimizeImageForVision(base64Image);
 
   const systemPrompt = `You are a document OCR system specialized in reading invoices, purchase orders, and order confirmations. You extract structured data with high accuracy. Read every number, product name, and price carefully. Output ONLY valid JSON.`;
 
