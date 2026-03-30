@@ -4,71 +4,63 @@ color 0A
 
 echo.
 echo  ╔══════════════════════════════════════════════════════════╗
-echo  ║   NORVEXIS CORE - LOCAL AI GATEWAY  v2.1                ║
+echo  ║   NORVEXIS CORE - LOCAL AI GATEWAY  v3.0                ║
 echo  ║                                                          ║
-echo  ║   Whisper (Speech-to-Text) + LM Studio Proxy            ║
-echo  ║   Port: 8765  (CORS enabled for norvexiscore.com)       ║
+echo  ║   1. Enables CORS on LM Studio (port 1234)             ║
+echo  ║   2. Starts Whisper STT + LLM Proxy (port 8765)        ║
 echo  ╚══════════════════════════════════════════════════════════╝
 echo.
 
-:: ─── Check if already running ──────────────────────────────────
+:: ─── Wait for system to be ready on boot ───────────────────────
+echo  [*] Waiting for system to be ready...
+timeout /t 8 /nobreak >nul
+
+:: ─── Step 1: Enable CORS on LM Studio ─────────────────────────
+echo  [*] Enabling CORS on LM Studio...
+lms server stop >nul 2>&1
+timeout /t 2 /nobreak >nul
+lms server start --port 1234 --cors >nul 2>&1
+if %errorlevel% equ 0 (
+    echo  [32m[OK][0m LM Studio CORS enabled on port 1234
+) else (
+    echo  [33m[WARN][0m Could not configure LM Studio CORS
+    echo         Open LM Studio manually and enable server
+)
+
+:: ─── Step 2: Check if gateway already running ──────────────────
 curl -s --max-time 3 http://localhost:8765/health >nul 2>&1
 if %errorlevel% equ 0 (
-    echo  [32m[!] AI Gateway is ALREADY running on port 8765[0m
-    echo      No need to start again.
+    echo  [32m[OK][0m AI Gateway already running on port 8765
     echo.
-    echo  Press any key to exit...
+    echo  All services ready! This window will close in 5 seconds.
+    timeout /t 5 /nobreak >nul
+    exit /b
+)
+
+:: ─── Step 3: Check Python ──────────────────────────────────────
+python --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo  [33m[WARN][0m Python not found. Gateway (Whisper STT) won't start.
+    echo         LM Studio CORS is enabled, so vision/LLM will still work.
+    echo.
+    echo  Press any key to close...
     pause >nul
     exit /b
 )
 
-:: ─── Wait for system to be ready (on boot, Python may not be in PATH yet)
-echo  [*] Waiting for system to be ready...
-timeout /t 5 /nobreak >nul
-
-:: ─── Check if Python is available ──────────────────────────────
-python --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo  [31m[ERROR] Python not found in PATH![0m
-    echo          Waiting 15 seconds and retrying...
-    timeout /t 15 /nobreak >nul
-    python --version >nul 2>&1
-    if %errorlevel% neq 0 (
-        echo  [31m[ERROR] Python still not found. Cannot start gateway.[0m
-        echo          Install Python from https://python.org
-        echo.
-        echo  Press any key to exit...
-        pause >nul
-        exit /b 1
-    )
-)
-
 echo  [32m[OK][0m Python found
-for /f "tokens=*" %%v in ('python --version 2^>^&1') do echo       %%v
 
-:: ─── Check if LM Studio is running ─────────────────────────────
-echo.
-echo  [*] Checking LM Studio...
-curl -s --max-time 3 http://127.0.0.1:1234/v1/models >nul 2>&1
-if %errorlevel% equ 0 (
-    echo  [32m[OK][0m LM Studio is running at 127.0.0.1:1234
-) else (
-    echo  [33m[WARN][0m LM Studio not detected yet (it may start later)
-    echo         Whisper STT will work, but AI features need LM Studio.
-)
-
-:: ─── Start the gateway with auto-restart watchdog ───────────────
+:: ─── Step 4: Start gateway with watchdog ───────────────────────
 echo.
 echo  ─────────────────────────────────────────────────────────────
-echo  [*] Starting AI Gateway with auto-restart watchdog...
-echo  [*] This window must stay open for AI features to work.
-echo  [*] Press Ctrl+C to stop the server.
+echo  [*] Starting AI Gateway (Whisper STT + LLM Proxy)...
+echo  [*] This window must stay open for Whisper STT.
+echo  [*] Vision/LLM now connects directly to LM Studio (CORS).
 echo  ─────────────────────────────────────────────────────────────
 echo.
 
 cd /d "R:\APPS\healthaxis-inventory-pwa"
 
-:: ─── Watchdog loop: auto-restart on crash ───────────────────────
 :loop
 echo [%date% %time%] Starting whisper_server.py...
 python whisper_server.py
@@ -76,18 +68,16 @@ set EXIT_CODE=%errorlevel%
 echo.
 echo [%date% %time%] Gateway stopped (exit code: %EXIT_CODE%)
 
-:: If exit code is 0, user pressed Ctrl+C intentionally
 if %EXIT_CODE% equ 0 (
-    echo [%date% %time%] Clean shutdown detected. Not restarting.
+    echo [%date% %time%] Clean shutdown. Not restarting.
     goto end
 )
 
 echo [%date% %time%] Crash detected! Restarting in 10 seconds...
-echo [%date% %time%] Press Ctrl+C now if you want to stop.
 timeout /t 10 /nobreak >nul
 goto loop
 
 :end
 echo.
-echo  Gateway stopped. Press any key to close.
+echo  Press any key to close.
 pause >nul

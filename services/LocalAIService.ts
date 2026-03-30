@@ -16,12 +16,12 @@
  */
 
 // ─── Configuration ──────────────────────────────────────────────────────────
-// Primary: AI Gateway (whisper_server.py) — REQUIRED for web app (has CORS headers)
-// The web app at norvexiscore.com needs CORS to reach local AI services.
-// LM Studio direct (1234) does NOT have CORS — only usable from localhost dev.
-const LM_STUDIO_GATEWAY_URL = 'http://localhost:8765/v1';
+// Primary: LM Studio direct — CORS enabled via: lms server start --port 1234 --cors
+// Fallback: AI Gateway (whisper_server.py) — proxy with CORS (also serves Whisper STT)
+// Both endpoints now support CORS for norvexiscore.com
 const LM_STUDIO_DIRECT_URL = 'http://127.0.0.1:1234/v1';
-let LM_STUDIO_URL = LM_STUDIO_GATEWAY_URL;
+const LM_STUDIO_GATEWAY_URL = 'http://localhost:8765/v1';
+let LM_STUDIO_URL = LM_STUDIO_DIRECT_URL;
 
 // Model identifiers (must match LM Studio model IDs exactly)
 const MODELS = {
