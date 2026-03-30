@@ -56,7 +56,16 @@ app.add_middleware(
 )
 
 # ─── HTTP client for LM Studio proxy ───────────────────────────────────────
-http_client = httpx.AsyncClient(base_url=LM_STUDIO_URL, timeout=120.0)
+# Vision requests with large images can take 2-5 minutes on 7B models
+http_client = httpx.AsyncClient(
+    base_url=LM_STUDIO_URL,
+    timeout=httpx.Timeout(
+        connect=10.0,    # Fast connect — LM Studio is local
+        read=300.0,      # 5 min for vision OCR on large invoices
+        write=60.0,      # Time to send large base64 image bodies
+        pool=10.0,       # Connection pool timeout
+    ),
+)
 
 # ─── Load Model (once at startup) ──────────────────────────────────────────
 whisper_model = None
@@ -108,10 +117,18 @@ async def health():
 # ─── LM Studio Proxy: /v1/chat/completions ─────────────────────────────────
 @app.post("/v1/chat/completions")
 async def proxy_chat_completions(request: Request):
-    """Proxy chat completion requests to LM Studio."""
+    """Proxy chat completion requests to LM Studio with vision support."""
+    import json as _json
     try:
         body = await request.body()
-        logger.info(f"[LLM Proxy] Forwarding chat/completions ({len(body)} bytes)")
+        body_size_kb = len(body) / 1024
+
+        # Detect if this is a vision request (contains image data)
+        is_vision = b"image_url" in body or b"image/" in body
+        logger.info(f"[LLM Proxy] Forwarding chat/completions ({body_size_kb:.1f} KB, vision={is_vision})")
+
+        if is_vision:
+            logger.info(f"[LLM Proxy] 🖼️  Vision request detected — using extended timeout")
 
         response = await http_client.post(
             "/v1/chat/completions",
@@ -119,14 +136,20 @@ async def proxy_chat_completions(request: Request):
             headers={"Content-Type": "application/json"},
         )
 
-        logger.info(f"[LLM Proxy] ✅ Response {response.status_code}")
+        logger.info(f"[LLM Proxy] ✅ Response {response.status_code} ({len(response.content)} bytes)")
         return JSONResponse(
             status_code=response.status_code,
             content=response.json(),
         )
     except httpx.ConnectError:
-        logger.error("[LLM Proxy] ❌ Cannot connect to LM Studio")
+        logger.error("[LLM Proxy] ❌ Cannot connect to LM Studio at 127.0.0.1:1234")
         return JSONResponse(status_code=502, content={"error": "LM Studio is not running at 127.0.0.1:1234"})
+    except httpx.ReadTimeout:
+        logger.error(f"[LLM Proxy] ⏳ LM Studio read timeout (vision={is_vision}). Model may be overloaded.")
+        return JSONResponse(status_code=504, content={"error": "LM Studio timed out processing the request. The vision model may need more time."})
+    except httpx.WriteTimeout:
+        logger.error(f"[LLM Proxy] ⏳ Write timeout sending {body_size_kb:.1f} KB to LM Studio")
+        return JSONResponse(status_code=504, content={"error": "Timeout sending data to LM Studio. Image may be too large."})
     except Exception as e:
         logger.error(f"[LLM Proxy] ❌ Error: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
