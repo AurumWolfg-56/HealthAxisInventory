@@ -65,8 +65,8 @@ const chatCompletion = async (
   const modelId = model in MODELS ? MODELS[model as keyof typeof MODELS] : model;
   const isVision = model === 'vision' || modelId === MODELS.vision;
 
-  // Vision tasks need much more time — large invoice OCR can take 2-5 min on 7B models
-  const timeoutMs = isVision ? 300000 : 60000;
+  // Complex logic tasks (smart) and parsing need much more time — invoices can take up to 2-3 mins on 14B models
+  const timeoutMs = isVision || model === 'smart' ? 300000 : 60000;
 
   // Try primary endpoint first, then fallback
   const endpoints = [LM_STUDIO_URL, LM_STUDIO_URL === LM_STUDIO_DIRECT_URL ? LM_STUDIO_GATEWAY_URL : LM_STUDIO_DIRECT_URL];
