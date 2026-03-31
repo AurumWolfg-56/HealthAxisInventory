@@ -78,7 +78,7 @@ echo   Quick Actions:
 echo     [1] Enable CORS on LM Studio (fix vision)
 echo     [2] Start AI Gateway (fix Whisper STT)
 echo     [3] Full restart (CORS + Gateway)
-echo     [4] Test vision model
+echo     [4] Test LLM (Smart Model)
 echo     [Q] Quit
 echo.
 set /p CHOICE="  Select: "
@@ -122,13 +122,13 @@ goto END
 
 :TEST_VISION
 echo.
-echo  Testing vision model...
-curl -s --max-time 30 -X POST http://127.0.0.1:1234/v1/chat/completions -H "Content-Type: application/json" -d "{\"model\":\"qwen2.5-vl-7b-instruct\",\"messages\":[{\"role\":\"user\",\"content\":\"Say OK\"}],\"max_tokens\":5}"
+echo  Testing Smart Model (Qwen2.5 14B)...
+curl -s --max-time 30 -X POST http://127.0.0.1:1234/v1/chat/completions -H "Content-Type: application/json" -d "{\"model\":\"qwen2.5-14b-instruct\",\"messages\":[{\"role\":\"user\",\"content\":\"Say OK\"}],\"max_tokens\":5}"
 echo.
 if %errorlevel% equ 0 (
-    echo  [32mVision model responded![0m
+    echo  [32mSmart model responded![0m
 ) else (
-    echo  [31mVision model not responding[0m
+    echo  [31mSmart model not responding[0m
 )
 goto END
 

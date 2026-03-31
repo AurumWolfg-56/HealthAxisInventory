@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTenant } from '../contexts/TenantContext';
 import { FeatureFlagKey } from '../utils/featureFlags';
 import Logo from './Logo';
+import { AIGatewayStatus } from './AIGatewayStatus';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -369,6 +370,7 @@ export const Layout: React.FC<LayoutProps> = ({
                             </div>
                         )}
 
+                        <AIGatewayStatus />
 
                         <button onClick={toggleTheme} className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 bg-white/40 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-700 backdrop-blur-md transition-all border border-white/40 dark:border-slate-700 shadow-sm hover:shadow-lg active:scale-90">
                             <i className={`fa-solid ${isDarkMode ? 'fa-sun text-amber-400' : 'fa-moon'} text-lg`}></i>
