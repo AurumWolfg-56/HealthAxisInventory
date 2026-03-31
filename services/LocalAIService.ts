@@ -5,14 +5,13 @@
  *
  * Models (loaded in LM Studio):
  * - Text:   bartowski/meta-llama-3.1-8b-instruct (fast intent extraction)
- * - Smart:  qwen2.5-14b-instruct (complex reasoning, reports)
- * - Vision: qwen2.5-vl-7b-instruct (OCR, invoice scanning, item labels)
+ * - Smart:  qwen2.5-14b-instruct (complex reasoning, reports, invoice parsing)
  * - Embed:  text-embedding-nomic-embed-text-v1.5 (semantic search)
  *
- * Why Qwen2.5-VL over LLaVA for vision:
- *   - Superior OCR and document understanding (tables, numbers, structured text)
- *   - Better at extracting precise values from invoices/labels vs general descriptions
- *   - Native multi-image support and higher resolution processing
+ * OCR Pipeline (for invoice/label scanning):
+ *   Image → Tesseract.js (OCR in browser) → extracted text → Qwen2.5-14B → JSON
+ *   This is more reliable than GGUF vision models which have broken image support.
+ *   Tesseract.js runs as WebAssembly in the browser — no server dependency.
  */
 
 // ─── Configuration ──────────────────────────────────────────────────────────
@@ -251,23 +250,21 @@ Return ONLY the refined text. No preamble.`
   }
 };
 
-// ─── Public API: Vision Functions ───────────────────────────────────────────
+// ─── Public API: OCR + AI Functions ──────────────────────────────────────────
 
 /**
- * Optimizes an image for vision model processing.
- * Resizes to max 1280px on longest side and compresses to JPEG.
- * LM Studio's Qwen2.5-VL fails with "failed to process image" on very large images.
+ * Optimizes an image for OCR processing.
+ * Resizes to max 2000px (OCR works better with higher res than vision models)
+ * and converts to high-quality JPEG for Tesseract.
  */
-const optimizeImageForVision = async (
+const optimizeImageForOCR = async (
   base64Image: string,
-  maxDimension: number = 1280,
-  quality: number = 0.75
+  maxDimension: number = 2000
 ): Promise<string> => {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
       let { width, height } = img;
-      const originalSize = base64Image.length;
 
       // Only resize if larger than maxDimension
       if (width > maxDimension || height > maxDimension) {
@@ -281,25 +278,71 @@ const optimizeImageForVision = async (
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       if (!ctx) {
-        resolve(base64Image); // Fallback: return original
+        resolve(base64Image);
         return;
       }
 
       ctx.drawImage(img, 0, 0, width, height);
-      const optimized = canvas.toDataURL('image/jpeg', quality);
-
-      const newSize = optimized.length;
-      const savings = ((1 - newSize / originalSize) * 100).toFixed(0);
-      console.log(`[LocalAI] 🖼️ Image optimized: ${width}x${height}, ${(newSize/1024).toFixed(0)}KB (${savings}% smaller)`);
-
+      // Higher quality for OCR accuracy
+      const optimized = canvas.toDataURL('image/png');
+      console.log(`[LocalAI] 🖼️ Image prepared for OCR: ${width}x${height}`);
       resolve(optimized);
     };
     img.onerror = () => {
-      console.warn('[LocalAI] Image optimization failed, using original');
+      console.warn('[LocalAI] Image preparation failed, using original');
       resolve(base64Image);
     };
     img.src = base64Image.startsWith('data:') ? base64Image : `data:image/jpeg;base64,${base64Image}`;
   });
+};
+
+/**
+ * Extracts text from an image using Tesseract.js OCR.
+ * Runs entirely in the browser (WebAssembly) — no server needed.
+ * Lazily loads Tesseract on first use.
+ */
+let tesseractWorker: any = null;
+
+const extractTextFromImage = async (base64Image: string): Promise<string> => {
+  const startTime = Date.now();
+  console.log('[LocalAI] 📸 Starting Tesseract.js OCR...');
+
+  try {
+    // Import Tesseract.js dynamically (lazy load)
+    const Tesseract = await import('tesseract.js');
+
+    // Optimize image for OCR
+    const optimizedImage = await optimizeImageForOCR(base64Image);
+
+    // Create or reuse worker
+    if (!tesseractWorker) {
+      console.log('[LocalAI] ⏳ Initializing Tesseract worker (first use)...');
+      tesseractWorker = await Tesseract.createWorker('eng', 1, {
+        logger: (m: any) => {
+          if (m.status === 'recognizing text') {
+            const pct = Math.round((m.progress || 0) * 100);
+            if (pct % 25 === 0) console.log(`[LocalAI] OCR progress: ${pct}%`);
+          }
+        }
+      });
+    }
+
+    const result = await tesseractWorker.recognize(optimizedImage);
+    const text = result.data.text;
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    const confidence = Math.round(result.data.confidence);
+
+    console.log(`[LocalAI] ✅ OCR complete: ${text.length} chars, ${confidence}% confidence, ${elapsed}s`);
+    return text;
+  } catch (error) {
+    console.error('[LocalAI] ❌ OCR error:', error);
+    // Cleanup broken worker
+    if (tesseractWorker) {
+      try { await tesseractWorker.terminate(); } catch {}
+      tesseractWorker = null;
+    }
+    throw new Error('Failed to extract text from image. Please try a clearer photo.');
+  }
 };
 
 export interface ScannedItemData {
@@ -317,21 +360,32 @@ export interface ScannedItemData {
 }
 
 /**
- * Scans an inventory item label using Qwen2.5-VL vision model.
- * Extracts all relevant data for creating a new inventory entry.
- * Qwen2.5-VL excels at OCR and reading text from packaging/labels.
+ * Scans an inventory item label using OCR + text AI.
+ * Uses Tesseract.js for image-to-text, then Qwen2.5-14B for structured extraction.
+ * This is more reliable than GGUF vision models which have inconsistent image support.
  */
 export const scanItemLabel = async (base64Image: string): Promise<ScannedItemData> => {
-  // Optimize image for vision model (resize + compress)
-  const imageUrl = await optimizeImageForVision(base64Image);
+  console.log('[LocalAI] 🔍 Starting OCR-based item scan...');
 
-  const systemPrompt = `You are a medical supply OCR system. You read product labels and packaging with high accuracy. You output ONLY valid JSON, no commentary.`;
+  // Step 1: OCR — Extract text from image using Tesseract.js
+  const ocrText = await extractTextFromImage(base64Image);
+  if (!ocrText || ocrText.trim().length < 5) {
+    throw new Error('Could not read text from image. Please ensure the label is clear and well-lit.');
+  }
+  console.log(`[LocalAI] 📄 OCR extracted ${ocrText.length} chars`);
 
-  const prompt = `Read all text on this medical supply label/packaging image carefully.
+  // Step 2: AI — Parse the extracted text into structured JSON
+  const systemPrompt = `You are a medical supply data extraction system. You receive OCR text from product labels/packaging and extract structured information. Output ONLY valid JSON, no commentary.`;
 
-Extract a JSON object with exactly these fields:
+  const prompt = `The following text was extracted via OCR from a medical supply label/packaging:
+
+--- OCR TEXT START ---
+${ocrText}
+--- OCR TEXT END ---
+
+Parse this text and return a JSON object with exactly these fields:
 {
-  "name": "exact product name from label",
+  "name": "exact product name found in text",
   "category": "one of: ${INVENTORY_CATEGORIES.join(', ')}",
   "stock": number (pack size, e.g. Box of 100 = 100, default 1),
   "unit": "each|box|pack|case|vial|bottle|roll",
@@ -348,15 +402,9 @@ Extract a JSON object with exactly these fields:
     const response = await chatCompletion(
       [
         { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: [
-            { type: 'image_url', image_url: { url: imageUrl } },
-            { type: 'text', text: prompt }
-          ]
-        }
+        { role: 'user', content: prompt }
       ],
-      { model: 'vision', jsonMode: true, maxTokens: 4096 }
+      { model: 'smart', jsonMode: true, maxTokens: 4096 }
     );
 
     return parseJsonResponse<ScannedItemData>(response);
@@ -372,8 +420,8 @@ Extract a JSON object with exactly these fields:
 export const identifyItemFromImage = scanItemLabel;
 
 /**
- * Parse invoice/purchase order images using Qwen2.5-VL vision model.
- * Qwen2.5-VL is excellent at reading tabular data, numbers, and structured documents.
+ * Parse invoice/purchase order images using OCR + text AI.
+ * Uses Tesseract.js for image-to-text, then Qwen2.5-14B for structured extraction.
  */
 export interface ParsedOrderData {
   poNumber: string;
@@ -395,14 +443,26 @@ export interface ParsedOrderData {
 }
 
 export const parseInvoiceFromImage = async (base64Image: string): Promise<ParsedOrderData | null> => {
-  // Optimize image for vision model (resize + compress to prevent LM Studio 400 errors)
-  const imageUrl = await optimizeImageForVision(base64Image);
+  console.log('[LocalAI] 🔍 Starting OCR-based invoice scan...');
 
-  const systemPrompt = `You are a document OCR system specialized in reading invoices, purchase orders, and order confirmations. You extract structured data with high accuracy. Read every number, product name, and price carefully. Output ONLY valid JSON.`;
+  // Step 1: OCR — Extract text from image using Tesseract.js
+  const ocrText = await extractTextFromImage(base64Image);
+  if (!ocrText || ocrText.trim().length < 10) {
+    console.error('[LocalAI] OCR returned insufficient text:', ocrText);
+    return null;
+  }
+  console.log(`[LocalAI] 📄 OCR extracted ${ocrText.length} chars from invoice`);
 
-  const prompt = `Read this invoice/order document image carefully. Extract ALL text and numbers precisely.
+  // Step 2: AI — Parse the extracted text into structured JSON
+  const systemPrompt = `You are a document parsing system specialized in reading invoices, purchase orders, and order confirmations. You receive OCR text and extract structured data with high accuracy. Extract every number, product name, and price carefully. Output ONLY valid JSON.`;
 
-Return a JSON object with this exact structure:
+  const prompt = `The following text was extracted via OCR from an invoice/order document:
+
+--- OCR TEXT START ---
+${ocrText}
+--- OCR TEXT END ---
+
+Parse this invoice text and return a JSON object with this exact structure:
 {
   "vendor": "supplier company name",
   "poNumber": "order/confirmation number",
@@ -425,24 +485,18 @@ Return a JSON object with this exact structure:
 }
 
 RULES:
-- Extract EVERY line item visible in the document
+- Extract EVERY line item from the invoice text
 - unitCost is the UNIT price, not quantity × price
 - Use 0 for any unclear numeric values
-- Read numbers exactly as printed (prices, quantities, totals)`;
+- Parse numbers exactly (remove $ signs, commas)`;
 
   try {
     const response = await chatCompletion(
       [
         { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: [
-            { type: 'image_url', image_url: { url: imageUrl } },
-            { type: 'text', text: prompt }
-          ]
-        }
+        { role: 'user', content: prompt }
       ],
-      { model: 'vision', jsonMode: true, maxTokens: 8192 }
+      { model: 'smart', jsonMode: true, maxTokens: 8192 }
     );
 
     return parseJsonResponse<ParsedOrderData>(response);
