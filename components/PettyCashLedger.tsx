@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { User, PettyCashTransaction, UserRole } from '../types';
+import { useAppData } from '../contexts/AppDataContext';
+import { PettyCashService } from '../services/PettyCashService'; // Database operations
 
 interface PettyCashLedgerProps {
     user: User;
@@ -15,8 +17,8 @@ const MOCK_HISTORY: PettyCashTransaction[] = [
 ];
 
 const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
-    // Master Data
-    const [history, setHistory] = useState<PettyCashTransaction[]>([]);
+    // Master Data from Global Context (Supabase)
+    const { pettyCashHistory: history, setPettyCashHistory: setHistory, isLoading } = useAppData();
     const [balance, setBalance] = useState(0);
 
     // Filter State
@@ -60,26 +62,15 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
         return recalculated.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     };
 
-    // Load Data
+    // Calculate Current Balance from Supabase Data
     useEffect(() => {
-        const stored = localStorage.getItem('ha_petty_cash');
-        let loadedData: PettyCashTransaction[] = [];
-
-        if (stored) {
-            try {
-                const parsed = JSON.parse(stored);
-                if (Array.isArray(parsed)) loadedData = parsed;
-            } catch (e) {
-                console.error("Failed to parse petty cash history", e);
-            }
+        // Data comes already loaded from AppDataContext
+        if (history.length > 0) {
+            setBalance(history[0].runningBalance);
         } else {
-            loadedData = MOCK_HISTORY;
+            setBalance(0);
         }
-
-        const processed = recalculateBalances(loadedData);
-        setHistory(processed);
-        setBalance(processed.length > 0 ? processed[0].runningBalance : 0);
-    }, []);
+    }, [history]);
 
     // Filtered View Logic
     const filteredHistory = useMemo(() => {
@@ -96,7 +87,7 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
     }, [history, startDate, endDate]);
 
     // Handle Transaction (Create or Update)
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const val = parseFloat(amount);
         if (!val || val <= 0) return;
@@ -111,6 +102,27 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                 }
                 return tx;
             });
+            
+            // Re-calculate the whole chain
+            const finalizedHistory = recalculateBalances(updatedHistory);
+            
+            // Update UI optimistically
+            setHistory(finalizedHistory);
+            setBalance(finalizedHistory.length > 0 ? finalizedHistory[0].runningBalance : 0);
+            
+            // Backend updates in background
+            try {
+                 // Update the specific row
+                 await PettyCashService.updateTransaction(editId, { amount: val, action: formAction, reason: reason });
+                 // NOTE: Since the balance of ALL subsequent transactions changes, a full backend resync of balances would be needed if it was complex.
+                 // For now, we update the local DB balances as well
+                 for (const tx of finalizedHistory) {
+                     PettyCashService.updateTransaction(tx.id, { runningBalance: tx.runningBalance }).catch(console.error);
+                 }
+            } catch (error) {
+                console.error("Failed to update transaction in database:", error);
+            }
+
         } else {
             // CREATE NEW
             if (formAction === 'WITHDRAWAL' && val > balance) {
@@ -118,24 +130,45 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
                 return;
             }
 
-            const newTx: PettyCashTransaction = {
-                id: `tx-${Date.now()}`,
+            const newTx = {
                 userId: user.id,
                 userName: user.username,
                 amount: val,
                 action: formAction,
                 reason: reason,
-                runningBalance: 0, // Placeholder
-                timestamp: new Date().toISOString()
+                runningBalance: 0 // Will be recalculated
             };
-            updatedHistory = [newTx, ...history];
+            
+            // Recalculate locally first for optimistic UI response
+            const localDummy: PettyCashTransaction = { ...newTx, id: `temp-${Date.now()}`, timestamp: new Date().toISOString() };
+            updatedHistory = [localDummy, ...history];
+            const finalizedHistory = recalculateBalances(updatedHistory);
+            
+            // Optimistic Update
+            setHistory(finalizedHistory);
+            setBalance(finalizedHistory.length > 0 ? finalizedHistory[0].runningBalance : 0);
+            
+            // Write to database
+            try {
+                // Find the calculated running balance for the new entry
+                const calculatedBalance = finalizedHistory.find(t => t.id === localDummy.id)?.runningBalance || 0;
+                
+                const savedTx = await PettyCashService.addTransaction({
+                    ...newTx,
+                    runningBalance: calculatedBalance
+                });
+                
+                if (savedTx) {
+                     // Replace the temp dummy ID with the real database ID
+                     setHistory(prev => prev.map(t => t.id === localDummy.id ? savedTx : t));
+                }
+            } catch (err) {
+                 console.error("Database save failed:", err);
+                 alert("Could not save to database. Check your connection.");
+                 // Rollback on fail
+                 setHistory(history);
+            }
         }
-
-        const finalizedHistory = recalculateBalances(updatedHistory);
-
-        setHistory(finalizedHistory);
-        setBalance(finalizedHistory.length > 0 ? finalizedHistory[0].runningBalance : 0);
-        localStorage.setItem('ha_petty_cash', JSON.stringify(finalizedHistory));
 
         // Reset Form
         setIsFormOpen(false);
@@ -154,29 +187,39 @@ const PettyCashLedger: React.FC<PettyCashLedgerProps> = ({ user, t }) => {
         setIsFormOpen(true);
     };
 
-    const handleDeleteClick = (e: React.MouseEvent, id: string) => {
+    const handleDeleteClick = async (e: React.MouseEvent, id: string) => {
         e.preventDefault();
         e.stopPropagation();
 
         if (!window.confirm("Are you sure you want to delete this transaction? Balance will be recalculated.")) return;
 
-        // Use functional state update to ensure we have the latest state
-        setHistory(prevHistory => {
-            const filtered = prevHistory.filter(tx => String(tx.id) !== String(id));
-            const finalizedHistory = recalculateBalances(filtered);
+        try {
+            // Database Delete First
+            await PettyCashService.deleteTransaction(id);
+            
+            // Use functional state update to ensure we have the latest state
+            setHistory(prevHistory => {
+                const filtered = prevHistory.filter(tx => String(tx.id) !== String(id));
+                const finalizedHistory = recalculateBalances(filtered);
 
-            // Side effect: Save to local storage inside the update
-            localStorage.setItem('ha_petty_cash', JSON.stringify(finalizedHistory));
+                // Re-sync subsequent balances in DB asynchronously
+                for (const tx of finalizedHistory) {
+                    PettyCashService.updateTransaction(tx.id, { runningBalance: tx.runningBalance }).catch(console.error);
+                }
 
-            // Side effect: Update balance
-            const newBalance = finalizedHistory.length > 0 ? finalizedHistory[0].runningBalance : 0;
-            setBalance(newBalance);
+                // Update balance locally
+                const newBalance = finalizedHistory.length > 0 ? finalizedHistory[0].runningBalance : 0;
+                setBalance(newBalance);
 
-            return finalizedHistory;
-        });
+                return finalizedHistory;
+            });
 
-        if (editId === id) {
-            handleCancel();
+            if (editId === id) {
+                handleCancel();
+            }
+        } catch (error) {
+            console.error("Failed to delete transaction", error);
+            alert("Could not delete from database.");
         }
     };
 

@@ -11,6 +11,7 @@ import { BudgetService } from '../services/BudgetService';
 import { ProtocolService } from '../services/ProtocolService';
 import { PriceService } from '../services/PriceService';
 import { MedicalCodeService } from '../services/MedicalCodeService';
+import { PettyCashService } from '../services/PettyCashService';
 import { billingRules as INITIAL_BILLING_RULES } from '../data/billingRules';
 import { useAuth } from './AuthContext';
 import { useTenant } from './TenantContext';
@@ -102,12 +103,13 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         try {
             // Run fetches in parallel
-            const [reportsResult, templatesResult, billingRulesResult, budgetsResult, protocolsResult] = await Promise.allSettled([
+            const [reportsResult, templatesResult, billingRulesResult, budgetsResult, protocolsResult, pettyCashResult] = await Promise.allSettled([
                 DailyReportService.getReports(),
                 TemplateService.getTemplates(),
                 BillingRuleService.getRules(),
                 BudgetService.getBudgets(user?.id),
-                ProtocolService.getProtocols()
+                ProtocolService.getProtocols(),
+                PettyCashService.getTransactions()
             ]);
 
             if (!mountedRef.current) return;
@@ -148,6 +150,13 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 console.error('[AppDataContext] ❌ Protocols failed:', protocolsResult.reason);
             }
 
+            // Handle Petty Cash
+            if (pettyCashResult.status === 'fulfilled') {
+                setPettyCashHistory(pettyCashResult.value);
+            } else {
+                console.error('[AppDataContext] ❌ Petty Cash failed:', pettyCashResult.reason);
+            }
+
             hasLoadedRef.current = true;
             console.log('[AppDataContext] === Data fetch complete ===');
         } catch (err: any) {
@@ -176,6 +185,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             ProtocolService.setAccessToken(accessToken);
             MedicalCodeService.setAccessToken(accessToken);
             PriceService.setAccessToken(accessToken);
+            PettyCashService.setAccessToken(accessToken);
 
             if (!hasLoadedRef.current) {
                 fetchAllData();
@@ -189,6 +199,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             setTemplates([]);
             setBudgets([]);
             setProtocols([]);
+            setPettyCashHistory([]);
         }
     }, [accessToken, fetchAllData]);
 
@@ -211,6 +222,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         UserService.setLocationId(locationId);
         MedicalCodeService.setLocationId(locationId);
         PriceService.setLocationId(locationId);
+        PettyCashService.setLocationId(locationId);
 
         // Re-fetch if data was already loaded (location switch)
         if (hasLoadedRef.current && accessToken) {
