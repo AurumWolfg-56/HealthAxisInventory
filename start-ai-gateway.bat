@@ -40,7 +40,7 @@ if %errorlevel% equ 0 (
 :: ─── Step 3: Check Python ──────────────────────────────────────
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo  [33m[WARN][0m Python not found. Gateway (Whisper STT) won't start.
+    echo  [33m[WARN][0m Python not found. Gateway Whisper STT won't start.
     echo         LM Studio CORS is enabled, so vision/LLM will still work.
     echo.
     echo  Press any key to close...
@@ -63,11 +63,7 @@ cd /d "R:\APPS\healthaxis-inventory-pwa"
 
 :loop
 echo [%date% %time%] Starting whisper_server.py...
-if exist ".venv\Scripts\python.exe" (
-    ".venv\Scripts\python.exe" whisper_server.py
-) else (
-    python whisper_server.py
-)
+python whisper_server.py
 set EXIT_CODE=%errorlevel%
 echo.
 echo [%date% %time%] Gateway stopped (exit code: %EXIT_CODE%)

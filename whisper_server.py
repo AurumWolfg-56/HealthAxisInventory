@@ -100,18 +100,9 @@ async def load_model():
 # ─── Health Check ───────────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
-    # Also check LM Studio connectivity
-    lm_status = "unknown"
-    try:
-        r = await http_client.get("/v1/models")
-        lm_status = "connected" if r.status_code == 200 else f"error:{r.status_code}"
-    except:
-        lm_status = "offline"
-
     return {
         "status": "ok",
-        "whisper": {"model": MODEL_SIZE, "device": actual_device, "compute": COMPUTE_TYPE},
-        "lm_studio": lm_status,
+        "whisper": {"model": MODEL_SIZE, "device": actual_device, "compute": COMPUTE_TYPE}
     }
 
 # ─── LM Studio Proxy: /v1/chat/completions ─────────────────────────────────
