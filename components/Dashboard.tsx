@@ -65,17 +65,17 @@ const Dashboard: React.FC<DashboardProps> = ({ inventory, dailyReports, pettyCas
             />
 
             {/* Quick Actions — compact horizontal cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-4 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
                 {quickActions.map(action => (
                     <button
                         key={action.route}
                         onClick={() => onNavigate(action.route)}
-                        className="flex items-center gap-3 p-4 rounded-2xl bg-white dark:bg-[#0c1511] border border-slate-200 dark:border-slate-800/60 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-medical-500/30 dark:hover:border-medical-500/20 transition-all duration-300 group"
+                        className="flex flex-col sm:flex-row justify-center sm:justify-start items-center gap-1.5 sm:gap-3 p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#0c1511] border border-slate-200 dark:border-slate-800/60 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-medical-500/30 dark:hover:border-medical-500/20 transition-all duration-300 group"
                     >
-                        <div className={`w-11 h-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center group-hover:bg-medical-50 dark:group-hover:bg-medical-500/10 transition-all duration-300 flex-shrink-0`}>
-                            <i className={`fa-solid ${action.icon} text-lg ${action.color} group-hover:text-medical-600 dark:group-hover:text-medical-400 transition-colors`}></i>
+                        <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full sm:rounded-xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center group-hover:bg-medical-50 dark:group-hover:bg-medical-500/10 transition-all duration-300 flex-shrink-0`}>
+                            <i className={`fa-solid ${action.icon} text-sm sm:text-lg ${action.color} group-hover:text-medical-600 dark:group-hover:text-medical-400 transition-colors`}></i>
                         </div>
-                        <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{action.label}</span>
+                        <span className="text-[10px] sm:text-sm font-bold text-slate-700 dark:text-slate-200 text-center sm:text-left leading-tight">{action.label}</span>
                     </button>
                 ))}
             </div>

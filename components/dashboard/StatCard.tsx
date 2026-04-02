@@ -70,10 +70,10 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, icon, color, trend, o
             </div>
 
             <div>
-                <div className="text-3xl font-bold text-slate-800 dark:text-white mb-1 tabular-nums group-hover:translate-x-0.5 transition-transform">
+                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-800 dark:text-white mb-1 tabular-nums group-hover:translate-x-0.5 transition-transform truncate" title={String(value)}>
                     {value}
                 </div>
-                <div className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                <div className="text-[11px] sm:text-sm font-medium text-slate-500 dark:text-slate-400 truncate">
                     {label}
                     {trend?.label && <span className="opacity-70 ml-1 font-normal">- {trend.label}</span>}
                 </div>

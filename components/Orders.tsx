@@ -369,13 +369,13 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
             {/* Premium Vendor Logos Quick Filter */}
             {viewMode === 'list' && (
                 <>
-                    <div className="flex flex-wrap gap-4">
+                    <div className="flex overflow-x-auto gap-3 pb-4 snap-x custom-scrollbar">
                         {/* All Vendors Button */}
                         <button
                             onClick={() => setVendorFilter('All')}
-                            className={`group relative h-12 px-5 rounded-xl font-bold text-sm transition-all duration-300 overflow-hidden ${vendorFilter === 'All'
-                                ? 'bg-gradient-to-r from-medical-600 to-medical-500 text-white shadow-xl shadow-medical-500/40 scale-105 ring-2 ring-white/30'
-                                : 'glass-panel text-slate-700 dark:text-white hover:shadow-lg hover:scale-[1.02] border-slate-200 dark:border-slate-800'
+                            className={`group relative h-12 px-5 rounded-xl font-bold text-sm transition-all duration-300 overflow-hidden flex-shrink-0 snap-start ${vendorFilter === 'All'
+                                ? 'bg-gradient-to-r from-medical-600 to-medical-500 text-white shadow-xl shadow-medical-500/40 scale-100 md:scale-105 ring-2 ring-white/30'
+                                : 'glass-panel text-slate-700 dark:text-white hover:shadow-lg md:hover:scale-[1.02] border-slate-200 dark:border-slate-800'
                                 }`}
                         >
                             <div className="flex items-center gap-2.5 relative z-10">
@@ -394,9 +394,9 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                             <button
                                 key={vendor.name}
                                 onClick={() => setVendorFilter(vendor.name)}
-                                className={`group relative h-12 px-4 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2.5 overflow-hidden ${vendorFilter === vendor.name
-                                    ? `bg-gradient-to-r ${vendor.color} text-white shadow-xl ${vendor.glowColor} scale-105 ring-2 ring-white/30`
-                                    : `${vendor.bgColor} ${vendor.textColor} hover:shadow-lg hover:scale-[1.02] border-2 ${vendor.borderActive} border-opacity-30 hover:border-opacity-100`
+                                className={`group relative h-12 px-4 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2.5 overflow-hidden flex-shrink-0 snap-start ${vendorFilter === vendor.name
+                                    ? `bg-gradient-to-r ${vendor.color} text-white shadow-xl ${vendor.glowColor} scale-100 md:scale-105 ring-2 ring-white/30`
+                                    : `${vendor.bgColor} ${vendor.textColor} hover:shadow-lg md:hover:scale-[1.02] border-2 ${vendor.borderActive} border-opacity-30 hover:border-opacity-100`
                                     }`}
                             >
                                 {vendor.logo ? (
@@ -428,7 +428,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                     </div>
 
                     {/* Date Filters - Glass Toolbar */}
-                    <div className="glass-panel p-2.5 rounded-2xl flex flex-col md:flex-row gap-2.5 items-center sticky top-24 z-20 border-white/50 dark:border-slate-800/80">
+                    <div className="glass-panel p-2.5 rounded-2xl flex flex-col md:flex-row gap-2.5 items-center sticky top-4 lg:top-24 z-20 border-white/50 dark:border-slate-800/80">
                         <div className="flex-1 relative group">
                             <i className="fa-solid fa-calendar-day absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm group-focus-within:text-medical-500 transition-colors z-10 pointer-events-none"></i>
                             <input
@@ -582,7 +582,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                                                 </td>
 
                                                 {/* Controls */}
-                                                <td className="p-4 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y md:border-r border-white dark:border-slate-800 md:rounded-r-[1.5rem] md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer text-right align-middle flex justify-center items-center md:table-cell bg-slate-50/50 dark:bg-slate-900/50 md:bg-transparent" onClick={(e) => e.stopPropagation()}>
+                                                <td className="p-3 md:p-5 md:bg-white md:dark:bg-slate-900 md:border-y md:border-r border-white dark:border-slate-800 md:rounded-r-[1.5rem] md:shadow-sm md:group-hover:shadow-xl md:group-hover:shadow-medical-500/10 md:group-hover:border-medical-500/20 transition-all cursor-pointer text-right align-middle flex justify-center items-center md:table-cell bg-slate-50/50 dark:bg-slate-900/50 md:bg-transparent" onClick={(e) => e.stopPropagation()}>
                                                     <div className="flex justify-center md:justify-end gap-3 md:gap-2 w-full md:w-auto md:opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); setViewingOrder(order); }}

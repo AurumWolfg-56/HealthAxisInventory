@@ -114,7 +114,7 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
 
     return (
         <>
-            <div className="space-y-10 pb-20 animate-fade-in-up max-w-7xl mx-auto">
+            <div className="space-y-6 sm:space-y-10 pb-24 sm:pb-20 max-w-7xl mx-auto px-1 sm:px-0">
                 {/* Header with gradient text */}
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-4">
@@ -143,7 +143,7 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                     {canEdit && (
                         <button
                             onClick={() => openModal()}
-                            className="h-14 px-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold shadow-lg flex items-center gap-2 transition-all hover:scale-105"
+                            className="h-12 sm:h-14 px-5 sm:px-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl sm:rounded-2xl font-bold shadow-lg flex items-center justify-center sm:justify-start gap-2 transition-all hover:scale-105"
                         >
                             <i className="fa-solid fa-plus"></i> Add Test Rule
                         </button>
@@ -163,30 +163,30 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                         <div className="relative">
                             <button
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                className={`w-full h-20 pl-6 pr-6 flex items-center justify-between bg-white dark:bg-slate-800/60 border-2 rounded-2xl transition-all duration-300 backdrop-blur-xl shadow-lg hover:shadow-xl
+                                className={`w-full h-14 sm:h-20 pl-4 sm:pl-6 pr-4 sm:pr-6 flex items-center justify-between bg-white dark:bg-slate-800/60 border-2 rounded-xl sm:rounded-2xl transition-all duration-300 backdrop-blur-xl shadow-lg hover:shadow-xl
                         ${isDropdownOpen
                                         ? 'border-emerald-500 ring-4 ring-emerald-500/10'
                                         : 'border-white dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-900/50'
                                     }
                     `}
                             >
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-3 sm:gap-4">
                                     {selectedInsurer ? (
-                                        <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-lg">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-base sm:text-lg">
                                             {selectedInsurer.charAt(0)}
                                         </div>
                                     ) : (
-                                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400">
-                                            <i className="fa-regular fa-building"></i>
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400">
+                                            <i className="fa-regular fa-building text-sm sm:text-base"></i>
                                         </div>
                                     )}
-                                    <span className={`text-xl font-bold ${selectedInsurer ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+                                    <span className={`text-base sm:text-xl font-bold truncate max-w-[200px] sm:max-w-none ${selectedInsurer ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
                                         {selectedInsurer || t('opt_select_insurance')}
                                     </span>
                                 </div>
 
-                                <div className={`w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-700 flex items-center justify-center text-slate-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : ''}`}>
-                                    <i className="fa-solid fa-chevron-down text-sm"></i>
+                                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-50 dark:bg-slate-700 flex items-center justify-center text-slate-400 transition-transform duration-300 flex-shrink-0 ${isDropdownOpen ? 'rotate-180 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : ''}`}>
+                                    <i className="fa-solid fa-chevron-down text-xs sm:text-sm"></i>
                                 </div>
                             </button>
 
@@ -236,7 +236,7 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                             {t('lbl_reverse_lookup')}
                         </label>
                         <div className="relative">
-                            <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 text-xl z-10 group-focus-within:text-medical-500 transition-colors">
+                            <div className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-slate-400 text-lg sm:text-xl z-10 group-focus-within:text-medical-500 transition-colors">
                                 <i className="fa-solid fa-search"></i>
                             </div>
                             <input
@@ -244,14 +244,14 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search test name (e.g. Strep)..."
-                                className="w-full h-20 pl-14 pr-14 bg-white dark:bg-slate-800/60 border-2 border-white dark:border-slate-700 rounded-2xl font-bold text-xl text-slate-900 dark:text-white focus:outline-none focus:border-medical-500 focus:ring-4 focus:ring-medical-500/10 transition-all placeholder-slate-300 dark:placeholder-slate-600 shadow-lg"
+                                className="w-full h-14 sm:h-20 pl-11 sm:pl-14 pr-11 sm:pr-14 bg-white dark:bg-slate-800/60 border-2 border-white dark:border-slate-700 rounded-xl sm:rounded-2xl font-bold text-base sm:text-xl text-slate-900 dark:text-white focus:outline-none focus:border-medical-500 focus:ring-4 focus:ring-medical-500/10 transition-all placeholder-slate-300 dark:placeholder-slate-600 shadow-lg"
                             />
                             {searchQuery && (
                                 <button
                                     onClick={() => setSearchQuery('')}
-                                    className="absolute right-5 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-full text-slate-500 hover:text-white hover:bg-red-500 dark:hover:bg-red-500 transition-all z-10"
+                                    className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-full text-slate-500 hover:text-white hover:bg-red-500 dark:hover:bg-red-500 transition-all z-10"
                                 >
-                                    <i className="fa-solid fa-xmark text-sm"></i>
+                                    <i className="fa-solid fa-xmark text-xs sm:text-sm"></i>
                                 </button>
                             )}
                         </div>
@@ -279,10 +279,10 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                                             {/* Green top border indicator */}
                                             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
 
-                                            <div className="p-6 pt-8 flex flex-col flex-1 h-full relative">
+                                            <div className="p-5 sm:p-6 pt-6 sm:pt-8 flex flex-col flex-1 h-full relative">
                                                 {/* Decoration bg */}
-                                                <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
-                                                    <i className="fa-solid fa-file-medical text-6xl text-emerald-500"></i>
+                                                <div className="absolute top-0 right-0 p-4 sm:p-6 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                                                    <i className="fa-solid fa-file-medical text-5xl sm:text-6xl text-emerald-500"></i>
                                                 </div>
 
                                                 {/* Admin Controls */}
@@ -330,22 +330,22 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                                                     </div>
                                                 )}
 
-                                                <div className="mt-auto pt-5 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
+                                                <div className="mt-auto pt-4 sm:pt-5 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
                                                     <div>
                                                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">CPT Code</div>
-                                                        <div className="text-3xl font-mono font-bold tabular-nums text-slate-800 dark:text-slate-100 tracking-tighter">
+                                                        <div className="text-2xl sm:text-3xl font-mono font-bold tabular-nums text-slate-800 dark:text-slate-100 tracking-tighter">
                                                             {rule.cpt}
                                                         </div>
                                                     </div>
                                                     <button
                                                         onClick={() => handleCopy(rule.cpt)}
-                                                        className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm ${copiedCpt === rule.cpt
+                                                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all shadow-sm ${copiedCpt === rule.cpt
                                                             ? 'bg-emerald-500 text-white shadow-emerald-500/30 scale-110'
                                                             : 'bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-slate-700 border border-slate-100 dark:border-slate-700'
                                                             }`}
                                                         title="Copy Code"
                                                     >
-                                                        <i className={`fa-solid ${copiedCpt === rule.cpt ? 'fa-check text-lg' : 'fa-copy text-lg'}`}></i>
+                                                        <i className={`fa-solid ${copiedCpt === rule.cpt ? 'fa-check text-base sm:text-lg' : 'fa-copy text-base sm:text-lg'}`}></i>
                                                     </button>
                                                 </div>
                                             </div>
@@ -364,19 +364,19 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                         </>
                     ) : (
                         /* Empty State */
-                        <div className="flex flex-col items-center justify-center py-24 opacity-60">
-                            <div className="w-40 h-40 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 rounded-full flex items-center justify-center mb-8 shadow-inner relative">
-                                <i className="fa-solid fa-hand-holding-dollar text-7xl text-slate-300 dark:text-slate-600 relative z-10"></i>
+                        <div className="flex flex-col items-center justify-center py-16 sm:py-24 opacity-60 px-4">
+                            <div className="w-32 h-32 sm:w-40 sm:h-40 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 rounded-full flex items-center justify-center mb-6 sm:mb-8 shadow-inner relative">
+                                <i className="fa-solid fa-hand-holding-dollar text-6xl sm:text-7xl text-slate-300 dark:text-slate-600 relative z-10"></i>
                                 <div className="absolute inset-0 bg-white/20 dark:bg-black/20 rounded-full blur-2xl"></div>
                             </div>
-                            <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 text-center">Select an Insurance to Begin</h3>
-                            <p className="text-slate-500 dark:text-slate-400 text-xl max-w-lg text-center leading-relaxed">
+                            <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2 sm:mb-3 text-center">Select an Insurance to Begin</h3>
+                            <p className="text-slate-500 dark:text-slate-400 text-lg sm:text-xl max-w-lg text-center leading-relaxed">
                                 Choose an insurance provider from the dropdown above to see authorized <span className="font-bold text-emerald-600 dark:text-emerald-400">"Bill to Client"</span> tests and codes.
                             </p>
 
                             {/* Visual Arrow Hint */}
-                            <div className="mt-8 animate-bounce">
-                                <i className="fa-solid fa-arrow-up text-slate-300 dark:text-slate-600 text-3xl"></i>
+                            <div className="mt-6 sm:mt-8 animate-bounce">
+                                <i className="fa-solid fa-arrow-up text-slate-300 dark:text-slate-600 text-2xl sm:text-3xl"></i>
                             </div>
                         </div>
                     )}
@@ -387,19 +387,19 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
             {/* --- ADD/EDIT MODAL --- */}
             {isModalOpen && createPortal(
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}>
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg p-8 shadow-2xl animate-fade-in-up border border-slate-100 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{editingRule.id ? 'Edit Billing Rule' : 'New Billing Rule'}</h3>
-                            <button onClick={() => setIsModalOpen(false)} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-red-500 flex items-center justify-center"><i className="fa-solid fa-xmark"></i></button>
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg p-6 sm:p-8 shadow-2xl animate-fade-in-up border border-slate-100 dark:border-slate-800 max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-6 flex-shrink-0">
+                            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{editingRule.id ? 'Edit Billing Rule' : 'New Billing Rule'}</h3>
+                            <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-red-500 flex items-center justify-center"><i className="fa-solid fa-xmark"></i></button>
                         </div>
 
-                        <div className="space-y-5">
+                        <div className="space-y-4 sm:space-y-5 overflow-y-auto custom-scrollbar pr-2 flex-1 relative">
                             <div>
                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Test Name</label>
                                 <input
                                     value={editingRule.testName || ''}
                                     onChange={e => setEditingRule({ ...editingRule, testName: e.target.value })}
-                                    className="w-full h-12 px-4 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                                    className="w-full h-12 px-4 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold text-sm sm:text-base text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 outline-none"
                                     placeholder="e.g. Rapid Strep"
                                 />
                             </div>
@@ -408,21 +408,21 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                                 <input
                                     value={editingRule.cpt || ''}
                                     onChange={e => setEditingRule({ ...editingRule, cpt: e.target.value })}
-                                    className="w-full h-12 px-4 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                                    className="w-full h-12 px-4 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-mono font-bold text-sm sm:text-base text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 outline-none"
                                     placeholder="e.g. 87880"
                                 />
                             </div>
 
                             <div>
                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Authorized Insurers</label>
-                                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar p-1">
+                                <div className="flex flex-wrap gap-2 p-1">
                                     {INSURERS.map(ins => (
                                         <button
                                             key={ins}
                                             onClick={() => toggleInsurerInEdit(ins)}
                                             className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${editingRule.insurers?.includes(ins)
-                                                ? 'bg-emerald-600 text-white border-emerald-600'
-                                                : 'bg-white dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
+                                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-500/30'
+                                                : 'bg-white dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                                                 }`}
                                         >
                                             {ins}
@@ -432,9 +432,9 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                             </div>
                         </div>
 
-                        <div className="flex gap-3 mt-8">
+                        <div className="flex gap-3 mt-6 sm:mt-8 flex-shrink-0 pt-2 border-t border-slate-100 dark:border-slate-800/50">
                             <button onClick={() => setIsModalOpen(false)} className="flex-1 h-12 rounded-xl font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
-                            <button onClick={handleSave} className="flex-1 h-12 rounded-xl bg-emerald-600 text-white font-bold shadow-lg hover:bg-emerald-500 transition-colors">Save Rule</button>
+                            <button onClick={handleSave} className="flex-1 h-12 rounded-xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-500/30 hover:bg-emerald-500 transition-colors">Save Rule</button>
                         </div>
                     </div>
                 </div>,
@@ -452,35 +452,35 @@ const BillingWizard: React.FC<BillingWizardProps> = ({ billingRules, user, onSav
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-medical-500/20 rounded-full blur-[80px] pointer-events-none"></div>
 
                         {/* Floating Header Area */}
-                        <div className="p-8 pb-4 flex items-start justify-between flex-shrink-0 relative z-10">
+                        <div className="p-6 sm:p-8 pb-4 flex items-start justify-between flex-shrink-0 relative z-10">
                             <div>
-                                <h3 className="text-3xl font-bold text-white tracking-tight leading-tight">{t('guide_title')}</h3>
-                                <div className="mt-2 text-medical-200/80 font-bold uppercase tracking-widest text-xs">{t('guide_subtitle')}</div>
+                                <h3 className="text-2xl sm:text-3xl font-bold text-white tracking-tight leading-tight">{t('guide_title')}</h3>
+                                <div className="mt-2 text-medical-200/80 font-bold uppercase tracking-widest text-[10px] sm:text-xs">{t('guide_subtitle')}</div>
                             </div>
-                            <div className="w-12 h-12 rounded-[14px] bg-white/5 flex items-center justify-center text-teal-400 border border-white/10 shadow-inner backdrop-blur-md">
-                                <i className="fa-solid fa-lightbulb text-xl"></i>
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-[14px] bg-white/5 flex items-center justify-center text-teal-400 border border-white/10 shadow-inner backdrop-blur-md">
+                                <i className="fa-solid fa-lightbulb text-lg sm:text-xl"></i>
                             </div>
                         </div>
 
                         {/* Content Area */}
-                        <div className="p-8 pt-4 space-y-6 overflow-y-auto custom-scrollbar flex-1 relative z-10">
-                            <div className="space-y-4">
+                        <div className="p-5 sm:p-8 pt-2 sm:pt-4 space-y-4 sm:space-y-6 overflow-y-auto custom-scrollbar flex-1 relative z-10">
+                            <div className="space-y-3 sm:space-y-4">
                                 {/* Rule 1 Block (Green/Positive "Hero") */}
-                                <div className="bg-[#0a231c] p-6 rounded-2xl border border-emerald-500/20 flex gap-5 items-center shadow-lg">
-                                    <div className="w-10 h-10 rounded-full bg-emerald-500/90 text-white flex-shrink-0 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.3)]">
-                                        <div className="w-3 h-3 rounded-full bg-white animate-pulse"></div>
+                                <div className="bg-[#0a231c] p-4 sm:p-6 rounded-2xl border border-emerald-500/20 flex gap-3 sm:gap-5 items-start sm:items-center shadow-lg">
+                                    <div className="w-8 h-8 sm:w-10 sm:h-10 mt-0.5 sm:mt-0 rounded-full bg-emerald-500/90 text-white flex-shrink-0 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                                        <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-white animate-pulse"></div>
                                     </div>
-                                    <p className="text-emerald-50 font-medium leading-relaxed text-sm md:text-base">
+                                    <p className="text-emerald-50 font-medium leading-relaxed text-[13px] sm:text-base">
                                         {t('guide_body')}
                                     </p>
                                 </div>
 
                                 {/* Rule 2 Block (Orange/Warning) */}
-                                <div className="bg-[#24130a] p-5 rounded-2xl border border-amber-500/20 flex gap-4 items-center shadow-lg">
-                                    <div className="w-6 h-6 rounded-full bg-amber-500/90 text-amber-950 flex-shrink-0 flex items-center justify-center text-xs font-bold shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-                                        !
+                                <div className="bg-[#24130a] p-4 sm:p-5 rounded-2xl border border-amber-500/20 flex gap-3 sm:gap-4 items-start sm:items-center shadow-lg">
+                                    <div className="w-6 h-6 mt-0.5 sm:mt-0 rounded-full bg-amber-500/90 text-amber-950 flex-shrink-0 flex items-center justify-center text-xs font-bold shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                                        <i className="fa-solid fa-exclamation text-[10px]"></i>
                                     </div>
-                                    <p className="text-amber-100/90 font-medium text-sm leading-relaxed">
+                                    <p className="text-amber-100/90 font-medium text-[13px] sm:text-sm leading-relaxed">
                                         {t('guide_warning')}
                                     </p>
                                 </div>

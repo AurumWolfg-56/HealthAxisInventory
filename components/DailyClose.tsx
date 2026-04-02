@@ -92,16 +92,16 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
     );
 
     return (
-        <div className="space-y-8 pb-20 animate-fade-in-up max-w-5xl mx-auto">
+        <div className="space-y-6 sm:space-y-8 pb-24 sm:pb-20 animate-fade-in-up max-w-5xl mx-auto px-1 sm:px-0">
             {/* Header */}
             <header className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-medical-500 flex items-center justify-center shadow-lg shadow-medical-500/20">
-                        <i className="fa-solid fa-cash-register text-xl text-white"></i>
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-medical-500 flex items-center justify-center shadow-lg shadow-medical-500/20">
+                        <i className="fa-solid fa-cash-register text-lg sm:text-xl text-white"></i>
                     </div>
                     <div>
-                        <h2 className="text-display text-slate-900 dark:text-white">Daily Medical Close</h2>
-                        <p className="text-caption mt-0.5">End-of-Day Reconciliation Wizard</p>
+                        <h2 className="text-2xl sm:text-display font-bold text-slate-900 dark:text-white leading-tight">Daily Medical Close</h2>
+                        <p className="text-[11px] sm:text-caption mt-0.5">End-of-Day Reconciliation Wizard</p>
                     </div>
                 </div>
                 <div className="text-right hidden md:block">
@@ -111,10 +111,10 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
             </header>
 
             {/* --- PANEL A: FINANCIALS --- */}
-            <div className={`glass-panel p-8 rounded-2xl shadow-glass transition-all duration-300 border-l-8 ${isFinBalanced ? 'border-l-emerald-500' : 'border-l-red-500'}`}>
+            <div className={`glass-panel p-5 sm:p-8 rounded-2xl shadow-glass transition-all duration-300 border-l-[6px] sm:border-l-8 ${isFinBalanced ? 'border-l-emerald-500' : 'border-l-red-500'}`}>
                 <SectionHeader title="1. Financial Reconciliation" icon="fa-sack-dollar" isValid={isFinBalanced} />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
                     {/* Drawer Inputs */}
                     <div className="space-y-4">
                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Collection Methods (Drawer)</h3>
@@ -170,14 +170,14 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
             </div>
 
             {/* --- PANEL B: VOLUME --- */}
-            <div className={`glass-panel p-8 rounded-2xl shadow-glass transition-all duration-300 border-l-8 ${isVolBalanced ? 'border-l-emerald-500' : 'border-l-red-500'}`}>
+            <div className={`glass-panel p-5 sm:p-8 rounded-2xl shadow-glass transition-all duration-300 border-l-[6px] sm:border-l-8 ${isVolBalanced ? 'border-l-emerald-500' : 'border-l-red-500'}`}>
                 <SectionHeader title="2. Patient Volume" icon="fa-users-medical" isValid={isVolBalanced} />
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12">
                     {/* Insurance Breakdown */}
                     <div>
                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Insurance Class (Counts)</h3>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-4">
                             {['medicaid', 'bcbs_il', 'meridian', 'commercial', 'medicare', 'workers_comp'].map((key) => (
                                 <div key={key} className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 flex flex-col">
                                     <span className="text-[10px] font-bold uppercase text-slate-500 mb-1">{key.replace('_', ' ')}</span>
@@ -186,7 +186,7 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
                                         min="0"
                                         value={(insCounts as any)[key] || ''}
                                         onChange={e => setInsCounts({ ...insCounts, [key]: parseInt(e.target.value) || 0 })}
-                                        className="bg-transparent font-mono font-bold text-xl text-slate-900 dark:text-white outline-none w-full"
+                                        className="bg-transparent font-mono font-bold text-lg sm:text-xl text-slate-900 dark:text-white outline-none w-full"
                                         placeholder="0"
                                     />
                                 </div>
@@ -255,20 +255,20 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
             </div>
 
             {/* --- PANEL C: STATS --- */}
-            <div className="glass-panel p-8 rounded-2xl shadow-glass">
+            <div className="glass-panel p-5 sm:p-8 rounded-2xl shadow-glass">
                 <SectionHeader title="3. Statistics" icon="fa-chart-simple" />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 text-center">
-                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">New Patients</div>
-                        <input type="number" min="0" value={stats.newPts || ''} onChange={e => setStats({ ...stats, newPts: parseInt(e.target.value) || 0 })} className="w-full text-center bg-transparent font-bold text-3xl outline-none" placeholder="0" />
+                <div className="grid grid-cols-3 gap-3 sm:gap-6">
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center shadow-inner border border-slate-100 dark:border-slate-700/50">
+                        <div className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 sm:mb-2">New Pts</div>
+                        <input type="number" min="0" value={stats.newPts || ''} onChange={e => setStats({ ...stats, newPts: parseInt(e.target.value) || 0 })} className="w-full text-center bg-transparent font-bold text-2xl sm:text-3xl outline-none text-emerald-600 dark:text-emerald-400" placeholder="0" />
                     </div>
-                    <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 text-center">
-                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Established</div>
-                        <input type="number" min="0" value={stats.estPts || ''} onChange={e => setStats({ ...stats, estPts: parseInt(e.target.value) || 0 })} className="w-full text-center bg-transparent font-bold text-3xl outline-none" placeholder="0" />
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center shadow-inner border border-slate-100 dark:border-slate-700/50">
+                        <div className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 sm:mb-2">Est.</div>
+                        <input type="number" min="0" value={stats.estPts || ''} onChange={e => setStats({ ...stats, estPts: parseInt(e.target.value) || 0 })} className="w-full text-center bg-transparent font-bold text-2xl sm:text-3xl outline-none text-blue-600 dark:text-blue-400" placeholder="0" />
                     </div>
-                    <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 text-center">
-                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">X-Rays</div>
-                        <input type="number" min="0" value={stats.xrays || ''} onChange={e => setStats({ ...stats, xrays: parseInt(e.target.value) || 0 })} className="w-full text-center bg-transparent font-bold text-3xl outline-none" placeholder="0" />
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center shadow-inner border border-slate-100 dark:border-slate-700/50">
+                        <div className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 sm:mb-2">X-Rays</div>
+                        <input type="number" min="0" value={stats.xrays || ''} onChange={e => setStats({ ...stats, xrays: parseInt(e.target.value) || 0 })} className="w-full text-center bg-transparent font-bold text-2xl sm:text-3xl outline-none text-amber-600 dark:text-amber-400" placeholder="0" />
                     </div>
                 </div>
                 <div className="mt-6">
@@ -278,14 +278,14 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
             </div>
 
             {/* --- ACTIONS --- */}
-            <div className="flex gap-4">
-                <button onClick={onCancel} className="flex-1 h-16 rounded-2xl border-2 border-slate-200 dark:border-slate-700 font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+            <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 mt-8">
+                <button onClick={onCancel} className="flex-1 h-14 sm:h-16 rounded-xl sm:rounded-2xl border-2 border-slate-200 dark:border-slate-700 font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Cancel Session</button>
                 <button
                     onClick={handlePrintAndSave}
                     disabled={!isFinBalanced || !isVolBalanced}
-                    className={`flex-1 h-16 rounded-2xl font-bold text-lg shadow-xl flex items-center justify-center gap-3 transition-all ${(!isFinBalanced || !isVolBalanced)
+                    className={`flex-1 h-14 sm:h-16 rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg shadow-xl flex items-center justify-center gap-2 sm:gap-3 transition-all ${(!isFinBalanced || !isVolBalanced)
                         ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
-                        : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:scale-[1.01]'
+                        : 'bg-emerald-600 dark:bg-emerald-500 text-white hover:bg-emerald-500 dark:hover:bg-emerald-400 hover:scale-[1.02]'
                         }`}
                 >
                     <i className={`fa-solid ${(!isFinBalanced || !isVolBalanced) ? 'fa-lock' : 'fa-file-signature'}`}></i>

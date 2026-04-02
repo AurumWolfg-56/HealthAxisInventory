@@ -210,7 +210,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
   };
 
   return (
-    <div className="space-y-10 animate-fade-in-up">
+    <div className="space-y-6 sm:space-y-10 animate-fade-in-up">
       <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".xlsx,.xls,.csv" />
 
       {/* Header & Stats */}
@@ -225,9 +225,9 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-4 pt-4">
-          <div className="glass-panel px-6 py-3 rounded-2xl flex items-center gap-3 border shadow-sm group hover:scale-105 transition-transform">
-            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400">
+        <div className="flex flex-wrap gap-3 sm:gap-4 pt-4">
+          <div className="glass-panel px-4 sm:px-6 py-3 rounded-2xl flex items-center gap-3 border shadow-sm group hover:scale-105 transition-transform flex-1 sm:flex-none min-w-[140px]">
+            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0">
               <i className="fa-solid fa-layer-group"></i>
             </div>
             <div>
@@ -236,8 +236,8 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
             </div>
           </div>
           {stats.lowStock > 0 && (
-            <div className="glass-panel px-6 py-3 rounded-2xl flex items-center gap-3 border border-amber-200/50 bg-amber-50/10 dark:border-amber-900/30 group hover:scale-105 transition-transform">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
+            <div className="glass-panel px-4 sm:px-6 py-3 rounded-2xl flex items-center gap-3 border border-amber-200/50 bg-amber-50/10 dark:border-amber-900/30 group hover:scale-105 transition-transform flex-1 sm:flex-none min-w-[140px]">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
                 <i className="fa-solid fa-triangle-exclamation"></i>
               </div>
               <div>
@@ -247,8 +247,8 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
             </div>
           )}
           {stats.expiring > 0 && (
-            <div className="glass-panel px-6 py-3 rounded-2xl flex items-center gap-3 border border-red-200/50 bg-red-50/10 dark:border-red-900/30 group hover:scale-105 transition-transform">
-              <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400">
+            <div className="glass-panel px-4 sm:px-6 py-3 rounded-2xl flex items-center gap-3 border border-red-200/50 bg-red-50/10 dark:border-red-900/30 group hover:scale-105 transition-transform flex-1 sm:flex-none min-w-[140px]">
+              <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 shrink-0">
                 <i className="fa-solid fa-clock-rotate-left"></i>
               </div>
               <div>
@@ -257,8 +257,8 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
               </div>
             </div>
           )}
-          <div className="glass-panel px-6 py-3 rounded-2xl flex items-center gap-3 border shadow-sm group hover:scale-105 transition-transform">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+          <div className="glass-panel px-4 sm:px-6 py-3 rounded-2xl flex items-center gap-3 border shadow-sm group hover:scale-105 transition-transform flex-1 sm:flex-none min-w-[140px]">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
               <i className="fa-solid fa-sack-dollar"></i>
             </div>
             <div>
@@ -687,12 +687,12 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
       </div>
 
       {/* Mobile Grid */}
-      <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 pb-24">
+      <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 pb-32 sm:pb-24">
         {
           paginatedItems.map((item, idx) => (
             <div
               key={item.id}
-              className={`glass-panel rounded-2xl luxury-shadow overflow-hidden border-white/50 dark:border-slate-800/60 p-5 flex flex-col gap-4 animate-fade-in border-l-[3px] ${getStatusBorderColor(item)}`}
+              className={`glass-panel rounded-2xl luxury-shadow overflow-hidden border-white/50 dark:border-slate-800/60 p-4 sm:p-5 flex flex-col gap-3 sm:gap-4 animate-fade-in border-l-[3px] ${getStatusBorderColor(item)}`}
               style={{ animationDelay: `${idx * 50}ms` }}
             >
               <div className="flex justify-between items-start">
@@ -734,20 +734,20 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-slate-50/50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="bg-slate-50/50 dark:bg-slate-900/50 p-2.5 sm:p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Batch</span>
                   <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 font-mono">
                     {item.batchNumber || '—'}
                   </span>
                 </div>
-                <div className="bg-slate-50/50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col">
+                <div className="bg-slate-50/50 dark:bg-slate-900/50 p-2.5 sm:p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Expiry</span>
                   <span className={`text-[11px] font-bold ${item.expiryDate && new Date(item.expiryDate) < new Date() ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}`}>
                     {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString(undefined, { month: 'short', year: '2-digit' }) : '—'}
                   </span>
                 </div>
-                <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-3 rounded-xl border border-emerald-100 dark:border-emerald-800/50 flex flex-col">
+                <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-2.5 sm:p-3 rounded-xl border border-emerald-100 dark:border-emerald-800/50 flex flex-col">
                   <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mb-0.5">Value</span>
                   <span className="text-[11px] font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
                     ${((item.stock || 0) * (item.averageCost || 0)).toFixed(0)}
@@ -755,7 +755,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={() => handleAsyncAction(item.id, async () => onUpdateItem(item.id, { stock: Math.max(0, item.stock - 1) }))}
                   disabled={loadingItemIds.has(item.id)}

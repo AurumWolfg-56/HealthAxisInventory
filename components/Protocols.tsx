@@ -340,7 +340,7 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="px-5 py-4 bg-slate-50 border-t border-slate-100 dark:bg-slate-800/50 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
+                        <div className="px-5 py-4 bg-slate-50 border-t border-slate-100 dark:bg-slate-800/50 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="text-xs font-medium text-slate-500 flex items-center gap-3">
                                 <span>Updated: {safeDate}</span>
                                 {protocol.targetRole && protocol.targetRole !== 'ALL_STAFF' && (
@@ -487,11 +487,11 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
                     </div>
 
                     {/* Stacked Filters */}
-                    <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar lg:pb-0">
+                    <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto custom-scrollbar snap-x pb-2 md:pb-0">
                         <select
                             value={selectedArea}
                             onChange={e => setSelectedArea(e.target.value as any)}
-                            className="px-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-700 dark:text-slate-300 font-bold outline-none focus:ring-2 focus:ring-medical-500 min-w-[140px] hover:border-slate-300 transition-colors"
+                            className="flex-shrink-0 snap-start px-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-700 dark:text-slate-300 font-bold outline-none focus:ring-2 focus:ring-medical-500 min-w-[140px] hover:border-slate-300 transition-colors"
                         >
                             <option value="ALL">All Areas</option>
                             <option value="FRONT_DESK">Front Desk</option>
@@ -504,7 +504,7 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
                         <select
                             value={selectedType}
                             onChange={e => setSelectedType(e.target.value as any)}
-                            className="px-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-700 dark:text-slate-300 font-bold outline-none focus:ring-2 focus:ring-medical-500 min-w-[140px] hover:border-slate-300 transition-colors"
+                            className="flex-shrink-0 snap-start px-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-700 dark:text-slate-300 font-bold outline-none focus:ring-2 focus:ring-medical-500 min-w-[140px] hover:border-slate-300 transition-colors"
                         >
                             <option value="ALL">All Rule Types</option>
                             <option value="STANDARD">Standard</option>

@@ -514,7 +514,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
     };
 
     return (
-        <div className="max-w-4xl mx-auto pb-20 animate-fade-in-up">
+        <div className="max-w-4xl mx-auto pb-32 sm:pb-20 px-2 sm:px-0 animate-fade-in-up">
             <CalculatorModal
                 isOpen={calcModal.isOpen}
                 onClose={() => setCalcModal(prev => ({ ...prev, isOpen: false }))}
@@ -613,7 +613,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
 
             {/* STEP 1: FINANCIALS */}
             {state.step === 1 && (
-                <div className="relative overflow-hidden bg-white dark:bg-slate-900/80 backdrop-blur-xl p-8 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-xl space-y-8">
+                <div className="relative overflow-hidden bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 sm:p-8 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-xl space-y-6 sm:space-y-8">
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600"></div>
                     <div className="flex justify-between items-center">
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
@@ -626,7 +626,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
                         <div className="space-y-4">
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700 pb-2">Methods (Drawer)</div>
                             {Object.entries(state.financials.methods).map(([key, val]) => (
@@ -696,7 +696,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
 
             {/* STEP 2: VOLUME */}
             {state.step === 2 && (
-                <div className="relative overflow-hidden bg-white dark:bg-slate-900/80 backdrop-blur-xl p-8 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-xl space-y-8">
+                <div className="relative overflow-hidden bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 sm:p-8 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-xl space-y-6 sm:space-y-8">
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-medical-400 via-medical-500 to-medical-600"></div>
                     <div className="flex justify-between items-center">
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
@@ -709,7 +709,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
                         {/* Insurance Column */}
                         <div className="space-y-4">
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700 pb-2">Insurance Breakdown</div>
@@ -844,7 +844,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
 
             {/* STEP 3: STATS & SIGN */}
             {state.step === 3 && (
-                <div className="relative overflow-hidden bg-white dark:bg-slate-900/80 backdrop-blur-xl p-8 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-xl space-y-8">
+                <div className="relative overflow-hidden bg-white dark:bg-slate-900/80 backdrop-blur-xl p-5 sm:p-8 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 shadow-xl space-y-6 sm:space-y-8">
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-400 via-violet-500 to-purple-600"></div>
                     <div className="flex justify-between items-center">
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
@@ -857,7 +857,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-6">
+                    <div className="grid grid-cols-3 gap-3 sm:gap-6">
                         {[
                             { key: 'newPts', label: 'New Patients' },
                             { key: 'estPts', label: 'Established' },
@@ -896,7 +896,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
             }
 
             {/* Footer Controls */}
-            <div className="flex gap-3 mt-10 p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/40">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 mt-8 sm:mt-10 p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/40">
                 <button
                     onClick={onCancel}
                     className="px-6 h-12 rounded-xl border border-slate-300 dark:border-slate-600 font-bold text-sm text-slate-500 hover:bg-white dark:hover:bg-slate-700 hover:border-slate-400 transition-all"

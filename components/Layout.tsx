@@ -153,7 +153,7 @@ export const Layout: React.FC<LayoutProps> = ({
         <button
             key={item.route}
             onClick={() => handleNavigateWrapper(item.route)}
-            className={`group relative flex items-center gap-3 px-4 py-2.5 w-full rounded-xl transition-all duration-200 active:scale-[0.97] outline-none
+            className={`group relative flex items-center gap-3 px-4 py-3 md:py-2.5 w-full rounded-xl transition-all duration-200 active:scale-[0.97] outline-none
               ${isActive
                     ? 'bg-medical-500/10 text-medical-500 dark:text-medical-400 font-semibold'
                     : 'text-slate-500 dark:text-slate-400 hover:bg-medical-500/5 hover:text-slate-700 dark:hover:text-slate-200'}`}
@@ -162,7 +162,7 @@ export const Layout: React.FC<LayoutProps> = ({
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 ${isActive ? 'bg-medical-500 text-white shadow-md shadow-medical-500/25' : 'text-inherit'}`}>
                 <i className={`fa-solid ${item.icon} text-sm`}></i>
             </div>
-            <span className="text-[13px] tracking-wide">{item.label}</span>
+            <span className="text-[13px] md:text-[13px] text-sm tracking-wide">{item.label}</span>
         </button>
     );
 
@@ -191,7 +191,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         {/* Section Header */}
                         <button
                             onClick={() => toggleSection(section.key)}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group/header
+                            className={`w-full flex items-center gap-3 px-4 py-3 md:py-2.5 rounded-xl transition-all duration-200 group/header active:scale-[0.98] outline-none
                                 ${hasActiveChild && !isExpanded ? 'bg-medical-500/5' : 'hover:bg-slate-100/50 dark:hover:bg-slate-800/30'}`}
                         >
                             <div className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${
@@ -231,11 +231,11 @@ export const Layout: React.FC<LayoutProps> = ({
                     <div className="p-6 pb-2">
                         <div className="flex justify-between items-center mb-3">
                             <div className="flex items-center gap-2">
-                                <img src="/logo.png" alt="Norvexis Core" className="w-6 h-6 object-contain" />
-                                <span className="text-xs font-black text-slate-400 dark:text-slate-500 tracking-tight">Norvexis <span className="text-medical-500">Core</span></span>
+                                <img src="/logo.png" alt="Norvexis Core" className="w-6 h-6 sm:w-7 sm:h-7 object-contain" />
+                                <span className="text-sm sm:text-base font-black text-slate-400 dark:text-slate-500 tracking-tight">Norvexis <span className="text-medical-500">Core</span></span>
                             </div>
-                            <button onClick={() => setIsMobileMenuOpen(false)} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center">
-                                <i className="fa-solid fa-chevron-left"></i>
+                            <button onClick={() => setIsMobileMenuOpen(false)} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center active:scale-95 transition-transform">
+                                <i className="fa-solid fa-chevron-left text-sm"></i>
                             </button>
                         </div>
                         <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30">
@@ -247,9 +247,9 @@ export const Layout: React.FC<LayoutProps> = ({
                         </div>
                     </div>
                     <div className="mx-6 my-4 p-4 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-800/50 flex items-center gap-3 shadow-inner">
-                        <div className="w-10 h-10 rounded-full bg-medical-500 text-white flex items-center justify-center font-bold text-sm shadow-md">{user.username.charAt(0).toUpperCase()}</div>
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-medical-500 text-white flex items-center justify-center font-bold text-sm sm:text-base shadow-md">{user.username.charAt(0).toUpperCase()}</div>
                         <div className="flex-1 overflow-hidden">
-                            <p className="font-bold text-slate-900 dark:text-white truncate">{user.username}</p>
+                            <p className="font-bold text-slate-900 dark:text-white truncate text-sm sm:text-base">{user.username}</p>
                             <p className="text-[10px] uppercase font-bold text-slate-500">{user.role?.replace('_', ' ')}</p>
                         </div>
                         <button onClick={handleSignOut} className="text-red-500 hover:bg-red-100 p-2 rounded-lg transition-colors"><i className="fa-solid fa-right-from-bracket"></i></button>
@@ -318,16 +318,16 @@ export const Layout: React.FC<LayoutProps> = ({
             {/* === MAIN CONTENT === */}
             <main className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
 
-                {/* Transparent Sticky Header */}
-                <header className="h-20 md:h-24 flex items-center justify-between px-6 md:px-12 sticky top-0 z-30 transition-all duration-300">
-                    <div className="flex items-center gap-4">
-                        <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden w-10 h-10 flex items-center justify-center text-slate-600 dark:text-slate-300 bg-white/50 dark:bg-slate-800/50 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 active:scale-90 transition-transform backdrop-blur-md">
-                            <i className="fa-solid fa-bars text-lg"></i>
+                {/* Glassmorphic Sticky Header - Prevents content scrolling overlap issues */}
+                <header className="h-16 sm:h-20 md:h-24 flex items-center justify-between px-4 sm:px-6 md:px-12 sticky top-0 z-30 transition-all duration-300 bg-medical-50/80 dark:bg-[#080d0b]/90 backdrop-blur-xl border-b border-white/40 dark:border-slate-800 md:bg-transparent md:backdrop-blur-none md:border-transparent">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-slate-600 dark:text-slate-300 bg-white/50 dark:bg-slate-800/50 rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-white/60 dark:border-slate-700 active:scale-95 transition-transform backdrop-blur-md">
+                            <i className="fa-solid fa-bars text-[15px]"></i>
                         </button>
                         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="hidden md:flex w-10 h-10 items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-xl transition-all shadow-sm">
                             <i className="fa-solid fa-bars-staggered text-lg"></i>
                         </button>
-                        <div className="md:hidden"><Logo className="w-8 h-8" classNameText="text-lg" showText={true} /></div>
+                        <div className="md:hidden flex items-center"><Logo className="w-7 h-7 sm:w-8 sm:h-8" classNameText="text-base sm:text-lg" showText={true} /></div>
                     </div>
 
                     <div className="flex items-center gap-3 md:gap-6">
@@ -336,11 +336,11 @@ export const Layout: React.FC<LayoutProps> = ({
                             <div className="relative">
                                 <button
                                     onClick={() => setShowLocationPicker(!showLocationPicker)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md rounded-full border border-white/40 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow text-xs font-bold text-slate-600 dark:text-slate-300"
+                                    className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/60 dark:bg-slate-800/60 backdrop-blur-md rounded-full border border-white/60 dark:border-slate-700 shadow-sm hover:shadow-md active:scale-95 transition-all text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200"
                                 >
                                     <i className="fa-solid fa-location-dot text-medical-500"></i>
                                     <span className="hidden sm:inline truncate max-w-[120px]">{currentLocation?.name || 'Select'}</span>
-                                    <i className="fa-solid fa-chevron-down text-[9px] opacity-50"></i>
+                                    <i className="fa-solid fa-chevron-down text-[8px] sm:text-[9px] opacity-70"></i>
                                 </button>
                                 {showLocationPicker && (
                                     <>
@@ -372,14 +372,14 @@ export const Layout: React.FC<LayoutProps> = ({
 
                         <AIGatewayStatus />
 
-                        <button onClick={toggleTheme} className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 bg-white/40 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-700 backdrop-blur-md transition-all border border-white/40 dark:border-slate-700 shadow-sm hover:shadow-lg active:scale-90">
-                            <i className={`fa-solid ${isDarkMode ? 'fa-sun text-amber-400' : 'fa-moon'} text-lg`}></i>
+                        <button onClick={toggleTheme} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 bg-white/60 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-700 backdrop-blur-md transition-all border border-white/60 dark:border-slate-700 shadow-sm hover:shadow-lg active:scale-90">
+                            <i className={`fa-solid ${isDarkMode ? 'fa-sun text-amber-400' : 'fa-moon text-slate-700'} text-[15px] sm:text-base md:text-lg`}></i>
                         </button>
                     </div>
                 </header>
 
                 {/* Dynamic Content Area with Page Transitions */}
-                <div id="main-scroll-container" className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-12 pb-28 md:pb-12 relative z-0 custom-scrollbar scroll-smooth pt-4">
+                <div id="main-scroll-container" className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-8 lg:px-12 pb-28 md:pb-12 relative z-0 custom-scrollbar scroll-smooth pt-2 sm:pt-4">
                     {children}
                 </div>
             </main>

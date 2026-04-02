@@ -282,10 +282,10 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
             </header>
 
             {/* Individual / Combos Tabs */}
-            <div className="glass-panel p-1.5 rounded-2xl flex w-full md:w-fit overflow-x-auto shadow-sm">
+            <div className="glass-panel p-1.5 rounded-2xl flex w-full md:w-fit overflow-x-auto shadow-sm custom-scrollbar snap-x">
                 <button
                     onClick={() => handleTabChange('individual')}
-                    className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${priceTab === 'individual'
+                    className={`flex-shrink-0 snap-start px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${priceTab === 'individual'
                         ? 'bg-white dark:bg-slate-800 shadow-sm text-emerald-600'
                         : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                         }`}
@@ -298,7 +298,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                 </button>
                 <button
                     onClick={() => handleTabChange('combo')}
-                    className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${priceTab === 'combo'
+                    className={`flex-shrink-0 snap-start px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${priceTab === 'combo'
                         ? 'bg-white dark:bg-slate-800 shadow-sm text-violet-600'
                         : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                         }`}

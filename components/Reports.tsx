@@ -144,10 +144,10 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
       </header>
 
       {/* Tabs */}
-      <div className="glass-panel p-1.5 rounded-2xl flex w-full md:w-fit overflow-x-auto shadow-sm">
+      <div className="glass-panel p-1.5 rounded-2xl flex w-full overflow-x-auto shadow-sm custom-scrollbar snap-x">
         <button
           onClick={() => setActiveTab('alerts')}
-          className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'alerts'
+          className={`flex-shrink-0 snap-start px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'alerts'
             ? 'bg-white dark:bg-slate-800 shadow-sm text-red-500'
             : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
             }`}
@@ -159,7 +159,7 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
         </button>
         <button
           onClick={() => setActiveTab('expiring')}
-          className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'expiring'
+          className={`flex-shrink-0 snap-start px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'expiring'
             ? 'bg-white dark:bg-slate-800 shadow-sm text-orange-500'
             : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
             }`}
@@ -171,7 +171,7 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
         </button>
         <button
           onClick={() => setActiveTab('history')}
-          className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'history'
+          className={`flex-shrink-0 snap-start px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'history'
             ? 'bg-white dark:bg-slate-800 shadow-sm text-medical-500'
             : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
             }`}
@@ -228,28 +228,28 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
               </div>
             ) : (
               <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                <thead className="hidden md:table-header-group bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                   <tr>
                     <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('col_item')}</th>
                     <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('col_status')}</th>
                     <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('th_location')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800 block md:table-row-group">
                   {lowStockItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="p-4">
+                    <tr key={item.id} className="block md:table-row bg-white dark:bg-transparent rounded-[1.5rem] md:rounded-none border border-slate-100 dark:border-slate-800 md:border-none shadow-sm md:shadow-none mb-4 md:mb-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors overflow-hidden">
+                      <td className="p-4 block md:table-cell border-b md:border-b-0 border-slate-50 dark:border-slate-800/50">
                         <div className="font-bold text-slate-900 dark:text-white">{item.name}</div>
                         <div className="text-xs text-slate-400 mt-1 font-mono">{t('lbl_batch')}: {item.batchNumber}</div>
                       </td>
-                      <td className="p-4">
+                      <td className="p-4 block md:table-cell border-b md:border-b-0 border-slate-50 dark:border-slate-800/50">
                         <div className="flex items-center gap-4">
-                          <div className="flex-1 max-w-[200px]">
+                          <div className="flex-1 md:max-w-[200px]">
                             <div className="flex justify-between text-xs font-bold mb-1">
                               <span className="text-red-500">{item.stock} {t('lbl_units')}</span>
                               <span className="text-slate-400">{t('lbl_min')}: {item.minStock}</span>
                             </div>
-                            <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden w-full">
                               <div className="h-full bg-red-500 rounded-full animate-pulse" style={{ width: `${Math.min(100, (item.stock / item.minStock) * 100)}%` }}></div>
                             </div>
                           </div>
@@ -258,7 +258,7 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
                           </span>
                         </div>
                       </td>
-                      <td className="p-4 text-sm font-bold text-slate-600 dark:text-slate-300">
+                      <td className="p-4 text-sm font-bold text-slate-600 dark:text-slate-300 block md:table-cell">
                         <i className="fa-solid fa-location-dot text-slate-400 mr-2"></i>
                         {item.location}
                       </td>
@@ -283,7 +283,7 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
               </div>
             ) : (
               <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                <thead className="hidden md:table-header-group bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                   <tr>
                     <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('col_item')}</th>
                     <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Expiration Date</th>
@@ -291,30 +291,35 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
                     <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('th_stock')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800 block md:table-row-group">
                   {expiringItems.map((item) => {
                     const daysLeft = getDaysRemaining(item.expiryDate);
                     const urgencyClass = daysLeft <= 7 ? 'text-red-600 bg-red-50' : 'text-orange-600 bg-orange-50';
 
                     return (
-                      <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="p-4">
+                      <tr key={item.id} className="block md:table-row bg-white dark:bg-transparent rounded-[1.5rem] md:rounded-none border border-slate-100 dark:border-slate-800 md:border-none shadow-sm md:shadow-none mb-4 md:mb-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors overflow-hidden">
+                        <td className="p-4 block md:table-cell border-b md:border-b-0 border-slate-50 dark:border-slate-800/50">
                           <div className="font-bold text-slate-900 dark:text-white">{item.name}</div>
                           <div className="text-xs text-slate-400 mt-1 font-mono">{t('lbl_batch')}: {item.batchNumber}</div>
                         </td>
-                        <td className="p-4">
+                        <td className="p-4 block md:table-cell border-b md:border-b-0 border-slate-50 dark:border-slate-800/50">
+                          <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Expiration Date</div>
                           <div className="font-mono font-bold text-slate-700 dark:text-slate-300">
-                            {new Date(item.expiryDate).toLocaleDateString()}
+                            {new Date(item.expiryDate!).toLocaleDateString()}
                           </div>
                         </td>
-                        <td className="p-4">
+                        <td className="p-4 flex items-center justify-between md:table-cell border-b md:border-b-0 border-slate-50 dark:border-slate-800/50">
+                          <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">Days Left</div>
                           <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg font-bold text-sm ${urgencyClass} dark:bg-opacity-20`}>
                             <i className="fa-solid fa-clock"></i>
                             {daysLeft <= 0 ? 'EXPIRED' : `${daysLeft} days`}
                           </span>
                         </td>
-                        <td className="p-4">
-                          <span className="font-bold tabular-nums text-lg">{item.stock}</span> <span className="text-xs text-slate-400">{t(item.unit)}</span>
+                        <td className="p-4 flex items-center justify-between md:table-cell block">
+                          <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">Stock Level</div>
+                          <div>
+                            <span className="font-bold tabular-nums text-lg">{item.stock}</span> <span className="text-xs text-slate-400">{t(item.unit)}</span>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -329,21 +334,21 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
         {activeTab === 'history' && (
           <div className="overflow-x-auto max-h-[600px] custom-scrollbar">
             <table className="w-full text-left border-collapse">
-              <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-10">
+              <thead className="hidden md:table-header-group bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-10">
                 <tr>
                   <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('col_action')}</th>
                   <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Details</th>
                   <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('col_user')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-800 block md:table-row-group">
                 {filteredLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="p-12 text-center text-slate-500 italic">No activity for the selected dates.</td>
+                  <tr className="block md:table-row">
+                    <td colSpan={3} className="p-12 text-center text-slate-500 italic block md:table-cell">No activity for the selected dates.</td>
                   </tr>
                 ) : filteredLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group/row">
-                    <td className="p-4">
+                  <tr key={log.id} className="block md:table-row bg-white dark:bg-transparent rounded-[1.5rem] md:rounded-none border border-slate-100 dark:border-slate-800 md:border-none shadow-sm md:shadow-none mb-4 md:mb-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group/row overflow-hidden">
+                    <td className="p-4 flex items-center justify-between md:table-cell border-b md:border-b-0 border-slate-50 dark:border-slate-800/50">
                       <span className={`inline-block px-3 py-1 rounded-md text-xs font-bold mb-1 ${getActionColor(log.action)}`}>
                         {log.action}
                       </span>
@@ -351,7 +356,7 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
                         {log.timestamp.toLocaleDateString()} {log.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </td>
-                    <td className="p-4 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <td className="p-4 text-sm font-medium text-slate-700 dark:text-slate-300 block md:table-cell border-b md:border-b-0 border-slate-50 dark:border-slate-800/50">
                       {editingLogId === log.id ? (
                         <div className="flex gap-2">
                           <input
@@ -416,7 +421,8 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
                         </div>
                       )}
                     </td>
-                    <td className="p-4 text-sm font-bold text-slate-900 dark:text-white">
+                    <td className="p-4 text-sm font-bold text-slate-900 dark:text-white flex items-center justify-between md:table-cell block">
+                      <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">User</div>
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs">
                           {log.user.charAt(0).toUpperCase()}

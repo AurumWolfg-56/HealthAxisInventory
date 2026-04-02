@@ -199,16 +199,16 @@ const MedicalCodesManager: React.FC<MedicalCodesManagerProps> = ({ codes, groups
                 </div>
 
                 {/* Tab Switcher */}
-                <div className="glass-panel p-1.5 rounded-2xl flex shadow-sm">
+                <div className="glass-panel p-1.5 rounded-2xl flex flex-col sm:flex-row w-full sm:w-auto shadow-sm gap-1 sm:gap-0">
                     <button
                         onClick={() => setActiveTab('search')}
-                        className={`px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'search' ? 'bg-white dark:bg-slate-800 shadow-sm text-medical-600 dark:text-medical-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'search' ? 'bg-white dark:bg-slate-800 shadow-sm text-medical-600 dark:text-medical-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         Browse & Search
                     </button>
                     <button
                         onClick={() => setActiveTab('groups')}
-                        className={`px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'groups' ? 'bg-white dark:bg-slate-800 shadow-sm text-medical-600 dark:text-medical-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'groups' ? 'bg-white dark:bg-slate-800 shadow-sm text-medical-600 dark:text-medical-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         Panel Management
                     </button>
@@ -219,18 +219,18 @@ const MedicalCodesManager: React.FC<MedicalCodesManagerProps> = ({ codes, groups
             {activeTab === 'search' && (
                 <>
                     {/* Search Bar & Add Button */}
-                    <div className="flex gap-4">
-                        <div className="glass-panel p-3 rounded-[2rem] luxury-shadow flex-1 transition-all border-white/50 dark:border-slate-800/80">
+                    <div className="flex gap-2 sm:gap-4 items-center">
+                        <div className="glass-panel p-2 sm:p-3 rounded-[2rem] luxury-shadow flex-1 transition-all border-white/50 dark:border-slate-800/80">
                             <div className="relative group">
-                                <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none transition-transform group-focus-within:scale-110">
-                                    <i className="fa-solid fa-magnifying-glass text-xl text-slate-400 group-focus-within:text-medical-500 transition-colors"></i>
+                                <div className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 pointer-events-none transition-transform group-focus-within:scale-110">
+                                    <i className="fa-solid fa-magnifying-glass text-lg sm:text-xl text-slate-400 group-focus-within:text-medical-500 transition-colors"></i>
                                 </div>
                                 <input
                                     type="text"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder="Search Panels, CPT, Lab, or Admin codes..."
-                                    className="w-full pl-16 pr-12 h-14 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none font-bold text-lg placeholder-slate-400 rounded-[1.5rem] border-none focus:ring-4 ring-medical-500/10 transition-all"
+                                    placeholder="Search Panels or Codes..."
+                                    className="w-full pl-12 sm:pl-16 pr-10 sm:pr-12 h-12 sm:h-14 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none font-bold text-base sm:text-lg placeholder-slate-400 rounded-[1.5rem] border-none focus:ring-4 ring-medical-500/10 transition-all"
                                 />
                                 {searchTerm && (
                                     <button
@@ -245,10 +245,10 @@ const MedicalCodesManager: React.FC<MedicalCodesManagerProps> = ({ codes, groups
                         {canEdit && (
                             <button
                                 onClick={() => openCodeModal()}
-                                className="h-14 w-14 rounded-2xl bg-medical-600 hover:bg-medical-500 text-white shadow-xl shadow-medical-500/30 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+                                className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-2xl bg-medical-600 hover:bg-medical-500 text-white shadow-xl shadow-medical-500/30 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
                                 title="Add Single Code"
                             >
-                                <i className="fa-solid fa-plus text-xl"></i>
+                                <i className="fa-solid fa-plus text-lg sm:text-xl"></i>
                             </button>
                         )}
                     </div>
@@ -272,7 +272,7 @@ const MedicalCodesManager: React.FC<MedicalCodesManagerProps> = ({ codes, groups
                                 className="group relative bg-white dark:bg-slate-900 rounded-2xl p-0 shadow-md border-2 border-purple-100 dark:border-purple-900/30 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full overflow-hidden cursor-pointer"
                             >
                                 {/* Header */}
-                                <div className="bg-purple-50 dark:bg-purple-900/20 p-6 border-b border-purple-100 dark:border-purple-800/50 relative">
+                                <div className="bg-purple-50 dark:bg-purple-900/20 p-4 sm:p-6 border-b border-purple-100 dark:border-purple-800/50 relative">
                                     <div className="flex justify-between items-start mb-1">
                                         <div>
                                             <div className="flex items-center gap-2 mb-2">
@@ -356,7 +356,7 @@ const MedicalCodesManager: React.FC<MedicalCodesManagerProps> = ({ codes, groups
                         {searchResults.codes.map((code) => (
                             <div
                                 key={code.id}
-                                className="group relative bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-xl hover:shadow-cyan-500/10 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full min-h-[200px]"
+                                className="group relative bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-xl hover:shadow-cyan-500/10 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full min-h-[200px]"
                             >
                                 <div className="flex justify-between items-start mb-4">
                                     <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors pr-2">
@@ -526,7 +526,7 @@ const MedicalCodesManager: React.FC<MedicalCodesManagerProps> = ({ codes, groups
                                     placeholder="e.g. 87880"
                                 />
                             </div>
-                            <div className="flex gap-4">
+                            <div className="flex flex-col sm:flex-row gap-4">
                                 <div className="flex-1">
                                     <label className="text-xs font-bold text-slate-500 uppercase">Lab Code</label>
                                     <input
@@ -599,8 +599,8 @@ const MedicalCodesManager: React.FC<MedicalCodesManagerProps> = ({ codes, groups
                                 {groupSearchTerm && (
                                     <div className="mt-4 space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
                                         {groupBuilderCodes.map(c => (
-                                            <div key={c.id} className="flex justify-between items-center p-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:border-purple-300 transition-colors">
-                                                <div className="flex-1 min-w-0 mr-3">
+                                            <div key={c.id} className="flex flex-col sm:flex-row justify-between sm:items-center p-3 sm:p-4 gap-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:border-purple-300 transition-colors">
+                                                <div className="flex-1 min-w-0 mr-0 sm:mr-3">
                                                     <div className="font-bold text-base text-slate-900 dark:text-white">{c.name}</div>
                                                     <div className="flex flex-wrap gap-2 mt-1">
                                                         {c.cptCode && <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-xs font-mono font-bold text-slate-600 dark:text-slate-300">CPT: {c.cptCode}</span>}
@@ -611,7 +611,7 @@ const MedicalCodesManager: React.FC<MedicalCodesManagerProps> = ({ codes, groups
                                                 <button
                                                     onClick={() => { toggleCodeInGroup(c.id); setGroupSearchTerm(''); }}
                                                     disabled={editingGroup.codeIds?.includes(c.id)}
-                                                    className={`h-10 px-4 rounded-xl font-bold text-sm transition-all ${editingGroup.codeIds?.includes(c.id)
+                                                    className={`h-10 px-4 rounded-xl font-bold text-sm transition-all sm:w-auto w-full mt-1 sm:mt-0 ${editingGroup.codeIds?.includes(c.id)
                                                         ? 'bg-green-100 text-green-700 cursor-default'
                                                         : 'bg-purple-600 text-white hover:bg-purple-500 shadow-md transform active:scale-95'
                                                         }`}
@@ -640,25 +640,25 @@ const MedicalCodesManager: React.FC<MedicalCodesManagerProps> = ({ codes, groups
                                                 <div className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white mb-3">{code.name}</div>
 
                                                 {/* Badges Container - Full Visualization */}
-                                                <div className="flex flex-wrap gap-3">
+                                                <div className="flex flex-wrap gap-2 sm:gap-3">
                                                     {code.cptCode && (
-                                                        <div className="group/chip flex items-center gap-3 bg-slate-100 dark:bg-slate-700 px-4 py-2 rounded-xl cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors border border-slate-200 dark:border-slate-600" onClick={() => handleCopy(code.cptCode)}>
-                                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">CPT</span>
-                                                            <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-lg">{code.cptCode}</span>
+                                                        <div className="group/chip flex items-center gap-2 sm:gap-3 bg-slate-100 dark:bg-slate-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors border border-slate-200 dark:border-slate-600" onClick={() => handleCopy(code.cptCode)}>
+                                                            <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">CPT</span>
+                                                            <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-base sm:text-lg">{code.cptCode}</span>
                                                             <i className="fa-regular fa-copy opacity-0 group-hover/chip:opacity-100 text-slate-400 transition-opacity"></i>
                                                         </div>
                                                     )}
                                                     {code.labCode && (
-                                                        <div className="group/chip flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-xl cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors border border-blue-100 dark:border-blue-900/30" onClick={() => handleCopy(code.labCode)}>
-                                                            <span className="text-xs font-bold text-blue-500 uppercase tracking-wider">LAB</span>
-                                                            <span className="font-mono font-bold text-blue-700 dark:text-blue-300 text-lg">{code.labCode}</span>
+                                                        <div className="group/chip flex items-center gap-2 sm:gap-3 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors border border-blue-100 dark:border-blue-900/30" onClick={() => handleCopy(code.labCode)}>
+                                                            <span className="text-[10px] sm:text-xs font-bold text-blue-500 uppercase tracking-wider">LAB</span>
+                                                            <span className="font-mono font-bold text-blue-700 dark:text-blue-300 text-base sm:text-lg">{code.labCode}</span>
                                                             <i className="fa-regular fa-copy opacity-0 group-hover/chip:opacity-100 text-blue-400 transition-opacity"></i>
                                                         </div>
                                                     )}
                                                     {code.adminCode && (
-                                                        <div className="group/chip flex items-center gap-3 bg-purple-50 dark:bg-purple-900/20 px-4 py-2 rounded-xl cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors border border-purple-100 dark:border-purple-900/30" onClick={() => handleCopy(code.adminCode)}>
-                                                            <span className="text-xs font-bold text-purple-500 uppercase tracking-wider">ADM</span>
-                                                            <span className="font-mono font-bold text-purple-700 dark:text-purple-300 text-lg">{code.adminCode}</span>
+                                                        <div className="group/chip flex items-center gap-2 sm:gap-3 bg-purple-50 dark:bg-purple-900/20 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors border border-purple-100 dark:border-purple-900/30" onClick={() => handleCopy(code.adminCode)}>
+                                                            <span className="text-[10px] sm:text-xs font-bold text-purple-500 uppercase tracking-wider">ADM</span>
+                                                            <span className="font-mono font-bold text-purple-700 dark:text-purple-300 text-base sm:text-lg">{code.adminCode}</span>
                                                             <i className="fa-regular fa-copy opacity-0 group-hover/chip:opacity-100 text-purple-400 transition-opacity"></i>
                                                         </div>
                                                     )}
@@ -696,34 +696,34 @@ const MedicalCodesManager: React.FC<MedicalCodesManagerProps> = ({ codes, groups
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="bg-purple-600 p-8 relative overflow-hidden flex-shrink-0">
+                        <div className="bg-purple-600 p-5 sm:p-8 relative overflow-hidden flex-shrink-0">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
                             {/* Close Button (Top Right) */}
                             <button
                                 onClick={() => setViewingGroup(null)}
-                                className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/20 text-white hover:bg-black/40 flex items-center justify-center transition-colors backdrop-blur-sm z-20"
+                                className="absolute top-4 right-4 sm:top-6 sm:right-6 w-10 h-10 rounded-full bg-black/20 text-white hover:bg-black/40 flex items-center justify-center transition-colors backdrop-blur-sm z-20"
                             >
                                 <i className="fa-solid fa-xmark text-lg"></i>
                             </button>
 
                             <div className="relative z-10">
                                 {/* Badge Row + Print Button */}
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/20 backdrop-blur-md text-white text-xs font-bold uppercase tracking-wider">
+                                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/20 backdrop-blur-md text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider">
                                         <i className="fa-solid fa-layer-group"></i> Exam Panel
                                     </div>
                                     <button
                                         onClick={handlePrintPanel}
-                                        className="flex items-center gap-2 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-wider transition-colors backdrop-blur-md border border-white/10"
+                                        className="flex items-center gap-2 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors backdrop-blur-md border border-white/10"
                                         title="Print Panel Details"
                                     >
                                         <i className="fa-solid fa-print"></i> Print List
                                     </button>
                                 </div>
 
-                                <h2 className="text-4xl font-bold text-white mb-2 tracking-tight pr-12">{viewingGroup.name}</h2>
-                                {viewingGroup.description && <p className="text-purple-100 text-lg font-medium pr-12">{viewingGroup.description}</p>}
+                                <h2 className="text-2xl sm:text-4xl font-bold text-white mb-2 tracking-tight pr-12">{viewingGroup.name}</h2>
+                                {viewingGroup.description && <p className="text-purple-100 text-sm sm:text-lg font-medium pr-12">{viewingGroup.description}</p>}
                             </div>
                         </div>
 

@@ -306,11 +306,11 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                     )}
                 </div>
 
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-3 w-full md:w-fit overflow-x-auto custom-scrollbar snap-x pb-2 md:pb-0">
                     <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 gap-1">
                         {([['cards', 'fa-grip', 'Cards'], ['chart', 'fa-chart-column', 'Chart'], ['trends', 'fa-chart-line', 'Trends']] as const).map(([view, icon, label]) => (
                             <button key={view} onClick={() => setActiveView(view)}
-                                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${activeView === view ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
+                                className={`flex-shrink-0 snap-start px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${activeView === view ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
                                 <i className={`fa-solid ${icon}`}></i>
                                 <span className="hidden sm:inline">{label}</span>
                             </button>
@@ -436,8 +436,8 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                             <div key={budget.id} className={`glass-panel rounded-2xl border border-white/60 dark:border-slate-800/60 shadow-xl shadow-slate-200/20 dark:shadow-none flex flex-col group transition-all duration-300 ${budget.status.glow}`}>
                                 <div className="p-6 md:p-8">
                                     {/* Header */}
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div>
+                                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                                        <div className="w-full">
                                             <div className="flex items-center gap-2 mb-2 flex-wrap">
                                                 {budget.vendors.map(v => (
                                                     <span key={v} className="px-3 py-1 bg-medical-50 dark:bg-medical-500/10 text-medical-600 dark:text-medical-400 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-medical-100 dark:border-medical-500/20 flex items-center gap-1.5">
@@ -450,25 +450,27 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                                                         <i className="fa-solid fa-rotate text-[8px]"></i> Auto
                                                     </span>
                                                 )}
+                                                {budget.isExpired && <span className="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-lg border border-slate-300 dark:border-slate-600 text-[10px] uppercase font-bold tracking-widest">EXPIRED</span>}
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <h4 className="text-slate-500 dark:text-slate-400 font-bold text-sm">
                                                     {new Date(budget.startDate).toLocaleDateString()} — {new Date(budget.endDate).toLocaleDateString()}
                                                 </h4>
-                                                {budget.isExpired && <span className="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded text-[9px] font-bold">EXPIRED</span>}
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center justify-between w-full md:w-auto gap-2">
                                             <span className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border ${budget.status.badge}`}>
                                                 {budget.truePercentUsed >= 75 && <i className="fa-solid fa-triangle-exclamation mr-1"></i>}
                                                 {budget.status.label}
                                             </span>
-                                            <button onClick={() => openModal(budget)} className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-medical-600 dark:hover:text-medical-400 hover:bg-medical-50 dark:hover:bg-medical-900/30 flex items-center justify-center transition-all text-sm">
-                                                <i className="fa-solid fa-pen-to-square"></i>
-                                            </button>
-                                            <button onClick={() => handleDelete(budget.id)} className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center justify-center transition-all text-sm">
-                                                <i className="fa-solid fa-trash-can"></i>
-                                            </button>
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={() => openModal(budget)} className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-medical-600 dark:hover:text-medical-400 hover:bg-medical-50 dark:hover:bg-medical-900/30 flex items-center justify-center transition-all text-sm">
+                                                    <i className="fa-solid fa-pen-to-square"></i>
+                                                </button>
+                                                <button onClick={() => handleDelete(budget.id)} className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center justify-center transition-all text-sm">
+                                                    <i className="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 

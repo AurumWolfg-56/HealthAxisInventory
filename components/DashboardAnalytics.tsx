@@ -280,7 +280,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
             </div>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <StatCard
                     label="Total Revenue"
                     value={`$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
@@ -330,13 +330,13 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                 {/* Income vs Expenses Chart */}
-                <div className="glass-panel p-6">
-                    <h3 className="section-title mb-6">
+                <div className="glass-panel p-4 sm:p-6">
+                    <h3 className="section-title mb-4 sm:mb-6">
                         <span className="section-title-bar"></span>
                         <i className="fa-solid fa-scale-balanced text-slate-400 dark:text-slate-500 text-sm"></i>
                         Income vs Expenses (Monthly)
                     </h3>
-                    <div className="h-[350px] w-full">
+                    <div className="h-[250px] sm:h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={incomeExpenseByMonth} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
@@ -362,13 +362,13 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                 </div>
 
                 {/* Revenue Area Chart */}
-                <div className="glass-panel p-6">
-                    <h3 className="section-title mb-6">
+                <div className="glass-panel p-4 sm:p-6">
+                    <h3 className="section-title mb-4 sm:mb-6">
                         <span className="section-title-bar"></span>
                         <i className="fa-solid fa-chart-line text-slate-400 dark:text-slate-500 text-sm"></i>
                         Revenue & Patient Trend
                     </h3>
-                    <div className="h-[350px] w-full">
+                    <div className="h-[250px] sm:h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <ComposedChart data={optimizedRevenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
@@ -399,8 +399,8 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
 
                 {/* Payment Methods Breakdown */}
-                <div className="glass-panel p-6">
-                    <h3 className="section-title mb-6">
+                <div className="glass-panel p-4 sm:p-6">
+                    <h3 className="section-title mb-4 sm:mb-6">
                         <span className="section-title-bar"></span>
                         <i className="fa-solid fa-wallet text-slate-400 dark:text-slate-500 text-sm"></i>
                         Collections (Methods)
@@ -442,13 +442,13 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                 </div>
 
                 {/* Patients by Insurance */}
-                <div className="glass-panel p-6">
-                    <h3 className="section-title mb-6">
+                <div className="glass-panel p-4 sm:p-6">
+                    <h3 className="section-title mb-4 sm:mb-6">
                         <span className="section-title-bar"></span>
                         <i className="fa-solid fa-shield-heart text-slate-400 dark:text-slate-500 text-sm"></i>
                         Patients by Insurance
                     </h3>
-                    <div className="h-[350px] w-full">
+                    <div className="h-[300px] sm:h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart layout="vertical" data={insuranceData} margin={{ left: 20, right: 60 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="currentColor" className="text-slate-200 dark:text-emerald-900/30" opacity={0.5} />
@@ -466,13 +466,13 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                 </div>
 
                 {/* Patients by Provider */}
-                <div className="glass-panel p-6">
-                    <h3 className="section-title mb-6">
+                <div className="glass-panel p-4 sm:p-6">
+                    <h3 className="section-title mb-4 sm:mb-6">
                         <span className="section-title-bar"></span>
                         <i className="fa-solid fa-user-doctor text-slate-400 dark:text-slate-500 text-sm"></i>
                         Visits by Provider
                     </h3>
-                    <div className="h-[350px] w-full">
+                    <div className="h-[250px] sm:h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={providerPatientData} margin={{ top: 30 }}>
                                 <defs>
@@ -511,41 +511,41 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {/* Inventory Health */}
-                <div className="glass-panel p-6">
+                <div className="glass-panel p-4 sm:p-6">
                     <h3 className="section-title mb-4">
                         <span className="section-title-bar"></span>
                         <i className="fa-solid fa-heartbeat text-slate-400 dark:text-slate-500 text-sm"></i>
                         Inventory Health
                     </h3>
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-2xl transition-all hover:scale-[1.02]">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center shadow-inner">
-                                    <i className="fa-solid fa-triangle-exclamation text-xl"></i>
+                    <div className="space-y-3 sm:space-y-4">
+                        <div className="flex justify-between items-center p-3 sm:p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-2xl transition-all hover:scale-[1.02]">
+                            <div className="flex items-center gap-3 sm:gap-4">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center shadow-inner">
+                                    <i className="fa-solid fa-triangle-exclamation text-lg sm:text-xl"></i>
                                 </div>
-                                <span className="font-semibold text-slate-700 dark:text-slate-200">Below Minimum</span>
+                                <span className="font-semibold text-sm sm:text-base text-slate-700 dark:text-slate-200">Below Minimum</span>
                             </div>
-                            <span className="text-2xl font-bold text-slate-900 dark:text-white">{lowStockCount}</span>
+                            <span className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{lowStockCount}</span>
                         </div>
 
-                        <div className="flex justify-between items-center p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-2xl transition-all hover:scale-[1.02]">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-inner">
-                                    <i className="fa-solid fa-clock text-xl"></i>
+                        <div className="flex justify-between items-center p-3 sm:p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-2xl transition-all hover:scale-[1.02]">
+                            <div className="flex items-center gap-3 sm:gap-4">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-inner">
+                                    <i className="fa-solid fa-clock text-lg sm:text-xl"></i>
                                 </div>
-                                <span className="font-semibold text-slate-700 dark:text-slate-200">Expiring (30d)</span>
+                                <span className="font-semibold text-sm sm:text-base text-slate-700 dark:text-slate-200">Expiring (30d)</span>
                             </div>
-                            <span className="text-2xl font-bold text-slate-900 dark:text-white">{expiringCount}</span>
+                            <span className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{expiringCount}</span>
                         </div>
 
-                        <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl transition-all hover:scale-[1.02]">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 flex items-center justify-center shadow-inner">
-                                    <i className="fa-solid fa-ban text-xl"></i>
+                        <div className="flex justify-between items-center p-3 sm:p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl transition-all hover:scale-[1.02]">
+                            <div className="flex items-center gap-3 sm:gap-4">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 flex items-center justify-center shadow-inner">
+                                    <i className="fa-solid fa-ban text-lg sm:text-xl"></i>
                                 </div>
-                                <span className="font-semibold text-slate-700 dark:text-slate-200">Expired</span>
+                                <span className="font-semibold text-sm sm:text-base text-slate-700 dark:text-slate-200">Expired</span>
                             </div>
-                            <span className="text-2xl font-bold text-slate-900 dark:text-white">{expiredCount}</span>
+                            <span className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{expiredCount}</span>
                         </div>
                     </div>
 
@@ -563,13 +563,13 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                 </div>
 
                 {/* Asset Value by Category Chart */}
-                <div className="glass-panel p-6 lg:col-span-2">
-                    <h3 className="section-title mb-6">
+                <div className="glass-panel p-4 sm:p-6 lg:col-span-2">
+                    <h3 className="section-title mb-4 sm:mb-6">
                         <span className="section-title-bar"></span>
                         <i className="fa-solid fa-layer-group text-slate-400 dark:text-slate-500 text-sm"></i>
                         Asset Value by Category
                     </h3>
-                    <div className="h-[400px] w-full">
+                    <div className="h-[300px] sm:h-[400px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart layout="vertical" data={categoryValueData} margin={{ left: 40, right: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="currentColor" className="text-slate-200 dark:text-emerald-900/30" opacity={0.5} />
