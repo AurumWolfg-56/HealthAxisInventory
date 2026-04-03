@@ -235,6 +235,9 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
         const requiredProtocols = protocols.filter(p => p.requiresAcknowledgment);
         
         users.forEach(u => {
+            // Only evaluate valid staff users with a complete profile (username)
+            if (!u.username || u.username.trim() === '') return;
+
             // Skip owners/managers from strict compliance list usually, but let's include if target is ALL_STAFF
             if (u.role === 'OWNER' || u.role === 'MANAGER') return; // Operations focus
             
