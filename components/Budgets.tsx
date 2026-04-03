@@ -87,6 +87,16 @@ const parseLocalDate = (dateStr: string) => {
   return new Date(y, m - 1, d);
 };
 
+const isVendorMatch = (budgetVendor: string, orderVendor: string) => {
+  if (!budgetVendor || !orderVendor) return false;
+  const bv = budgetVendor.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const ov = orderVendor.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (bv === ov) return true;
+  // Handle cases where order has `.com`, `inc`, `llc`
+  if (ov.startsWith(bv) || bv.startsWith(ov)) return true;
+  return false;
+};
+
 // ──────────────────────────────────────────────────────────────────
 // Component
 // ──────────────────────────────────────────────────────────────────
@@ -103,6 +113,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
   const [activeView, setActiveView] = useState<
     "cards" | "chart" | "trends" | "history"
   >("cards");
+  const [showOnlyAtRisk, setShowOnlyAtRisk] = useState(false);
 
   const exportRef = useRef<HTMLDivElement>(null);
 
@@ -283,24 +294,51 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
 
       const matchingOrders: { order: Order; amount: number }[] = [];
       let spent = 0;
+      const itemMap: Record<string, { name: string; quantity: number; spend: number }> = {};
 
       orders.forEach((order) => {
         if (order.status === "CANCELLED") return;
         const orderDate = new Date(order.orderDate).getTime();
         if (orderDate < budgetStart || orderDate > budgetEnd) return;
 
-        // Match by VENDOR name
-        if (
-          vendors.some((v) => v.toLowerCase() === order.vendor?.toLowerCase())
-        ) {
+        // Match by VENDOR name (flexible to handle things like .com, Inc., or substrings)
+        if (vendors.some((v) => isVendorMatch(v, order.vendor))) {
           const total = order.grandTotal || order.subtotal || 0;
           spent += total;
           matchingOrders.push({ order, amount: total });
+
+          // Accumulate top items
+          order.items.forEach(item => {
+            const key = item.productId || item.name;
+            if (!itemMap[key]) {
+              itemMap[key] = { name: item.name, quantity: 0, spend: 0 };
+            }
+            itemMap[key].quantity += item.quantity;
+            itemMap[key].spend += item.quantity * item.price;
+          });
         }
       });
 
+      const topItems = Object.values(itemMap)
+        .sort((a, b) => b.spend - a.spend)
+        .slice(0, 3);
+
       const percentUsed = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
-      const isExpired = budgetEnd < Date.now();
+      const now = Date.now();
+      const isExpired = budgetEnd < now;
+      let projectedSpend = spent;
+
+      // Project spend if budget is active (past 5% of period to avoid wild swings)
+      if (!isExpired && budgetStart < now) {
+        const totalDuration = budgetEnd - budgetStart;
+        const passedDuration = now - budgetStart;
+        const passedRatio = passedDuration / totalDuration;
+        
+        if (passedRatio > 0.05) {
+          projectedSpend = spent / passedRatio;
+        }
+      }
+
       const status = getStatusInfo(percentUsed);
 
       return {
@@ -310,6 +348,8 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
         truePercentUsed: percentUsed,
         status,
         matchingOrders,
+        topItems,
+        projectedSpend,
         isExpired,
         vendors,
       };
@@ -474,6 +514,16 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-fit overflow-x-auto custom-scrollbar snap-x pb-2 md:pb-0">
+          {activeView === "cards" && (
+            <button
+              onClick={() => setShowOnlyAtRisk(!showOnlyAtRisk)}
+              className={`h-11 px-4 rounded-xl font-bold flex items-center gap-2 text-sm transition-all border ${showOnlyAtRisk ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 shadow-sm" : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"}`}
+            >
+              <i className="fa-solid fa-fire"></i>
+              <span className="hidden sm:inline">At Risk Only</span>
+            </button>
+          )}
+
           <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 gap-1">
             {(
               [
@@ -866,8 +916,13 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
             </div>
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              {budgetStats.map((budget) => {
+              {budgetStats
+                .filter((b) => (showOnlyAtRisk ? b.truePercentUsed >= 75 : true))
+                .sort((a, b) => b.truePercentUsed - a.truePercentUsed)
+                .map((budget) => {
                 const isExpanded = expandedBudget === budget.id;
+                const isProjectedOver = budget.projectedSpend > budget.amount;
+
                 return (
                   <div
                     key={budget.id}
@@ -991,6 +1046,21 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                         </p>
                       )}
 
+                      {/* Projected Spend Alert */}
+                      {!budget.isExpired && budget.amount > 0 && budget.spent > 0 && budget.truePercentUsed < 100 && isProjectedOver && (
+                        <div className="mt-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 flex items-start gap-3">
+                          <i className="fa-solid fa-arrow-trend-up text-amber-500 mt-0.5"></i>
+                          <div>
+                            <p className="text-xs font-bold text-amber-900 dark:text-amber-400">
+                              Projected Overspend
+                            </p>
+                            <p className="text-[10px] text-amber-700 dark:text-amber-500 font-medium">
+                              At this rate, you will spend ~${fmt(budget.projectedSpend)} by the end of the period.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Auto-roll for expired recurring */}
                       {budget.isExpired && budget.isRecurring && (
                         <button
@@ -1021,43 +1091,69 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
 
                     {/* Expanded Order Breakdown */}
                     {isExpanded && (
-                      <div className="border-t border-slate-100 dark:border-slate-800 p-4 md:px-8 md:pb-6 bg-slate-50/50 dark:bg-slate-800/20 rounded-b-2xl space-y-2 animate-fade-in-up">
-                        <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-3 px-1">
-                          Order Breakdown
-                        </p>
-                        {budget.matchingOrders
-                          .sort(
-                            (a, b) =>
-                              new Date(b.order.orderDate).getTime() -
-                              new Date(a.order.orderDate).getTime(),
-                          )
-                          .map(({ order, amount }) => (
-                            <div
-                              key={order.id}
-                              className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800"
-                            >
-                              <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <div className="w-8 h-8 rounded-lg bg-medical-50 dark:bg-medical-900/20 flex items-center justify-center text-medical-500 text-xs flex-shrink-0">
-                                  <i className="fa-solid fa-receipt"></i>
+                      <div className="border-t border-slate-100 dark:border-slate-800 p-4 md:px-8 md:pb-6 bg-slate-50/50 dark:bg-slate-800/20 rounded-b-2xl space-y-4 animate-fade-in-up">
+                        
+                        {/* Top Items List */}
+                        {budget.topItems && budget.topItems.length > 0 && (
+                          <div className="mb-4">
+                            <p className="text-[10px] uppercase font-bold text-amber-500 tracking-widest mb-3 px-1 flex items-center gap-2">
+                              <i className="fa-solid fa-chart-pie"></i> Largest Expenses
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                              {budget.topItems.map((item, i) => (
+                                <div key={i} className="bg-white dark:bg-slate-900/50 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 flex justify-between items-center gap-2">
+                                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate w-3/4" title={item.name}>
+                                    {item.quantity}x {item.name}
+                                  </span>
+                                  <span className="text-xs font-mono font-bold text-medical-600 dark:text-medical-400">
+                                    ${fmt(item.spend)}
+                                  </span>
                                 </div>
-                                <div className="min-w-0">
-                                  <p className="text-sm font-bold text-slate-800 dark:text-white truncate">
-                                    {order.poNumber || "No PO#"}
-                                  </p>
-                                  <p className="text-[10px] text-slate-400 font-bold">
-                                    {new Date(
-                                      order.orderDate,
-                                    ).toLocaleDateString()}{" "}
-                                    · {order.items.length} item
-                                    {order.items.length > 1 ? "s" : ""}
-                                  </p>
-                                </div>
-                              </div>
-                              <p className="text-sm font-bold tabular-nums text-slate-900 dark:text-white ml-3 flex-shrink-0">
-                                ${fmt(amount)}
-                              </p>
+                              ))}
                             </div>
-                          ))}
+                          </div>
+                        )}
+
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-3 px-1">
+                            Recent Order Breakdown
+                          </p>
+                          <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                            {budget.matchingOrders
+                              .sort(
+                                (a, b) =>
+                                  new Date(b.order.orderDate).getTime() -
+                                  new Date(a.order.orderDate).getTime(),
+                              )
+                              .map(({ order, amount }) => (
+                                <div
+                                  key={order.id}
+                                  className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800"
+                                >
+                                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    <div className="w-8 h-8 rounded-lg bg-medical-50 dark:bg-medical-900/20 flex items-center justify-center text-medical-500 text-xs flex-shrink-0">
+                                      <i className="fa-solid fa-receipt"></i>
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-bold text-slate-800 dark:text-white truncate">
+                                        {order.poNumber || "No PO#"}
+                                      </p>
+                                      <p className="text-[10px] text-slate-400 font-bold">
+                                        {new Date(
+                                          order.orderDate,
+                                        ).toLocaleDateString()}{" "}
+                                        · {order.items.length} item
+                                        {order.items.length > 1 ? "s" : ""}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <p className="text-sm font-bold tabular-nums text-slate-900 dark:text-white ml-3 flex-shrink-0">
+                                    ${fmt(amount)}
+                                  </p>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
