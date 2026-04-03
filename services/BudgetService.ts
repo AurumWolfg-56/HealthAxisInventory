@@ -63,22 +63,25 @@ export const BudgetService = {
     },
 
     async createBudget(budget: Omit<Budget, 'id' | 'createdAt' | 'updatedAt'>, userId: string): Promise<Budget | null> {
+        const payload: any = {
+            user_id: userId,
+            category: budget.category,
+            categories: budget.categories || [],
+            amount: budget.amount,
+            period: budget.period,
+            start_date: budget.startDate,
+            end_date: budget.endDate,
+            is_recurring: budget.isRecurring || false,
+            notes: budget.notes || ''
+        };
+        if (_locationId) payload.location_id = _locationId;
+
         const response = await fetch(
             `${SUPABASE_URL}/rest/v1/budgets`,
             {
                 method: 'POST',
                 headers: getHeaders(),
-                body: JSON.stringify({
-                    user_id: userId,
-                    category: budget.category,
-                    categories: budget.categories || [],
-                    amount: budget.amount,
-                    period: budget.period,
-                    start_date: budget.startDate,
-                    end_date: budget.endDate,
-                    is_recurring: budget.isRecurring || false,
-                    notes: budget.notes || ''
-                })
+                body: JSON.stringify(payload)
             }
         );
 

@@ -26,6 +26,15 @@ const getStatusInfo = (pct: number) => {
     return { label: 'HEALTHY', color: 'text-emerald-500', bg: 'bg-emerald-500', badge: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800', glow: '' };
 };
 
+const getLocalDateString = (d: Date) => {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const parseLocalDate = (dateStr: string) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d);
+};
+
 // ──────────────────────────────────────────────────────────────────
 // Component
 // ──────────────────────────────────────────────────────────────────
@@ -61,8 +70,8 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
         period: 'MONTHLY',
         isRecurring: false,
         notes: '',
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]
+        startDate: getLocalDateString(new Date()),
+        endDate: getLocalDateString(new Date(new Date().setMonth(new Date().getMonth() + 1)))
     });
 
     const openModal = (budget?: Budget) => {
@@ -84,8 +93,8 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                 period: 'MONTHLY',
                 isRecurring: false,
                 notes: '',
-                startDate: new Date().toISOString().split('T')[0],
-                endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]
+                startDate: getLocalDateString(new Date()),
+                endDate: getLocalDateString(new Date(new Date().setMonth(new Date().getMonth() + 1)))
             });
         }
         setIsModalOpen(true);
@@ -133,7 +142,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
     // Auto-roll recurring budgets
     const handleAutoRoll = async (budget: Budget) => {
         if (!user?.id) return;
-        const start = new Date(budget.endDate);
+        const start = parseLocalDate(budget.endDate);
         start.setDate(start.getDate() + 1);
         const end = new Date(start);
         if (budget.period === 'MONTHLY') end.setMonth(end.getMonth() + 1);
@@ -148,8 +157,8 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                 period: budget.period,
                 isRecurring: true,
                 notes: budget.notes || '',
-                startDate: start.toISOString().split('T')[0],
-                endDate: end.toISOString().split('T')[0]
+                startDate: getLocalDateString(start),
+                endDate: getLocalDateString(end)
             }, user.id);
             if (created) setBudgets(prev => [created, ...prev]);
         } catch (err) {
@@ -172,8 +181,11 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
     // ──────────────────────────────────────────────────────────────
     const budgetStats = useMemo(() => {
         return budgets.map(budget => {
-            const budgetStart = new Date(budget.startDate).getTime();
-            const budgetEnd = new Date(budget.endDate).getTime();
+            const [sY, sM, sD] = budget.startDate.split('-').map(Number);
+            const [eY, eM, eD] = budget.endDate.split('-').map(Number);
+            
+            const budgetStart = new Date(sY, sM - 1, sD, 0, 0, 0, 0).getTime();
+            const budgetEnd = new Date(eY, eM - 1, eD, 23, 59, 59, 999).getTime();
             const vendors = (budget.categories && budget.categories.length > 0)
                 ? budget.categories
                 : budget.category ? [budget.category] : [];
@@ -195,7 +207,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
             });
 
             const percentUsed = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
-            const isExpired = new Date(budget.endDate).getTime() < Date.now();
+            const isExpired = budgetEnd < Date.now();
             const status = getStatusInfo(percentUsed);
 
             return {
@@ -454,7 +466,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <h4 className="text-slate-500 dark:text-slate-400 font-bold text-sm">
-                                                    {new Date(budget.startDate).toLocaleDateString()} — {new Date(budget.endDate).toLocaleDateString()}
+                                                    {parseLocalDate(budget.startDate).toLocaleDateString()} — {parseLocalDate(budget.endDate).toLocaleDateString()}
                                                 </h4>
                                             </div>
                                         </div>
