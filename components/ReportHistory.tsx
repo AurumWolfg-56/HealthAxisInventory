@@ -27,6 +27,32 @@ const AggregateReportDocument: React.FC<{
 
     const formatCurrency = (val: number) => `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+    // Calculated KPIs
+    const totalDays = Math.max(1, Math.ceil((period.end.getTime() - period.start.getTime()) / (1000 * 60 * 60 * 24)));
+    const tR = data.totals.revenue || 0;
+    const tP = data.totals.patients || 0;
+    const avgPerDay = tP > 0 ? (tP / totalDays) : 0;
+    const avgPerWeek = avgPerDay * 7;
+    const arpp = tP > 0 ? (tR / tP) : 0;
+    
+    // New vs Est Ratio
+    const newPts = data.stats.newPts || 0;
+    const estPts = data.stats.estPts || 0;
+    const totalVisitsStats = newPts + estPts;
+    const newRatio = totalVisitsStats > 0 ? (newPts / totalVisitsStats) * 100 : 0;
+
+    const renderBar = (count: number, total: number, color: string) => {
+        const pct = total > 0 ? (count / total) * 100 : 0;
+        return (
+            <div className="flex items-center gap-2 justify-end">
+                <div className="w-16 h-1.5 rounded-full bg-slate-200 overflow-hidden" style={{ backgroundColor: '#e2e8f0' }}>
+                    <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }}></div>
+                </div>
+                <div className="text-[9px] font-mono font-bold text-slate-500 w-8 text-right">{pct.toFixed(1)}%</div>
+            </div>
+        );
+    };
+
     return (
         <div
             className="bg-white text-slate-900 font-sans box-border relative leading-normal"
@@ -63,18 +89,22 @@ const AggregateReportDocument: React.FC<{
 
             <div className="p-12">
                 {/* Executive Summary Cards */}
-                <div className="flex justify-between gap-6 mb-10">
-                    <div className="w-[32%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                <div className="flex justify-between gap-4 mb-10">
+                    <div className="w-[24%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
                         <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total Revenue</div>
-                        <div className="text-3xl font-black text-slate-900 mt-1">{formatCurrency(data.totals.revenue)}</div>
+                        <div className="text-2xl font-black text-slate-900 mt-1">{formatCurrency(tR)}</div>
                     </div>
-                    <div className="w-[32%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    <div className="w-[23%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
                         <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total Patients</div>
-                        <div className="text-3xl font-black text-slate-900 mt-1">{data.totals.patients}</div>
+                        <div className="text-2xl font-black text-slate-900 mt-1">{tP}</div>
                     </div>
-                    <div className="w-[32%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Avg. Daily Revenue</div>
-                        <div className="text-3xl font-black text-emerald-600 mt-1">{formatCurrency(data.totals.revenue / (reportCount || 1))}</div>
+                    <div className="w-[25%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Rev / Patient</div>
+                        <div className="text-2xl font-black text-emerald-600 mt-1" style={{ color: '#059669' }}>{formatCurrency(arpp)}</div>
+                    </div>
+                    <div className="w-[24%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Avg Daily Volume</div>
+                        <div className="text-2xl font-black text-medical-600 mt-1" style={{ color: '#0ea5e9' }}>{avgPerDay.toFixed(1)} <span className="text-xs font-bold text-slate-400">/day</span></div>
                     </div>
                 </div>
 
@@ -139,51 +169,97 @@ const AggregateReportDocument: React.FC<{
                     </div>
                 </div>
 
-                {/* Section 2: Volume & Stats */}
-                <div className="flex justify-between gap-10 mb-10">
+                {/* Row 2: Demographics & Providers */}
+                <div className="flex justify-between gap-10 mb-8">
+                    {/* Payers */}
                     <div className="w-[48%]">
                         <div className="flex items-center gap-3 border-b-2 border-slate-900 pb-2 mb-4">
                             <div className="w-6 h-6 bg-slate-900 text-white flex items-center justify-center text-xs font-bold rounded" style={{ backgroundColor: '#0f172a', color: 'white' }}>2</div>
-                            <h3 className="text-sm font-bold uppercase tracking-wide text-slate-900">Patient Volume</h3>
+                            <h3 className="text-sm font-bold uppercase tracking-wide text-slate-900">Payer Mix</h3>
                         </div>
                         <table className="w-full text-xs border-collapse">
                             <tbody>
-                                {Object.entries(data.insurances).map(([k, v]) => (
-                                    <tr key={k} className="border-b border-slate-100">
-                                        <td className="py-2 text-slate-600 capitalize">{k.replace(/_/g, ' ').replace('Comp', ' Comp')}</td>
-                                        <td className="py-2 text-right font-bold text-slate-900">{v as number}</td>
+                                {Object.entries(data.insurances).sort((a,b) => (b[1] as number) - (a[1] as number)).map(([k, v]) => (
+                                    <tr key={k} className="border-b border-slate-100 border-dashed">
+                                        <td className="py-2 text-slate-600 capitalize pl-1">{k.replace(/_/g, ' ').replace('Comp', ' Comp')}</td>
+                                        <td className="py-2 text-right">{renderBar(v as number, tP, '#f59e0b')}</td>
+                                        <td className="py-2 text-right font-bold text-slate-900 w-12">{v as number}</td>
                                     </tr>
                                 ))}
-                                <tr className="bg-slate-50 border-t border-slate-200" style={{ backgroundColor: '#f8fafc' }}>
-                                    <td className="py-2 font-bold text-slate-900">TOTAL PATIENTS</td>
-                                    <td className="py-2 text-right font-black text-slate-900 text-sm">{data.totals.patients}</td>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
 
-                    <div className="w-[48%] flex flex-col gap-6">
-                        <div>
-                            <div className="flex items-center gap-3 border-b-2 border-slate-900 pb-2 mb-4">
-                                <div className="w-6 h-6 bg-slate-900 text-white flex items-center justify-center text-xs font-bold rounded" style={{ backgroundColor: '#0f172a', color: 'white' }}>3</div>
-                                <h3 className="text-sm font-bold uppercase tracking-wide text-slate-900">Operational Stats</h3>
+                    {/* Providers */}
+                    <div className="w-[48%]">
+                        <div className="flex items-center gap-3 border-b-2 border-slate-900 pb-2 mb-4">
+                            <div className="w-6 h-6 bg-slate-900 text-white flex items-center justify-center text-xs font-bold rounded" style={{ backgroundColor: '#0f172a', color: 'white' }}>3</div>
+                            <h3 className="text-sm font-bold uppercase tracking-wide text-slate-900">Provider Volume</h3>
+                        </div>
+                        <table className="w-full text-xs border-collapse">
+                            <tbody>
+                                {Object.keys(data.operational.providerVisits).length === 0 ? (
+                                    <tr><td className="py-4 text-slate-400 italic">No provider data in this period.</td></tr>
+                                ) : (
+                                    Object.entries(data.operational.providerVisits).sort((a,b) => (b[1] as number) - (a[1] as number)).map(([k, v]) => (
+                                        <tr key={k} className="border-b border-slate-100 border-dashed">
+                                            <td className="py-2 text-slate-800 font-bold pl-1">{k}</td>
+                                            <td className="py-2 text-right">{renderBar(v as number, tP, '#8b5cf6')}</td>
+                                            <td className="py-2 text-right font-bold text-slate-900 w-12">{v as number}</td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Row 3: Advanced KPIs */}
+                <div>
+                    <div className="flex items-center gap-3 border-b-2 border-slate-900 pb-2 mb-4">
+                        <div className="w-6 h-6 bg-slate-900 text-white flex items-center justify-center text-xs font-bold rounded" style={{ backgroundColor: '#0f172a', color: 'white' }}>4</div>
+                        <h3 className="text-sm font-bold uppercase tracking-wide text-slate-900">Operational Benchmarks</h3>
+                    </div>
+                    
+                    <div className="flex justify-between gap-4">
+                        <div className="w-[32%] bg-slate-50 border border-slate-100 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #f1f5f9' }}>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 border-b border-slate-200 pb-1">Acquisition</div>
+                            <div className="flex justify-between items-end">
+                                <div>
+                                    <div className="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-wider">New vs Est.</div>
+                                    <div className="text-xl font-black text-slate-900">{newRatio.toFixed(1)}% <span className="text-[10px] font-bold text-slate-400 ml-0.5 uppercase tracking-wider">New</span></div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-wider">Raw Count</div>
+                                    <div className="text-xs font-bold text-slate-700">{newPts} New / {estPts} Est</div>
+                                </div>
                             </div>
-                            <div className="bg-slate-50 rounded-lg p-4 border border-slate-100" style={{ backgroundColor: '#f8fafc', border: '1px solid #f1f5f9' }}>
-                                <div className="flex justify-between text-xs mb-3">
-                                    <span className="font-bold text-slate-700">Total Nurse Visits</span>
-                                    <span className="font-bold text-slate-900">{data.operational.nurseVisits}</span>
+                        </div>
+
+                        <div className="w-[32%] bg-slate-50 border border-slate-100 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #f1f5f9' }}>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 border-b border-slate-200 pb-1">Pacing Metrics</div>
+                            <div className="flex justify-between items-end">
+                                <div>
+                                    <div className="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-wider">Avg / Week</div>
+                                    <div className="text-xl font-black text-slate-900">{avgPerWeek.toFixed(1)} <span className="text-[10px] font-bold text-slate-400 ml-0.5 uppercase tracking-wider">pts</span></div>
                                 </div>
-                                <div className="flex justify-between text-xs mb-3">
-                                    <span className="font-bold text-slate-700">New Patients</span>
-                                    <span className="font-bold text-slate-900">{data.stats.newPts}</span>
+                                <div className="text-right ml-4">
+                                    <div className="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-wider">X-Rays</div>
+                                    <div className="text-xs font-bold text-slate-700">{data.stats.xrays} total</div>
                                 </div>
-                                <div className="flex justify-between text-xs mb-3">
-                                    <span className="font-bold text-slate-700">Established</span>
-                                    <span className="font-bold text-slate-900">{data.stats.estPts}</span>
+                            </div>
+                        </div>
+
+                        <div className="w-[32%] bg-slate-50 border border-slate-100 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #f1f5f9' }}>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 border-b border-slate-200 pb-1">Clinical Staff</div>
+                            <div className="flex justify-between items-end">
+                                <div>
+                                    <div className="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-wider">Nurse Visits</div>
+                                    <div className="text-xl font-black text-slate-900">{data.operational.nurseVisits}</div>
                                 </div>
-                                <div className="flex justify-between text-xs mb-1">
-                                    <span className="font-bold text-slate-700">X-Rays Performed</span>
-                                    <span className="font-bold text-slate-900">{data.stats.xrays}</span>
+                                <div className="text-right">
+                                    <div className="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-wider">% of Tot.</div>
+                                    <div className="text-xs font-bold text-slate-700">{tP > 0 ? ((data.operational.nurseVisits/tP)*100).toFixed(1) : 0}%</div>
                                 </div>
                             </div>
                         </div>
@@ -277,6 +353,12 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ reports, user, onEditRepo
 
             // Operational
             acc.operational.nurseVisits += report.operational.nurseVisits || 0;
+            if (report.operational.providerVisits) {
+                Object.entries(report.operational.providerVisits).forEach(([provider, count]) => {
+                    const cnt = typeof count === 'number' ? count : parseInt(String(count) || '0', 10);
+                    acc.operational.providerVisits[provider] = (acc.operational.providerVisits[provider] || 0) + cnt;
+                });
+            }
 
             // Stats
             acc.stats.newPts += report.stats.newPts || 0;
