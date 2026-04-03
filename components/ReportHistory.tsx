@@ -59,7 +59,8 @@ const AggregateReportDocument: React.FC<{
             className="bg-white text-slate-900 font-sans box-border relative leading-normal"
             style={{
                 width: '215.9mm',
-                minHeight: '279.4mm',
+                height: '278mm',
+                overflow: 'hidden',
                 margin: '0',
                 padding: '0',
                 backgroundColor: '#ffffff'
@@ -265,7 +266,7 @@ const AggregateReportDocument: React.FC<{
                     </div>
                 </div>
 
-                <div className="mt-8 pt-8 border-t border-slate-200 text-[9px] text-center text-slate-400 font-medium uppercase tracking-wider">
+                <div className="mt-6 pt-6 border-t border-slate-200 text-[9px] text-center text-slate-400 font-medium uppercase tracking-wider">
                     Confidential Internal Document • Norvexis Core
                 </div>
             </div>
