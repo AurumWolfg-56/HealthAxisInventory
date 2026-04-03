@@ -257,6 +257,18 @@ export type ProtocolArea = 'FRONT_DESK' | 'MA_STATION' | 'EXAM_ROOM' | 'LAB' | '
 export type ProtocolType = 'STANDARD' | 'HIPAA' | 'OSHA' | 'EMERGENCY';
 export type ProtocolTargetRole = 'ALL_STAFF' | 'MEDICAL_ONLY' | 'FRONT_DESK_ONLY';
 
+export interface ProtocolChecklist {
+  id: string;
+  text: string;
+}
+
+export interface ProtocolQuiz {
+  id: string;
+  question: string;
+  options: string[];
+  answerIndex: number;
+}
+
 export interface Protocol {
   id: string;
   title: string;
@@ -267,6 +279,9 @@ export interface Protocol {
   requiresAcknowledgment: boolean;
   isPinned: boolean;
   targetRole: ProtocolTargetRole;
+  videoUrl?: string;
+  checklists?: ProtocolChecklist[];
+  quizzes?: ProtocolQuiz[];
   createdBy: string;
   createdAt: string;
   updatedAt: string;

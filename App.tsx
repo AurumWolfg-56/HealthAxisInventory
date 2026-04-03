@@ -120,7 +120,7 @@ const App: React.FC = () => {
 
     // --- APP DATA CONTEXT ---
     const {
-        templates, setTemplates, dailyReports, billingRules, pettyCashHistory, logs,
+        protocols, templates, setTemplates, dailyReports, billingRules, pettyCashHistory, logs,
         setDailyReports, setLogs, addLog: contextAddLog, setBillingRules
     } = useAppData();
 
@@ -1212,6 +1212,7 @@ const App: React.FC = () => {
                 orders={orders}
                 dailyReports={dailyReports}
                 pettyCash={pettyCashHistory}
+                protocols={protocols}
             />
 
             {viewingReport && (

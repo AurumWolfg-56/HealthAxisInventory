@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { queryClinicData, QueryResult } from '../services/QueryEngine';
 import { checkConnection } from '../services/LocalAIService';
-import { InventoryItem, Order, PettyCashTransaction } from '../types';
+import { InventoryItem, Order, PettyCashTransaction, Protocol } from '../types';
 import { DailyReport } from '../types/dailyReport';
 
 interface Message {
@@ -19,6 +19,7 @@ interface AskNorvexisProps {
   orders: Order[];
   dailyReports: DailyReport[];
   pettyCash: PettyCashTransaction[];
+  protocols: Protocol[];
 }
 
 const QUICK_QUESTIONS = [
@@ -35,6 +36,7 @@ const AskNorvexis: React.FC<AskNorvexisProps> = ({
   orders,
   dailyReports,
   pettyCash,
+  protocols,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -81,7 +83,8 @@ const AskNorvexis: React.FC<AskNorvexisProps> = ({
         inventory,
         orders,
         dailyReports,
-        pettyCash
+        pettyCash,
+        protocols
       );
       addMessage('assistant', result.answer, result.dataUsed);
     } catch (error: any) {
@@ -92,7 +95,7 @@ const AskNorvexis: React.FC<AskNorvexisProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [loading, inventory, orders, dailyReports, pettyCash]);
+  }, [loading, inventory, orders, dailyReports, pettyCash, protocols]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

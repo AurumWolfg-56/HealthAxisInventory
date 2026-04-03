@@ -50,6 +50,61 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
 
     const [viewingSignaturesFor, setViewingSignaturesFor] = useState<Protocol | undefined>(undefined);
 
+    // Interactive Checklists & Quizzes UX State
+    const [checklistStates, setChecklistStates] = useState<Record<string, Record<string, boolean>>>({});
+    const [quizAnswers, setQuizAnswers] = useState<Record<string, Record<string, number>>>({}); // [protocolId]: { [quizId]: selectedOptionIndex }
+    const [quizErrors, setQuizErrors] = useState<Record<string, string>>({});
+
+    const toggleChecklist = (protocolId: string, checklistId: string) => {
+        setChecklistStates(prev => ({
+            ...prev,
+            [protocolId]: {
+                ...(prev[protocolId] || {}),
+                [checklistId]: !(prev[protocolId]?.[checklistId])
+            }
+        }));
+    };
+
+    const handleQuizOptionSelect = (protocolId: string, quizId: string, optIndex: number) => {
+        setQuizAnswers(prev => ({
+            ...prev,
+            [protocolId]: {
+                ...(prev[protocolId] || {}),
+                [quizId]: optIndex
+            }
+        }));
+        // clear error if any
+        if (quizErrors[protocolId]) {
+            setQuizErrors(prev => {
+                const newErr = { ...prev };
+                delete newErr[protocolId];
+                return newErr;
+            });
+        }
+    };
+
+    const attemptAcknowledgeWithQuiz = async (protocol: Protocol, e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        
+        // Validate quizzes if they exist
+        if (protocol.quizzes && protocol.quizzes.length > 0) {
+            const answers = quizAnswers[protocol.id] || {};
+            for (const q of protocol.quizzes) {
+                if (answers[q.id] === undefined) {
+                    setQuizErrors(prev => ({ ...prev, [protocol.id]: 'Please answer all questions before signing.' }));
+                    return;
+                }
+                if (answers[q.id] !== q.answerIndex) {
+                    setQuizErrors(prev => ({ ...prev, [protocol.id]: 'One or more answers are incorrect. Please review the protocol and try again.' }));
+                    return;
+                }
+            }
+        }
+
+        // Passed!
+        await handleAcknowledge(protocol.id);
+    };
+
     useEffect(() => {
         const fetchAcks = async () => {
             if (!user?.id) return;
@@ -152,6 +207,16 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
         return protocols.filter(p => p.requiresAcknowledgment && !myAcknowledgments[p.id] && isUserInTargetAudience(p));
     }, [protocols, myAcknowledgments, loadingAcks, user]);
 
+    // NEW Gamification / Compliance metrics
+    const complianceStats = useMemo(() => {
+        const required = protocols.filter(p => p.requiresAcknowledgment && isUserInTargetAudience(p));
+        const total = required.length;
+        if (total === 0) return { total: 0, signed: 0, percentage: 100 };
+        
+        const signed = required.filter(p => myAcknowledgments[p.id]).length;
+        return { total, signed, percentage: Math.round((signed / total) * 100) };
+    }, [protocols, myAcknowledgments, user]);
+
     const groupedProtocols = useMemo(() => {
         return {
             PINNED: filteredProtocols.filter(p => p.isPinned && !isProtocolFullyAcknowledged(p)),
@@ -161,6 +226,35 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
             STANDARD: filteredProtocols.filter(p => p.type === 'STANDARD')
         };
     }, [filteredProtocols, isProtocolFullyAcknowledged]);
+
+    // Manager Matrix
+    const staffCompliancePending = useMemo(() => {
+        if (!isManager || loadingAcks) return [];
+        
+        const pending: { user: User, protocol: Protocol }[] = [];
+        const requiredProtocols = protocols.filter(p => p.requiresAcknowledgment);
+        
+        users.forEach(u => {
+            // Skip owners/managers from strict compliance list usually, but let's include if target is ALL_STAFF
+            if (u.role === 'OWNER' || u.role === 'MANAGER') return; // Operations focus
+            
+            requiredProtocols.forEach(p => {
+                let isInAudience = true;
+                if (p.targetRole && p.targetRole !== 'ALL_STAFF') {
+                    if (p.targetRole === 'MEDICAL_ONLY' && u.role !== 'MA' && u.role !== 'DOCTOR') isInAudience = false;
+                    if (p.targetRole === 'FRONT_DESK_ONLY' && u.role !== 'FRONT_DESK') isInAudience = false;
+                }
+                
+                if (isInAudience) {
+                    const hasAck = allAcknowledgments.some(a => a.protocolId === p.id && a.userId === u.id);
+                    if (!hasAck) {
+                        pending.push({ user: u, protocol: p });
+                    }
+                }
+            });
+        });
+        return pending;
+    }, [users, protocols, allAcknowledgments, isManager, loadingAcks]);
 
     const handleSaveProtocol = async (data: Partial<Protocol>) => {
         try {
@@ -278,6 +372,16 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
         const dateObj = new Date(protocol.updatedAt);
         const safeDate = isNaN(dateObj.getTime()) ? new Date().toLocaleDateString() : dateObj.toLocaleDateString();
 
+        const getEmbedVideoUrl = (url?: string) => {
+            if (!url) return null;
+            if (url.includes('youtube.com/watch?v=')) return url.replace('watch?v=', 'embed/');
+            if (url.includes('youtu.be/')) return url.replace('youtu.be/', 'youtube.com/embed/');
+            if (url.includes('loom.com/share/')) return url.replace('share/', 'embed/');
+            return url; // fallback
+        };
+
+        const embedVideoUrl = getEmbedVideoUrl(protocol.videoUrl);
+
         return (
             <div
                 key={protocol.id}
@@ -335,8 +439,99 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
                 {/* Accordion Body (Expanded) */}
                 {isExpanded && (
                     <div className="border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/10">
-                        <div className="p-5 sm:p-6">
-                            <RichTextContent content={protocol.content} />
+                        <div className="p-5 sm:p-6 space-y-6">
+                            
+                            {/* Multimedia (Video) */}
+                            {embedVideoUrl && (
+                                <div className="rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 bg-black aspect-[16/9] w-full max-w-4xl mx-auto">
+                                    <iframe 
+                                        src={embedVideoUrl} 
+                                        className="w-full h-full" 
+                                        frameBorder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowFullScreen
+                                    ></iframe>
+                                </div>
+                            )}
+
+                            {/* Core Document */}
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+                                <RichTextContent content={protocol.content} />
+                            </div>
+
+                            {/* Actionable Checklists */}
+                            {protocol.checklists && protocol.checklists.length > 0 && (
+                                <div className="bg-medical-50/50 dark:bg-medical-900/10 border border-medical-100 dark:border-medical-500/20 p-5 rounded-2xl">
+                                    <h4 className="text-sm font-bold text-medical-800 dark:text-medical-400 mb-4 flex items-center gap-2">
+                                        <i className="fa-solid fa-list-check"></i> Standard Operating Procedure Checklist
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {protocol.checklists.map((chk, index) => {
+                                            const isChecked = !!checklistStates[protocol.id]?.[chk.id];
+                                            return (
+                                                <button 
+                                                    key={chk.id} 
+                                                    className={`w-full flex items-center gap-4 p-3 rounded-xl border text-left transition-all ${isChecked ? 'bg-medical-100/50 border-medical-200 text-slate-500 dark:bg-medical-900/20 dark:border-medical-500/20 dark:text-slate-400' : 'bg-white border-slate-200 text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 shadow-sm'}`}
+                                                    onClick={(e) => { e.stopPropagation(); toggleChecklist(protocol.id, chk.id); }}
+                                                >
+                                                    <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 border-2 transition-colors ${isChecked ? 'bg-medical-500 border-medical-500 text-white' : 'border-slate-300 dark:border-slate-600 bg-transparent text-transparent'}`}>
+                                                        <i className="fa-solid fa-check text-xs"></i>
+                                                    </div>
+                                                    <span className={`text-sm font-medium ${isChecked ? 'line-through opacity-70' : ''}`}>{chk.text}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Micro-Quizzes (Knowledge Check) inline gate before signing */}
+                            {isUnread && protocol.quizzes && protocol.quizzes.length > 0 && (
+                                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-500/30 p-5 rounded-2xl animate-fade-in shadow-inner">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-10 h-10 bg-purple-500 text-white flex items-center justify-center rounded-xl shadow-md">
+                                            <i className="fa-solid fa-brain"></i>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">Comprehension Check required</h4>
+                                            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">You must pass this short quiz to unlock the digital signature.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6 mt-6">
+                                        {protocol.quizzes.map((quiz, qIdx) => (
+                                            <div key={quiz.id} className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                                                <p className="text-sm font-bold text-slate-900 dark:text-white mb-4">
+                                                    <span className="text-purple-500 mr-2">Q{qIdx + 1}.</span>
+                                                    {quiz.question}
+                                                </p>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    {quiz.options.map((opt, oIdx) => {
+                                                        const isSelected = quizAnswers[protocol.id]?.[quiz.id] === oIdx;
+                                                        return (
+                                                            <button
+                                                                key={oIdx}
+                                                                onClick={(e) => { e.stopPropagation(); handleQuizOptionSelect(protocol.id, quiz.id, oIdx); }}
+                                                                className={`p-3 text-left rounded-lg text-sm font-medium border transition-all ${isSelected ? 'border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 ring-2 ring-purple-500/20 shadow-sm' : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-purple-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-purple-500/50'}`}
+                                                            >
+                                                                {opt}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {quizErrors[protocol.id] && (
+                                        <div className="mt-4 p-3 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border border-red-200 dark:border-red-500/30 rounded-xl text-sm font-bold flex items-center gap-2 animate-shake">
+                                            <i className="fa-solid fa-triangle-exclamation"></i>
+                                            {quizErrors[protocol.id]}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                         </div>
 
                         {/* Footer Actions */}
@@ -378,10 +573,10 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
                                 {protocol.requiresAcknowledgment && isUserInTargetAudience(protocol) && (
                                     isUnread ? (
                                         <button
-                                            onClick={(e) => handleAcknowledge(protocol.id, e)}
+                                            onClick={(e) => attemptAcknowledgeWithQuiz(protocol, e)}
                                             className="ml-auto px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-orange-500/30 transition-all flex items-center gap-2"
                                         >
-                                            <i className="fa-solid fa-signature animate-bounce-subtle"></i> Sign Now
+                                            <i className="fa-solid fa-signature animate-bounce-subtle"></i> Sign & Acknowledge
                                         </button>
                                     ) : (
                                         <span className="ml-auto flex items-center gap-2 text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-4 py-2 rounded-xl">
@@ -432,42 +627,138 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
 
     return (
         <div className="p-4 sm:p-6 lg:p-8 pb-32">
-            {/* Header section */}
-            <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Clinic Protocols</h1>
-                    <p className="text-slate-500 dark:text-slate-400 max-w-2xl text-lg relative z-10 leading-relaxed font-medium">
-                        Staff Hub for clinical rules, standards, and procedures.
-                    </p>
+            {/* Header section & Action Center */}
+            <div className="mb-8">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+                    <div>
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Staff Operations Hub</h1>
+                        <p className="text-slate-500 dark:text-slate-400 max-w-2xl text-lg relative z-10 leading-relaxed font-medium">
+                            Welcome {user?.username}, stay compliant and confident in your procedures.
+                        </p>
+                    </div>
+                    {isManager && (
+                        <button
+                            onClick={() => { setEditingProtocol(undefined); setIsModalOpen(true); }}
+                            className="px-6 py-3.5 bg-medical-600 hover:bg-medical-700 text-white rounded-2xl font-bold shadow-lg shadow-medical-500/30 transition-all flex items-center justify-center gap-2 active:scale-95"
+                        >
+                            <i className="fa-solid fa-plus"></i>
+                            New Protocol
+                        </button>
+                    )}
                 </div>
-                {isManager && (
-                    <button
-                        onClick={() => { setEditingProtocol(undefined); setIsModalOpen(true); }}
-                        className="px-6 py-3.5 bg-medical-600 hover:bg-medical-700 text-white rounded-2xl font-bold shadow-lg shadow-medical-500/30 transition-all flex items-center justify-center gap-2 active:scale-95"
-                    >
-                        <i className="fa-solid fa-plus"></i>
-                        Create New Protocol
-                    </button>
-                )}
-            </div>
 
-            {/* Critical Unread Banner */}
-            {unreadCriticals.length > 0 && (
-                <div className="mb-8 p-5 sm:p-6 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-2xl shadow-xl shadow-red-500/20 flex flex-col sm:flex-row items-center justify-between gap-4 animate-scale-in border border-red-400/50">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 shadow-inner">
-                            <i className="fa-solid fa-file-signature animate-wiggle"></i>
+                {/* Gamification Dashboard */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    {/* Compliance Card */}
+                    <div className="bg-white dark:bg-[#1a2235] rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-6">
+                        <div className="relative w-24 h-24 flex-shrink-0 flex items-center justify-center">
+                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                <path
+                                    className="text-slate-100 dark:text-slate-800"
+                                    strokeWidth="3"
+                                    stroke="currentColor"
+                                    fill="none"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                />
+                                <path
+                                    className={`${complianceStats.percentage === 100 ? 'text-emerald-500' : complianceStats.percentage > 70 ? 'text-orange-400' : 'text-red-500'} transition-all duration-1000 ease-out`}
+                                    strokeDasharray={`${complianceStats.percentage}, 100`}
+                                    strokeWidth="3"
+                                    strokeLinecap="round"
+                                    stroke="currentColor"
+                                    fill="none"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                />
+                            </svg>
+                            <div className="absolute flex flex-col items-center justify-center">
+                                <span className={`text-xl font-black ${complianceStats.percentage === 100 ? 'text-emerald-500' : 'text-slate-800 dark:text-white'}`}>{complianceStats.percentage}%</span>
+                            </div>
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold tracking-tight">Signatures Required</h3>
-                            <p className="font-medium text-white/90 text-sm mt-0.5">
-                                You have {unreadCriticals.length} mandatory protocol(s) that require your digital acknowledgment.
+                            <h3 className="text-lg font-bold text-slate-800 dark:text-white">Compliance Score</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
+                                {complianceStats.signed} of {complianceStats.total} required procedures signed.
                             </p>
+                            {complianceStats.percentage === 100 && complianceStats.total > 0 && (
+                                <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-bold">
+                                    <i className="fa-solid fa-award"></i> Up to date
+                                </div>
+                            )}
                         </div>
                     </div>
-                    {/* The specific unread items will have signed orange buttons on them */}
+
+                    {/* Pending Actions Carousel/List */}
+                    <div className="lg:col-span-2 bg-gradient-to-r from-medical-50 to-emerald-50 dark:from-[#1a2235] dark:to-medical-900/10 rounded-3xl p-6 shadow-sm border border-medical-100 dark:border-medical-500/20 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                            <i className="fa-solid fa-clipboard-check text-8xl text-medical-500"></i>
+                        </div>
+                        
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 relative z-10">Action Required</h3>
+                        
+                        {unreadCriticals.length > 0 ? (
+                            <div className="space-y-3 relative z-10 max-h-[140px] overflow-y-auto custom-scrollbar pr-2">
+                                {unreadCriticals.map(p => (
+                                    <div key={p.id} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur border border-white/40 dark:border-slate-700/50 p-3 rounded-2xl flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => {
+                                        setExpandedCardId(p.id);
+                                        // Scroll to normal accordion list below
+                                        setTimeout(() => {
+                                           document.getElementById('library-section')?.scrollIntoView({ behavior: 'smooth' });
+                                        }, 100);
+                                    }}>
+                                        <div className="flex items-center gap-3 overflow-hidden">
+                                            <div className={`w-2 h-10 rounded-full flex-shrink-0 ${p.severity === 'CRITICAL' ? 'bg-red-500' : 'bg-orange-400'}`}></div>
+                                            <div className="overflow-hidden">
+                                                <p className="font-bold text-slate-800 dark:text-white truncate">{p.title}</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{p.area.replace('_', ' ')}</p>
+                                            </div>
+                                        </div>
+                                        <button className="flex-shrink-0 px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-colors">
+                                            Review
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="h-[100px] flex items-center justify-center relative z-10">
+                                <p className="text-slate-500 dark:text-slate-400 font-medium text-center">
+                                    <i className="fa-solid fa-check-circle text-emerald-500 mr-2 text-lg"></i>
+                                    You have no pending required protocols. Great job!
+                                </p>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            )}
+
+                {/* Manager Oversight Matrix */}
+                {isManager && staffCompliancePending.length > 0 && (
+                    <div className="bg-white dark:bg-[#1a2235] border border-slate-200 dark:border-slate-700 p-6 rounded-3xl shadow-sm mb-8 animate-fade-in">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 rounded-xl flex items-center justify-center font-bold">
+                                <i className="fa-solid fa-users-viewfinder"></i>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Manager Oversight</h3>
+                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Staff missing required signatures</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {staffCompliancePending.map((item, idx) => (
+                                <div key={idx} className="flex flex-col p-3 rounded-xl bg-slate-50 border border-slate-200 dark:bg-slate-900/50 dark:border-slate-800">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                                            {item.user.username.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">{item.user.username}</div>
+                                    </div>
+                                    <div className="pl-8 text-xs text-slate-500 dark:text-slate-400 truncate">
+                                        <i className="fa-solid fa-file-signature mr-1 text-orange-400"></i> {item.protocol.title}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Smart Search & Filters */}
             <div className="bg-white dark:bg-[#1a2235] border border-slate-100 dark:border-slate-800 rounded-2xl p-4 sm:p-5 mb-8 shadow-sm">
@@ -475,11 +766,11 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
                     {/* Deep Text Search */}
                     <div className="flex-1 relative">
                         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                            <i className="fa-solid fa-magnifying-glass text-slate-400"></i>
+                            <i className="fa-solid fa-robot text-medical-500"></i>
                         </div>
                         <input
                             type="text"
-                            placeholder="Smart Search (e.g. 'blood spill', 'front desk rules')..."
+                            placeholder="Ask Norvexis or search (e.g. 'blood spill', 'front desk rules')..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 hover:border-slate-300 transition-all placeholder:text-slate-400 font-bold"
@@ -517,7 +808,7 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
             </div>
 
             {/* Folder View UI */}
-            <div className="max-w-5xl mx-auto">
+            <div id="library-section" className="max-w-5xl mx-auto pt-4 relative">
                 <ProtocolFolder
                     title="Pinned Announcements 📌"
                     icon="fa-thumbtack text-medical-600 dark:text-medical-400"

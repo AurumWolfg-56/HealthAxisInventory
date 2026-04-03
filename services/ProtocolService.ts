@@ -53,6 +53,9 @@ export const ProtocolService = {
                 requiresAcknowledgment: item.requires_acknowledgment,
                 isPinned: item.is_pinned,
                 targetRole: item.target_role,
+                videoUrl: item.video_url,
+                checklists: item.checklists || [],
+                quizzes: item.quizzes || [],
                 createdBy: item.created_by,
                 createdAt: item.created_at,
                 updatedAt: item.updated_at
@@ -73,7 +76,10 @@ export const ProtocolService = {
                 type: protocol.type,
                 requires_acknowledgment: protocol.requiresAcknowledgment,
                 is_pinned: protocol.isPinned,
-                target_role: protocol.targetRole
+                target_role: protocol.targetRole,
+                video_url: protocol.videoUrl,
+                checklists: protocol.checklists || [],
+                quizzes: protocol.quizzes || []
             };
 
             const controller = new AbortController();
@@ -105,6 +111,9 @@ export const ProtocolService = {
                 requiresAcknowledgment: item.requires_acknowledgment,
                 isPinned: item.is_pinned,
                 targetRole: item.target_role,
+                videoUrl: item.video_url,
+                checklists: item.checklists || [],
+                quizzes: item.quizzes || [],
                 createdBy: item.created_by,
                 createdAt: item.created_at,
                 updatedAt: item.updated_at
@@ -126,6 +135,9 @@ export const ProtocolService = {
             if (updates.requiresAcknowledgment !== undefined) dbUpdates.requires_acknowledgment = updates.requiresAcknowledgment;
             if (updates.isPinned !== undefined) dbUpdates.is_pinned = updates.isPinned;
             if (updates.targetRole !== undefined) dbUpdates.target_role = updates.targetRole;
+            if (updates.videoUrl !== undefined) dbUpdates.video_url = updates.videoUrl;
+            if (updates.checklists !== undefined) dbUpdates.checklists = updates.checklists;
+            if (updates.quizzes !== undefined) dbUpdates.quizzes = updates.quizzes;
             dbUpdates.updated_at = new Date().toISOString();
 
             const controller = new AbortController();
@@ -155,6 +167,9 @@ export const ProtocolService = {
                 requiresAcknowledgment: item.requires_acknowledgment,
                 isPinned: item.is_pinned,
                 targetRole: item.target_role,
+                videoUrl: item.video_url,
+                checklists: item.checklists || [],
+                quizzes: item.quizzes || [],
                 createdBy: item.created_by,
                 createdAt: item.created_at,
                 updatedAt: item.updated_at

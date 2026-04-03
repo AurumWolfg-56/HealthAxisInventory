@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Protocol, ProtocolSeverity, ProtocolArea, ProtocolType, ProtocolTargetRole } from '../types';
+import { Protocol, ProtocolSeverity, ProtocolArea, ProtocolType, ProtocolTargetRole, ProtocolChecklist, ProtocolQuiz } from '../types';
 import { RichTextContent } from './RichTextContent';
 
 interface ProtocolModalProps {
@@ -19,7 +19,10 @@ const ProtocolModal: React.FC<ProtocolModalProps> = ({ isOpen, onClose, onSave, 
         type: 'STANDARD',
         requiresAcknowledgment: false,
         isPinned: false,
-        targetRole: 'ALL_STAFF'
+        targetRole: 'ALL_STAFF',
+        videoUrl: '',
+        checklists: [],
+        quizzes: []
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -33,7 +36,10 @@ const ProtocolModal: React.FC<ProtocolModalProps> = ({ isOpen, onClose, onSave, 
                 type: 'STANDARD',
                 requiresAcknowledgment: false,
                 isPinned: false,
-                targetRole: 'ALL_STAFF'
+                targetRole: 'ALL_STAFF',
+                videoUrl: '',
+                checklists: [],
+                quizzes: []
             });
         }
     }, [isOpen, initialData]);
@@ -71,6 +77,21 @@ const ProtocolModal: React.FC<ProtocolModalProps> = ({ isOpen, onClose, onSave, 
         }
     };
 
+    // Checklist Logic
+    const addChecklist = () => setFormData(prev => ({ ...prev, checklists: [...(prev.checklists || []), { id: Date.now().toString(), text: '' }] }));
+    const updateChecklist = (id: string, text: string) => setFormData(prev => ({ ...prev, checklists: (prev.checklists || []).map(c => c.id === id ? { ...c, text } : c) }));
+    const removeChecklist = (id: string) => setFormData(prev => ({ ...prev, checklists: (prev.checklists || []).filter(c => c.id !== id) }));
+
+    // Quiz Logic
+    const addQuiz = () => setFormData(prev => ({ ...prev, quizzes: [...(prev.quizzes || []), { id: Date.now().toString(), question: '', options: ['', '', '', ''], answerIndex: 0 }] }));
+    const updateQuizOption = (quizId: string, optIndex: number, val: string) => 
+        setFormData(prev => ({ ...prev, quizzes: (prev.quizzes || []).map(q => q.id === quizId ? { ...q, options: q.options.map((o, i) => i === optIndex ? val : o) } : q) }));
+    const updateQuizAnswer = (quizId: string, answerIndex: number) => 
+        setFormData(prev => ({ ...prev, quizzes: (prev.quizzes || []).map(q => q.id === quizId ? { ...q, answerIndex } : q) }));
+    const updateQuizQuestion = (quizId: string, question: string) => 
+        setFormData(prev => ({ ...prev, quizzes: (prev.quizzes || []).map(q => q.id === quizId ? { ...q, question } : q) }));
+    const removeQuiz = (quizId: string) => setFormData(prev => ({ ...prev, quizzes: (prev.quizzes || []).filter(q => q.id !== quizId) }));
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
             <div className="bg-white dark:bg-[#1a2235] rounded-2xl w-full max-w-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] animate-scale-in">
@@ -94,19 +115,37 @@ const ProtocolModal: React.FC<ProtocolModalProps> = ({ isOpen, onClose, onSave, 
                 <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
                     <form id="protocol-form" onSubmit={handleSubmit} className="space-y-6">
 
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Title</label>
-                            <input
-                                type="text"
-                                required
-                                value={formData.title}
-                                onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 focus:border-transparent transition-all outline-none"
-                                placeholder="e.g., Opening Procedures, Sterilization Guide"
-                            />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Title</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={formData.title}
+                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 focus:border-transparent transition-all outline-none"
+                                    placeholder="e.g., Opening Procedures, Sterilization Guide"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Training Video URL (Optional)</label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                        <i className="fa-brands fa-youtube text-red-500"></i>
+                                    </div>
+                                    <input
+                                        type="url"
+                                        value={formData.videoUrl || ''}
+                                        onChange={e => setFormData({ ...formData, videoUrl: e.target.value })}
+                                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-medical-500 transition-all outline-none"
+                                        placeholder="YouTube or Loom Link..."
+                                    />
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Severity</label>
                                 <select
@@ -215,6 +254,103 @@ const ProtocolModal: React.FC<ProtocolModalProps> = ({ isOpen, onClose, onSave, 
                                     </div>
                                 </div>
                             )}
+                        </div>
+
+                        {/* Interactive Checklists */}
+                        <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                            <div className="flex justify-between items-center mb-4">
+                                <div>
+                                    <h3 className="text-sm font-bold text-slate-900 dark:text-white"><i className="fa-solid fa-list-check text-medical-500 mr-2"></i>Interactive Checklist</h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Add actionable checkpoints for the staff to physically tick off.</p>
+                                </div>
+                                <button type="button" onClick={addChecklist} className="px-4 py-2 text-xs font-bold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg hover:border-medical-500 hover:text-medical-600 transition-all">
+                                    <i className="fa-solid fa-plus mr-1"></i> Add Step
+                                </button>
+                            </div>
+                            
+                            <div className="space-y-3">
+                                {formData.checklists?.map((item, index) => (
+                                    <div key={item.id} className="flex items-center gap-3 bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-700">
+                                        <div className="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-black text-slate-400 flex-shrink-0">{index + 1}</div>
+                                        <input
+                                            type="text"
+                                            value={item.text}
+                                            onChange={(e) => updateChecklist(item.id, e.target.value)}
+                                            placeholder="e.g. Turn on the Sterilizer..."
+                                            className="flex-1 bg-transparent border-none outline-none text-sm font-medium text-slate-900 dark:text-white focus:ring-0"
+                                            required
+                                        />
+                                        <button type="button" onClick={() => removeChecklist(item.id)} className="w-8 h-8 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors">
+                                            <i className="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+                                ))}
+                                {!formData.checklists?.length && (
+                                    <div className="text-center py-4 bg-white/50 dark:bg-black/10 rounded-xl border border-dashed border-slate-300 dark:border-slate-600">
+                                        <span className="text-xs font-medium text-slate-400">No checklists. This will just be a standard text protocol.</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Micro Quizzes */}
+                        <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                            <div className="flex justify-between items-center mb-4">
+                                <div>
+                                    <h3 className="text-sm font-bold text-slate-900 dark:text-white"><i className="fa-solid fa-brain text-purple-500 mr-2"></i>Knowledge Check (Quiz)</h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Block the digital signature unless they correctly answer these questions.</p>
+                                </div>
+                                <button type="button" onClick={addQuiz} className="px-4 py-2 text-xs font-bold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg hover:border-purple-500 hover:text-purple-600 transition-all">
+                                    <i className="fa-solid fa-plus mr-1"></i> Add Question
+                                </button>
+                            </div>
+                            
+                            <div className="space-y-6">
+                                {formData.quizzes?.map((quiz, qIdx) => (
+                                    <div key={quiz.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm relative group">
+                                        <button type="button" onClick={() => removeQuiz(quiz.id)} className="absolute top-4 right-4 w-8 h-8 rounded-lg text-slate-400 bg-slate-50 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 transition-all">
+                                            <i className="fa-solid fa-trash"></i>
+                                        </button>
+                                        
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Question {qIdx + 1}</label>
+                                        <input
+                                            type="text"
+                                            value={quiz.question}
+                                            onChange={(e) => updateQuizQuestion(quiz.id, e.target.value)}
+                                            placeholder="e.g. What is the immediate first step during a chemical spill?"
+                                            className="w-full px-4 py-3 mb-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm font-semibold outline-none focus:ring-2 focus:ring-purple-500"
+                                            required
+                                        />
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            {quiz.options.map((opt, optIdx) => (
+                                                <div key={optIdx} className={`flex items-center gap-3 p-2 rounded-lg border ${quiz.answerIndex === optIdx ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/30'} transition-all`}>
+                                                    <input
+                                                        type="radio"
+                                                        name={`quiz-${quiz.id}`}
+                                                        checked={quiz.answerIndex === optIdx}
+                                                        onChange={() => updateQuizAnswer(quiz.id, optIdx)}
+                                                        className="w-4 h-4 text-emerald-500 focus:ring-emerald-500 border-slate-300 ml-2"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={opt}
+                                                        onChange={(e) => updateQuizOption(quiz.id, optIdx, e.target.value)}
+                                                        className="flex-1 bg-transparent border-none outline-none text-sm font-medium focus:ring-0"
+                                                        placeholder={`Option ${String.fromCharCode(65 + optIdx)}`}
+                                                        required
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                                {!formData.quizzes?.length && (
+                                    <div className="text-center py-4 bg-white/50 dark:bg-black/10 rounded-xl border border-dashed border-slate-300 dark:border-slate-600">
+                                        <span className="text-xs font-medium text-slate-400">No quizzes. Staff will just click 'Sign & Acknowledge'.</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

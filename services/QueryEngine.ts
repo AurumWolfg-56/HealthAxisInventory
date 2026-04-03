@@ -6,7 +6,7 @@
  */
 
 import { jsonChat, chat } from './LocalAIService';
-import { InventoryItem, Order, PettyCashTransaction } from '../types';
+import { InventoryItem, Order, PettyCashTransaction, Protocol } from '../types';
 import { DailyReport } from '../types/dailyReport';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -17,7 +17,7 @@ export interface QueryResult {
 }
 
 interface QueryIntent {
-  category: 'inventory' | 'orders' | 'revenue' | 'expenses' | 'general';
+  category: 'inventory' | 'orders' | 'revenue' | 'expenses' | 'protocols' | 'general';
   action: 'search' | 'count' | 'sum' | 'compare' | 'list' | 'status';
   filters: {
     itemName?: string;
@@ -33,7 +33,8 @@ function buildDataContext(
   inventory: InventoryItem[],
   orders: Order[],
   dailyReports: DailyReport[],
-  pettyCash: PettyCashTransaction[]
+  pettyCash: PettyCashTransaction[],
+  protocols: Protocol[]
 ): string {
   const parts: string[] = [];
 
@@ -139,6 +140,16 @@ function buildDataContext(
     }
   }
 
+  if (intent.category === 'protocols' || intent.category === 'general') {
+    if (protocols.length > 0) {
+      parts.push(`\nCLINIC PROTOCOLS & RULES (${protocols.length} total):`);
+      protocols.forEach(p => {
+        parts.push(`- Protocol Area: ${p.area} | Severity: ${p.severity}`);
+        parts.push(`  Content/Rules: ${p.content}`);
+      });
+    }
+  }
+
   return parts.join('\n');
 }
 
@@ -149,18 +160,19 @@ export async function queryClinicData(
   inventory: InventoryItem[],
   orders: Order[],
   dailyReports: DailyReport[],
-  pettyCash: PettyCashTransaction[]
+  pettyCash: PettyCashTransaction[],
+  protocols: Protocol[]
 ): Promise<QueryResult> {
   console.log(`[QueryEngine] Processing: "${question}"`);
 
   // Step 1: Classify intent
   const intent = await jsonChat<QueryIntent>(
     `Classify this clinic data question. Return JSON with:
-- category: "inventory" | "orders" | "revenue" | "expenses" | "general"
+- category: "inventory" | "orders" | "revenue" | "expenses" | "protocols" | "general"
 - action: "search" | "count" | "sum" | "compare" | "list" | "status"
 - filters: { itemName?, category?, dateRange?, vendor? }
 
-The clinic manages: medical inventory, purchase orders, daily revenue reports, petty cash.`,
+The clinic manages: medical inventory, purchase orders, daily revenue reports, petty cash, and clinic protocols/rules/SOPs.`,
     question,
     { model: 'fast', maxTokens: 256 }
   );
@@ -168,7 +180,7 @@ The clinic manages: medical inventory, purchase orders, daily revenue reports, p
   console.log('[QueryEngine] Intent:', intent);
 
   // Step 2: Gather relevant data
-  const dataContext = buildDataContext(intent, inventory, orders, dailyReports, pettyCash);
+  const dataContext = buildDataContext(intent, inventory, orders, dailyReports, pettyCash, protocols);
 
   // Step 3: Generate human-readable answer
   const answer = await chat(
