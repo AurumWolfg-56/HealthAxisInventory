@@ -227,37 +227,7 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
         };
     }, [filteredProtocols, isProtocolFullyAcknowledged]);
 
-    // Manager Matrix
-    const staffCompliancePending = useMemo(() => {
-        if (!isManager || loadingAcks) return [];
-        
-        const pending: { user: User, protocol: Protocol }[] = [];
-        const requiredProtocols = protocols.filter(p => p.requiresAcknowledgment);
-        
-        users.forEach(u => {
-            // Only evaluate valid staff users with a complete profile (username)
-            if (!u.username || u.username.trim() === '') return;
 
-            // Skip owners/managers from strict compliance list usually, but let's include if target is ALL_STAFF
-            if (u.role === 'OWNER' || u.role === 'MANAGER') return; // Operations focus
-            
-            requiredProtocols.forEach(p => {
-                let isInAudience = true;
-                if (p.targetRole && p.targetRole !== 'ALL_STAFF') {
-                    if (p.targetRole === 'MEDICAL_ONLY' && u.role !== 'MA' && u.role !== 'DOCTOR') isInAudience = false;
-                    if (p.targetRole === 'FRONT_DESK_ONLY' && u.role !== 'FRONT_DESK') isInAudience = false;
-                }
-                
-                if (isInAudience) {
-                    const hasAck = allAcknowledgments.some(a => a.protocolId === p.id && a.userId === u.id);
-                    if (!hasAck) {
-                        pending.push({ user: u, protocol: p });
-                    }
-                }
-            });
-        });
-        return pending;
-    }, [users, protocols, allAcknowledgments, isManager, loadingAcks]);
 
     const handleSaveProtocol = async (data: Partial<Protocol>) => {
         try {
@@ -732,35 +702,7 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
                     </div>
                 </div>
 
-                {/* Manager Oversight Matrix */}
-                {isManager && staffCompliancePending.length > 0 && (
-                    <div className="bg-white dark:bg-[#1a2235] border border-slate-200 dark:border-slate-700 p-6 rounded-3xl shadow-sm mb-8 animate-fade-in">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 rounded-xl flex items-center justify-center font-bold">
-                                <i className="fa-solid fa-users-viewfinder"></i>
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Manager Oversight</h3>
-                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Staff missing required signatures</p>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {staffCompliancePending.map((item, idx) => (
-                                <div key={idx} className="flex flex-col p-3 rounded-xl bg-slate-50 border border-slate-200 dark:bg-slate-900/50 dark:border-slate-800">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0">
-                                            {item.user.username ? item.user.username.charAt(0).toUpperCase() : 'U'}
-                                        </div>
-                                        <div className="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">{item.user.username || 'Unknown User'}</div>
-                                    </div>
-                                    <div className="pl-8 text-xs text-slate-500 dark:text-slate-400 truncate">
-                                        <i className="fa-solid fa-file-signature mr-1 text-orange-400"></i> {item.protocol.title}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+
             </div>
 
             {/* Smart Search & Filters */}
