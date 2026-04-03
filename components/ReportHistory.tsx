@@ -5,6 +5,7 @@ import { DailyReport } from '../types/dailyReport';
 import { UserRole, Permission, User } from '../types';
 import { formatDate, formatDateForFilename } from '../utils/dateUtils';
 import { DailyReportService } from '../services/DailyReportService';
+import { UserService } from '../services/UserService';
 
 interface ReportHistoryProps {
     reports: DailyReport[];
@@ -23,7 +24,8 @@ const AggregateReportDocument: React.FC<{
     period: { start: Date; end: Date; label: string };
     reportCount: number;
     generatedBy: string;
-}> = ({ data, period, reportCount, generatedBy }) => {
+    usersMap: Record<string, string>;
+}> = ({ data, period, reportCount, generatedBy, usersMap }) => {
 
     const formatCurrency = (val: number) => `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -87,9 +89,9 @@ const AggregateReportDocument: React.FC<{
                 <div>Date: <span className="text-slate-900 ml-2">{formatDate(new Date())}</span></div>
             </div>
 
-            <div className="p-12">
+            <div className="p-8 pb-4">
                 {/* Executive Summary Cards */}
-                <div className="flex justify-between gap-4 mb-10">
+                <div className="flex justify-between gap-4 mb-6">
                     <div className="w-[24%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
                         <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total Revenue</div>
                         <div className="text-2xl font-black text-slate-900 mt-1">{formatCurrency(tR)}</div>
@@ -109,8 +111,8 @@ const AggregateReportDocument: React.FC<{
                 </div>
 
                 {/* Section 1: Financials */}
-                <div className="mb-10">
-                    <div className="flex items-center gap-3 border-b-2 border-slate-900 pb-2 mb-4">
+                <div className="mb-6">
+                    <div className="flex items-center gap-3 border-b-2 border-slate-900 pb-2 mb-3">
                         <div className="w-6 h-6 bg-slate-900 text-white flex items-center justify-center text-xs font-bold rounded" style={{ backgroundColor: '#0f172a', color: 'white' }}>1</div>
                         <h3 className="text-sm font-bold uppercase tracking-wide text-slate-900">Financial Totals</h3>
                     </div>
@@ -170,10 +172,10 @@ const AggregateReportDocument: React.FC<{
                 </div>
 
                 {/* Row 2: Demographics & Providers */}
-                <div className="flex justify-between gap-10 mb-8">
+                <div className="flex justify-between gap-10 mb-6">
                     {/* Payers */}
                     <div className="w-[48%]">
-                        <div className="flex items-center gap-3 border-b-2 border-slate-900 pb-2 mb-4">
+                        <div className="flex items-center gap-3 border-b-2 border-slate-900 pb-2 mb-3">
                             <div className="w-6 h-6 bg-slate-900 text-white flex items-center justify-center text-xs font-bold rounded" style={{ backgroundColor: '#0f172a', color: 'white' }}>2</div>
                             <h3 className="text-sm font-bold uppercase tracking-wide text-slate-900">Payer Mix</h3>
                         </div>
@@ -192,7 +194,7 @@ const AggregateReportDocument: React.FC<{
 
                     {/* Providers */}
                     <div className="w-[48%]">
-                        <div className="flex items-center gap-3 border-b-2 border-slate-900 pb-2 mb-4">
+                        <div className="flex items-center gap-3 border-b-2 border-slate-900 pb-2 mb-3">
                             <div className="w-6 h-6 bg-slate-900 text-white flex items-center justify-center text-xs font-bold rounded" style={{ backgroundColor: '#0f172a', color: 'white' }}>3</div>
                             <h3 className="text-sm font-bold uppercase tracking-wide text-slate-900">Provider Volume</h3>
                         </div>
@@ -203,7 +205,9 @@ const AggregateReportDocument: React.FC<{
                                 ) : (
                                     Object.entries(data.operational.providerVisits).sort((a,b) => (b[1] as number) - (a[1] as number)).map(([k, v]) => (
                                         <tr key={k} className="border-b border-slate-100 border-dashed">
-                                            <td className="py-2 text-slate-800 font-bold pl-1">{k}</td>
+                                            <td className="py-2 text-slate-800 font-bold pl-1 truncate max-w-[120px]" title={usersMap[k] || k}>
+                                                {usersMap[k] || k}
+                                            </td>
                                             <td className="py-2 text-right">{renderBar(v as number, tP, '#8b5cf6')}</td>
                                             <td className="py-2 text-right font-bold text-slate-900 w-12">{v as number}</td>
                                         </tr>
@@ -216,7 +220,7 @@ const AggregateReportDocument: React.FC<{
 
                 {/* Row 3: Advanced KPIs */}
                 <div>
-                    <div className="flex items-center gap-3 border-b-2 border-slate-900 pb-2 mb-4">
+                    <div className="flex items-center gap-3 border-b-2 border-slate-900 pb-2 mb-3">
                         <div className="w-6 h-6 bg-slate-900 text-white flex items-center justify-center text-xs font-bold rounded" style={{ backgroundColor: '#0f172a', color: 'white' }}>4</div>
                         <h3 className="text-sm font-bold uppercase tracking-wide text-slate-900">Operational Benchmarks</h3>
                     </div>
@@ -280,6 +284,16 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ reports, user, onEditRepo
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const aggregateRef = useRef<HTMLDivElement>(null);
+    const [usersMap, setUsersMap] = useState<Record<string, string>>({});
+
+    // Fetch users for mapping UUIDs to Names
+    React.useEffect(() => {
+        UserService.getUsers().then(users => {
+            const m: Record<string, string> = {};
+            users.forEach(u => m[u.id] = u.full_name);
+            setUsersMap(m);
+        }).catch(err => console.error('[ReportHistory] Failed to fetch users map:', err));
+    }, []);
 
     // Filtering Logic
     const { filteredReports, range } = useMemo(() => {
@@ -563,6 +577,7 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ reports, user, onEditRepo
                             period={range}
                             reportCount={filteredReports.length}
                             generatedBy={user.username}
+                            usersMap={usersMap}
                         />
                     </div>
                 </div>,
