@@ -631,8 +631,8 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700 pb-2">Methods (Drawer)</div>
                             {Object.entries(state.financials.methods).map(([key, val]) => (
                                 <div key={key} className="flex justify-between items-center">
-                                    <span className="capitalize font-medium text-slate-700 dark:text-slate-300">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                                    <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 rounded-lg pl-3 pr-1 py-1">
+                                    <span className="capitalize font-medium text-sm text-slate-700 dark:text-slate-300">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                    <div className="flex items-center gap-1 sm:gap-2 bg-slate-50 dark:bg-slate-800 rounded-lg pl-2 sm:pl-3 pr-1 py-1">
                                         <span className="text-slate-400 text-xs">$</span>
                                         <input
                                             type="number"
@@ -640,7 +640,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                                             step="0.01"
                                             value={val || ''}
                                             onChange={e => dispatch({ type: 'SET_FIN_METHOD', payload: { key: key as any, value: parseFloat(e.target.value) || 0 } })}
-                                            className="bg-transparent w-24 text-right font-mono font-bold outline-none text-slate-900 dark:text-white"
+                                            className="bg-transparent w-20 sm:w-24 text-right font-mono font-bold outline-none text-slate-900 dark:text-white"
                                             placeholder="0.00"
                                         />
                                         <button
@@ -663,8 +663,8 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700 pb-2">Types (System)</div>
                             {Object.entries(state.financials.types).map(([key, val]) => (
                                 <div key={key} className="flex justify-between items-center">
-                                    <span className="capitalize font-medium text-slate-700 dark:text-slate-300">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                                    <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 rounded-lg pl-3 pr-1 py-1">
+                                    <span className="capitalize font-medium text-sm text-slate-700 dark:text-slate-300">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                    <div className="flex items-center gap-1 sm:gap-2 bg-slate-50 dark:bg-slate-800 rounded-lg pl-2 sm:pl-3 pr-1 py-1">
                                         <span className="text-slate-400 text-xs">$</span>
                                         <input
                                             type="number"
@@ -672,7 +672,7 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                                             step="0.01"
                                             value={val || ''}
                                             onChange={e => dispatch({ type: 'SET_FIN_TYPE', payload: { key: key as any, value: parseFloat(e.target.value) || 0 } })}
-                                            className="bg-transparent w-24 text-right font-mono font-bold outline-none text-slate-900 dark:text-white"
+                                            className="bg-transparent w-20 sm:w-24 text-right font-mono font-bold outline-none text-slate-900 dark:text-white"
                                             placeholder="0.00"
                                         />
                                         <button
@@ -715,8 +715,8 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700 pb-2">Insurance Breakdown</div>
                             <div className="grid grid-cols-2 gap-3">
                                 {Object.entries(state.insurances).map(([key, val]) => (
-                                    <div key={key} className="bg-slate-50 dark:bg-slate-800 rounded-xl p-2.5">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">{key.replace('_', ' ').replace('Comp', ' Comp')}</label>
+                                    <div key={key} className="bg-slate-50 dark:bg-slate-800 rounded-xl p-2 sm:p-2.5">
+                                        <label className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase block mb-1 truncate" title={key.replace('_', ' ').replace('Comp', ' Comp')}>{key.replace('_', ' ').replace('Comp', ' Comp')}</label>
                                         <input
                                             type="number"
                                             min="0"

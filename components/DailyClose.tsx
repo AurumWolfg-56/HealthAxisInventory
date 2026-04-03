@@ -121,15 +121,15 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
                         <div className="space-y-3">
                             <label className="flex justify-between items-center text-sm font-bold text-slate-700 dark:text-slate-300">
                                 <span>Cash</span>
-                                <input type="number" value={finMethods.cash || ''} onChange={e => setFinMethods({ ...finMethods, cash: parseFloat(e.target.value) || 0 })} className="w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
+                                <input type="number" value={finMethods.cash || ''} onChange={e => setFinMethods({ ...finMethods, cash: parseFloat(e.target.value) || 0 })} className="w-20 sm:w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
                             </label>
                             <label className="flex justify-between items-center text-sm font-bold text-slate-700 dark:text-slate-300">
-                                <span>Credit Cards</span>
-                                <input type="number" value={finMethods.cc || ''} onChange={e => setFinMethods({ ...finMethods, cc: parseFloat(e.target.value) || 0 })} className="w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
+                                <span className="truncate pr-2">Credit Cards</span>
+                                <input type="number" value={finMethods.cc || ''} onChange={e => setFinMethods({ ...finMethods, cc: parseFloat(e.target.value) || 0 })} className="w-20 sm:w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
                             </label>
                             <label className="flex justify-between items-center text-sm font-bold text-slate-700 dark:text-slate-300">
                                 <span>Checks</span>
-                                <input type="number" value={finMethods.check || ''} onChange={e => setFinMethods({ ...finMethods, check: parseFloat(e.target.value) || 0 })} className="w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
+                                <input type="number" value={finMethods.check || ''} onChange={e => setFinMethods({ ...finMethods, check: parseFloat(e.target.value) || 0 })} className="w-20 sm:w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
                             </label>
                         </div>
                         <div className="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between font-bold text-slate-900 dark:text-white">
@@ -144,15 +144,15 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
                         <div className="space-y-3">
                             <label className="flex justify-between items-center text-sm font-bold text-slate-700 dark:text-slate-300">
                                 <span>Bill Pay</span>
-                                <input type="number" value={finTypes.billPay || ''} onChange={e => setFinTypes({ ...finTypes, billPay: parseFloat(e.target.value) || 0 })} className="w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
+                                <input type="number" value={finTypes.billPay || ''} onChange={e => setFinTypes({ ...finTypes, billPay: parseFloat(e.target.value) || 0 })} className="w-20 sm:w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
                             </label>
                             <label className="flex justify-between items-center text-sm font-bold text-slate-700 dark:text-slate-300">
                                 <span>Copay</span>
-                                <input type="number" value={finTypes.copay || ''} onChange={e => setFinTypes({ ...finTypes, copay: parseFloat(e.target.value) || 0 })} className="w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
+                                <input type="number" value={finTypes.copay || ''} onChange={e => setFinTypes({ ...finTypes, copay: parseFloat(e.target.value) || 0 })} className="w-20 sm:w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
                             </label>
                             <label className="flex justify-between items-center text-sm font-bold text-slate-700 dark:text-slate-300">
                                 <span>Self Pay</span>
-                                <input type="number" value={finTypes.selfPay || ''} onChange={e => setFinTypes({ ...finTypes, selfPay: parseFloat(e.target.value) || 0 })} className="w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
+                                <input type="number" value={finTypes.selfPay || ''} onChange={e => setFinTypes({ ...finTypes, selfPay: parseFloat(e.target.value) || 0 })} className="w-20 sm:w-32 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-right font-mono focus:ring-2 focus:ring-medical-500 outline-none" placeholder="0.00" />
                             </label>
                         </div>
                         <div className="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between font-bold text-slate-900 dark:text-white">
@@ -179,8 +179,8 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Insurance Class (Counts)</h3>
                         <div className="grid grid-cols-2 gap-2 sm:gap-4">
                             {['medicaid', 'bcbs_il', 'meridian', 'commercial', 'medicare', 'workers_comp'].map((key) => (
-                                <div key={key} className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 flex flex-col">
-                                    <span className="text-[10px] font-bold uppercase text-slate-500 mb-1">{key.replace('_', ' ')}</span>
+                                <div key={key} className="bg-slate-50 dark:bg-slate-800 rounded-xl p-2 sm:p-3 flex flex-col">
+                                    <span className="text-[9px] sm:text-[10px] font-bold uppercase text-slate-500 mb-1 truncate" title={key.replace('_', ' ')}>{key.replace('_', ' ')}</span>
                                     <input
                                         type="number"
                                         min="0"

@@ -373,19 +373,21 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ reports, user, onEditRepo
                 )}
 
                 {/* Aggregates & Action */}
-                <div className="flex gap-8 border-l border-slate-200 dark:border-slate-700 pl-8 items-center">
-                    <div>
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Revenue</div>
-                        <div className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
-                    </div>
-                    <div className="mr-4">
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Patients</div>
-                        <div className="text-2xl font-bold tabular-nums text-medical-600 dark:text-medical-400">{totalPatients}</div>
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 sm:border-l border-slate-200 dark:border-slate-700 sm:pl-8 items-start sm:items-center w-full xl:w-auto mt-4 xl:mt-0 pt-4 sm:pt-0 border-t sm:border-t-0">
+                    <div className="flex gap-8 w-full sm:w-auto justify-between sm:justify-start">
+                        <div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Revenue</div>
+                            <div className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                        </div>
+                        <div className="mr-4">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Patients</div>
+                            <div className="text-2xl font-bold tabular-nums text-medical-600 dark:text-medical-400">{totalPatients}</div>
+                        </div>
                     </div>
 
                     <button
                         onClick={handleGenerateSummary}
-                        className="h-11 px-5 bg-medical-600 hover:bg-medical-500 text-white rounded-xl font-semibold text-sm shadow-md shadow-medical-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5 whitespace-nowrap flex-shrink-0"
+                        className="w-full sm:w-auto h-11 px-5 bg-medical-600 hover:bg-medical-500 text-white rounded-xl font-semibold text-sm shadow-md shadow-medical-500/20 flex items-center justify-center sm:justify-start gap-2 transition-all hover:-translate-y-0.5 whitespace-nowrap flex-shrink-0"
                         title="Generate summarized PDF for selected period"
                     >
                         <i className="fa-solid fa-file-invoice-dollar"></i> Generate Period Summary
@@ -396,7 +398,7 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ reports, user, onEditRepo
             {/* Data Table */}
             <div className="glass-panel rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full text-left whitespace-nowrap">
                         <thead className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                             <tr>
                                 <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Date / ID</th>
