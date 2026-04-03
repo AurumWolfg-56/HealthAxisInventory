@@ -746,9 +746,9 @@ const Protocols: React.FC<ProtocolsProps> = ({ user, users = [], t }) => {
                                 <div key={idx} className="flex flex-col p-3 rounded-xl bg-slate-50 border border-slate-200 dark:bg-slate-900/50 dark:border-slate-800">
                                     <div className="flex items-center gap-2 mb-1">
                                         <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0">
-                                            {item.user.username.charAt(0).toUpperCase()}
+                                            {item.user.username ? item.user.username.charAt(0).toUpperCase() : 'U'}
                                         </div>
-                                        <div className="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">{item.user.username}</div>
+                                        <div className="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">{item.user.username || 'Unknown User'}</div>
                                     </div>
                                     <div className="pl-8 text-xs text-slate-500 dark:text-slate-400 truncate">
                                         <i className="fa-solid fa-file-signature mr-1 text-orange-400"></i> {item.protocol.title}
