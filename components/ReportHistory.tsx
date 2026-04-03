@@ -35,7 +35,6 @@ const AggregateReportDocument: React.FC<{
     const tP = data.totals.patients || 0;
     const avgPerDay = tP > 0 ? (tP / totalDays) : 0;
     const avgPerWeek = avgPerDay * 7;
-    const arpp = tP > 0 ? (tR / tP) : 0;
     
     // New vs Est Ratio
     const newPts = data.stats.newPts || 0;
@@ -67,7 +66,7 @@ const AggregateReportDocument: React.FC<{
             }}
         >
             {/* Header Strip */}
-            <div className="bg-slate-800 text-white px-12 py-8 flex justify-between items-center print-color-adjust" style={{ backgroundColor: '#1e293b', color: 'white', WebkitPrintColorAdjust: 'exact' }}>
+            <div className="bg-slate-800 text-white px-12 py-6 flex justify-between items-center print-color-adjust" style={{ backgroundColor: '#1e293b', color: 'white', WebkitPrintColorAdjust: 'exact' }}>
                 <div>
                     <h1 className="text-3xl font-black tracking-tight uppercase m-0 leading-none">
                         Health<span className="text-emerald-400" style={{ color: '#34d399' }}>Axis</span> Analytics
@@ -89,24 +88,20 @@ const AggregateReportDocument: React.FC<{
                 <div>Date: <span className="text-slate-900 ml-2">{formatDate(new Date())}</span></div>
             </div>
 
-            <div className="p-8 pb-4">
+            <div className="p-6 pb-2">
                 {/* Executive Summary Cards */}
-                <div className="flex justify-between gap-4 mb-6">
-                    <div className="w-[24%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                <div className="flex justify-between gap-6 mb-6">
+                    <div className="w-[32%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
                         <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total Revenue</div>
-                        <div className="text-2xl font-black text-slate-900 mt-1">{formatCurrency(tR)}</div>
+                        <div className="text-3xl font-black text-slate-900 mt-1">{formatCurrency(tR)}</div>
                     </div>
-                    <div className="w-[23%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    <div className="w-[32%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
                         <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total Patients</div>
-                        <div className="text-2xl font-black text-slate-900 mt-1">{tP}</div>
+                        <div className="text-3xl font-black text-slate-900 mt-1">{tP}</div>
                     </div>
-                    <div className="w-[25%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Rev / Patient</div>
-                        <div className="text-2xl font-black text-emerald-600 mt-1" style={{ color: '#059669' }}>{formatCurrency(arpp)}</div>
-                    </div>
-                    <div className="w-[24%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    <div className="w-[32%] bg-slate-50 border border-slate-200 rounded-lg p-4" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
                         <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Avg Daily Volume</div>
-                        <div className="text-2xl font-black text-medical-600 mt-1" style={{ color: '#0ea5e9' }}>{avgPerDay.toFixed(1)} <span className="text-xs font-bold text-slate-400">/day</span></div>
+                        <div className="text-3xl font-black text-medical-600 mt-1" style={{ color: '#0ea5e9' }}>{avgPerDay.toFixed(1)} <span className="text-sm font-bold text-slate-400">/day</span></div>
                     </div>
                 </div>
 
@@ -205,8 +200,8 @@ const AggregateReportDocument: React.FC<{
                                 ) : (
                                     Object.entries(data.operational.providerVisits).sort((a,b) => (b[1] as number) - (a[1] as number)).map(([k, v]) => (
                                         <tr key={k} className="border-b border-slate-100 border-dashed">
-                                            <td className="py-2 text-slate-800 font-bold pl-1 truncate max-w-[120px]" title={usersMap[k] || k}>
-                                                {usersMap[k] || k}
+                                            <td className="py-2 text-slate-800 font-bold pl-1" title={usersMap[k] || k}>
+                                                <div className="truncate w-32">{usersMap[k] || `Inactive (${k.substring(0, 4)})`}</div>
                                             </td>
                                             <td className="py-2 text-right">{renderBar(v as number, tP, '#8b5cf6')}</td>
                                             <td className="py-2 text-right font-bold text-slate-900 w-12">{v as number}</td>
