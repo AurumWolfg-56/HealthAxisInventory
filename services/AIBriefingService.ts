@@ -155,18 +155,17 @@ export async function generateBriefing(
 
   const { prompt, dataPoints } = buildDataSnapshot(inventory, dailyReports, orders, pettyCash);
 
-  const systemPrompt = `You are the AI clinic manager assistant for Norvexis, an urgent care / primary care clinic management system.
+  const systemPrompt = `You are the AI clinic manager assistant for Norvexis, an urgent care / primary care clinic.
 
-Generate a concise executive briefing (3-5 bullet points) based on the clinic data. Be actionable and direct.
+Generate a high-impact executive briefing based on the provided data snapshot.
 
 Rules:
-- Start each point with an emoji icon (⚠️ for alerts, 📊 for stats, ✅ for good news, 💰 for financial, 📦 for inventory)
-- Keep each bullet to 1-2 sentences max
-- Highlight the MOST IMPORTANT items first (expired items, critical low stock, revenue anomalies)
-- If everything looks good, say so positively
-- Use dollar amounts and specific numbers
-- Language: English
-- Be professional but conversational — like a trusted manager reporting to the owner`;
+- Do NOT just repeat the data (they can already see the numbers). Provide MANAGEMENT INSIGHTS.
+- E.g. instead of saying "70 items are low stock", say "Critical supply chain bottleneck: 70 items require immediate reordering to prevent clinical delays."
+- Limit to 3 short, sharp bullet points.
+- ALWAYS start each point with an emoji (⚠️, 💡, 📈, 📉, 🚨, ✅).
+- Tone: Professional, authoritative, and proactive.
+- Language: English.`;
 
   try {
     // Fast connection check: if AI gateway is unreachable, skip LLM call

@@ -26,8 +26,8 @@ const AIBriefingCard: React.FC<AIBriefingProps> = ({
     setLoading(true);
     setError(null);
     try {
-      // Race the actual briefing against a 6-second timeout
-      const TIMEOUT_MS = 6000;
+      // Race the actual briefing against a 15-second timeout (accommodates local AI cold start)
+      const TIMEOUT_MS = 15000;
       const result = await Promise.race([
         generateBriefing(inventory, dailyReports, orders, pettyCash, forceRefresh),
         new Promise<never>((_, reject) =>
@@ -115,18 +115,11 @@ const AIBriefingCard: React.FC<AIBriefingProps> = ({
           >
             <i className={`fa-solid fa-arrows-rotate text-xs ${loading ? 'animate-spin' : ''}`} />
           </button>
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all"
-          >
-            <i className={`fa-solid fa-chevron-${isCollapsed ? 'down' : 'up'} text-xs`} />
-          </button>
         </div>
       </div>
 
       {/* Content */}
-      {!isCollapsed && (
-        <div className="px-5 pb-4">
+      <div className="px-5 pb-5">
           {/* Loading State */}
           {loading && !briefing && (
             <div className="flex items-center gap-3 py-6">
@@ -156,47 +149,59 @@ const AIBriefingCard: React.FC<AIBriefingProps> = ({
 
           {/* Briefing Content */}
           {briefing && (
-            <>
-              {/* Summary — render each line as a bullet */}
-              <div className="space-y-2 mt-1">
-                {briefing.summary.split('\n').filter(line => line.trim()).map((line, i) => (
-                  <p key={i} className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                    {line.replace(/^[-•*]\s*/, '')}
-                  </p>
-                ))}
+            <div className="animate-fade-in mt-2">
+              {/* Insight Cards */}
+              <div className="space-y-3">
+                {briefing.summary.split('\n').filter(line => line.trim()).map((line, i) => {
+                  // Extract emoji if present to style it distinctly
+                  const match = line.match(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic}|\u200d)+/gu);
+                  const emoji = match ? match[0] : '';
+                  const content = emoji ? line.replace(emoji, '').trim().replace(/^[-•*]\s*/, '') : line.replace(/^[-•*]\s*/, '');
+                  
+                  return (
+                    <div key={i} className="flex gap-3 p-3.5 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md rounded-xl border border-white/40 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-shadow group">
+                      {emoji && (
+                        <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center flex-shrink-0 shadow-sm text-lg group-hover:scale-110 transition-transform">
+                          {emoji}
+                        </div>
+                      )}
+                      <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed font-medium mt-0.5">
+                        {content}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* Quick Stats Bar */}
-              <div className="grid grid-cols-4 gap-2 mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700/40">
-                <div className="text-center">
-                  <div className={`text-lg font-bold ${briefing.dataPoints.lowStockItems > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
-                    {briefing.dataPoints.lowStockItems}
+              {/* Quick Stats Pills */}
+              <div className="flex flex-wrap gap-2 mt-5 pt-4 border-t border-slate-200/60 dark:border-slate-700/40">
+                {briefing.dataPoints.lowStockItems > 0 && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100/50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-lg text-xs font-bold border border-amber-200/50 dark:border-amber-500/20">
+                    <i className="fa-solid fa-triangle-exclamation"></i>
+                    {briefing.dataPoints.lowStockItems} Low Stock
                   </div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Low Stock</div>
+                )}
+                
+                {briefing.dataPoints.expiringItems > 0 && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100/50 dark:bg-red-500/10 text-red-700 dark:text-red-400 rounded-lg text-xs font-bold border border-red-200/50 dark:border-red-500/20">
+                    <i className="fa-solid fa-clock"></i>
+                    {briefing.dataPoints.expiringItems} Expiring
+                  </div>
+                )}
+
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100/50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-bold border border-emerald-200/50 dark:border-emerald-500/20">
+                  <i className="fa-solid fa-sack-dollar"></i>
+                  ${briefing.dataPoints.todayRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })} Today
                 </div>
-                <div className="text-center">
-                  <div className={`text-lg font-bold ${briefing.dataPoints.expiringItems > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                    {briefing.dataPoints.expiringItems}
-                  </div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Expiring</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                    ${briefing.dataPoints.todayRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Revenue</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-blue-500">
-                    {briefing.dataPoints.recentOrders}
-                  </div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Orders</div>
+
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100/50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 rounded-lg text-xs font-bold border border-blue-200/50 dark:border-blue-500/20">
+                  <i className="fa-solid fa-box-open"></i>
+                  {briefing.dataPoints.recentOrders} Recent Orders
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
-      )}
 
       {/* Powered by local AI badge */}
       <div className="flex items-center justify-center gap-1.5 py-2 bg-emerald-50/50 dark:bg-emerald-950/20 border-t border-emerald-100/50 dark:border-emerald-900/20">
