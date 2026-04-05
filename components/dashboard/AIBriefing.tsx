@@ -43,6 +43,7 @@ const AIBriefingCard: React.FC<AIBriefingProps> = ({
         if (!i.expiryDate) return false;
         const days = Math.ceil((new Date(i.expiryDate).getTime() - Date.now()) / (1000*60*60*24));
         return days >= 0 && days <= 14;
+      }).length;
       setBriefing({
         summary: `📊 Your clinic has ${inventory.length} items. ${lowStockCount > 0 ? `⚠️ ${lowStockCount} items are low on stock!` : '✅ All stock levels healthy.'} ${expiringCount > 0 ? `⏰ ${expiringCount} items expiring soon.` : ''}`,
         generatedAt: new Date().toISOString(),
