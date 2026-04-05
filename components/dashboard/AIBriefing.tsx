@@ -43,15 +43,14 @@ const AIBriefingCard: React.FC<AIBriefingProps> = ({
         if (!i.expiryDate) return false;
         const days = Math.ceil((new Date(i.expiryDate).getTime() - Date.now()) / (1000*60*60*24));
         return days >= 0 && days <= 14;
-      }).length;
       setBriefing({
-        summary: `📊 Your clinic has ${inventory.length} items tracked. ${lowStockCount > 0 ? `⚠️ ${lowStockCount} items are low on stock.` : '✅ All stock levels are healthy.'} ${expiringCount > 0 ? `⚠️ ${expiringCount} items expiring within 14 days.` : ''}`,
+        summary: `📊 Your clinic has ${inventory.length} items. ${lowStockCount > 0 ? `⚠️ ${lowStockCount} items are low on stock!` : '✅ All stock levels healthy.'} ${expiringCount > 0 ? `⏰ ${expiringCount} items expiring soon.` : ''}`,
         generatedAt: new Date().toISOString(),
         dataPoints: {
           expiringItems: expiringCount,
           lowStockItems: lowStockCount,
-          todayRevenue: 0,
-          recentOrders: 0,
+          totalRevenue7d: 0,
+          pendingOrders: 0,
         },
       });
     } finally {
@@ -191,12 +190,12 @@ const AIBriefingCard: React.FC<AIBriefingProps> = ({
 
                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100/50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-bold border border-emerald-200/50 dark:border-emerald-500/20">
                   <i className="fa-solid fa-sack-dollar"></i>
-                  ${briefing.dataPoints.todayRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })} Today
+                  ${briefing.dataPoints.totalRevenue7d.toLocaleString(undefined, { maximumFractionDigits: 0 })} Weekly
                 </div>
 
                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100/50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 rounded-lg text-xs font-bold border border-blue-200/50 dark:border-blue-500/20">
                   <i className="fa-solid fa-box-open"></i>
-                  {briefing.dataPoints.recentOrders} Recent Orders
+                  {briefing.dataPoints.pendingOrders} Pending Orders
                 </div>
               </div>
             </div>

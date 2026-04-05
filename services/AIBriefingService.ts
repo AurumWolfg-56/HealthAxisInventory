@@ -15,13 +15,13 @@ export interface AIBriefing {
   dataPoints: {
     expiringItems: number;
     lowStockItems: number;
-    todayRevenue: number;
-    recentOrders: number;
+    totalRevenue7d: number;
+    pendingOrders: number;
   };
 }
 
 // ─── Cache ──────────────────────────────────────────────────────────────────
-const CACHE_KEY = 'norvexis_ai_briefing';
+const CACHE_KEY = 'norvexis_ai_briefing_v2'; // Changed to _v2 to invalidate old cached fallback prompts
 const CACHE_DURATION_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 function getCachedBriefing(): AIBriefing | null {
@@ -85,12 +85,10 @@ function buildDataSnapshot(
   const avgRevenue = recentReports.length > 0
     ? recentReports.reduce((sum, r) => sum + (r.totals?.revenue || 0), 0) / recentReports.length
     : 0;
+  const totalRevenue7d = recentReports.reduce((sum, r) => sum + (r.totals?.revenue || 0), 0);
 
-  // ── Recent orders (last 7 days)
-  const recentOrders = orders.filter(o => {
-    const oDate = new Date(o.orderDate || '');
-    return (now.getTime() - oDate.getTime()) < 7 * 24 * 60 * 60 * 1000;
-  });
+  // ── Pending orders
+  const pendingOrders = orders.filter(o => o.status === 'PENDING');
 
   // ── Petty cash (last 7 days)
   const recentPettyCash = pettyCash.filter(t => {
@@ -116,8 +114,7 @@ REVENUE (last 7 reports):
 - Trend: ${recentReports.slice(0, 3).map(r => `$${(r.totals?.revenue || 0).toFixed(0)}`).join(' → ')}
 
 ORDERS:
-- ${recentOrders.length} orders in last 7 days
-- Pending: ${recentOrders.filter(o => o.status === 'PENDING').length}
+- ${pendingOrders.length} orders currently PENDING action
 
 PETTY CASH (last 7 days):
 - ${recentPettyCash.length} transactions totaling $${pettyCashTotal.toFixed(2)}`;
@@ -127,8 +124,8 @@ PETTY CASH (last 7 days):
     dataPoints: {
       expiringItems: expiringItems.length,
       lowStockItems: lowStock.length,
-      todayRevenue,
-      recentOrders: recentOrders.length,
+      totalRevenue7d,
+      pendingOrders: pendingOrders.length,
     }
   };
 }
@@ -173,7 +170,7 @@ Rules:
     if (!connected) {
       console.log('[AIBriefing] ⏭️ AI gateway unreachable — returning data-only briefing');
       const fallback: AIBriefing = {
-        summary: `📊 Your clinic has ${inventory.length} items tracked. ${dataPoints.lowStockItems > 0 ? `⚠️ ${dataPoints.lowStockItems} items are low on stock.` : '✅ All stock levels are healthy.'} ${dataPoints.expiringItems > 0 ? `⚠️ ${dataPoints.expiringItems} items expiring within 14 days.` : ''}`,
+        summary: `📊 Your clinic has ${inventory.length} items. ${dataPoints.lowStockItems > 0 ? `⚠️ ${dataPoints.lowStockItems} items are low on stock!` : '✅ All stock levels healthy.'} ${dataPoints.pendingOrders > 0 ? `📦 You have ${dataPoints.pendingOrders} pending orders.` : ''} 💰 Weekly Revenue: $${dataPoints.totalRevenue7d.toFixed(0)}`,
         generatedAt: new Date().toISOString(),
         dataPoints,
       };
@@ -200,7 +197,7 @@ Rules:
     console.error('[AIBriefing] ❌ Generation failed:', error);
     // Return a fallback briefing with just the data points
     return {
-      summary: `📊 Your clinic has ${inventory.length} items tracked. ${dataPoints.lowStockItems > 0 ? `⚠️ ${dataPoints.lowStockItems} items are low on stock.` : '✅ All stock levels are healthy.'} ${dataPoints.expiringItems > 0 ? `⚠️ ${dataPoints.expiringItems} items expiring within 14 days.` : ''}`,
+      summary: `📊 Your clinic has ${inventory.length} items. ${dataPoints.lowStockItems > 0 ? `⚠️ ${dataPoints.lowStockItems} items are low on stock!` : '✅ All stock levels healthy.'} ${dataPoints.pendingOrders > 0 ? `📦 You have ${dataPoints.pendingOrders} pending orders.` : ''} 💰 Weekly Revenue: $${dataPoints.totalRevenue7d.toFixed(0)}`,
       generatedAt: new Date().toISOString(),
       dataPoints,
     };
