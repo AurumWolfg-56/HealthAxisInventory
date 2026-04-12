@@ -42,12 +42,12 @@ export const PettyCashService = {
     async getTransactions(): Promise<PettyCashTransaction[]> {
         if (!_cachedToken) {
             console.warn('[PettyCashService] Cannot fetch transactions: No token');
-            return [];
+            throw new Error('No token');
         }
 
         if (!_locationId) {
             console.warn('[PettyCashService] Cannot fetch transactions: No location_id');
-            return [];
+            throw new Error('No location_id');
         }
 
         try {

@@ -157,6 +157,17 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 console.error('[AppDataContext] ❌ Petty Cash failed:', pettyCashResult.reason);
             }
 
+            // [FIX] Feature: Automatically sync any daily reports that were saved offline
+            DailyReportService.restoreLocalReports(user?.id).then((restoredCount) => {
+                if (restoredCount && restoredCount > 0) {
+                    console.log(`[AppDataContext] ♻️ Auto-synced ${restoredCount} offline reports!`);
+                    // Fetch reports again to show the newly synced data in UI
+                    DailyReportService.getReports().then((newReports) => {
+                        if (mountedRef.current) setDailyReports(newReports);
+                    }).catch(err => console.error("Failed to refresh reports after sync", err));
+                }
+            }).catch(err => console.error("Auto-sync failed", err));
+
             hasLoadedRef.current = true;
             console.log('[AppDataContext] === Data fetch complete ===');
         } catch (err: any) {
