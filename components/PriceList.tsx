@@ -25,6 +25,11 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
     const [formData, setFormData] = useState<Partial<PriceItem>>({});
     const [isLoading, setIsLoading] = useState(false);
     const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+
+    // Calculator State
+    const [cart, setCart] = useState<{ item: PriceItem; qty: number }[]>([]);
+    const [isCartOpen, setIsCartOpen] = useState(false);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const canManage = hasPermission('prices.manage');
@@ -200,6 +205,101 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                 setIsLoading(false);
             }
         }
+    };
+
+    // Calculator Actions
+    const addToCart = (item: PriceItem) => {
+        setCart(prev => {
+            const existing = prev.find(p => p.item.id === item.id);
+            if (existing) {
+                return prev.map(p => p.item.id === item.id ? { ...p, qty: p.qty + 1 } : p);
+            }
+            return [...prev, { item, qty: 1 }];
+        });
+        setIsCartOpen(true);
+    };
+
+    const updateCartQty = (id: string, delta: number) => {
+        setCart(prev => {
+            return prev.map(p => {
+                if (p.item.id === id) {
+                    return { ...p, qty: Math.max(0, p.qty + delta) };
+                }
+                return p;
+            }).filter(p => p.qty > 0);
+        });
+    };
+
+    const cartTotal = useMemo(() => cart.reduce((sum, p) => sum + (p.item.price * p.qty), 0), [cart]);
+
+    const handlePrintQuote = () => {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+        
+        const html = `
+            <html>
+                <head>
+                    <title>Service Estimate</title>
+                    <style>
+                        body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #111; }
+                        .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
+                        h1 { margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 1px; }
+                        .subtitle { color: #666; font-size: 14px; margin-top: 5px; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+                        th { background: #f8f9fa; font-weight: bold; text-transform: uppercase; font-size: 12px; color: #666; }
+                        .qty { width: 60px; text-align: center; }
+                        .price { width: 100px; text-align: right; }
+                        .total-row { font-weight: bold; font-size: 18px; }
+                        .total-row td { border-top: 2px solid #333; border-bottom: none; }
+                        .footer { margin-top: 50px; font-size: 12px; color: #888; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Service Estimate</h1>
+                        <div class="subtitle">Estimated costs for requested services</div>
+                        <div style="margin-top: 10px; font-size: 12px;">Date: ${new Date().toLocaleDateString()}</div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th class="qty">Qty</th>
+                                <th class="price">Unit Price</th>
+                                <th class="price">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${cart.map(c => `
+                                <tr>
+                                    <td>
+                                        <strong>${c.item.serviceName}</strong>
+                                        ${c.item.code ? `<br/><span style="font-size:11px;color:#666">Code: ${c.item.code}</span>` : ''}
+                                    </td>
+                                    <td class="qty">${c.qty}</td>
+                                    <td class="price">$${c.item.price.toFixed(2)}</td>
+                                    <td class="price">$${(c.item.price * c.qty).toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                            <tr class="total-row">
+                                <td colspan="3" align="right">Estimated Total:</td>
+                                <td class="price">$${cartTotal.toFixed(2)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="footer">
+                        This is an estimate only. Actual costs may vary depending on medical necessity or insurance adjustments.<br/>
+                        Thank you for choosing our clinic.
+                    </div>
+                    <script>
+                        window.onload = () => { window.print(); window.close(); }
+                    </script>
+                </body>
+            </html>
+        `;
+        printWindow.document.write(html);
+        printWindow.document.close();
     };
 
     return (
@@ -434,7 +534,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                         <th className="p-6 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Service</th>
                                         <th className="p-6 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category</th>
                                         <th className="p-6 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Price</th>
-                                        {canManage && <th className="p-6 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest w-32">Actions</th>}
+                                        <th className="p-6 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest w-32">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
@@ -489,24 +589,35 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                                     ${item.price.toFixed(2)}
                                                 </div>
                                             </td>
-                                            {canManage && (
-                                                <td className="p-6">
-                                                    <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                                                        <button
-                                                            onClick={() => handleEdit(item)}
-                                                            className="w-11 h-11 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-800/60 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-sm"
-                                                        >
-                                                            <i className="fa-solid fa-pen text-sm"></i>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDelete(item.id)}
-                                                            className="w-11 h-11 rounded-xl bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/60 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-sm"
-                                                        >
-                                                            <i className="fa-solid fa-trash text-sm"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            )}
+                                            <td className="p-6">
+                                                <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                                                    <button
+                                                        onClick={() => addToCart(item)}
+                                                        className="w-11 h-11 rounded-xl bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-200 dark:hover:bg-cyan-800/60 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-sm"
+                                                        title="Add to Calculator"
+                                                    >
+                                                        <i className="fa-solid fa-plus text-sm"></i>
+                                                    </button>
+                                                    {canManage && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleEdit(item)}
+                                                                className="w-11 h-11 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-800/60 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-sm"
+                                                                title="Edit"
+                                                            >
+                                                                <i className="fa-solid fa-pen text-sm"></i>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDelete(item.id)}
+                                                                className="w-11 h-11 rounded-xl bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/60 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-sm"
+                                                                title="Delete"
+                                                            >
+                                                                <i className="fa-solid fa-trash text-sm"></i>
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -560,22 +671,30 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                         </div>
                                     </div>
                                     {/* Action row */}
-                                    {canManage && (
-                                        <div className="flex gap-2 justify-end mt-1 pt-3 border-t border-slate-100 dark:border-slate-800/50">
-                                            <button
-                                                onClick={() => handleEdit(item)}
-                                                className="px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-bold text-sm"
-                                            >
-                                                <i className="fa-solid fa-pen mr-2"></i>Edit
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(item.id)}
-                                                className="px-4 py-2 rounded-xl bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-400 font-bold text-sm"
-                                            >
-                                                <i className="fa-solid fa-trash mr-2"></i>Delete
-                                            </button>
-                                        </div>
-                                    )}
+                                    <div className="flex gap-2 justify-end mt-1 pt-3 border-t border-slate-100 dark:border-slate-800/50">
+                                        <button
+                                            onClick={() => addToCart(item)}
+                                            className="px-4 py-2 rounded-xl bg-cyan-50 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400 font-bold text-sm"
+                                        >
+                                            <i className="fa-solid fa-plus mr-2"></i>Add to Quote
+                                        </button>
+                                        {canManage && (
+                                            <>
+                                                <button
+                                                    onClick={() => handleEdit(item)}
+                                                    className="px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-bold text-sm"
+                                                >
+                                                    <i className="fa-solid fa-pen mr-2"></i>Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(item.id)}
+                                                    className="px-4 py-2 rounded-xl bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-400 font-bold text-sm"
+                                                >
+                                                    <i className="fa-solid fa-trash mr-2"></i>Delete
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -730,6 +849,111 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                 {localIsLoading ? <i className="fa-solid fa-spinner animate-spin text-xl"></i> : <i className={`fa-solid ${editingItem ? 'fa-check' : 'fa-plus'} text-xl`}></i>}
                                 {editingItem ? 'Save Changes' : 'Add Service'}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Floating FAB to open Calculator if there are items */}
+            {cart.length > 0 && !isCartOpen && (
+                <button
+                    onClick={() => setIsCartOpen(true)}
+                    className="fixed bottom-6 right-6 h-16 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-black text-lg shadow-2xl flex items-center gap-3 animate-fade-in-up hover:scale-105 active:scale-95 transition-transform z-40"
+                >
+                    <i className="fa-solid fa-calculator"></i>
+                    Quote ({cart.reduce((s, c) => s + c.qty, 0)})
+                    <span className="opacity-60 font-medium">|</span>
+                    ${cartTotal.toFixed(2)}
+                </button>
+            )}
+
+            {/* Service Calculator Drawer */}
+            {isCartOpen && (
+                <div 
+                    className="fixed inset-0 z-[10000] bg-transparent"
+                    onClick={() => setIsCartOpen(false)} // Close when clicking outside
+                >
+                    <div 
+                        className="absolute right-0 top-0 bottom-0 w-full sm:w-[400px] bg-white dark:bg-slate-900 shadow-[-10px_0_40px_rgba(0,0,0,0.1)] dark:shadow-[-10px_0_40px_rgba(0,0,0,0.3)] flex flex-col animate-slide-in-right border-l border-slate-200 dark:border-slate-800"
+                        onClick={e => e.stopPropagation()} // Prevent click-through
+                    >
+                        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shadow-sm">
+                                    <i className="fa-solid fa-calculator"></i>
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Service Calculator</h3>
+                            </div>
+                            <button onClick={() => setIsCartOpen(false)} className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                            {cart.length === 0 ? (
+                                <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                                    <i className="fa-solid fa-basket-shopping text-4xl mb-4 opacity-50"></i>
+                                    <p className="font-bold">No services selected</p>
+                                    <p className="text-sm mt-1">Click the + button on services to add them here.</p>
+                                </div>
+                            ) : (
+                                cart.map(c => (
+                                    <div key={c.item.id} className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col gap-3">
+                                        <div className="flex justify-between items-start gap-2">
+                                            <div className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
+                                                {c.item.serviceName}
+                                            </div>
+                                            <button 
+                                                onClick={() => updateCartQty(c.item.id, -c.qty)}
+                                                className="text-slate-400 hover:text-red-500 transition-colors"
+                                            >
+                                                <i className="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+                                                <button onClick={() => updateCartQty(c.item.id, -1)} className="w-7 h-7 rounded bg-white dark:bg-slate-600 text-slate-600 dark:text-white hover:text-red-500 flex items-center justify-center shadow-sm">
+                                                    <i className="fa-solid fa-minus text-xs"></i>
+                                                </button>
+                                                <span className="w-6 text-center text-sm font-bold">{c.qty}</span>
+                                                <button onClick={() => updateCartQty(c.item.id, 1)} className="w-7 h-7 rounded bg-white dark:bg-slate-600 text-slate-600 dark:text-white hover:text-emerald-500 flex items-center justify-center shadow-sm">
+                                                    <i className="fa-solid fa-plus text-xs"></i>
+                                                </button>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="font-bold text-emerald-600 dark:text-emerald-400">
+                                                    ${(c.item.price * c.qty).toFixed(2)}
+                                                </div>
+                                                {c.qty > 1 && (
+                                                    <div className="text-[10px] text-slate-400">${c.item.price.toFixed(2)} each</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <div className="p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+                            <div className="flex items-end justify-between mb-4">
+                                <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Total Estimate</span>
+                                <span className="text-3xl font-black text-slate-900 dark:text-white">${cartTotal.toFixed(2)}</span>
+                            </div>
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={() => setCart([])} 
+                                    disabled={cart.length === 0}
+                                    className="h-14 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors flex-shrink-0"
+                                >
+                                    Clear
+                                </button>
+                                <button 
+                                    onClick={handlePrintQuote}
+                                    disabled={cart.length === 0}
+                                    className="flex-1 h-14 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    <i className="fa-solid fa-print"></i> Generate Estimate
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
