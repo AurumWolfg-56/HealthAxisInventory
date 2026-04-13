@@ -604,7 +604,8 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                                 </div>
                                             </td>
                                         </tr>
-                                    ))}
+                                    );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
