@@ -83,8 +83,8 @@ const getLocalDateString = (d: Date) => {
 };
 
 const parseLocalDate = (dateStr: string) => {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  return new Date(y, m - 1, d);
+  const [y, m, d] = dateStr.split("T")[0].split("-").map(Number);
+  return new Date(y, m - 1, d, 12, 0, 0, 0);
 };
 
 const isVendorMatch = (budgetVendor: string, orderVendor: string) => {
@@ -298,7 +298,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
 
       orders.forEach((order) => {
         if (order.status === "CANCELLED") return;
-        const orderDate = new Date(order.orderDate).getTime();
+        const orderDate = parseLocalDate(order.orderDate).getTime();
         if (orderDate < budgetStart || orderDate > budgetEnd) return;
 
         // Match by VENDOR name (flexible to handle things like .com, Inc., or substrings)
@@ -423,7 +423,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
 
     orders.forEach((order) => {
       if (order.status === "CANCELLED" || !order.vendor) return;
-      const d = new Date(order.orderDate);
+      const d = parseLocalDate(order.orderDate);
       const key = d.toLocaleDateString("en-US", {
         month: "short",
         year: "2-digit",
