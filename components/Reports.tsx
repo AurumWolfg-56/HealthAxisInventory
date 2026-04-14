@@ -39,14 +39,14 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
   // Logic: Low Stock
   const lowStockItems = inventory.filter(item => item.stock <= item.minStock);
 
-  // Logic: Expiring Soon (30 Days)
+  // Logic: Expiring Soon (30 Days) + Already Expired
   const expiringItems = inventory.filter(item => {
     if (!item.expiryDate) return false;
     const today = new Date();
     const expDate = new Date(item.expiryDate);
     const diffTime = expDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 30 && diffDays >= -1; // Include expired yesterday just in case
+    return diffDays <= 30; // Include all items that will expire in <30 days OR already expired
   }).sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime());
 
   const getActionColor = (action: string) => {
@@ -185,7 +185,7 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
         <div className="flex items-center gap-3 px-4 py-2 bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl flex-1">
           <i className="fa-solid fa-calendar text-slate-400"></i>
           <div className="flex-1">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">From Date</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Audit Start</div>
             <input
               type="date"
               value={startDate}
@@ -197,7 +197,7 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
         <div className="flex items-center gap-3 px-4 py-2 bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl flex-1">
           <i className="fa-solid fa-calendar-check text-slate-400"></i>
           <div className="flex-1">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">To Date</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Audit End</div>
             <input
               type="date"
               value={endDate}
@@ -294,7 +294,12 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800 block md:table-row-group">
                   {expiringItems.map((item) => {
                     const daysLeft = getDaysRemaining(item.expiryDate);
-                    const urgencyClass = daysLeft <= 7 ? 'text-red-600 bg-red-50' : 'text-orange-600 bg-orange-50';
+                    let urgencyClass = 'text-orange-600 bg-orange-50 dark:bg-orange-900/20';
+                    if (daysLeft <= 0) {
+                      urgencyClass = 'text-white bg-red-600 shadow-md shadow-red-500/30 font-black';
+                    } else if (daysLeft <= 7) {
+                      urgencyClass = 'text-red-600 bg-red-50 dark:bg-red-900/30';
+                    }
 
                     return (
                       <tr key={item.id} className="block md:table-row bg-white dark:bg-transparent rounded-[1.5rem] md:rounded-none border border-slate-100 dark:border-slate-800 md:border-none shadow-sm md:shadow-none mb-4 md:mb-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors overflow-hidden">
@@ -310,7 +315,7 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
                         </td>
                         <td className="p-4 flex items-center justify-between md:table-cell border-b md:border-b-0 border-slate-50 dark:border-slate-800/50">
                           <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">Days Left</div>
-                          <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg font-bold text-sm ${urgencyClass} dark:bg-opacity-20`}>
+                          <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg font-bold text-sm ${urgencyClass} ${daysLeft > 0 ? 'dark:bg-opacity-20' : ''}`}>
                             <i className="fa-solid fa-clock"></i>
                             {daysLeft <= 0 ? 'EXPIRED' : `${daysLeft} days`}
                           </span>
@@ -444,9 +449,7 @@ const Reports: React.FC<ReportsProps> = ({ inventory, logs, user, t, hasPermissi
           <InventoryReportDocument
             data={{
               inventory,
-              logs: filteredLogs,
-              startDate: new Date(startDate).toLocaleDateString(),
-              endDate: new Date(endDate).toLocaleDateString(),
+              reportDate: new Date().toLocaleDateString(),
               author: user.username,
               facilityName: 'Norvexis Core'
             }}
