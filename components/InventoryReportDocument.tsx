@@ -48,7 +48,7 @@ export const InventoryReportDocument: React.FC<InventoryReportDocumentProps> = (
             <div className="bg-[#0f172a] text-white px-12 pt-10 pb-8 flex justify-between items-center print-color-adjust" style={{ backgroundColor: '#0f172a', color: 'white', WebkitPrintColorAdjust: 'exact' }}>
                 <div>
                     <h1 className="text-4xl font-black tracking-tight uppercase m-0 leading-none">
-                        Norvexis<span className="text-[#38bdf8]" style={{ color: '#38bdf8' }}>Core</span>
+                        Health<span className="text-[#38bdf8]" style={{ color: '#38bdf8' }}>Axis</span>
                     </h1>
                     <p className="text-[11px] font-bold tracking-[0.25em] uppercase text-slate-400 mt-2">
                         Inventory Status Report
@@ -102,14 +102,14 @@ export const InventoryReportDocument: React.FC<InventoryReportDocumentProps> = (
                 </div>
 
                 {/* Section 1: Critical Action Items (Only shows if there are alerts) */}
-                {(hasLowStock || hasExpired) && (
-                    <div className="mb-10">
+                {(hasLowStock || hasExpired) ? (
+                    <div className="mb-10 min-h-[300px]">
                         <div className="flex items-center gap-3 border-b-2 border-slate-900 pb-2 mb-4" style={{borderBottom: '2px solid #0f172a'}}>
                             <div className="w-6 h-6 flex items-center justify-center text-xs font-bold rounded" style={{ backgroundColor: '#0f172a', color: 'white' }}>!</div>
                             <h3 className="text-sm font-black uppercase tracking-wide text-slate-900">Critical Action Required</h3>
                         </div>
                         
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             {/* Expired Items */}
                             {expiredItems.length > 0 && (
                                 <div className="border rounded-lg overflow-hidden" style={{ borderColor: '#fca5a5' }}>
@@ -127,7 +127,7 @@ export const InventoryReportDocument: React.FC<InventoryReportDocumentProps> = (
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {expiredItems.map(item => (
+                                            {expiredItems.slice(0, 10).map(item => (
                                                 <tr key={`exp-${item.id}`} className="border-t border-slate-100" style={{borderTop: '1px solid #f1f5f9'}}>
                                                     <td className="py-2 pr-4 font-bold text-slate-900">{item.name}</td>
                                                     <td className="py-2 pr-4 font-mono text-slate-500">{item.batchNumber}</td>
@@ -135,6 +135,13 @@ export const InventoryReportDocument: React.FC<InventoryReportDocumentProps> = (
                                                     <td className="py-2 text-right font-black text-red-600">{item.stock} {item.unit}</td>
                                                 </tr>
                                             ))}
+                                            {expiredItems.length > 10 && (
+                                                <tr>
+                                                    <td colSpan={4} className="py-3 text-center text-red-500 font-bold italic border-t border-slate-100" style={{borderTop: '1px solid #f1f5f9'}}>
+                                                        + {expiredItems.length - 10} more expired items. Please check dashboard for full list.
+                                                    </td>
+                                                </tr>
+                                            )}
                                         </tbody>
                                     </table>
                                     </div>
@@ -145,7 +152,7 @@ export const InventoryReportDocument: React.FC<InventoryReportDocumentProps> = (
                             {lowStockItems.filter(item => !expiredItems.some(e => e.id === item.id)).length > 0 && (
                                 <div className="border rounded-lg overflow-hidden" style={{ borderColor: '#fcd34d' }}>
                                     <div className="px-4 py-2 font-bold text-[10px] uppercase tracking-wider bg-amber-50 text-amber-700" style={{backgroundColor: '#fffbeb', color: '#b45309'}}>
-                                        LOW STOCK ALERTS ({lowStockItems.length} SKUs)
+                                        LOW STOCK ALERTS ({lowStockItems.filter(item => !expiredItems.some(e => e.id === item.id)).length} SKUs)
                                     </div>
                                     <div className="p-4" style={{backgroundColor: '#ffffff'}}>
                                     <table className="w-full text-[10px] border-collapse">
@@ -158,7 +165,7 @@ export const InventoryReportDocument: React.FC<InventoryReportDocumentProps> = (
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {lowStockItems.filter(item => !expiredItems.some(e => e.id === item.id)).map(item => (
+                                            {lowStockItems.filter(item => !expiredItems.some(e => e.id === item.id)).slice(0, 10).map(item => (
                                                 <tr key={`low-${item.id}`} className="border-t border-slate-100" style={{borderTop: '1px solid #f1f5f9'}}>
                                                     <td className="py-2 pr-4 font-bold text-slate-900">{item.name}</td>
                                                     <td className="py-2 pr-4 text-slate-500">{item.location}</td>
@@ -166,6 +173,13 @@ export const InventoryReportDocument: React.FC<InventoryReportDocumentProps> = (
                                                     <td className="py-2 text-right font-black text-amber-600">{item.stock} {item.unit}</td>
                                                 </tr>
                                             ))}
+                                            {lowStockItems.filter(item => !expiredItems.some(e => e.id === item.id)).length > 10 && (
+                                                <tr>
+                                                    <td colSpan={4} className="py-3 text-center text-amber-600 font-bold italic border-t border-slate-100" style={{borderTop: '1px solid #f1f5f9'}}>
+                                                        + {lowStockItems.filter(item => !expiredItems.some(e => e.id === item.id)).length - 10} more low stock items. Please check dashboard.
+                                                    </td>
+                                                </tr>
+                                            )}
                                         </tbody>
                                     </table>
                                     </div>
@@ -173,61 +187,16 @@ export const InventoryReportDocument: React.FC<InventoryReportDocumentProps> = (
                             )}
                         </div>
                     </div>
+                ) : (
+                    <div className="mb-10 min-h-[250px] flex flex-col items-center justify-center p-10 border border-green-200 rounded-xl bg-green-50" style={{ borderColor: '#bbf7d0', backgroundColor: '#f0fdf4' }}>
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: '#dcfce7', color: '#166534', fontSize: '24px' }}>✓</div>
+                        <h3 className="text-xl font-black text-green-800" style={{ color: '#166534' }}>Inventory is Healthy</h3>
+                        <p className="text-sm font-medium text-green-700 mt-2" style={{ color: '#15803d' }}>There are no expired items or low stock alerts at this time.</p>
+                    </div>
                 )}
 
-                {/* Section 2: Complete Inventory Snapshot */}
-                <div className="mb-10">
-                    <div className="flex items-center gap-3 border-b-2 border-slate-900 pb-2 mb-4" style={{borderBottom: '2px solid #0f172a'}}>
-                        <div className="w-6 h-6 flex items-center justify-center text-xs font-bold rounded" style={{ backgroundColor: '#0f172a', color: 'white' }}>{hasLowStock || hasExpired ? '2' : '1'}</div>
-                        <h3 className="text-sm font-black uppercase tracking-wide text-slate-900">Complete Inventory Manifest</h3>
-                    </div>
-                    
-                    <div className="border border-slate-200 rounded-xl overflow-hidden" style={{border: '1px solid #e2e8f0'}}>
-                        <table className="w-full text-[10px] border-collapse bg-white">
-                            <thead className="bg-[#f8fafc] border-b border-slate-200" style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                                <tr>
-                                    <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase tracking-wider">Item Name / Category</th>
-                                    <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase tracking-wider">Batch / Exp</th>
-                                    <th className="text-left px-4 py-3 font-bold text-slate-500 uppercase tracking-wider">Location</th>
-                                    <th className="text-right px-4 py-3 font-bold text-slate-500 uppercase tracking-wider">Stock</th>
-                                    <th className="text-right px-4 py-3 font-bold text-slate-500 uppercase tracking-wider">Avg Cost</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100" style={{ borderColor: '#f1f5f9' }}>
-                                {inventory.map((item) => (
-                                    <tr key={item.id} className="hover:bg-slate-50">
-                                        <td className="px-4 py-3">
-                                            <div className="font-bold text-slate-900">{item.name}</div>
-                                            <div className="text-slate-400 mt-0.5">{item.category}</div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="font-mono text-slate-600">{item.batchNumber}</div>
-                                            <div className="text-slate-400 mt-0.5">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : 'N/A'}</div>
-                                        </td>
-                                        <td className="px-4 py-3 text-slate-600">
-                                            {item.location}
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <div className="font-black text-slate-900 text-xs">{item.stock}</div>
-                                            <div className="text-slate-400 mt-0.5">{item.unit}</div>
-                                        </td>
-                                        <td className="px-4 py-3 text-right font-mono font-bold text-slate-500">
-                                            {formatCurrency(item.averageCost || 0)}
-                                        </td>
-                                    </tr>
-                                ))}
-                                {inventory.length === 0 && (
-                                    <tr>
-                                        <td colSpan={5} className="py-8 text-center text-slate-400 italic font-medium">No inventory items found.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
                 {/* Signatures */}
-                <div className="flex justify-between items-end mt-16 pt-8 break-inside-avoid">
+                <div className="flex justify-between items-end mt-20 pt-8 break-inside-avoid">
                     <div className="w-[40%]">
                         <div className="border-b-2 border-slate-900 mb-2" style={{ borderBottom: '2px solid #0f172a' }}></div>
                         <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Inventory Coordinator: {author}</div>
@@ -249,3 +218,4 @@ export const InventoryReportDocument: React.FC<InventoryReportDocumentProps> = (
         </div>
     );
 };
+
