@@ -27,8 +27,12 @@ export const InventoryReportDocument: React.FC<InventoryReportDocumentProps> = (
         return diffDays <= 0;
     });
 
-    const hasLowStock = lowStockItems.length > 0;
     const hasExpired = expiredItems.length > 0;
+
+    const pureLowStock = lowStockItems.filter(item => !expiredItems.some(e => e.id === item.id));
+    const hasLowStock = pureLowStock.length > 0;
+    const totalDeficitQty = pureLowStock.reduce((acc, item) => acc + (item.minStock - item.stock), 0);
+    const estRestockCost = pureLowStock.reduce((acc, item) => acc + ((item.minStock - item.stock) * (item.averageCost || 0)), 0);
 
     const formatCurrency = (val: number) => `$${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -148,40 +152,27 @@ export const InventoryReportDocument: React.FC<InventoryReportDocumentProps> = (
                                 </div>
                             )}
 
-                            {/* Low Stock Items (excluding ones that are already listed as expired) */}
-                            {lowStockItems.filter(item => !expiredItems.some(e => e.id === item.id)).length > 0 && (
+                            {/* Low Stock Items Statistical Summary */}
+                            {pureLowStock.length > 0 && (
                                 <div className="border rounded-lg overflow-hidden" style={{ borderColor: '#fcd34d' }}>
                                     <div className="px-4 py-2 font-bold text-[10px] uppercase tracking-wider bg-amber-50 text-amber-700" style={{backgroundColor: '#fffbeb', color: '#b45309'}}>
-                                        LOW STOCK ALERTS ({lowStockItems.filter(item => !expiredItems.some(e => e.id === item.id)).length} SKUs)
+                                        LOW STOCK STATISTICS ({pureLowStock.length} SKUs AFFECTED)
                                     </div>
-                                    <div className="p-4" style={{backgroundColor: '#ffffff'}}>
-                                    <table className="w-full text-[10px] border-collapse">
-                                        <thead>
-                                            <tr>
-                                                <th className="text-left pb-2 text-slate-400 uppercase">Item Name</th>
-                                                <th className="text-left pb-2 text-slate-400 uppercase">Location</th>
-                                                <th className="text-right pb-2 text-slate-400 uppercase">Min Req</th>
-                                                <th className="text-right pb-2 text-slate-400 uppercase">Current Stock</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {lowStockItems.filter(item => !expiredItems.some(e => e.id === item.id)).slice(0, 10).map(item => (
-                                                <tr key={`low-${item.id}`} className="border-t border-slate-100" style={{borderTop: '1px solid #f1f5f9'}}>
-                                                    <td className="py-2 pr-4 font-bold text-slate-900">{item.name}</td>
-                                                    <td className="py-2 pr-4 text-slate-500">{item.location}</td>
-                                                    <td className="py-2 text-right text-slate-500">{item.minStock}</td>
-                                                    <td className="py-2 text-right font-black text-amber-600">{item.stock} {item.unit}</td>
-                                                </tr>
-                                            ))}
-                                            {lowStockItems.filter(item => !expiredItems.some(e => e.id === item.id)).length > 10 && (
-                                                <tr>
-                                                    <td colSpan={4} className="py-3 text-center text-amber-600 font-bold italic border-t border-slate-100" style={{borderTop: '1px solid #f1f5f9'}}>
-                                                        + {lowStockItems.filter(item => !expiredItems.some(e => e.id === item.id)).length - 10} more low stock items. Please check dashboard.
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
+                                    <div className="p-5 flex justify-between items-center" style={{backgroundColor: '#ffffff'}}>
+                                        <div className="text-center w-1/3 border-r border-slate-100" style={{ borderRight: '1px solid #f1f5f9' }}>
+                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Unit Deficit</div>
+                                            <div className="text-2xl font-black text-amber-600">{totalDeficitQty}</div>
+                                            <div className="text-[9px] font-medium text-slate-500 mt-1">Units required for optimal levels</div>
+                                        </div>
+                                        <div className="text-center w-1/3 border-r border-slate-100" style={{ borderRight: '1px solid #f1f5f9' }}>
+                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Est. Restock Cost</div>
+                                            <div className="text-2xl font-black text-slate-800">{formatCurrency(estRestockCost)}</div>
+                                            <div className="text-[9px] font-medium text-slate-500 mt-1">Capital required to replenish</div>
+                                        </div>
+                                        <div className="text-center w-1/3">
+                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Action</div>
+                                            <div className="text-sm font-bold text-slate-700 mt-2">See dashboard to generate Purchase Order.</div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
