@@ -12,6 +12,7 @@ import { ProtocolService } from '../services/ProtocolService';
 import { PriceService } from '../services/PriceService';
 import { MedicalCodeService } from '../services/MedicalCodeService';
 import { PettyCashService } from '../services/PettyCashService';
+import { ScheduleService } from '../services/ScheduleService';
 import { billingRules as INITIAL_BILLING_RULES } from '../data/billingRules';
 import { useAuth } from './AuthContext';
 import { useTenant } from './TenantContext';
@@ -197,6 +198,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             MedicalCodeService.setAccessToken(accessToken);
             PriceService.setAccessToken(accessToken);
             PettyCashService.setAccessToken(accessToken);
+            ScheduleService.setAccessToken(accessToken);
 
             if (!hasLoadedRef.current) {
                 fetchAllData();
@@ -234,6 +236,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         MedicalCodeService.setLocationId(locationId);
         PriceService.setLocationId(locationId);
         PettyCashService.setLocationId(locationId);
+        ScheduleService.setLocationId(locationId);
 
         // Re-fetch if data was already loaded (location switch)
         if (hasLoadedRef.current && accessToken) {
