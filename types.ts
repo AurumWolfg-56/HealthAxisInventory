@@ -59,6 +59,19 @@ export interface Shift {
   updated_at?: string;
 }
 
+export interface TimeOffRequest {
+  id: string;
+  user_id: string; // References User
+  start_date: string; // YYYY-MM-DD
+  end_date: string; // YYYY-MM-DD
+  status: 'pending' | 'approved' | 'rejected';
+  reason?: string;
+  reviewed_by?: string; // ID of MANAGER/OWNER who reviewed
+  location_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface User {
   id: string;
   username: string;

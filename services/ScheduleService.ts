@@ -1,4 +1,4 @@
-import { Shift } from '../types';
+import { Shift, TimeOffRequest } from '../types';
 
 export class ScheduleService {
     private static accessToken: string | null = null;
@@ -156,6 +156,81 @@ export class ScheduleService {
             return await response.json();
         } catch (error) {
             console.error('[ScheduleService] Bulk create failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * TIME-OFF REQUESTS
+     */
+
+    static async fetchTimeOffRequests(startDate: string, endDate: string): Promise<TimeOffRequest[]> {
+        try {
+            if (!this.accessToken) return [];
+
+            const locFilter = this.locationId ? `&location_id=eq.${this.locationId}` : '';
+            // We want to fetch all requests that overlap with the visible dashboard date
+            const query = `?or=(and(start_date.lte.${endDate},end_date.gte.${startDate}))${locFilter}&order=created_at.desc`;
+            
+            const response = await fetch(`${this.apiUrl}/time_off_requests${query}`, {
+                headers: this.getHeaders()
+            });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+            return data || [];
+        } catch (error) {
+            console.error('[ScheduleService] Fetch TimeOff failed:', error);
+            return [];
+        }
+    }
+
+    static async createTimeOffRequest(requestData: Omit<TimeOffRequest, 'id' | 'created_at' | 'updated_at'>): Promise<TimeOffRequest | null> {
+        try {
+            const response = await fetch(`${this.apiUrl}/time_off_requests`, {
+                method: 'POST',
+                headers: this.getHeaders(),
+                body: JSON.stringify({
+                    ...requestData,
+                    location_id: requestData.location_id || this.locationId
+                })
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Failed to create time-off request (${response.status}): ${text}`);
+            }
+
+            const saved = await response.json();
+            return saved[0] as TimeOffRequest;
+        } catch (error) {
+            console.error('[ScheduleService] Create TimeOff failed:', error);
+            throw error;
+        }
+    }
+
+    static async updateTimeOffRequestStatus(requestId: string, status: 'approved' | 'rejected', reviewerId: string): Promise<TimeOffRequest | null> {
+        try {
+            const response = await fetch(`${this.apiUrl}/time_off_requests?id=eq.${requestId}`, {
+                method: 'PATCH',
+                headers: this.getHeaders(),
+                body: JSON.stringify({
+                    status,
+                    reviewed_by: reviewerId,
+                    updated_at: new Date().toISOString()
+                })
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Failed to update time-off request (${response.status}): ${text}`);
+            }
+
+            const saved = await response.json();
+            return saved[0] as TimeOffRequest;
+        } catch (error) {
+            console.error('[ScheduleService] Update TimeOff failed:', error);
             throw error;
         }
     }
