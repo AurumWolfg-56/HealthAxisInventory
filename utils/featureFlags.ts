@@ -21,6 +21,7 @@ export const MODULE_FLAGS = {
   MOD_REPORTS:       'mod_reports',
   MOD_PETTY_CASH:    'mod_petty_cash',
   MOD_SCANNER:       'mod_scanner',
+  MOD_SCHEDULE:      'mod_schedule',
 } as const;
 
 /** Sub-feature flags: granular control within modules */
@@ -54,6 +55,7 @@ export const DEFAULT_FEATURE_FLAGS: Record<FeatureFlagKey, boolean> = {
   mod_reports: true,
   mod_petty_cash: true,
   mod_scanner: true,
+  mod_schedule: true,
   // Sub-features
   feat_pdf_export: true,
   feat_budget_autoroll: true,

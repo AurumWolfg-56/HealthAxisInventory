@@ -107,6 +107,7 @@ export const Layout: React.FC<LayoutProps> = ({
             items: [
                 { route: AppRoute.INVENTORY, icon: "fa-boxes-stacked", label: t('nav_inventory'), perm: 'inventory.view', moduleFlag: 'mod_inventory' as FeatureFlagKey },
                 { route: AppRoute.ORDERS, icon: "fa-cart-shopping", label: t('nav_orders'), perm: 'orders.view', moduleFlag: 'mod_orders' as FeatureFlagKey },
+                { route: AppRoute.SCHEDULE, icon: "fa-calendar-week", label: "Scheduler", perm: 'schedule.view', moduleFlag: 'mod_schedule' as FeatureFlagKey },
                 { route: AppRoute.BUDGETS, icon: "fa-wallet", label: "Budgets", perm: 'finance.manage', moduleFlag: 'mod_budgets' as FeatureFlagKey },
                 { route: AppRoute.PRICELIST, icon: "fa-tags", label: t('nav_prices'), perm: 'prices.view', moduleFlag: 'mod_pricelist' as FeatureFlagKey },
             ]

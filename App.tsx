@@ -30,6 +30,7 @@ import PettyCashLedger from './components/PettyCashLedger';
 import VoiceMemos from './components/VoiceMemos';
 import Budgets from './components/Budgets';
 import Protocols from './components/Protocols';
+import { SmartScheduler } from './components/SmartScheduler';
 import { InventoryIntelligenceDashboard } from './components/InventoryIntelligence';
 import { InventoryIntelligenceVerification } from './components/InventoryIntelligenceVerification';
 import Login from './components/Login';
@@ -515,6 +516,7 @@ const App: React.FC = () => {
 
                     {currentRoute === AppRoute.DASHBOARD && hasPermission('dashboard.view') && <Dashboard inventory={inventory} logs={logs} dailyReports={dailyReports} pettyCashHistory={pettyCashHistory} orders={orders} users={usersDb} prices={prices} t={t} onNavigate={handleNavigate} />}
                     {currentRoute === AppRoute.PROTOCOLS && hasPermission('protocols.view') && <Protocols user={user} users={usersDb} t={t} />}
+                    {currentRoute === AppRoute.SCHEDULE && hasPermission('schedule.view') && <SmartScheduler users={usersDb} currentUser={user} hasPermission={hasPermission} t={t} />}
                     {currentRoute === AppRoute.INVENTORY && hasPermission('inventory.view') && (
                         <Inventory
                             items={inventory}

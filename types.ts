@@ -8,11 +8,11 @@ export enum UserRole {
 }
 
 export const INITIAL_ROLE_CONFIGS: RoleConfig[] = [
-  { role: UserRole.OWNER, permissions: ['inventory.view', 'inventory.edit', 'inventory.audit', 'orders.view', 'orders.create', 'orders.receive', 'orders.delete', 'reports.view', 'reports.create', 'prices.view', 'prices.manage', 'forms.manage', 'forms.generate', 'billing.view', 'codes.view', 'codes.manage', 'finance.view', 'finance.manage', 'admin.access', 'intelligence.view', 'protocols.view', 'protocols.manage'] },
-  { role: UserRole.MANAGER, permissions: ['inventory.view', 'inventory.edit', 'inventory.audit', 'orders.view', 'orders.create', 'orders.receive', 'orders.delete', 'reports.view', 'reports.create', 'prices.view', 'prices.manage', 'forms.manage', 'forms.generate', 'billing.view', 'codes.view', 'codes.manage', 'finance.view', 'finance.manage', 'admin.access', 'intelligence.view', 'protocols.view', 'protocols.manage'] },
-  { role: UserRole.DOCTOR, permissions: ['inventory.view', 'inventory.edit', 'orders.view', 'orders.create', 'reports.view', 'reports.create', 'prices.view', 'forms.generate', 'billing.view', 'codes.view', 'protocols.view'] },
-  { role: UserRole.MA, permissions: ['inventory.view', 'inventory.audit', 'orders.view', 'forms.generate', 'codes.view', 'protocols.view'] },
-  { role: UserRole.FRONT_DESK, permissions: ['prices.view', 'prices.manage', 'inventory.view', 'forms.generate', 'reports.view', 'reports.create', 'billing.view', 'codes.view', 'finance.view', 'protocols.view'] }
+  { role: UserRole.OWNER, permissions: ['inventory.view', 'inventory.edit', 'inventory.audit', 'orders.view', 'orders.create', 'orders.receive', 'orders.delete', 'reports.view', 'reports.create', 'prices.view', 'prices.manage', 'forms.manage', 'forms.generate', 'billing.view', 'codes.view', 'codes.manage', 'finance.view', 'finance.manage', 'admin.access', 'intelligence.view', 'protocols.view', 'protocols.manage', 'schedule.view', 'schedule.manage'] },
+  { role: UserRole.MANAGER, permissions: ['inventory.view', 'inventory.edit', 'inventory.audit', 'orders.view', 'orders.create', 'orders.receive', 'orders.delete', 'reports.view', 'reports.create', 'prices.view', 'prices.manage', 'forms.manage', 'forms.generate', 'billing.view', 'codes.view', 'codes.manage', 'finance.view', 'finance.manage', 'admin.access', 'intelligence.view', 'protocols.view', 'protocols.manage', 'schedule.view', 'schedule.manage'] },
+  { role: UserRole.DOCTOR, permissions: ['inventory.view', 'inventory.edit', 'orders.view', 'orders.create', 'reports.view', 'reports.create', 'prices.view', 'forms.generate', 'billing.view', 'codes.view', 'protocols.view', 'schedule.view'] },
+  { role: UserRole.MA, permissions: ['inventory.view', 'inventory.audit', 'orders.view', 'forms.generate', 'codes.view', 'protocols.view', 'schedule.view'] },
+  { role: UserRole.FRONT_DESK, permissions: ['prices.view', 'prices.manage', 'inventory.view', 'forms.generate', 'reports.view', 'reports.create', 'billing.view', 'codes.view', 'finance.view', 'protocols.view', 'schedule.view'] }
 ];
 
 export type Permission =
@@ -37,11 +37,26 @@ export type Permission =
   | 'finance.manage' // New
   | 'intelligence.view' // New
   | 'protocols.view'
-  | 'protocols.manage';
+  | 'protocols.manage'
+  | 'schedule.view'
+  | 'schedule.manage';
 
 export interface RoleConfig {
   role: UserRole;
   permissions: Permission[];
+}
+
+export interface Shift {
+  id: string;
+  user_id: string; // References User
+  date: string; // YYYY-MM-DD
+  start_time: string; // HH:mm
+  end_time: string; // HH:mm
+  role_type?: 'provider' | 'staff'; // Optional cache for UI grouping
+  notes?: string;
+  location_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface User {
@@ -51,6 +66,7 @@ export interface User {
   role: UserRole;
   permissions?: Permission[];
   platformRole?: 'platform_admin' | 'platform_viewer' | null;
+  themeColor?: string;
 }
 
 export interface InventoryItem {
@@ -238,6 +254,7 @@ export enum AppRoute {
   VOICE_MEMOS = 'VOICE_MEMOS', // New
   BUDGETS = 'BUDGETS', // New
   PROTOCOLS = 'PROTOCOLS', // New
+  SCHEDULE = 'SCHEDULE', // New Smart Scheduler
   PLATFORM = 'PLATFORM' // Norvexis Core Command Center
 }
 
