@@ -236,11 +236,11 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                         <td className="py-4 px-6 font-semibold text-slate-700 dark:text-slate-300 sticky left-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)]">
                                             <div className="flex items-center gap-3">
                                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${getThemeClasses(u.themeColor!).split(' ')[0]} ${getThemeClasses(u.themeColor!).split(' ')[1]}`}>
-                                                    {u.username.substring(0,2).toUpperCase()}
+                                                    {(u.username || 'U').substring(0,2).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <div className="leading-tight">{u.username}</div>
-                                                    <div className="text-[10px] text-slate-400 capitalize">{u.role}</div>
+                                                    <div className="leading-tight">{u.username || 'Unknown'}</div>
+                                                    <div className="text-[10px] text-slate-400 capitalize">{u.role || 'Staff'}</div>
                                                 </div>
                                             </div>
                                         </td>
