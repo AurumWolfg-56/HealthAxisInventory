@@ -23,7 +23,10 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     
     // Feature States
     const [clipboardShift, setClipboardShift] = useState<Shift | null>(null);
-    const [shiftEditor, setShiftEditor] = useState<{isOpen: boolean, user: ExtendedUser|null, dateObj: Date|null, shift: Shift|null}>({isOpen: false, user: null, dateObj: null, shift: null});
+    const [shiftEditor, setShiftEditor] = useState<{isOpen: boolean, user: ExtendedUser|null, dateObj: Date|null, shift: Shift|null, tmpStart?: string, tmpEnd?: string, tmpColor?: string}>({isOpen: false, user: null, dateObj: null, shift: null, tmpStart: '08:00', tmpEnd: '17:00', tmpColor: 'blue'});
+    const [userColorOverrides, setUserColorOverrides] = useState<Record<string, string>>(() => {
+        try { return JSON.parse(localStorage.getItem('HA_USER_COLORS') || '{}'); } catch { return {}; }
+    });
     const [aiQuery, setAiQuery] = useState('');
     const [aiProcessing, setAiProcessing] = useState(false);
     
@@ -107,9 +110,9 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     const colorMappedUsers = useMemo(() => {
         return users.map((u, i) => ({
             ...u,
-            themeColor: u.themeColor || SHIFT_COLORS[i % SHIFT_COLORS.length]
+            themeColor: userColorOverrides[u.id] || u.themeColor || SHIFT_COLORS[i % SHIFT_COLORS.length]
         }));
-    }, [users]);
+    }, [users, userColorOverrides]);
     const providers = colorMappedUsers.filter(u => ['DOCTOR'].includes(u.role));
     const supportStaff = colorMappedUsers.filter(u => ['MANAGER', 'OWNER', 'MA', 'FRONT_DESK'].includes(u.role));
 
@@ -146,7 +149,13 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
         }
 
         const existingShift = shifts.find(s => s.user_id === user.id && s.date === dateStr);
-        setShiftEditor({ isOpen: true, user, dateObj, shift: existingShift || null });
+        const uColor = userColorOverrides[user.id] || user.themeColor || SHIFT_COLORS[0];
+        setShiftEditor({ 
+            isOpen: true, user, dateObj, shift: existingShift || null, 
+            tmpStart: existingShift ? existingShift.start_time : '08:00', 
+            tmpEnd: existingShift ? existingShift.end_time : '17:00', 
+            tmpColor: uColor 
+        });
     };
 
     const duplicatePriorWeek = async () => {
@@ -552,32 +561,56 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
 
             {/* SHIFT EDITOR MODAL */}
             {shiftEditor.isOpen && shiftEditor.user && shiftEditor.dateObj && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in-up">
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden relative">
+                <div className="fixed inset-0 z-[100] grid place-items-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden relative my-auto">
                         <div className="bg-slate-50 dark:bg-slate-800/50 p-6 border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-start">
-                            <div>
+                            <div className="flex-1">
                                 <h2 className="text-xl font-black text-slate-800 dark:text-white leading-tight mb-1">
                                     {shiftEditor.shift ? 'Edit Assignment' : 'Assign Shift'}
                                 </h2>
-                                <p className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">
+                                <p className="text-[11px] font-bold text-slate-400 tracking-wider uppercase mb-3">
                                     {shiftEditor.dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                                 </p>
+                                {/* Color Picker Row */}
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    {SHIFT_COLORS.map(color => (
+                                        <button 
+                                            key={color} 
+                                            type="button"
+                                            onClick={() => {
+                                                setShiftEditor(prev => ({...prev, tmpColor: color}));
+                                                const newOverrides = { ...userColorOverrides, [shiftEditor.user!.id]: color };
+                                                setUserColorOverrides(newOverrides);
+                                                localStorage.setItem('HA_USER_COLORS', JSON.stringify(newOverrides));
+                                            }}
+                                            className={`w-5 h-5 rounded-full border-2 transition-all ${shiftEditor.tmpColor === color ? 'border-slate-800 dark:border-white scale-110' : 'border-transparent hover:scale-110'} ${getThemeClasses(color).split(' ')[0]}`}
+                                        />
+                                    ))}
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-sm ${getThemeClasses(shiftEditor.user.themeColor || 'blue').split(' ')[0]} ${getThemeClasses(shiftEditor.user.themeColor || 'blue').split(' ')[1]}`}>
+                            <div className="flex items-center gap-2 ml-4">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-sm shadow-sm ${getThemeClasses(shiftEditor.tmpColor).split(' ')[0]} ${getThemeClasses(shiftEditor.tmpColor).split(' ')[1]}`}>
                                     {(shiftEditor.user.username || shiftEditor.user.full_name || 'U').substring(0,2).toUpperCase()}
                                 </div>
                             </div>
                         </div>
 
                         <form onSubmit={submitShiftEditor} className="p-6">
+                            {/* Quick Time Presets */}
+                            <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-thin">
+                                <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '08:00', tmpEnd: '14:00'}))} className="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 rounded-lg transition-colors">Morning</button>
+                                <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '14:00', tmpEnd: '20:00'}))} className="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 rounded-lg transition-colors">Afternoon</button>
+                                <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '08:00', tmpEnd: '17:00'}))} className="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 rounded-lg transition-colors">Full Day</button>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4 mb-5">
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Start Time</label>
                                     <input 
                                         type="time" 
                                         name="start_time" 
-                                        defaultValue={shiftEditor.shift ? shiftEditor.shift.start_time : '08:00'} 
+                                        value={shiftEditor.tmpStart}
+                                        onChange={e => setShiftEditor(prev => ({...prev, tmpStart: e.target.value}))}
                                         required 
                                         className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-mono"
                                     />
@@ -587,7 +620,8 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                     <input 
                                         type="time" 
                                         name="end_time" 
-                                        defaultValue={shiftEditor.shift ? shiftEditor.shift.end_time : '17:00'} 
+                                        value={shiftEditor.tmpEnd}
+                                        onChange={e => setShiftEditor(prev => ({...prev, tmpEnd: e.target.value}))}
                                         required 
                                         className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-mono"
                                     />
