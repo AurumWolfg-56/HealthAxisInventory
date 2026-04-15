@@ -41,11 +41,11 @@ jobs:
             apk add --no-cache lftp &&
             lftp -c \"
               set ssl:verify-certificate no;
-              set ftp:ssl-force true;
-              set ftp:ssl-protect-data true;
+              set ftp:ssl-allow no;
               set ftp:passive-mode true;
-              set dns:fatal-timeout 30;
-              set net:timeout 30;
+              set ftp:auto-passive-mode yes;
+              set dns:fatal-timeout 15;
+              set net:timeout 15;
               set net:max-retries 10;
               set net:reconnect-interval-base 5;
               set net:connection-limit 1;
