@@ -23,6 +23,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     
     // Feature States
     const [clipboardShift, setClipboardShift] = useState<Shift | null>(null);
+    const [shiftEditor, setShiftEditor] = useState<{isOpen: boolean, user: ExtendedUser|null, dateObj: Date|null, shift: Shift|null}>({isOpen: false, user: null, dateObj: null, shift: null});
     const [aiQuery, setAiQuery] = useState('');
     const [aiProcessing, setAiProcessing] = useState(false);
     
@@ -145,34 +146,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
         }
 
         const existingShift = shifts.find(s => s.user_id === user.id && s.date === dateStr);
-        if (existingShift) {
-            const action = window.prompt(`Options:\n1. Copy\n2. Delete\n3. Edit time (HH:MM-HH:MM)`);
-            if (action === '1') setClipboardShift(existingShift);
-            else if (action === '2') {
-                await ScheduleService.deleteShift(existingShift.id);
-                setShifts(prev => prev.filter(s => s.id !== existingShift.id));
-            } else if (action === '3') {
-                const newTime = window.prompt('Enter new time e.g., 08:00-17:00');
-                if (newTime && newTime.includes('-')) {
-                    const [start, end] = newTime.split('-');
-                    const updated = await ScheduleService.updateShift(existingShift.id, { start_time: start.trim(), end_time: end.trim() });
-                    if (updated) setShifts(prev => prev.map(s => s.id === updated.id ? updated : s));
-                }
-            }
-        } else {
-            const timeStr = window.prompt("Enter Shift Time (e.g., 08:00-17:00)");
-            if (timeStr && timeStr.includes('-')) {
-                const [start, end] = timeStr.split('-');
-                const saved = await ScheduleService.createShift({
-                    user_id: user.id,
-                    date: dateStr,
-                    start_time: start.trim(),
-                    end_time: end.trim(),
-                    role_type: providers.find(p => p.id === user.id) ? 'provider' : 'staff'
-                });
-                if (saved) setShifts(prev => [...prev, saved]);
-            }
-        }
+        setShiftEditor({ isOpen: true, user, dateObj, shift: existingShift || null });
     };
 
     const duplicatePriorWeek = async () => {
@@ -227,6 +201,87 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
         if (saved) {
             setTimeOffRequests(prev => prev.map(r => r.id === saved.id ? saved : r));
         }
+    };
+
+    const submitShiftEditor = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        const start = fd.get('start_time') as string;
+        const end = fd.get('end_time') as string;
+        const notes = fd.get('notes') as string;
+        const repeatMonth = fd.get('repeat_month') as string === 'on';
+        const actionType = fd.get('action_type') as string;
+
+        if (!shiftEditor.user || !shiftEditor.dateObj) return;
+
+        setIsLoading(true);
+
+        try {
+            if (actionType === 'delete' && shiftEditor.shift) {
+                await ScheduleService.deleteShift(shiftEditor.shift.id);
+                setShifts(prev => prev.filter(s => s.id !== shiftEditor.shift!.id));
+                setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null });
+                setIsLoading(false);
+                return;
+            }
+            if (actionType === 'copy' && shiftEditor.shift) {
+                setClipboardShift(shiftEditor.shift);
+                setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null });
+                setIsLoading(false);
+                return;
+            }
+
+            if (!start || !end) {
+                 alert("Start and End times are required");
+                 setIsLoading(false);
+                 return;
+            }
+
+            const baseShiftToCreate = {
+                user_id: shiftEditor.user.id,
+                start_time: start,
+                end_time: end,
+                notes: notes,
+                role_type: shiftEditor.user.role === 'DOCTOR' ? 'provider' as const : 'staff' as const
+            };
+
+            if (shiftEditor.shift && !repeatMonth) {
+                // Update
+                const updated = await ScheduleService.updateShift(shiftEditor.shift.id, { start_time: start, end_time: end, notes });
+                if (updated) setShifts(prev => prev.map(s => s.id === updated.id ? updated : s));
+            } else if (!repeatMonth) {
+                // Create Single
+                const saved = await ScheduleService.createShift({
+                    ...baseShiftToCreate,
+                    date: shiftEditor.dateObj.toISOString().split('T')[0]
+                });
+                if (saved) setShifts(prev => [...prev, saved]);
+            } else {
+                // Create Repeating for Month
+                const targetDayOfWeek = shiftEditor.dateObj.getDay();
+                const year = shiftEditor.dateObj.getFullYear();
+                const month = shiftEditor.dateObj.getMonth();
+                
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const newShifts: Omit<Shift, 'id'>[] = [];
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const d = new Date(year, month, day);
+                    if (d.getDay() === targetDayOfWeek) {
+                        const localDStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                        newShifts.push({ ...baseShiftToCreate, date: localDStr });
+                    }
+                }
+                
+                const savedArr = await ScheduleService.bulkCreateShifts(newShifts);
+                if (savedArr) setShifts(prev => [...prev, ...savedArr]);
+            }
+            setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null });
+        } catch (e) {
+            console.error(e);
+            alert("Failed to save shift");
+        }
+        setIsLoading(false);
     };
 
     const handlePrint = () => {
@@ -494,6 +549,97 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                      facilityName: 'Immediate Care Plus'
                  }} />
             </div>
+
+            {/* SHIFT EDITOR MODAL */}
+            {shiftEditor.isOpen && shiftEditor.user && shiftEditor.dateObj && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in-up">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden relative">
+                        <div className="bg-slate-50 dark:bg-slate-800/50 p-6 border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-start">
+                            <div>
+                                <h2 className="text-xl font-black text-slate-800 dark:text-white leading-tight mb-1">
+                                    {shiftEditor.shift ? 'Edit Assignment' : 'Assign Shift'}
+                                </h2>
+                                <p className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">
+                                    {shiftEditor.dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-sm ${getThemeClasses(shiftEditor.user.themeColor || 'blue').split(' ')[0]} ${getThemeClasses(shiftEditor.user.themeColor || 'blue').split(' ')[1]}`}>
+                                    {(shiftEditor.user.username || shiftEditor.user.full_name || 'U').substring(0,2).toUpperCase()}
+                                </div>
+                            </div>
+                        </div>
+
+                        <form onSubmit={submitShiftEditor} className="p-6">
+                            <div className="grid grid-cols-2 gap-4 mb-5">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Start Time</label>
+                                    <input 
+                                        type="time" 
+                                        name="start_time" 
+                                        defaultValue={shiftEditor.shift ? shiftEditor.shift.start_time : '08:00'} 
+                                        required 
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-mono"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">End Time</label>
+                                    <input 
+                                        type="time" 
+                                        name="end_time" 
+                                        defaultValue={shiftEditor.shift ? shiftEditor.shift.end_time : '17:00'} 
+                                        required 
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-mono"
+                                    />
+                                </div>
+                            </div>
+                            
+                            {!shiftEditor.shift && (
+                                <div className="mb-5 bg-indigo-50/50 dark:bg-indigo-900/20 p-3 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
+                                    <label className="flex items-start gap-3 cursor-pointer group">
+                                        <div className="mt-0.5">
+                                            <input type="checkbox" name="repeat_month" className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-indigo-300 shadow-sm cursor-pointer" />
+                                        </div>
+                                        <div>
+                                            <span className="text-sm font-bold text-indigo-900 dark:text-indigo-300 block mb-0.5 group-hover:text-indigo-700 transition-colors">Repeat entire month</span>
+                                            <span className="text-[10px] text-indigo-500/80 leading-snug block">Automatically duplicates this exact shift for every {shiftEditor.dateObj.toLocaleDateString('en-US', { weekday: 'long' })} in this month.</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            )}
+
+                            <div className="mb-6 border-b border-slate-100 dark:border-slate-800 pb-6">
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Shift Notes (Optional)</label>
+                                <input 
+                                    name="notes" 
+                                    defaultValue={shiftEditor.shift?.notes} 
+                                    placeholder="e.g. Front desk duty" 
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                                />
+                            </div>
+
+                            <div className="flex justify-between items-center">
+                                <div className="flex gap-2">
+                                    {shiftEditor.shift && (
+                                        <>
+                                            <button type="submit" name="action_type" value="delete" className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors shadow-sm border border-rose-100" title="Delete Shift">
+                                                <i className="fa-solid fa-trash-can text-sm"></i>
+                                            </button>
+                                            <button type="submit" name="action_type" value="copy" className="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 flex items-center justify-center transition-colors shadow-sm" title="Copy to Clipboard">
+                                                <i className="fa-solid fa-copy text-sm"></i>
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                                <div className="flex gap-2">
+                                    <button type="button" onClick={() => setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null })} className="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition">Cancel</button>
+                                    <button type="submit" name="action_type" value="save" className="px-6 py-2.5 bg-indigo-600 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md shadow-indigo-600/30 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all">Save</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 @media print {
