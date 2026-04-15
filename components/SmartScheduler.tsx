@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Shift, AppRoute } from '../types';
 import { ScheduleService } from '../services/ScheduleService';
-import { FaChevronLeft, FaChevronRight, FaCopy, FaPaste, FaTrash, FaMagic, FaCheck, FaExclamationTriangle } from 'react-icons/fa';
 
 interface SmartSchedulerProps {
     users: User[];
@@ -263,14 +262,14 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                                             {/* Extra hint for clipboard state */}
                                                             {clipboardShift && clipboardShift.id === shift.id && (
                                                                 <div className="absolute top-1 right-1 animate-pulse">
-                                                                    <FaCopy size={10} className="opacity-50" />
+                                                                    <i className="fa-solid fa-copy text-[10px] opacity-50"></i>
                                                                 </div>
                                                             )}
                                                         </div>
                                                     ) : (
                                                         <div className="h-full w-full min-h-[40px] rounded-lg border border-dashed border-transparent hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex items-center justify-center">
                                                             {canManage && clipboardShift && (
-                                                                <FaPaste className="text-indigo-300 opacity-0 hover:opacity-100 transition-opacity" size={14} />
+                                                                <i className="fa-solid fa-paste text-indigo-300 opacity-0 hover:opacity-100 transition-opacity text-sm"></i>
                                                             )}
                                                         </div>
                                                     )}
@@ -310,7 +309,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                 <div className="flex items-center gap-3">
                     <div className="flex bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-1">
                         <button onClick={handlePrevWeek} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-lg transition-colors">
-                            <FaChevronLeft size={12} />
+                            <i className="fa-solid fa-chevron-left text-xs"></i>
                         </button>
                         <div className="px-4 py-1.5 font-bold text-sm text-slate-700 dark:text-slate-300 flex items-center min-w-[170px] justify-center">
                             {weekDates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} 
@@ -318,7 +317,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                             {weekDates[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </div>
                         <button onClick={handleNextWeek} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-lg transition-colors">
-                            <FaChevronRight size={12} />
+                            <i className="fa-solid fa-chevron-right text-xs"></i>
                         </button>
                     </div>
 
@@ -336,7 +335,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                 onClick={duplicatePriorWeek}
                                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700 shadow-md shadow-indigo-600/20 transition-all hover:-translate-y-0.5"
                             >
-                                <FaCopy /> Duplicate Last Week
+                                <i className="fa-solid fa-copy"></i> Duplicate Last Week
                             </button>
                         </div>
                     )}
@@ -363,7 +362,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                     <div className="max-w-4xl mx-auto pointer-events-auto">
                         <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl flex items-center gap-4 group hover:border-indigo-500/50 transition-colors">
                             <div className="bg-indigo-500/20 p-3 rounded-xl">
-                                <FaMagic className="text-indigo-400" />
+                                <i className="fa-solid fa-wand-magic-sparkles text-indigo-400"></i>
                             </div>
                             <input 
                                 type="text"
