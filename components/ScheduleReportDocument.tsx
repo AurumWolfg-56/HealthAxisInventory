@@ -47,11 +47,13 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
                     <tbody>
-                        {usersGroup.map((u, i) => (
+                        {usersGroup.map((u, i) => {
+                            const displayName = u.username || (u as any).full_name || 'Unknown';
+                            return (
                             <tr key={u.id} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                                 <td style={{ padding: '8px 12px', borderRight: '1px solid #e2e8f0', width: '120px', fontWeight: 'bold', color: '#334155' }}>
-                                    <div style={{ fontSize: '11px' }}>{u.username}</div>
-                                    <div style={{ fontSize: '8px', color: '#64748b', textTransform: 'uppercase' }}>{u.role.replace('_', ' ')}</div>
+                                    <div style={{ fontSize: '11px' }}>{displayName}</div>
+                                    <div style={{ fontSize: '8px', color: '#64748b', textTransform: 'uppercase' }}>{(u.role || '').replace('_', ' ')}</div>
                                 </td>
                                 {dates.map(d => {
                                     const dStr = d.toISOString().split('T')[0];
@@ -77,7 +79,7 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                     );
                                 })}
                             </tr>
-                        ))}
+                        )})}
                     </tbody>
                 </table>
             </div>

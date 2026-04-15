@@ -3,6 +3,8 @@ import { User, Shift, AppRoute, TimeOffRequest } from '../types';
 import { ScheduleService } from '../services/ScheduleService';
 import { ScheduleReportDocument } from './ScheduleReportDocument';
 
+type ExtendedUser = User & { full_name?: string };
+
 interface SmartSchedulerProps {
     users: User[];
     currentUser: User | null;
@@ -114,7 +116,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
 
     // ACTIONS //
     const handleCellClick = async (user: User, dateObj: Date) => {
-        if (!canManage || viewMode === 'month') return;
+        if (!canManage) return;
         const dateStr = dateObj.toISOString().split('T')[0];
 
         // Ensure not clicking on an approved time off
@@ -274,16 +276,18 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                             </tr>
                         </thead>
                         <tbody>
-                            {groupUsers.map(u => (
+                            {groupUsers.map((u: ExtendedUser) => {
+                                const displayName = u.username || u.full_name || 'Unknown';
+                                return (
                                 <tr key={u.id} className="border-b border-slate-50/50 dark:border-slate-800/50 hover:bg-slate-50/30 transition-colors group">
                                     <td className="py-4 px-6 font-semibold sticky left-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)]">
                                         <div className="flex items-center gap-3">
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${getThemeClasses(u.themeColor!).split(' ')[0]} ${getThemeClasses(u.themeColor!).split(' ')[1]}`}>
-                                                {(u.username || 'U').substring(0,2).toUpperCase()}
+                                                {(displayName).substring(0,2).toUpperCase()}
                                             </div>
                                             <div>
-                                                <div className="leading-tight text-slate-800 dark:text-slate-200">{u.username || 'Unknown'}</div>
-                                                <div className="text-[10px] text-slate-400 capitalize">{u.role}</div>
+                                                <div className="leading-tight text-slate-800 dark:text-slate-200">{displayName}</div>
+                                                <div className="text-[10px] text-slate-400 capitalize">{(u.role || '').replace('_', ' ')}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -315,7 +319,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                         );
                                     })}
                                 </tr>
-                            ))}
+                            )})}
                         </tbody>
                     </table>
                 </div>
@@ -398,11 +402,12 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                     <div className="max-h-96 overflow-y-auto">
                         {pendingRequests.length === 0 ? <div className="p-6 text-center text-slate-500 font-medium text-sm">No pending requests</div> : (
                             pendingRequests.map(req => {
-                                const requester = users.find(u => u.id === req.user_id);
+                                const requester = users.find(u => u.id === req.user_id) as ExtendedUser;
+                                const reqName = requester?.username || requester?.full_name || 'Unknown User';
                                 return (
                                     <div key={req.id} className="p-4 border-b border-slate-100 hover:bg-slate-50">
                                         <div className="flex justify-between items-start mb-2">
-                                            <div className="font-bold text-slate-800">{requester?.username}</div>
+                                            <div className="font-bold text-slate-800">{reqName}</div>
                                             <div className="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-600 font-bold">{req.start_date} to {req.end_date}</div>
                                         </div>
                                         <p className="text-xs text-slate-500 italic mb-3">"{req.reason || 'No reason provided'}"</p>
