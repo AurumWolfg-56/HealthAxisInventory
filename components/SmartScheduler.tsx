@@ -259,6 +259,8 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                  return;
             }
 
+            const dateStr = fd.get('shift_date') as string || shiftEditor.dateObj.toISOString().split('T')[0];
+            
             const baseShiftToCreate = {
                 user_id: shiftEditor.user.id,
                 start_time: start,
@@ -269,13 +271,18 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
 
             if (shiftEditor.shift && !repeatMonth) {
                 // Update
-                const updated = await ScheduleService.updateShift(shiftEditor.shift.id, { start_time: start, end_time: end, notes });
-                if (updated) setShifts(prev => prev.map(s => s.id === updated.id ? updated : s));
+                const updated = await ScheduleService.updateShift(shiftEditor.shift.id, { date: dateStr, start_time: start, end_time: end, notes });
+                if (updated) {
+                    setShifts(prev => {
+                        const filtered = prev.filter(s => s.id !== updated.id);
+                        return [...filtered, updated];
+                    });
+                }
             } else if (!repeatMonth) {
                 // Create Single
                 const saved = await ScheduleService.createShift({
                     ...baseShiftToCreate,
-                    date: shiftEditor.dateObj.toISOString().split('T')[0]
+                    date: dateStr
                 });
                 if (saved) setShifts(prev => [...prev, saved]);
             } else {
@@ -318,15 +325,26 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     };
 
     // UI HELPERS //
+    const formatTime = (timeStr: string) => {
+        if (!timeStr) return '';
+        const [h, m] = timeStr.split(':');
+        const d = new Date();
+        d.setHours(parseInt(h), parseInt(m));
+        return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+    };
+
     const getThemeClasses = (colorName: string) => {
-        const map: any = {
-            blue: 'bg-blue-50/50 text-blue-700 border-l-blue-500',
-            emerald: 'bg-emerald-50/50 text-emerald-700 border-l-emerald-500',
-            rose: 'bg-rose-50/50 text-rose-700 border-l-rose-500',
-            amber: 'bg-amber-50/50 text-amber-700 border-l-amber-500',
-            purple: 'bg-purple-50/50 text-purple-700 border-l-purple-500',
-            indigo: 'bg-indigo-50/50 text-indigo-700 border-l-indigo-500',
-            teal: 'bg-teal-50/50 text-teal-700 border-l-teal-500',
+        const map: Record<string, string> = {
+            blue: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-l-blue-500 dark:border-l-blue-400',
+            emerald: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-l-emerald-500 dark:border-l-emerald-400',
+            rose: 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border-l-rose-500 dark:border-l-rose-400',
+            amber: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-l-amber-500 dark:border-l-amber-400',
+            purple: 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border-l-purple-500 dark:border-l-purple-400',
+            indigo: 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-l-indigo-500 dark:border-l-indigo-400',
+            teal: 'bg-teal-100 dark:bg-teal-500/20 text-teal-700 dark:text-teal-300 border-l-teal-500 dark:border-l-teal-400',
+            cyan: 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-l-cyan-500 dark:border-l-cyan-400',
+            fuchsia: 'bg-fuchsia-100 dark:bg-fuchsia-500/20 text-fuchsia-700 dark:text-fuchsia-300 border-l-fuchsia-500 dark:border-l-fuchsia-400',
+            orange: 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 border-l-orange-500 dark:border-l-orange-400',
         };
         return map[colorName] || map['blue'];
     };
@@ -383,8 +401,8 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                                     </div>
                                                 ) : shift ? (
                                                     <div className={`p-2 rounded-lg border-l-4 shadow-sm relative ${getThemeClasses(u.themeColor!)}`}>
-                                                        <div className="font-bold tracking-tight text-[11px] leading-none mb-1">{shift.start_time}</div>
-                                                        <div className="font-bold tracking-tight text-[11px] leading-none opacity-80">{shift.end_time}</div>
+                                                        <div className="font-bold tracking-tight text-[11px] leading-none mb-1">{formatTime(shift.start_time)}</div>
+                                                        <div className="font-bold tracking-tight text-[11px] leading-none opacity-80">{formatTime(shift.end_time)}</div>
                                                         {clipboardShift?.id === shift.id && <div className="absolute top-1 right-1 animate-pulse"><i className="fa-solid fa-copy opacity-50"></i></div>}
                                                     </div>
                                                 ) : viewMode === 'week' ? (
@@ -614,6 +632,16 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                 <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '10:00', tmpEnd: '20:00'}))} className="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 rounded-lg transition-colors">Weekday (10-8)</button>
                                 <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '10:00', tmpEnd: '18:00'}))} className="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 rounded-lg transition-colors">Weekend (10-6)</button>
                                 <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '10:00', tmpEnd: '16:00'}))} className="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 rounded-lg transition-colors">Holiday (10-4)</button>
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Shift Date (Move)</label>
+                                <input 
+                                    type="date" 
+                                    name="shift_date" 
+                                    required 
+                                    defaultValue={shiftEditor.dateObj?.toISOString().split('T')[0] || ''} 
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-mono"
+                                />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4 mb-5">
