@@ -400,13 +400,49 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                         const timeOff = timeOffRequests.find(t => t.user_id === u.id && t.status === 'approved' && t.start_date <= dStrLocal && t.end_date >= dStrLocal);
                                         
                                         return (
-                                            <td key={dStr} className={`py-1 px-1 border-l border-slate-100/50 dark:border-slate-800/50 align-top ${canManage && !timeOff && viewMode==='week' ? (clipboardShift ? 'cursor-cell' : 'cursor-pointer') : ''}`} onClick={() => handleCellClick(u, d)}>
+                                            <td 
+                                                key={dStr} 
+                                                className={`py-1 px-1 border-l border-slate-100/50 dark:border-slate-800/50 align-top ${canManage && !timeOff && viewMode==='week' ? (clipboardShift ? 'cursor-cell' : 'cursor-pointer') : ''}`} 
+                                                onClick={() => handleCellClick(u, d)}
+                                                onDragOver={canManage ? (e) => e.preventDefault() : undefined}
+                                                onDrop={canManage ? async (e) => {
+                                                    e.preventDefault();
+                                                    try {
+                                                        const dataStr = e.dataTransfer.getData('application/json');
+                                                        if (!dataStr) return;
+                                                        const data = JSON.parse(dataStr);
+                                                        if (data.action === 'move') {
+                                                            const movingShift = shifts.find(s => s.id === data.shiftId);
+                                                            if (movingShift && (movingShift.date !== dStrLocal || movingShift.user_id !== u.id)) {
+                                                                setIsLoading(true);
+                                                                const updated = await ScheduleService.updateShift(movingShift.id, { 
+                                                                    date: dStrLocal,
+                                                                    user_id: u.id
+                                                                });
+                                                                if (updated) {
+                                                                    setShifts(prev => {
+                                                                        const filtered = prev.filter(s => s.id !== updated.id);
+                                                                        return [...filtered, updated];
+                                                                    });
+                                                                }
+                                                                setIsLoading(false);
+                                                            }
+                                                        }
+                                                    } catch(err) {}
+                                                } : undefined}
+                                            >
                                                 {timeOff ? (
                                                     <div className="h-full w-full p-2 rounded border border-red-200 bg-[repeat-x_repeating-linear-gradient(45deg,theme(colors.red.50),theme(colors.red.50)_10px,transparent_10px,transparent_20px)] flex items-center justify-center min-h-[40px]">
                                                         <span className="px-2 py-1 bg-red-100 text-red-700 text-[9px] font-black uppercase rounded shadow-sm">Blocked</span>
                                                     </div>
                                                 ) : shift ? (
-                                                    <div className={`p-2 rounded-lg border-l-4 shadow-sm relative ${getThemeClasses(u.themeColor!)}`}>
+                                                    <div 
+                                                        draggable={canManage}
+                                                        onDragStart={(e) => {
+                                                            e.dataTransfer.setData('application/json', JSON.stringify({ action: 'move', shiftId: shift.id }));
+                                                        }}
+                                                        className={`p-2 rounded-lg border-l-4 shadow-sm relative ${getThemeClasses(u.themeColor!)} ${canManage ? 'cursor-grab active:cursor-grabbing hover:shadow-md' : ''}`}
+                                                    >
                                                         <div className="font-bold tracking-tight text-[11px] leading-none mb-1">{formatTime(shift.start_time)}</div>
                                                         <div className="font-bold tracking-tight text-[11px] leading-none opacity-80">{formatTime(shift.end_time)}</div>
                                                         {clipboardShift?.id === shift.id && <div className="absolute top-1 right-1 animate-pulse"><i className="fa-solid fa-copy opacity-50"></i></div>}
@@ -438,8 +474,9 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                         <span className="bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md">Workforce Management</span>
                         {!canManage && <span className="bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md">Staff View</span>}
                     </div>
-                    <h1 className="text-3xl font-black tracking-tight">Smart Scheduler</h1>
-                    <p className="text-sm text-slate-500 mt-1 font-medium">Manage clinical shifts, time-off requests, and coverage.</p>
+                    <h1 className="text-xl md:text-3xl font-black tracking-tight">Smart Scheduler</h1>
+                    <p className="text-sm text-slate-500 mt-1 font-medium mb-3">Manage clinical shifts, time-off requests, and coverage.</p>
+                    {canManage && <div className="inline-flex items-center gap-2 bg-indigo-50/50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold px-3 py-1.5 rounded-lg border border-indigo-100/50 dark:border-indigo-800/30 shadow-sm"><i className="fa-solid fa-lightbulb text-amber-400"></i> Pro Tip: You can Drag & Drop shifts directly to move them or reassign to another staff member.</div>}
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-3">
@@ -609,8 +646,8 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
 
             {/* SHIFT EDITOR MODAL */}
             {shiftEditor.isOpen && shiftEditor.user && shiftEditor.dateObj && (
-                <div className="fixed inset-0 z-[100] grid place-items-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden relative my-auto">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto pt-20 pb-20">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden relative m-auto">
                         <div className="bg-slate-50 dark:bg-slate-800/50 p-6 border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-start">
                             <div className="flex-1">
                                 <h2 className="text-xl font-black text-slate-800 dark:text-white leading-tight mb-1">
