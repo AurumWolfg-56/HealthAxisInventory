@@ -23,7 +23,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     
     // Feature States
     const [clipboardShift, setClipboardShift] = useState<Shift | null>(null);
-    const [shiftEditor, setShiftEditor] = useState<{isOpen: boolean, user: ExtendedUser|null, dateObj: Date|null, shift: Shift|null, tmpStart?: string, tmpEnd?: string, tmpColor?: string}>({isOpen: false, user: null, dateObj: null, shift: null, tmpStart: '08:00', tmpEnd: '17:00', tmpColor: 'blue'});
+    const [shiftEditor, setShiftEditor] = useState<{isOpen: boolean, user: ExtendedUser|null, dateObj: Date|null, shift: Shift|null, tmpStart?: string, tmpEnd?: string, tmpColor?: string, tmpDate?: string}>({isOpen: false, user: null, dateObj: null, shift: null, tmpStart: '08:00', tmpEnd: '17:00', tmpColor: 'blue'});
     const [userColorOverrides, setUserColorOverrides] = useState<Record<string, string>>(() => {
         try { return JSON.parse(localStorage.getItem('HA_USER_COLORS') || '{}'); } catch { return {}; }
     });
@@ -163,11 +163,14 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
             defaultEnd = lastShift.end_time;
         }
 
+        let defaultDate = dateObj.toISOString().split('T')[0];
+
         setShiftEditor({ 
             isOpen: true, user, dateObj, shift: existingShift || null, 
             tmpStart: existingShift ? existingShift.start_time : defaultStart, 
             tmpEnd: existingShift ? existingShift.end_time : defaultEnd, 
-            tmpColor: uColor 
+            tmpColor: uColor,
+            tmpDate: existingShift ? existingShift.date : defaultDate
         });
     };
 
@@ -204,11 +207,14 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     const submitTimeOff = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
+        const targetUserId = fd.get('user_id') as string || currentUser!.id;
+        const initialStatus = canManage ? 'approved' : 'pending';
+
         const saved = await ScheduleService.createTimeOffRequest({
-            user_id: currentUser!.id,
+            user_id: targetUserId,
             start_date: fd.get('start_date') as string,
             end_date: fd.get('end_date') as string,
-            status: 'pending',
+            status: initialStatus,
             reason: fd.get('reason') as string
         });
         if (saved) {
@@ -553,6 +559,17 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
                         <h2 className="text-xl font-black mb-4">Request Time Off / Block</h2>
                         <form onSubmit={submitTimeOff}>
+                            {canManage && (
+                                <div className="mb-4">
+                                    <label className="block text-xs font-bold text-slate-500 mb-1">Staff Member</label>
+                                    <select name="user_id" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 font-bold text-slate-700">
+                                        <option value={currentUser!.id}>Myself</option>
+                                        {users.filter(u => u.id !== currentUser!.id).map(u => (
+                                            <option key={u.id} value={u.id}>{u.username || u.full_name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 mb-1">Start Date</label>
@@ -600,7 +617,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                     {shiftEditor.shift ? 'Edit Assignment' : 'Assign Shift'}
                                 </h2>
                                 <p className="text-[11px] font-bold text-slate-400 tracking-wider uppercase mb-3">
-                                    {shiftEditor.dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                                    {shiftEditor.tmpDate ? new Date(shiftEditor.tmpDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : shiftEditor.dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                                 </p>
                                 {/* Color Picker Row */}
                                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -639,7 +656,8 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                     type="date" 
                                     name="shift_date" 
                                     required 
-                                    defaultValue={shiftEditor.dateObj?.toISOString().split('T')[0] || ''} 
+                                    value={shiftEditor.tmpDate || ''}
+                                    onChange={e => setShiftEditor(prev => ({...prev, tmpDate: e.target.value}))}
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-mono"
                                 />
                             </div>
