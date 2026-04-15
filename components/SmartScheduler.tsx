@@ -150,10 +150,23 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
 
         const existingShift = shifts.find(s => s.user_id === user.id && s.date === dateStr);
         const uColor = userColorOverrides[user.id] || user.themeColor || SHIFT_COLORS[0];
+        
+        // Smart Defaults: Detect their most recent shift, otherwise fallback to clinic hours
+        const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+        let defaultStart = '10:00';
+        let defaultEnd = isWeekend ? '18:00' : '20:00';
+        
+        const userPastShifts = shifts.filter(s => s.user_id === user.id);
+        if (userPastShifts.length > 0) {
+            const lastShift = userPastShifts.reduce((latest, s) => s.date > latest.date ? s : latest, userPastShifts[0]);
+            defaultStart = lastShift.start_time;
+            defaultEnd = lastShift.end_time;
+        }
+
         setShiftEditor({ 
             isOpen: true, user, dateObj, shift: existingShift || null, 
-            tmpStart: existingShift ? existingShift.start_time : '08:00', 
-            tmpEnd: existingShift ? existingShift.end_time : '17:00', 
+            tmpStart: existingShift ? existingShift.start_time : defaultStart, 
+            tmpEnd: existingShift ? existingShift.end_time : defaultEnd, 
             tmpColor: uColor 
         });
     };
@@ -598,9 +611,9 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                         <form onSubmit={submitShiftEditor} className="p-6">
                             {/* Quick Time Presets */}
                             <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-thin">
-                                <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '08:00', tmpEnd: '14:00'}))} className="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 rounded-lg transition-colors">Morning</button>
-                                <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '14:00', tmpEnd: '20:00'}))} className="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 rounded-lg transition-colors">Afternoon</button>
-                                <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '08:00', tmpEnd: '17:00'}))} className="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 rounded-lg transition-colors">Full Day</button>
+                                <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '10:00', tmpEnd: '20:00'}))} className="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 rounded-lg transition-colors">Weekday (10-8)</button>
+                                <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '10:00', tmpEnd: '18:00'}))} className="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 rounded-lg transition-colors">Weekend (10-6)</button>
+                                <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '08:00', tmpEnd: '17:00'}))} className="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 rounded-lg transition-colors">Early (8-5)</button>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4 mb-5">
@@ -666,12 +679,25 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                     )}
                                 </div>
                                 <div className="flex gap-2">
-                                    <button type="button" onClick={() => setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null })} className="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition">Cancel</button>
-                                    <button type="submit" name="action_type" value="save" className="px-6 py-2.5 bg-indigo-600 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md shadow-indigo-600/30 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all">Save</button>
+                                    <button type="button" onClick={() => setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null })} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-sm rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Cancel</button>
+                                    <button type="submit" name="action_type" value="save" className="px-5 py-2 bg-medical-500 text-white font-bold text-sm rounded-xl hover:bg-medical-600 transition-colors shadow-md shadow-medical-500/20 active:scale-[0.98]">Save Shift</button>
                                 </div>
                             </div>
                         </form>
                     </div>
+                </div>
+            )}
+
+            {/* PASTE MODE NOTIFICATION TOAST */}
+            {clipboardShift && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[110] bg-indigo-600 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-4 animate-fade-in border border-indigo-400 font-medium">
+                    <div className="flex items-center gap-2">
+                        <i className="fa-solid fa-paste animate-bounce"></i>
+                        <span>Paste Mode Active <span className="font-bold opacity-80 text-xs ml-1">({clipboardShift.start_time} - {clipboardShift.end_time})</span></span>
+                    </div>
+                    <button onClick={() => setClipboardShift(null)} className="bg-white/20 hover:bg-white/30 text-white w-7 h-7 rounded-full flex items-center justify-center transition">
+                        <i className="fa-solid fa-xmark text-sm"></i>
+                    </button>
                 </div>
             )}
 
