@@ -238,27 +238,12 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
         const end = fd.get('end_time') as string;
         const notes = fd.get('notes') as string;
         const repeatMonth = fd.get('repeat_month') as string === 'on';
-        const actionType = fd.get('action_type') as string;
 
         if (!shiftEditor.user || !shiftEditor.dateObj) return;
 
         setIsLoading(true);
 
         try {
-            if (actionType === 'delete' && shiftEditor.shift) {
-                await ScheduleService.deleteShift(shiftEditor.shift.id);
-                setShifts(prev => prev.filter(s => s.id !== shiftEditor.shift!.id));
-                setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null });
-                setIsLoading(false);
-                return;
-            }
-            if (actionType === 'copy' && shiftEditor.shift) {
-                setClipboardShift(shiftEditor.shift);
-                setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null });
-                setIsLoading(false);
-                return;
-            }
-
             if (!start || !end) {
                  alert("Start and End times are required");
                  setIsLoading(false);
@@ -756,10 +741,26 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                 <div className="flex gap-2">
                                     {shiftEditor.shift && (
                                         <>
-                                            <button type="submit" name="action_type" value="delete" className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors shadow-sm border border-rose-100" title="Delete Shift">
+                                            <button 
+                                                type="button" 
+                                                title="Delete Shift"
+                                                onClick={async () => {
+                                                    setIsLoading(true);
+                                                    await ScheduleService.deleteShift(shiftEditor.shift!.id);
+                                                    setShifts(prev => prev.filter(s => s.id !== shiftEditor.shift!.id));
+                                                    setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null });
+                                                    setIsLoading(false);
+                                                }}
+                                                className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors shadow-sm border border-rose-100">
                                                 <i className="fa-solid fa-trash-can text-sm"></i>
                                             </button>
-                                            <button type="submit" name="action_type" value="copy" className="px-4 py-2 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-bold text-xs flex items-center gap-2 transition-colors shadow-sm border border-indigo-100 h-10">
+                                            <button 
+                                                type="button"
+                                                onClick={() => {
+                                                    setClipboardShift(shiftEditor.shift!);
+                                                    setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null });
+                                                }}
+                                                className="px-4 py-2 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-bold text-xs flex items-center gap-2 transition-colors shadow-sm border border-indigo-100 h-10">
                                                 <i className="fa-solid fa-stamp text-sm"></i> Stamp Mode
                                             </button>
                                         </>
