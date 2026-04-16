@@ -34,26 +34,11 @@ jobs:
       - name: Wait for Hostinger auto-deploy to finish
         run: sleep 120
 
-      - name: Deploy to Hostinger via LFTP (Alpine)
-        timeout-minutes: 5
-        run: |
-          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest sh -c "
-            apk add --no-cache lftp &&
-            lftp -c \"
-              set ssl:verify-certificate no;
-              set ftp:ssl-allow no;
-              set ftp:passive-mode true;
-              set ftp:auto-passive-mode yes;
-              set dns:fatal-timeout 15;
-              set net:timeout 15;
-              set net:max-retries 10;
-              set net:reconnect-interval-base 5;
-              set net:connection-limit 1;
-              set xfer:use-temp-file no;
-              set xfer:clobber true;
-              set cmd:trace true;
-              open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
-              mirror -R --verbose --no-perms --parallel=1 --exclude-glob .git* --exclude-glob node_modules --exclude-glob whisper_server.py --exclude-glob start_whisper.bat --exclude-glob '*.pyc' ./dist/ ./;
-              exit 0;
-            \" || echo 'LFTP encountered an issue but proceeding'
-          "
+      - name: Deploy to Hostinger via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ./
+          local-dir: ./dist/
