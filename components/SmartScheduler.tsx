@@ -33,6 +33,9 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     // Modals
     const [showTimeOffModal, setShowTimeOffModal] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [activeTab, setActiveTab] = useState<'providers' | 'staff'>('providers');
+    const [hoveredCell, setHoveredCell] = useState<{userId: string, date: string} | null>(null);
+    const [dragTargetCell, setDragTargetCell] = useState<{userId: string, date: string} | null>(null);
 
     const canManage = hasPermission('schedule.manage');
     const reportRef = useRef<HTMLDivElement>(null);
@@ -305,14 +308,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     };
 
     const handlePrint = () => {
-        const printContent = document.getElementById('schedule-report-document-container');
-        if (printContent) {
-            const originalContents = document.body.innerHTML;
-            document.body.innerHTML = printContent.innerHTML;
-            window.print();
-            document.body.innerHTML = originalContents;
-            window.location.reload(); // Reload to restore React bindings
-        }
+        window.print();
     };
 
     // UI HELPERS //
@@ -387,11 +383,16 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                         return (
                                             <td 
                                                 key={dStr} 
-                                                className={`py-1 px-1 border-l border-slate-100/50 dark:border-slate-800/50 align-top ${canManage && !timeOff && viewMode==='week' ? (clipboardShift ? 'cursor-cell' : 'cursor-pointer') : ''}`} 
+                                                className={`py-1 px-1 border-l border-slate-100/50 dark:border-slate-800/50 align-top transition-colors ${canManage && !timeOff && viewMode==='week' ? (clipboardShift ? 'cursor-cell' : 'cursor-pointer') : ''} ${dragTargetCell?.userId === u.id && dragTargetCell?.date === dStrLocal ? 'bg-indigo-50/50 dark:bg-indigo-900/30' : ''}`} 
                                                 onClick={() => handleCellClick(u, d)}
+                                                onDragEnter={canManage ? () => setDragTargetCell({userId: u.id, date: dStrLocal}) : undefined}
+                                                onDragLeave={canManage ? () => setDragTargetCell(null) : undefined}
+                                                onMouseEnter={canManage && clipboardShift ? () => setHoveredCell({userId: u.id, date: dStrLocal}) : undefined}
+                                                onMouseLeave={canManage && clipboardShift ? () => setHoveredCell(null) : undefined}
                                                 onDragOver={canManage ? (e) => e.preventDefault() : undefined}
                                                 onDrop={canManage ? async (e) => {
                                                     e.preventDefault();
+                                                    setDragTargetCell(null);
                                                     try {
                                                         const dataStr = e.dataTransfer.getData('application/json');
                                                         if (!dataStr) return;
@@ -433,8 +434,15 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                                         {clipboardShift?.id === shift.id && <div className="absolute top-1 right-1 animate-pulse"><i className="fa-solid fa-copy opacity-50"></i></div>}
                                                     </div>
                                                 ) : viewMode === 'week' ? (
-                                                    <div className="h-full w-full min-h-[40px] rounded-lg border border-dashed border-transparent hover:border-slate-300 transition flex items-center justify-center">
-                                                        {canManage && clipboardShift && <i className="fa-solid fa-paste text-indigo-300 opacity-0 hover:opacity-100 transition text-sm"></i>}
+                                                    <div className="h-full w-full min-h-[40px] rounded-lg border border-dashed border-transparent hover:border-slate-300 transition flex items-center justify-center relative overflow-hidden">
+                                                        {canManage && clipboardShift && hoveredCell?.userId === u.id && hoveredCell?.date === dStrLocal && (
+                                                            <div className={`absolute inset-0 p-2 rounded-lg border border-indigo-200/50 opacity-50 scale-95 transition-all outline-dashed outline-2 outline-indigo-400 ${getThemeClasses(u.themeColor!)}`}>
+                                                                <div className="font-bold tracking-tight text-[11px] leading-none mb-1">{formatTime(clipboardShift.start_time)}</div>
+                                                                <div className="font-bold tracking-tight text-[11px] leading-none opacity-80">{formatTime(clipboardShift.end_time)}</div>
+                                                                <div className="absolute top-1 right-1"><i className="fa-solid fa-stamp opacity-50"></i></div>
+                                                            </div>
+                                                        )}
+                                                        {canManage && clipboardShift && !(hoveredCell?.userId === u.id && hoveredCell?.date === dStrLocal) && <i className="fa-solid fa-paste text-indigo-300 opacity-0 hover:opacity-100 transition text-sm"></i>}
                                                     </div>
                                                 ) : <div className="h-full min-h-[40px]"></div>}
                                             </td>
@@ -554,9 +562,27 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
             {isLoading ? (
                 <div className="h-64 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>
             ) : (
-                <div className={viewMode === 'month' ? 'opacity-80' : ''}>
-                    {providers.length > 0 && renderGrid("Clinical Providers", providers)}
-                    {supportStaff.length > 0 && renderGrid("Support Staff", supportStaff)}
+                <div className={`mt-6 ${viewMode === 'month' ? 'opacity-90' : ''} print:hidden`}>
+                    {/* TABS FOR VIEWS */}
+                    <div className="flex border-b border-slate-200 dark:border-slate-800 mb-6 gap-6 px-4">
+                        <button 
+                            onClick={() => setActiveTab('providers')}
+                            className={`pb-3 text-sm font-black transition-all ${activeTab === 'providers' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                            Clinical <span className="ml-1 text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">{providers.length}</span>
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('staff')}
+                            className={`pb-3 text-sm font-black transition-all ${activeTab === 'staff' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                            Support Staff <span className="ml-1 text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">{supportStaff.length}</span>
+                        </button>
+                    </div>
+
+                    <div className="animate-fade-in px-2">
+                        {activeTab === 'providers' && providers.length > 0 && renderGrid("Clinical Providers", providers)}
+                        {activeTab === 'staff' && supportStaff.length > 0 && renderGrid("Support Staff", supportStaff)}
+                    </div>
                 </div>
             )}
 
@@ -619,10 +645,10 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                 </div>
             )}
 
-            {/* HIDDEN PRINT DOCUMENT */}
-            <div id="schedule-report-document-container" className="hidden">
+            {/* NATIVE CSS PRINT DOCUMENT */}
+            <div id="schedule-report-document-container" className="hidden print:block absolute inset-0 w-full min-h-screen bg-white z-[999]">
                  <ScheduleReportDocument data={{
-                     users: colorMappedUsers,
+                     users: colorMappedUsers.filter(u => activeTab === 'providers' ? ['DOCTOR'].includes(u.role) : ['MANAGER', 'OWNER', 'MA', 'FRONT_DESK'].includes(u.role)),
                      shifts,
                      timeOffRequests,
                      startDate: startDateStr,
