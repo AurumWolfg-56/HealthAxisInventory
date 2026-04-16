@@ -510,9 +510,13 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                         <>
                             <div className="h-6 w-px bg-slate-200 mx-1"></div>
                             {clipboardShift && (
-                                <button onClick={() => setClipboardShift(null)} className="px-4 py-2 bg-rose-50 text-rose-600 font-bold text-sm rounded-xl hover:bg-rose-100 transition border border-rose-100">
-                                    Cancel
-                                </button>
+                                <div className="flex items-center gap-2 bg-indigo-600 text-white pl-4 pr-1.5 py-1.5 rounded-xl shadow-lg border border-indigo-500 animate-fade-in">
+                                    <i className="fa-solid fa-stamp animate-bounce text-sm" />
+                                    <span className="text-xs font-bold mr-1">Stamp Mode Active</span>
+                                    <button onClick={() => setClipboardShift(null)} className="hover:bg-rose-500 bg-rose-400 text-white rounded-lg px-2.5 py-1 flex items-center justify-center transition ml-1" title="Cancel Stamp Mode">
+                                        <i className="fa-solid fa-xmark text-sm"></i>
+                                    </button>
+                                </div>
                             )}
                             <button onClick={duplicatePriorWeek} disabled={viewMode==='month'} className="px-4 py-2 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700 shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed">
                                 <i className="fa-solid fa-copy"></i> Clone
@@ -646,9 +650,9 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
 
             {/* SHIFT EDITOR MODAL */}
             {shiftEditor.isOpen && shiftEditor.user && shiftEditor.dateObj && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto pt-20 pb-20">
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden relative m-auto">
-                        <div className="bg-slate-50 dark:bg-slate-800/50 p-6 border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-start">
+                <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+                    <div className="absolute inset-x-4 top-[8vh] max-h-[85vh] overflow-y-auto w-auto sm:max-w-sm sm:mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col">
+                        <div className="bg-slate-50 dark:bg-slate-800/50 p-6 border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-start sticky top-0 z-10">
                             <div className="flex-1">
                                 <h2 className="text-xl font-black text-slate-800 dark:text-white leading-tight mb-1">
                                     {shiftEditor.shift ? 'Edit Assignment' : 'Assign Shift'}
@@ -755,8 +759,8 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                             <button type="submit" name="action_type" value="delete" className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors shadow-sm border border-rose-100" title="Delete Shift">
                                                 <i className="fa-solid fa-trash-can text-sm"></i>
                                             </button>
-                                            <button type="submit" name="action_type" value="copy" className="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 flex items-center justify-center transition-colors shadow-sm" title="Copy to Clipboard">
-                                                <i className="fa-solid fa-copy text-sm"></i>
+                                            <button type="submit" name="action_type" value="copy" className="px-4 py-2 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-bold text-xs flex items-center gap-2 transition-colors shadow-sm border border-indigo-100 h-10">
+                                                <i className="fa-solid fa-stamp text-sm"></i> Stamp Mode
                                             </button>
                                         </>
                                     )}
