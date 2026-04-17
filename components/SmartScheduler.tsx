@@ -23,7 +23,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     
     // Feature States
     const [clipboardShift, setClipboardShift] = useState<Shift | null>(null);
-    const [shiftEditor, setShiftEditor] = useState<{isOpen: boolean, user: ExtendedUser|null, dateObj: Date|null, shift: Shift|null, tmpStart?: string, tmpEnd?: string, tmpColor?: string, tmpDate?: string, applyDays?: Record<number, boolean>}>({isOpen: false, user: null, dateObj: null, shift: null, tmpStart: '08:00', tmpEnd: '17:00', tmpColor: 'blue', applyDays: {}});
+    const [shiftEditor, setShiftEditor] = useState<{isOpen: boolean, user: ExtendedUser|null, dateObj: Date|null, shift: Shift|null, tmpStart?: string, tmpEnd?: string, tmpColor?: string, tmpDate?: string, applyDays?: Record<number, boolean>, notifyStaff?: boolean}>({isOpen: false, user: null, dateObj: null, shift: null, tmpStart: '08:00', tmpEnd: '17:00', tmpColor: 'blue', applyDays: {}, notifyStaff: false});
     const [userColorOverrides, setUserColorOverrides] = useState<Record<string, string>>(() => {
         try { return JSON.parse(localStorage.getItem('HA_USER_COLORS') || '{}'); } catch { return {}; }
     });
@@ -211,6 +211,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
         const end = fd.get('end_time') as string;
         const notes = fd.get('notes') as string;
         const repeatMonth = fd.get('repeat_month') as string === 'on';
+        const notifyStaff = fd.get('notify_staff') as string === 'on';
 
         if (!shiftEditor.dateObj) return;
 
@@ -290,7 +291,13 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                 const savedArr = await ScheduleService.bulkCreateShifts(newShifts);
                 if (savedArr) setShifts(prev => [...prev, ...savedArr]);
             }
-            setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null, tmpStart: '10:00', tmpEnd: '18:00', tmpColor: 'blue', applyDays: {} });
+
+            if (notifyStaff && selectedUserObj?.email) {
+                // Background notification
+                ScheduleService.notifyScheduleChange(selectedUserObj.email);
+            }
+
+            setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null, tmpStart: '10:00', tmpEnd: '18:00', tmpColor: 'blue', applyDays: {}, notifyStaff: false });
         } catch (e) {
             console.error(e);
             alert("Failed to save shift");
@@ -771,8 +778,18 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                     name="notes" 
                                     defaultValue={shiftEditor.shift?.notes} 
                                     placeholder="e.g. Front desk duty" 
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all mb-4"
                                 />
+                                <label className="flex items-center gap-2 cursor-pointer mt-2">
+                                    <input 
+                                        type="checkbox" 
+                                        name="notify_staff" 
+                                        defaultChecked={shiftEditor.notifyStaff}
+                                        onChange={e => setShiftEditor(prev => ({...prev, notifyStaff: e.target.checked}))}
+                                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300"
+                                    />
+                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Notify staff member via email</span>
+                                </label>
                             </div>
 
                             <div className="flex justify-between items-center">
@@ -786,7 +803,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                                     setIsLoading(true);
                                                     await ScheduleService.deleteShift(shiftEditor.shift!.id);
                                                     setShifts(prev => prev.filter(s => s.id !== shiftEditor.shift!.id));
-                                                    setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null });
+                                                    setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null, notifyStaff: false });
                                                     setIsLoading(false);
                                                 }}
                                                 className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors shadow-sm border border-rose-100">
@@ -796,7 +813,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                                 type="button"
                                                 onClick={() => {
                                                     setClipboardShift(shiftEditor.shift!);
-                                                    setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null });
+                                                    setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null, notifyStaff: false });
                                                 }}
                                                 className="px-4 py-2 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-bold text-xs flex items-center gap-2 transition-colors shadow-sm border border-indigo-100 h-10">
                                                 <i className="fa-solid fa-stamp text-sm"></i> Stamp Mode
@@ -805,7 +822,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                     )}
                                 </div>
                                 <div className="flex gap-2">
-                                    <button type="button" onClick={() => setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null })} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-sm rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Cancel</button>
+                                    <button type="button" onClick={() => setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null, notifyStaff: false })} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-sm rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Cancel</button>
                                     <button type="submit" name="action_type" value="save" className="px-5 py-2 bg-medical-500 text-white font-bold text-sm rounded-xl hover:bg-medical-600 transition-colors shadow-md shadow-medical-500/20 active:scale-[0.98]">Save Shift</button>
                                 </div>
                             </div>

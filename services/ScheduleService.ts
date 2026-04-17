@@ -234,4 +234,27 @@ export class ScheduleService {
             throw error;
         }
     }
+
+    /**
+     * NOTIFICATIONS
+     */
+    static async notifyScheduleChange(email?: string): Promise<boolean> {
+        try {
+            const url = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/send-email';
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    type: 'schedule_change',
+                    to: email
+                })
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('[ScheduleService] Notify failed', error);
+            return false;
+        }
+    }
 }
