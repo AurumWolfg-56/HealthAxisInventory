@@ -213,7 +213,7 @@ const App: React.FC = () => {
         const fetchUsersDb = async () => {
             if (!user?.id || !accessToken) return; // Wait for BOTH user AND token
             try {
-                const fetchedUsers = await UserService.getUsers();
+                const fetchedUsers = await UserService.getUsers(true);
                 console.log('[Debug] Users fetched:', fetchedUsers);
                 setUsersDb(fetchedUsers);
                 localStorage.setItem(STORAGE_KEYS.USERS_DB, JSON.stringify(fetchedUsers));

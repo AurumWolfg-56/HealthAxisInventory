@@ -102,6 +102,22 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setIsLoading(true);
         console.log('[AppDataContext] === Starting data fetch ===');
 
+        // [FIX] Ensure services have locationId exactly before fetching
+        if (locationId) {
+            InventoryService.setLocationId(locationId);
+            OrderService.setLocationId(locationId);
+            DailyReportService.setLocationId(locationId);
+            TemplateService.setLocationId(locationId);
+            BillingRuleService.setLocationId(locationId);
+            BudgetService.setLocationId(locationId);
+            ProtocolService.setLocationId(locationId);
+            UserService.setLocationId(locationId);
+            MedicalCodeService.setLocationId(locationId);
+            PriceService.setLocationId(locationId);
+            PettyCashService.setLocationId(locationId);
+            ScheduleService.setLocationId(locationId);
+        }
+
         try {
             // Run fetches in parallel
             const [reportsResult, templatesResult, billingRulesResult, budgetsResult, protocolsResult, pettyCashResult] = await Promise.allSettled([
