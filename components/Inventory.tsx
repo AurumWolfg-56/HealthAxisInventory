@@ -636,8 +636,18 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                               <button
                                 onClick={() => onEditItem(item)}
                                 className="w-8 h-8 rounded-lg bg-medical-50 dark:bg-medical-900/30 text-medical-600 dark:text-medical-400 hover:bg-medical-600 hover:text-white flex items-center justify-center transition-all text-xs active:scale-90 ml-0.5"
+                                title="Edit Item"
                               >
                                 <i className="fa-solid fa-pen-to-square"></i>
+                              </button>
+                            )}
+                            {user?.username?.toLowerCase() === 'manager raul' && (
+                              <button
+                                onClick={() => onDeleteItem(item.id)}
+                                className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-500 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all text-xs active:scale-90 ml-0.5"
+                                title="Delete Item"
+                              >
+                                <i className="fa-solid fa-trash-can"></i>
                               </button>
                             )}
                           </div>
@@ -724,14 +734,25 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                     </div>
                   </div>
                 </div>
-                {hasPermission('inventory.edit') && (
-                  <button
-                    onClick={() => onEditItem(item)}
-                    className="w-9 h-9 glass-panel rounded-lg flex items-center justify-center text-slate-400 hover:text-medical-500 transition-all active:scale-95"
-                  >
-                    <i className={`fa-solid ${isAuditMode ? 'fa-pen-to-square' : 'fa-ellipsis-vertical'} text-sm`}></i>
-                  </button>
-                )}
+                <div className="flex gap-1.5 h-max">
+                  {hasPermission('inventory.edit') && (
+                    <button
+                      onClick={() => onEditItem(item)}
+                      className="w-9 h-9 glass-panel rounded-lg flex items-center justify-center text-slate-400 hover:text-medical-500 transition-all active:scale-95 shadow-sm hover:shadow"
+                    >
+                      <i className={`fa-solid ${isAuditMode ? 'fa-pen-to-square' : 'fa-ellipsis-vertical'} text-sm`}></i>
+                    </button>
+                  )}
+                  {user?.username?.toLowerCase() === 'manager raul' && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDeleteItem(item.id); }}
+                      className="w-9 h-9 glass-panel rounded-lg flex items-center justify-center text-red-500 hover:text-white hover:bg-red-600 transition-all active:scale-95 shadow-sm hover:shadow"
+                      title="Delete Item"
+                    >
+                      <i className="fa-solid fa-trash-can text-sm"></i>
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2 sm:gap-3">

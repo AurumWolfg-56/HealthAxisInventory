@@ -206,6 +206,28 @@ export const InventoryService = {
     },
 
     /**
+     * Deletes an inventory item.
+     */
+    async deleteItem(id: string): Promise<boolean> {
+        try {
+            console.log(`[InventoryService] Deleting item ${id}...`);
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/items?id=eq.${id}`, {
+                method: 'DELETE',
+                headers: getHeaders()
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Delete failed (${response.status}): ${text}`);
+            }
+            return true;
+        } catch (e) {
+            console.error('[InventoryService] Delete failed:', e);
+            throw e;
+        }
+    },
+
+    /**
      * Bulk imports items.
      */
     async importItems(items: Partial<InventoryItem>[]): Promise<number> {

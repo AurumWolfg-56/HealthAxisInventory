@@ -536,7 +536,21 @@ const App: React.FC = () => {
                                     addToast(`Update failed: ${e.message}`, 'error');
                                 }
                             }}
-                            onDeleteItem={() => { }}
+                            onDeleteItem={async (id) => {
+                                try {
+                                    if (window.confirm('Are you sure you want to completely delete this item from the database? This action cannot be undone.')) {
+                                        await InventoryService.deleteItem(id);
+                                        setInventory(prev => prev.filter(inv => inv.id !== id));
+                                        addToast('Item deleted successfully', 'success');
+
+                                        // Optional: Log update
+                                        if (user?.id) await InventoryService.logAction(user.id, 'REMOVED', id, `Deleted inventory item`);
+                                    }
+                                } catch (e: any) {
+                                    console.error('[App] Failed to delete item:', e);
+                                    addToast(`Delete failed: ${e.message}`, 'error');
+                                }
+                            }}
                             onAuditItem={async (id) => {
                                 try {
                                     const timestamp = new Date().toISOString();
