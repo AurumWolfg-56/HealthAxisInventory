@@ -641,7 +641,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                                 <i className="fa-solid fa-pen-to-square"></i>
                               </button>
                             )}
-                            {user?.username?.toLowerCase() === 'manager raul' && (
+                            {(user?.username?.toLowerCase().includes('raul') || user?.email?.toLowerCase().includes('raul') || user?.username?.toLowerCase() === 'manager raul') && (
                               <button
                                 onClick={() => onDeleteItem(item.id)}
                                 className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-500 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all text-xs active:scale-90 ml-0.5"
@@ -743,7 +743,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                       <i className={`fa-solid ${isAuditMode ? 'fa-pen-to-square' : 'fa-ellipsis-vertical'} text-sm`}></i>
                     </button>
                   )}
-                  {user?.username?.toLowerCase() === 'manager raul' && (
+                  {(user?.username?.toLowerCase().includes('raul') || user?.email?.toLowerCase().includes('raul') || user?.username?.toLowerCase() === 'manager raul') && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onDeleteItem(item.id); }}
                       className="w-9 h-9 glass-panel rounded-lg flex items-center justify-center text-red-500 hover:text-white hover:bg-red-600 transition-all active:scale-95 shadow-sm hover:shadow"
