@@ -67,9 +67,36 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
             jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
         };
 
-        // Use html2pdf to generate
-        (window as any).html2pdf().set(opt).from(reportRef.current).save().then(() => {
-            onCloseComplete(`Daily Close completed. Revenue: $${totalMethods.toFixed(2)}. Patients: ${totalInsurance}.`);
+        // 1. Generate PDF as Base64 string for email
+        (window as any).html2pdf().set(opt).from(reportRef.current).outputPdf('datauristring').then(async (pdfDataUri: string) => {
+            try {
+                // Strip the data:application/pdf;filename=generated.pdf;base64, part
+                const base64Content = pdfDataUri.split(',')[1];
+                
+                // Send email
+                const emailUrl = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/send-email';
+                await fetch(emailUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'daily_close',
+                        data: {
+                            date: new Date().toLocaleDateString(),
+                            totalMethods: totalMethods.toFixed(2),
+                            totalInsurance: totalInsurance,
+                            closedBy: user.username,
+                            pdfBase64: base64Content
+                        }
+                    })
+                });
+            } catch (err) {
+                console.error("Failed to send Daily Close email:", err);
+            }
+            
+            // 2. Actually trigger the browser download for the user
+            (window as any).html2pdf().set(opt).from(reportRef.current).save().then(() => {
+                onCloseComplete(`Daily Close completed. Revenue: $${totalMethods.toFixed(2)}. Patients: ${totalInsurance}.`);
+            });
         });
     };
 

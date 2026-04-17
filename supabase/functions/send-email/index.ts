@@ -22,6 +22,7 @@ serve(async (req: Request) => {
     let to = payload.to || 'iarejyero@gmail.com';
     let subject = 'Norvexis Core System';
     let html = '<p>Automated system message.</p>';
+    let attachments: any[] = [];
 
     if (type === 'schedule_change') {
        subject = `[Norvexis] Schedule Update Notification`;
@@ -61,6 +62,26 @@ serve(async (req: Request) => {
     } else if (type === 'test') {
        subject = '[Norvexis] Successful Integration Test';
        html = `<div style="font-family: sans-serif; padding: 20px;"><h2>Successful Connection!</h2><p>The notification system is operating optimally.</p></div>`
+    } else if (type === 'daily_close') {
+       subject = `[Norvexis] Daily Close Report - ${data.date || new Date().toLocaleDateString()}`;
+       html = `
+        <div style="font-family: sans-serif; padding: 20px;">
+            <h2 style="color: #0f172a;">Daily Medical Close Complete</h2>
+            <p>The daily close reconciliation has been completed via Norvexis Core.</p>
+            <ul>
+                <li><strong>Revenue:</strong> $${data.totalMethods || '0.00'}</li>
+                <li><strong>Total Patients:</strong> ${data.totalInsurance || '0'}</li>
+                <li><strong>Closed By:</strong> ${data.closedBy || 'Admin'}</li>
+            </ul>
+            <p>The official PDF report is attached to this email.</p>
+        </div>
+       `;
+       if (data.pdfBase64) {
+           attachments.push({
+               filename: `DailyClose_${data.date || 'Report'}.pdf`,
+               content: data.pdfBase64
+           });
+       }
     }
 
     console.log(`[send-email] Sending ${type} email to ${to}`);
@@ -70,6 +91,7 @@ serve(async (req: Request) => {
       to: typeof to === 'string' ? [to] : to,
       subject,
       html,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
 
     if (error) {
