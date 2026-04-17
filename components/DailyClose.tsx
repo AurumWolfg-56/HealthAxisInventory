@@ -62,20 +62,22 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
         const opt = {
             margin: 10,
             filename: `DailyClose_${new Date().toISOString().split('T')[0]}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
+            image: { type: 'jpeg', quality: 0.80 },
+            html2canvas: { scale: 1.5, useCORS: true },
             jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
         };
 
-        // 1. Generate PDF as Base64 string for email
-        (window as any).html2pdf().set(opt).from(reportRef.current).outputPdf('datauristring').then(async (pdfDataUri: string) => {
+        // We use html2pdf to build a worker, output as datauristring, THEN save. 
+        const worker = (window as any).html2pdf().set(opt).from(reportRef.current);
+        
+        worker.outputPdf('datauristring').then(async (pdfDataUri: string) => {
             try {
-                // Strip the data:application/pdf;filename=generated.pdf;base64, part
-                const base64Content = pdfDataUri.split(',')[1];
+                // Strip the exact metadata from base64 string
+                const base64Content = pdfDataUri.split('base64,')[1];
                 
                 // Send email
                 const emailUrl = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/send-email';
-                await fetch(emailUrl, {
+                const res = await fetch(emailUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -89,12 +91,32 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
                         }
                     })
                 });
+
+                if (!res.ok) {
+                    console.error("Email API returned status", res.status);
+                    // If Payload too large (413), try sending without attachment
+                    if (res.status === 413) {
+                        await fetch(emailUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                type: 'daily_close',
+                                data: {
+                                    date: new Date().toLocaleDateString(),
+                                    totalMethods: totalMethods.toFixed(2),
+                                    totalInsurance: totalInsurance,
+                                    closedBy: user.username
+                                }
+                            })
+                        });
+                    }
+                }
             } catch (err) {
                 console.error("Failed to send Daily Close email:", err);
             }
             
-            // 2. Actually trigger the browser download for the user
-            (window as any).html2pdf().set(opt).from(reportRef.current).save().then(() => {
+            // 2. Trigger browser download
+            worker.save().then(() => {
                 onCloseComplete(`Daily Close completed. Revenue: $${totalMethods.toFixed(2)}. Patients: ${totalInsurance}.`);
             });
         });
