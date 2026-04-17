@@ -26,8 +26,8 @@ const AIBriefingCard: React.FC<AIBriefingProps> = ({
     setLoading(true);
     setError(null);
     try {
-      // Race the actual briefing against a 15-second timeout (accommodates local AI cold start)
-      const TIMEOUT_MS = 15000;
+      // Race the actual briefing against a 45-second timeout (accommodates local AI cold start)
+      const TIMEOUT_MS = 45000;
       const result = await Promise.race([
         generateBriefing(inventory, dailyReports, orders, pettyCash, forceRefresh),
         new Promise<never>((_, reject) =>

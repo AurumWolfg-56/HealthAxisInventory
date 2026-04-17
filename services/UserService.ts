@@ -43,7 +43,7 @@ export const UserService = {
         _locationId = id;
     },
 
-    async getUsers(): Promise<DBUser[]> {
+    async getUsers(skipAdminEnrichment: boolean = false): Promise<DBUser[]> {
         console.log('[UserService] Fetching users (hybrid approach)...');
         try {
             // Step 1: Fetch profiles + roles via PostgREST (always works)
@@ -77,34 +77,36 @@ export const UserService = {
             }));
 
             // Step 2: Try to enrich with auth metadata via Edge Function (optional)
-            try {
-                const fnUrl = `${SUPABASE_URL}/functions/v1/admin-api`;
-                const fnResp = await fetch(fnUrl, {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: JSON.stringify({ action: 'list_users' })
-                });
+            if (!skipAdminEnrichment) {
+                try {
+                    const fnUrl = `${SUPABASE_URL}/functions/v1/admin-api`;
+                    const fnResp = await fetch(fnUrl, {
+                        method: 'POST',
+                        headers: getHeaders(),
+                        body: JSON.stringify({ action: 'list_users' })
+                    });
 
-                if (fnResp.ok) {
-                    const fnData = await fnResp.json();
-                    if (fnData.success && fnData.users) {
-                        // Merge auth data into profile data
-                        for (const user of users) {
-                            const authUser = fnData.users.find((au: any) => au.id === user.id);
-                            if (authUser) {
-                                user.email = authUser.email || user.email;
-                                user.last_sign_in_at = authUser.last_sign_in_at || undefined;
-                                if (!user.created_at && authUser.created_at) {
-                                    user.created_at = authUser.created_at;
+                    if (fnResp.ok) {
+                        const fnData = await fnResp.json();
+                        if (fnData.success && fnData.users) {
+                            // Merge auth data into profile data
+                            for (const user of users) {
+                                const authUser = fnData.users.find((au: any) => au.id === user.id);
+                                if (authUser) {
+                                    user.email = authUser.email || user.email;
+                                    user.last_sign_in_at = authUser.last_sign_in_at || undefined;
+                                    if (!user.created_at && authUser.created_at) {
+                                        user.created_at = authUser.created_at;
+                                    }
                                 }
                             }
                         }
+                    } else {
+                        console.warn('[UserService] Auth metadata enrichment failed (non-critical):', fnResp.status);
                     }
-                } else {
-                    console.warn('[UserService] Auth metadata enrichment failed (non-critical):', fnResp.status);
+                } catch (enrichErr) {
+                    console.warn('[UserService] Auth metadata enrichment failed (non-critical):', enrichErr);
                 }
-            } catch (enrichErr) {
-                console.warn('[UserService] Auth metadata enrichment failed (non-critical):', enrichErr);
             }
 
             return users;

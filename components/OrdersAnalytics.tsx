@@ -179,7 +179,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800">
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Spend by Vendor</h3>
                         <div className="h-[300px] w-full">
-                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={300}>
+                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1} debounce={300}>
                                 <BarChart data={metrics.vendorData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                                     <XAxis type="number" hide />
@@ -202,7 +202,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                     <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800">
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Spending Trend (Monthly)</h3>
                         <div className="h-[300px] w-full">
-                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={300}>
+                            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1} debounce={300}>
                                 <AreaChart data={metrics.trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">

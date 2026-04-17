@@ -284,7 +284,8 @@ const ReportHistory: React.FC<ReportHistoryProps> = ({ reports, user, onEditRepo
 
     // Fetch users for mapping UUIDs to Names
     React.useEffect(() => {
-        UserService.getUsers().then(users => {
+        // Skip auth enrichment here to avoid 401s for non-admins, as we only need full_name
+        UserService.getUsers(true).then(users => {
             const m: Record<string, string> = {};
             users.forEach(u => m[u.id] = u.full_name);
             setUsersMap(m);

@@ -93,8 +93,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             return;
         }
 
-        if (!accessToken) {
-            console.warn('[AppDataContext] ⚠️ No accessToken, aborting fetch');
+        if (!accessToken || !locationId) {
+            console.warn('[AppDataContext] ⚠️ Missing accessToken or locationId, aborting fetch');
             return;
         }
 
@@ -177,7 +177,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             isFetchingRef.current = false;
             if (mountedRef.current) setIsLoading(false);
         }
-    }, [accessToken, user?.id]);
+    }, [accessToken, user?.id, locationId]);
 
     // ──────────────────────────────────────────────────────────────
     // When accessToken changes (from null → token), cache it on

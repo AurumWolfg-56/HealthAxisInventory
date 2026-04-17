@@ -620,7 +620,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
             Budget vs Actual by Vendor
           </h3>
           <div style={{ width: "100%", minHeight: 320 }}>
-            <ResponsiveContainer width="100%" height={320}>
+            <ResponsiveContainer width="100%" height={320} minWidth={1} minHeight={1}>
               <BarChart data={chartData} barGap={8}>
                 <CartesianGrid
                   strokeDasharray="3 3"
@@ -683,7 +683,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
             6-Month Vendor Spending Trends
           </h3>
           <div style={{ width: "100%", minHeight: 320 }}>
-            <ResponsiveContainer width="100%" height={320}>
+            <ResponsiveContainer width="100%" height={320} minWidth={1} minHeight={1}>
               <LineChart data={trendData}>
                 <CartesianGrid
                   strokeDasharray="3 3"

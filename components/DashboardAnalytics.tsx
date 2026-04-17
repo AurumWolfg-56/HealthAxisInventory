@@ -337,7 +337,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                         Income vs Expenses (Monthly)
                     </h3>
                     <div className="h-[250px] sm:h-[350px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                             <BarChart data={incomeExpenseByMonth} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorInc" x1="0" y1="0" x2="0" y2="1">
@@ -369,7 +369,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                         Revenue & Patient Trend
                     </h3>
                     <div className="h-[250px] sm:h-[350px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                             <ComposedChart data={optimizedRevenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
@@ -406,7 +406,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                         Collections (Methods)
                     </h3>
                     <div className="h-[250px] w-full flex flex-col items-center justify-center">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                             <PieChart>
                                 <Pie
                                     data={methodData}
@@ -449,7 +449,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                         Patients by Insurance
                     </h3>
                     <div className="h-[300px] sm:h-[350px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                             <BarChart layout="vertical" data={insuranceData} margin={{ left: 20, right: 60 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="currentColor" className="text-slate-200 dark:text-emerald-900/30" opacity={0.5} />
                                 <XAxis type="number" hide />
@@ -473,7 +473,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                         Visits by Provider
                     </h3>
                     <div className="h-[250px] sm:h-[350px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                             <BarChart data={providerPatientData} margin={{ top: 30 }}>
                                 <defs>
                                     <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
@@ -570,7 +570,7 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
                         Asset Value by Category
                     </h3>
                     <div className="h-[300px] sm:h-[400px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                             <BarChart layout="vertical" data={categoryValueData} margin={{ left: 40, right: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="currentColor" className="text-slate-200 dark:text-emerald-900/30" opacity={0.5} />
                                 <XAxis type="number" tickFormatter={(val) => `$${val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val}`} axisLine={false} tickLine={false} />

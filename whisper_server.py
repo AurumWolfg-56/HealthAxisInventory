@@ -27,6 +27,7 @@ for p in cuda_paths:
 from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 import uvicorn
 import httpx
 
@@ -46,6 +47,12 @@ logger = logging.getLogger("whisper-server")
 # ─── FastAPI App ────────────────────────────────────────────────────────────
 app = FastAPI(title="Norvexis Local AI Gateway", version="2.0.0")
 
+class PrivateNetworkMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+        return response
+
 # Allow CORS from any origin (production site + localhost)
 app.add_middleware(
     CORSMiddleware,
@@ -54,6 +61,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(PrivateNetworkMiddleware)
 
 # ─── HTTP client for LM Studio proxy ───────────────────────────────────────
 # Vision requests with large images can take 2-5 minutes on 7B models

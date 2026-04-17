@@ -78,7 +78,8 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
         setLoading(true);
         setError(null);
         try {
-            const fetchedUsers = await UserService.getUsers();
+            const skipEnrichment = currentUser?.platformRole !== 'platform_admin';
+            const fetchedUsers = await UserService.getUsers(skipEnrichment);
             setUsers(fetchedUsers);
         } catch (err: any) {
             console.error('Error fetching users:', err);
