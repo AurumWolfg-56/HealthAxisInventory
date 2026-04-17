@@ -23,7 +23,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     
     // Feature States
     const [clipboardShift, setClipboardShift] = useState<Shift | null>(null);
-    const [shiftEditor, setShiftEditor] = useState<{isOpen: boolean, user: ExtendedUser|null, dateObj: Date|null, shift: Shift|null, tmpStart?: string, tmpEnd?: string, tmpColor?: string, tmpDate?: string}>({isOpen: false, user: null, dateObj: null, shift: null, tmpStart: '08:00', tmpEnd: '17:00', tmpColor: 'blue'});
+    const [shiftEditor, setShiftEditor] = useState<{isOpen: boolean, user: ExtendedUser|null, dateObj: Date|null, shift: Shift|null, tmpStart?: string, tmpEnd?: string, tmpColor?: string, tmpDate?: string, applyDays?: Record<number, boolean>}>({isOpen: false, user: null, dateObj: null, shift: null, tmpStart: '08:00', tmpEnd: '17:00', tmpColor: 'blue', applyDays: {}});
     const [userColorOverrides, setUserColorOverrides] = useState<Record<string, string>>(() => {
         try { return JSON.parse(localStorage.getItem('HA_USER_COLORS') || '{}'); } catch { return {}; }
     });
@@ -122,59 +122,29 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     const pendingRequests = timeOffRequests.filter(r => r.status === 'pending');
 
     // ACTIONS //
-    const handleCellClick = async (user: User, dateObj: Date) => {
-        if (!canManage) return;
-        const dateStr = dateObj.toISOString().split('T')[0];
+    const handleStamp = async (dateStr: string, userId: string) => {
+        if (!canManage || !clipboardShift) return;
 
         // Ensure not clicking on an approved time off
-        const localDStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
-        const hasTimeOff = timeOffRequests.some(t => t.user_id === user.id && t.status === 'approved' && t.start_date <= localDStr && t.end_date >= localDStr);
+        const hasTimeOff = timeOffRequests.some(t => t.user_id === userId && t.status === 'approved' && t.start_date <= dateStr && t.end_date >= dateStr);
         if (hasTimeOff) {
             alert("This user has approved time off on this date.");
             return;
         }
         
-        if (clipboardShift) {
-            try {
-                const saved = await ScheduleService.createShift({
-                    user_id: user.id,
-                    date: dateStr,
-                    start_time: clipboardShift.start_time,
-                    end_time: clipboardShift.end_time,
-                    role_type: providers.find(p => p.id === user.id) ? 'provider' : 'staff',
-                    notes: clipboardShift.notes
-                });
-                if (saved) setShifts(prev => [...prev, saved]);
-            } catch (e) {
-                console.error('Failed to paste shift', e);
-            }
-            return;
+        try {
+            const saved = await ScheduleService.createShift({
+                user_id: userId,
+                date: dateStr,
+                start_time: clipboardShift.start_time,
+                end_time: clipboardShift.end_time,
+                role_type: providers.find(p => p.id === userId) ? 'provider' : 'staff',
+                notes: clipboardShift.notes
+            });
+            if (saved) setShifts(prev => [...prev, saved]);
+        } catch (e) {
+            console.error('Failed to paste shift', e);
         }
-
-        const existingShift = shifts.find(s => s.user_id === user.id && s.date === dateStr);
-        const uColor = userColorOverrides[user.id] || user.themeColor || SHIFT_COLORS[0];
-        
-        // Smart Defaults: Detect their most recent shift, otherwise fallback to clinic hours
-        const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-        let defaultStart = '10:00';
-        let defaultEnd = isWeekend ? '18:00' : '20:00';
-        
-        const userPastShifts = shifts.filter(s => s.user_id === user.id);
-        if (userPastShifts.length > 0) {
-            const lastShift = userPastShifts.reduce((latest, s) => s.date > latest.date ? s : latest, userPastShifts[0]);
-            defaultStart = lastShift.start_time;
-            defaultEnd = lastShift.end_time;
-        }
-
-        let defaultDate = dateObj.toISOString().split('T')[0];
-
-        setShiftEditor({ 
-            isOpen: true, user, dateObj, shift: existingShift || null, 
-            tmpStart: existingShift ? existingShift.start_time : defaultStart, 
-            tmpEnd: existingShift ? existingShift.end_time : defaultEnd, 
-            tmpColor: uColor,
-            tmpDate: existingShift ? existingShift.date : defaultDate
-        });
     };
 
     const duplicatePriorWeek = async () => {
@@ -242,7 +212,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
         const notes = fd.get('notes') as string;
         const repeatMonth = fd.get('repeat_month') as string === 'on';
 
-        if (!shiftEditor.user || !shiftEditor.dateObj) return;
+        if (!shiftEditor.dateObj) return;
 
         setIsLoading(true);
 
@@ -253,14 +223,22 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                  return;
             }
 
+            const targetUserId = fd.get('user_id') as string || shiftEditor.user?.id;
+            if (!targetUserId) {
+                 alert("Please select a staff member");
+                 setIsLoading(false);
+                 return;
+            }
+
             const dateStr = fd.get('shift_date') as string || shiftEditor.dateObj.toISOString().split('T')[0];
             
+            const selectedUserObj = users.find(u => u.id === targetUserId);
             const baseShiftToCreate = {
-                user_id: shiftEditor.user.id,
+                user_id: targetUserId,
                 start_time: start,
                 end_time: end,
                 notes: notes,
-                role_type: shiftEditor.user.role === 'DOCTOR' ? 'provider' as const : 'staff' as const
+                role_type: selectedUserObj?.role === 'DOCTOR' ? 'provider' as const : 'staff' as const
             };
 
             if (shiftEditor.shift && !repeatMonth) {
@@ -272,7 +250,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                         return [...filtered, updated];
                     });
                 }
-            } else if (!repeatMonth) {
+            } else if (!repeatMonth && !shiftEditor.applyDays) {
                 // Create Single
                 const saved = await ScheduleService.createShift({
                     ...baseShiftToCreate,
@@ -280,18 +258,31 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                 });
                 if (saved) setShifts(prev => [...prev, saved]);
             } else {
-                // Create Repeating for Month
-                const targetDayOfWeek = shiftEditor.dateObj.getDay();
-                const year = shiftEditor.dateObj.getFullYear();
-                const month = shiftEditor.dateObj.getMonth();
+                // Batch create for selected week days [Sun][Mon]...
+                const dayOffset = shiftEditor.dateObj.getDay();
+                const sunday = new Date(shiftEditor.dateObj);
+                sunday.setDate(sunday.getDate() - dayOffset);
                 
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
                 const newShifts: Omit<Shift, 'id'>[] = [];
-                
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const d = new Date(year, month, day);
-                    if (d.getDay() === targetDayOfWeek) {
-                        const localDStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const daysToApply = shiftEditor.applyDays ? Object.keys(shiftEditor.applyDays).filter(k => shiftEditor.applyDays![Number(k)]).map(Number) : [dayOffset];
+
+                // Fallback to repeat month if the checkbox was somehow activated (for backward compat)
+                if (repeatMonth) {
+                    const year = shiftEditor.dateObj.getFullYear();
+                    const month = shiftEditor.dateObj.getMonth();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const d = new Date(year, month, day);
+                        if (d.getDay() === dayOffset) {
+                            const localDStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                            newShifts.push({ ...baseShiftToCreate, date: localDStr });
+                        }
+                    }
+                } else {
+                    for (const targetDayIndex of daysToApply) {
+                        const d = new Date(sunday);
+                        d.setDate(sunday.getDate() + targetDayIndex);
+                        const localDStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
                         newShifts.push({ ...baseShiftToCreate, date: localDStr });
                     }
                 }
@@ -299,7 +290,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                 const savedArr = await ScheduleService.bulkCreateShifts(newShifts);
                 if (savedArr) setShifts(prev => [...prev, ...savedArr]);
             }
-            setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null });
+            setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null, tmpStart: '10:00', tmpEnd: '18:00', tmpColor: 'blue', applyDays: {} });
         } catch (e) {
             console.error(e);
             alert("Failed to save shift");
@@ -336,126 +327,131 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
         return map[colorName] || map['blue'];
     };
 
-    const renderGrid = (groupName: string, groupUsers: typeof colorMappedUsers) => (
-        <div className="mb-10 animate-fade-in-up">
-            <h3 className="text-xl font-black text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                {groupName}
-                <span className="text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-1 rounded-full">{groupUsers.length}</span>
-            </h3>
-            
-            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-800/50 overflow-hidden">
-                <div className="overflow-x-auto min-h-[150px]">
-                    <table className="w-full text-sm text-left">
-                        <thead className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-                            <tr>
-                                <th className="py-4 px-6 font-bold text-slate-400 uppercase tracking-wider text-[10px] w-48 sticky left-0 bg-white dark:bg-slate-900 z-20">Staff Member</th>
-                                {activeDates.map(d => (
-                                    <th key={d.toISOString()} className="py-2 px-2 font-bold text-center border-l border-slate-100 dark:border-slate-800 min-w-[120px]">
-                                        <div className="text-[10px] uppercase text-slate-400">{d.toLocaleDateString('en-US', { weekday: 'short' })}</div>
-                                        <div className="text-sm text-slate-800 dark:text-slate-200">{d.getDate()} {viewMode==='month' && d.toLocaleDateString('en-US',{month:'short'})}</div>
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {groupUsers.map((u: ExtendedUser) => {
-                                const displayName = u.username || u.full_name || 'Unknown';
-                                return (
-                                <tr key={u.id} className="border-b border-slate-50/50 dark:border-slate-800/50 hover:bg-slate-50/30 transition-colors group">
-                                    <td className="py-4 px-6 font-semibold sticky left-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)]">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${getThemeClasses(u.themeColor!).split(' ')[0]} ${getThemeClasses(u.themeColor!).split(' ')[1]}`}>
-                                                {(displayName).substring(0,2).toUpperCase()}
+    const renderCalendar = () => {
+        const filteredUsers = activeTab === 'providers' ? providers : supportStaff;
+        const filteredUserIds = new Set(filteredUsers.map(u => u.id));
+        
+        return (
+            <div className="mb-10 animate-fade-in-up">
+                <div className="bg-white dark:bg-slate-900 shadow-sm rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                    <div className="grid grid-cols-7 bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, idx) => (
+                            <div key={day} className={`py-3 px-2 font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-[10px] text-center ${idx > 0 ? 'border-l border-slate-100 dark:border-slate-800' : ''}`}>
+                                {day}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="grid grid-cols-7 auto-rows-fr">
+                        {activeDates.map((d, i) => {
+                            const dStr = d.toISOString().split('T')[0];
+                            const dStrLocal = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                            
+                            const dayShifts = shifts.filter(s => (s.date === dStr || s.date === dStrLocal) && filteredUserIds.has(s.user_id));
+                            
+                            // Check for stamp ghosting
+                            const isDragTarget = dragTargetCell?.date === dStrLocal;
+                            const isHovered = hoveredCell?.date === dStrLocal;
+
+                            return (
+                                <div 
+                                    key={dStr}
+                                    className={`min-h-[140px] border-b border-r border-slate-100/60 dark:border-slate-800/60 p-1.5 relative group transition-colors ${i % 7 === 6 ? 'border-r-0' : ''} ${canManage && clipboardShift ? 'cursor-cell hover:bg-indigo-50/40 dark:hover:bg-indigo-900/20' : 'hover:bg-slate-50/40 dark:hover:bg-slate-800/40'} ${isDragTarget ? 'bg-indigo-50/50 dark:bg-indigo-900/30 shadow-inner' : ''}`}
+                                    onClick={() => {
+                                        if (!canManage) return;
+                                        if (clipboardShift) {
+                                            handleStamp(dStrLocal, clipboardShift.user_id);
+                                        } else {
+                                            setShiftEditor({ isOpen: true, user: null, dateObj: d, shift: null, tmpStart: '10:00', tmpEnd: '18:00', tmpColor: 'blue', tmpDate: dStrLocal, applyDays: { [d.getDay()]: true } });
+                                        }
+                                    }}
+                                    onDragEnter={canManage ? () => setDragTargetCell({userId: '', date: dStrLocal}) : undefined}
+                                    onDragLeave={canManage ? () => setDragTargetCell(null) : undefined}
+                                    onMouseEnter={canManage && clipboardShift ? () => setHoveredCell({userId: '', date: dStrLocal}) : undefined}
+                                    onMouseLeave={canManage && clipboardShift ? () => setHoveredCell(null) : undefined}
+                                    onDragOver={canManage ? e => e.preventDefault() : undefined}
+                                    onDrop={canManage ? async e => {
+                                        e.preventDefault();
+                                        setDragTargetCell(null);
+                                        try {
+                                            const dataStr = e.dataTransfer.getData('application/json');
+                                            if (!dataStr) return;
+                                            const data = JSON.parse(dataStr);
+                                            if (data.action === 'move') {
+                                                const movingShift = shifts.find(s => s.id === data.shiftId);
+                                                if (movingShift && movingShift.date !== dStrLocal) {
+                                                    setIsLoading(true);
+                                                    const updated = await ScheduleService.updateShift(movingShift.id, { date: dStrLocal });
+                                                    if (updated) {
+                                                        setShifts(prev => {
+                                                            const filtered = prev.filter(s => s.id !== updated.id);
+                                                            return [...filtered, updated];
+                                                        });
+                                                    }
+                                                    setIsLoading(false);
+                                                }
+                                            }
+                                        } catch(err) {}
+                                    } : undefined}
+                                >
+                                    <div className="flex justify-between items-center mb-1.5 px-1">
+                                        <span className={`text-xs font-black ${d.getMonth() !== currentDate.getMonth() ? 'text-slate-300 dark:text-slate-600' : 'text-slate-600 dark:text-slate-300'}`}>{d.getDate()}{i < 7 && d.getDate() === 1 ? ` ${d.toLocaleDateString('en-US',{month:'short'})}` : ''}</span>
+                                        {canManage && !clipboardShift && (
+                                            <button className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded-full bg-slate-100 hover:bg-indigo-100 text-slate-400 hover:text-indigo-600 dark:bg-slate-800 dark:hover:bg-indigo-900/50 flex items-center justify-center text-[10px] transition-all"><i className="fa-solid fa-plus"></i></button>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="flex flex-col gap-1 overflow-y-auto max-h-[110px] scrollbar-thin">
+                                        {dayShifts.map(shift => {
+                                            const u = filteredUsers.find(user => user.id === shift.user_id) as ExtendedUser;
+                                            if (!u) return null;
+                                            
+                                            const timeOff = timeOffRequests.find(t => t.user_id === u.id && t.status === 'approved' && t.start_date <= dStrLocal && t.end_date >= dStrLocal);
+
+                                            return timeOff ? (
+                                                <div key={`off-${shift.id}`} className="w-full p-1 rounded-md border border-red-200 bg-[repeat-x_repeating-linear-gradient(45deg,theme(colors.red.50),theme(colors.red.50)_10px,transparent_10px,transparent_20px)] flex items-center justify-center">
+                                                    <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-[8px] font-black uppercase rounded shadow-sm truncate max-w-full">{u.username || u.full_name} Off</span>
+                                                </div>
+                                            ) : (
+                                                <div 
+                                                    key={shift.id}
+                                                    draggable={canManage}
+                                                    onDragStart={e => {
+                                                        e.stopPropagation();
+                                                        e.dataTransfer.setData('application/json', JSON.stringify({ action: 'move', shiftId: shift.id }));
+                                                    }}
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        if (!canManage) return;
+                                                        const applyDaysMap: Record<number, boolean> = {};
+                                                        applyDaysMap[d.getDay()] = true;
+                                                        setShiftEditor({ isOpen: true, user: u, dateObj: d, shift, tmpStart: shift.start_time, tmpEnd: shift.end_time, tmpDate: shift.date, applyDays: applyDaysMap });
+                                                    }}
+                                                    className={`p-1.5 rounded-md border-l-[3px] shrink-0 text-left transition-all ${getThemeClasses(userColorOverrides[u.id] || u.themeColor || 'blue')} ${canManage ? 'cursor-grab active:cursor-grabbing hover:brightness-95 dark:hover:brightness-110' : ''}`}
+                                                >
+                                                    <div className="font-bold text-[10px] leading-tight truncate mb-0.5">{u.username || u.full_name?.split(' ')[0]}</div>
+                                                    <div className="text-[9px] font-medium leading-none opacity-90 truncate">{formatTime(shift.start_time)}-{formatTime(shift.end_time)}</div>
+                                                    {clipboardShift?.id === shift.id && <div className="absolute top-1 right-1 animate-pulse"><i className="fa-solid fa-copy opacity-50 text-[10px]"></i></div>}
+                                                </div>
+                                            );
+                                        })}
+
+                                        {/* Ghost Cell Preview */}
+                                        {canManage && clipboardShift && isHovered && (
+                                            <div className={`p-1.5 rounded-md border-l-[3px] shrink-0 border-dashed opacity-50 scale-95 origin-top transition-all outline-dashed outline-1 outline-indigo-400 relative ${getThemeClasses(userColorOverrides[clipboardShift.user_id] || 'blue')}`}>
+                                                <div className="font-bold text-[10px] leading-tight truncate mb-0.5">Paste Shift</div>
+                                                <div className="text-[9px] font-medium leading-none opacity-90 truncate">{formatTime(clipboardShift.start_time)}-{formatTime(clipboardShift.end_time)}</div>
+                                                <div className="absolute top-1 right-1"><i className="fa-solid fa-stamp opacity-50"></i></div>
                                             </div>
-                                            <div>
-                                                <div className="leading-tight text-slate-800 dark:text-slate-200">{displayName}</div>
-                                                <div className="text-[10px] text-slate-400 capitalize">{(u.role || '').replace('_', ' ')}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    {activeDates.map(d => {
-                                        const dStr = d.toISOString().split('T')[0];
-                                        const dStrLocal = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                                        
-                                        const shift = shifts.find(s => s.user_id === u.id && (s.date === dStr || s.date === dStrLocal));
-                                        const timeOff = timeOffRequests.find(t => t.user_id === u.id && t.status === 'approved' && t.start_date <= dStrLocal && t.end_date >= dStrLocal);
-                                        
-                                        return (
-                                            <td 
-                                                key={dStr} 
-                                                className={`py-1 px-1 border-l border-slate-100/50 dark:border-slate-800/50 align-top transition-colors ${canManage && !timeOff && viewMode==='week' ? (clipboardShift ? 'cursor-cell' : 'cursor-pointer') : ''} ${dragTargetCell?.userId === u.id && dragTargetCell?.date === dStrLocal ? 'bg-indigo-50/50 dark:bg-indigo-900/30' : ''}`} 
-                                                onClick={() => handleCellClick(u, d)}
-                                                onDragEnter={canManage ? () => setDragTargetCell({userId: u.id, date: dStrLocal}) : undefined}
-                                                onDragLeave={canManage ? () => setDragTargetCell(null) : undefined}
-                                                onMouseEnter={canManage && clipboardShift ? () => setHoveredCell({userId: u.id, date: dStrLocal}) : undefined}
-                                                onMouseLeave={canManage && clipboardShift ? () => setHoveredCell(null) : undefined}
-                                                onDragOver={canManage ? (e) => e.preventDefault() : undefined}
-                                                onDrop={canManage ? async (e) => {
-                                                    e.preventDefault();
-                                                    setDragTargetCell(null);
-                                                    try {
-                                                        const dataStr = e.dataTransfer.getData('application/json');
-                                                        if (!dataStr) return;
-                                                        const data = JSON.parse(dataStr);
-                                                        if (data.action === 'move') {
-                                                            const movingShift = shifts.find(s => s.id === data.shiftId);
-                                                            if (movingShift && (movingShift.date !== dStrLocal || movingShift.user_id !== u.id)) {
-                                                                setIsLoading(true);
-                                                                const updated = await ScheduleService.updateShift(movingShift.id, { 
-                                                                    date: dStrLocal,
-                                                                    user_id: u.id
-                                                                });
-                                                                if (updated) {
-                                                                    setShifts(prev => {
-                                                                        const filtered = prev.filter(s => s.id !== updated.id);
-                                                                        return [...filtered, updated];
-                                                                    });
-                                                                }
-                                                                setIsLoading(false);
-                                                            }
-                                                        }
-                                                    } catch(err) {}
-                                                } : undefined}
-                                            >
-                                                {timeOff ? (
-                                                    <div className="h-full w-full p-2 rounded border border-red-200 bg-[repeat-x_repeating-linear-gradient(45deg,theme(colors.red.50),theme(colors.red.50)_10px,transparent_10px,transparent_20px)] flex items-center justify-center min-h-[40px]">
-                                                        <span className="px-2 py-1 bg-red-100 text-red-700 text-[9px] font-black uppercase rounded shadow-sm">Blocked</span>
-                                                    </div>
-                                                ) : shift ? (
-                                                    <div 
-                                                        draggable={canManage}
-                                                        onDragStart={(e) => {
-                                                            e.dataTransfer.setData('application/json', JSON.stringify({ action: 'move', shiftId: shift.id }));
-                                                        }}
-                                                        className={`p-2 rounded-lg border-l-4 shadow-sm relative ${getThemeClasses(u.themeColor!)} ${canManage ? 'cursor-grab active:cursor-grabbing hover:shadow-md' : ''}`}
-                                                    >
-                                                        <div className="font-bold tracking-tight text-[11px] leading-none mb-1">{formatTime(shift.start_time)}</div>
-                                                        <div className="font-bold tracking-tight text-[11px] leading-none opacity-80">{formatTime(shift.end_time)}</div>
-                                                        {clipboardShift?.id === shift.id && <div className="absolute top-1 right-1 animate-pulse"><i className="fa-solid fa-copy opacity-50"></i></div>}
-                                                    </div>
-                                                ) : viewMode === 'week' ? (
-                                                    <div className="h-full w-full min-h-[40px] rounded-lg border border-dashed border-transparent hover:border-slate-300 transition flex items-center justify-center relative overflow-hidden">
-                                                        {canManage && clipboardShift && hoveredCell?.userId === u.id && hoveredCell?.date === dStrLocal && (
-                                                            <div className={`absolute inset-0 p-2 rounded-lg border border-indigo-200/50 opacity-50 scale-95 transition-all outline-dashed outline-2 outline-indigo-400 ${getThemeClasses(u.themeColor!)}`}>
-                                                                <div className="font-bold tracking-tight text-[11px] leading-none mb-1">{formatTime(clipboardShift.start_time)}</div>
-                                                                <div className="font-bold tracking-tight text-[11px] leading-none opacity-80">{formatTime(clipboardShift.end_time)}</div>
-                                                                <div className="absolute top-1 right-1"><i className="fa-solid fa-stamp opacity-50"></i></div>
-                                                            </div>
-                                                        )}
-                                                        {canManage && clipboardShift && !(hoveredCell?.userId === u.id && hoveredCell?.date === dStrLocal) && <i className="fa-solid fa-paste text-indigo-300 opacity-0 hover:opacity-100 transition text-sm"></i>}
-                                                    </div>
-                                                ) : <div className="h-full min-h-[40px]"></div>}
-                                            </td>
-                                        );
-                                    })}
-                                </tr>
-                            )})}
-                        </tbody>
-                    </table>
+                                        )}
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     return (
         <div className="p-6 max-w-[1600px] mx-auto pb-32">
@@ -580,8 +576,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                     </div>
 
                     <div className="animate-fade-in px-2">
-                        {activeTab === 'providers' && providers.length > 0 && renderGrid("Clinical Providers", providers)}
-                        {activeTab === 'staff' && supportStaff.length > 0 && renderGrid("Support Staff", supportStaff)}
+                        {renderCalendar()}
                     </div>
                 </div>
             )}
@@ -659,97 +654,114 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                  }} />
             </div>
 
-            {/* SHIFT EDITOR MODAL */}
-            {shiftEditor.isOpen && shiftEditor.user && shiftEditor.dateObj && (
-                <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-                    <div className="absolute inset-x-4 top-[8vh] max-h-[85vh] overflow-y-auto w-auto sm:max-w-sm sm:mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col">
-                        <div className="bg-slate-50 dark:bg-slate-800/50 p-6 border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-start sticky top-0 z-10">
-                            <div className="flex-1">
-                                <h2 className="text-xl font-black text-slate-800 dark:text-white leading-tight mb-1">
-                                    {shiftEditor.shift ? 'Edit Assignment' : 'Assign Shift'}
-                                </h2>
-                                <p className="text-[11px] font-bold text-slate-400 tracking-wider uppercase mb-3">
-                                    {shiftEditor.tmpDate ? new Date(shiftEditor.tmpDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : shiftEditor.dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                                </p>
-                                {/* Color Picker Row */}
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                    {SHIFT_COLORS.map(color => (
-                                        <button 
-                                            key={color} 
-                                            type="button"
-                                            onClick={() => {
-                                                setShiftEditor(prev => ({...prev, tmpColor: color}));
-                                                const newOverrides = { ...userColorOverrides, [shiftEditor.user!.id]: color };
-                                                setUserColorOverrides(newOverrides);
-                                                localStorage.setItem('HA_USER_COLORS', JSON.stringify(newOverrides));
-                                            }}
-                                            className={`w-5 h-5 rounded-full border-2 transition-all ${shiftEditor.tmpColor === color ? 'border-slate-800 dark:border-white scale-110' : 'border-transparent hover:scale-110'} ${getThemeClasses(color).split(' ')[0]}`}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2 ml-4">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-sm shadow-sm ${getThemeClasses(shiftEditor.tmpColor).split(' ')[0]} ${getThemeClasses(shiftEditor.tmpColor).split(' ')[1]}`}>
-                                    {(shiftEditor.user.username || shiftEditor.user.full_name || 'U').substring(0,2).toUpperCase()}
-                                </div>
-                            </div>
+            {/* SHIFT EDITOR MODAL (POPOVER STYLE) */}
+            {shiftEditor.isOpen && shiftEditor.dateObj && (
+                <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm animate-fade-in flex items-center justify-center p-4">
+                    <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col relative overflow-hidden">
+                        <div className="bg-slate-50 dark:bg-slate-800/50 p-5 border-b border-slate-100 dark:border-slate-800/50">
+                            <h2 className="text-xl font-black text-slate-800 dark:text-white leading-tight mb-1">
+                                {shiftEditor.shift ? 'Edit Assignment' : 'Assign Shift'}
+                            </h2>
+                            <p className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">
+                                {shiftEditor.tmpDate ? new Date(shiftEditor.tmpDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : shiftEditor.dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                            </p>
                         </div>
 
-                        <form onSubmit={submitShiftEditor} className="p-6">
-                            {/* Quick Time Presets */}
-                            <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-thin">
-                                <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '10:00', tmpEnd: '20:00'}))} className="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 rounded-lg transition-colors">Weekday (10-8)</button>
-                                <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '10:00', tmpEnd: '18:00'}))} className="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 rounded-lg transition-colors">Weekend (10-6)</button>
-                                <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '10:00', tmpEnd: '16:00'}))} className="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 rounded-lg transition-colors">Holiday (10-4)</button>
-                            </div>
+                        <form onSubmit={submitShiftEditor} className="p-5">
+                            {/* Employee Selector */}
                             <div className="mb-4">
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Shift Date (Move)</label>
-                                <input 
-                                    type="date" 
-                                    name="shift_date" 
-                                    required 
-                                    value={shiftEditor.tmpDate || ''}
-                                    onChange={e => setShiftEditor(prev => ({...prev, tmpDate: e.target.value}))}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-mono"
-                                />
+                                <select 
+                                    name="user_id" 
+                                    defaultValue={shiftEditor.user?.id || ''}
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all cursor-pointer"
+                                    onChange={(e) => {
+                                        const u = users.find(user => user.id === e.target.value);
+                                        if (u) {
+                                            setShiftEditor(prev => ({ ...prev, user: u as ExtendedUser, tmpColor: userColorOverrides[u.id] || u.themeColor || 'blue'}));
+                                        }
+                                    }}
+                                >
+                                    <option value="" disabled>Select Employee</option>
+                                    {users.map(u => (
+                                        <option key={u.id} value={u.id}>{u.username || u.full_name} ({(u.role || '').replace('_', ' ').toLowerCase()})</option>
+                                    ))}
+                                </select>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 mb-5">
+                            <div className="grid grid-cols-2 gap-3 mb-4">
                                 <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Start Time</label>
                                     <input 
                                         type="time" 
                                         name="start_time" 
                                         value={shiftEditor.tmpStart}
                                         onChange={e => setShiftEditor(prev => ({...prev, tmpStart: e.target.value}))}
                                         required 
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-mono"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200"
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">End Time</label>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-slate-400 font-bold">-</span>
                                     <input 
                                         type="time" 
                                         name="end_time" 
                                         value={shiftEditor.tmpEnd}
                                         onChange={e => setShiftEditor(prev => ({...prev, tmpEnd: e.target.value}))}
                                         required 
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-mono"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200"
                                     />
                                 </div>
                             </div>
-                            
+
+                            {/* Color & Presets */}
+                            <div className="flex items-center justify-between mb-5">
+                                <div className="flex items-center gap-1">
+                                    {SHIFT_COLORS.slice(0, 5).map(color => (
+                                        <button 
+                                            key={color} 
+                                            type="button"
+                                            onClick={() => {
+                                                setShiftEditor(prev => ({...prev, tmpColor: color}));
+                                                if (shiftEditor.user) {
+                                                    const newOverrides = { ...userColorOverrides, [shiftEditor.user.id]: color };
+                                                    setUserColorOverrides(newOverrides);
+                                                    localStorage.setItem('HA_USER_COLORS', JSON.stringify(newOverrides));
+                                                }
+                                            }}
+                                            className={`w-5 h-5 rounded-full border-2 transition-all ${shiftEditor.tmpColor === color ? 'border-slate-800 dark:border-white scale-110' : 'border-transparent hover:scale-110'} ${getThemeClasses(color).split(' ')[0]}`}
+                                        />
+                                    ))}
+                                </div>
+                                <div className="flex gap-1">
+                                    <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '10:00', tmpEnd: '20:00'}))} className="px-2 py-1 bg-slate-100 text-[9px] font-bold uppercase rounded text-slate-500">10-8</button>
+                                    <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '10:00', tmpEnd: '18:00'}))} className="px-2 py-1 bg-slate-100 text-[9px] font-bold uppercase rounded text-slate-500">10-6</button>
+                                </div>
+                            </div>
+
+                            {/* Apply Days Multi-Select */}
                             {!shiftEditor.shift && (
-                                <div className="mb-5 bg-indigo-50/50 dark:bg-indigo-900/20 p-3 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
-                                    <label className="flex items-start gap-3 cursor-pointer group">
-                                        <div className="mt-0.5">
-                                            <input type="checkbox" name="repeat_month" className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-indigo-300 shadow-sm cursor-pointer" />
-                                        </div>
-                                        <div>
-                                            <span className="text-sm font-bold text-indigo-900 dark:text-indigo-300 block mb-0.5 group-hover:text-indigo-700 transition-colors">Repeat entire month</span>
-                                            <span className="text-[10px] text-indigo-500/80 leading-snug block">Automatically duplicates this exact shift for every {shiftEditor.dateObj.toLocaleDateString('en-US', { weekday: 'long' })} in this month.</span>
-                                        </div>
-                                    </label>
+                                <div className="mb-5">
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Apply to:</label>
+                                    <div className="flex justify-between">
+                                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, dIdx) => {
+                                            const isActive = shiftEditor.applyDays?.[dIdx];
+                                            return (
+                                                <button
+                                                    key={day}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setShiftEditor(prev => {
+                                                            const newDays = { ...prev.applyDays };
+                                                            newDays[dIdx] = !newDays[dIdx];
+                                                            return { ...prev, applyDays: newDays };
+                                                        });
+                                                    }}
+                                                    className={`w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-black tracking-tighter transition-all ${isActive ? 'bg-indigo-600 text-white shadow-md scale-110' : 'bg-slate-50 text-slate-400 border border-slate-200 hover:bg-slate-100'}`}
+                                                >
+                                                    {day}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
                                 </div>
                             )}
 
