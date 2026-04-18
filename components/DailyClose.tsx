@@ -70,21 +70,34 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
         // We use html2pdf to build a worker, output as datauristring, THEN save. 
         const worker = (window as any).html2pdf().set(opt).from(reportRef.current);
         
-        // 1. Trigger the download immediately so user isn't blocked
-        worker.save().then(() => {
-            onCloseComplete(`Daily Close completed. Revenue: $${totalMethods.toFixed(2)}. Patients: ${totalInsurance}.`);
-        });
+        // We use html2pdf to build the PDF, extract the jsPDF instance to get the base64, then save it.
+        (window as any).html2pdf().set(opt).from(reportRef.current)
+        .toPdf()
+        .get('pdf')
+        .then(async (pdf: any) => {
+            try {
+                // pdf is the raw jsPDF instance. Extract data URI synchronously
+                const pdfDataUri = pdf.output('datauristring');
+                const base64Content = pdfDataUri.split(',')[1];
+                
+                const emailUrl = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/send-email';
+                const res = await fetch(emailUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'daily_close',
+                        data: {
+                            date: new Date().toLocaleDateString(),
+                            totalMethods: totalMethods.toFixed(2),
+                            totalInsurance: totalInsurance,
+                            closedBy: user.username,
+                            pdfBase64: base64Content
+                        }
+                    })
+                });
 
-        // 2. Try to dispatch email in the background
-        try {
-            const getPdf = typeof worker.outputPdf === 'function' ? worker.outputPdf('datauristring') : worker.output('datauristring');
-            
-            getPdf.then(async (pdfDataUri: string) => {
-                try {
-                    const base64Content = pdfDataUri.split(',')[1];
-                    const emailUrl = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/send-email';
-                    
-                    const res = await fetch(emailUrl, {
+                if (!res.ok && res.status === 413) {
+                    await fetch(emailUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -93,35 +106,19 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
                                 date: new Date().toLocaleDateString(),
                                 totalMethods: totalMethods.toFixed(2),
                                 totalInsurance: totalInsurance,
-                                closedBy: user.username,
-                                pdfBase64: base64Content
+                                closedBy: user.username
                             }
                         })
                     });
-
-                    if (!res.ok && res.status === 413) {
-                        // Fallback if PDF too large
-                        await fetch(emailUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                type: 'daily_close',
-                                data: {
-                                    date: new Date().toLocaleDateString(),
-                                    totalMethods: totalMethods.toFixed(2),
-                                    totalInsurance: totalInsurance,
-                                    closedBy: user.username
-                                }
-                            })
-                        });
-                    }
-                } catch (e) {
-                    console.error("Failed executing background email logic:", e);
                 }
-            });
-        } catch (e) {
-            console.error("Failed executing html2pdf output:", e);
-        }
+            } catch (err) {
+                console.error("Failed to send Daily Close email:", err);
+            }
+        })
+        .save()
+        .then(() => {
+            onCloseComplete(`Daily Close completed. Revenue: $${totalMethods.toFixed(2)}. Patients: ${totalInsurance}.`);
+        });
     };
 
     // --- RENDER HELPERS ---
