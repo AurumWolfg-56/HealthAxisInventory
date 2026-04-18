@@ -70,32 +70,37 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
         // We use html2pdf to build a worker, output as datauristring, THEN save. 
         const worker = (window as any).html2pdf().set(opt).from(reportRef.current);
         
-        worker.outputPdf('datauristring').then(async (pdfDataUri: string) => {
-            try {
-                // Strip the exact metadata from base64 string
-                const base64Content = pdfDataUri.split('base64,')[1];
-                
-                // Send email
-                const emailUrl = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/send-email';
-                const res = await fetch(emailUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        type: 'daily_close',
-                        data: {
-                            date: new Date().toLocaleDateString(),
-                            totalMethods: totalMethods.toFixed(2),
-                            totalInsurance: totalInsurance,
-                            closedBy: user.username,
-                            pdfBase64: base64Content
-                        }
-                    })
-                });
+        // 1. Trigger the download immediately so user isn't blocked
+        worker.save().then(() => {
+            onCloseComplete(`Daily Close completed. Revenue: $${totalMethods.toFixed(2)}. Patients: ${totalInsurance}.`);
+        });
 
-                if (!res.ok) {
-                    console.error("Email API returned status", res.status);
-                    // If Payload too large (413), try sending without attachment
-                    if (res.status === 413) {
+        // 2. Try to dispatch email in the background
+        try {
+            const getPdf = typeof worker.outputPdf === 'function' ? worker.outputPdf('datauristring') : worker.output('datauristring');
+            
+            getPdf.then(async (pdfDataUri: string) => {
+                try {
+                    const base64Content = pdfDataUri.split(',')[1];
+                    const emailUrl = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/send-email';
+                    
+                    const res = await fetch(emailUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: 'daily_close',
+                            data: {
+                                date: new Date().toLocaleDateString(),
+                                totalMethods: totalMethods.toFixed(2),
+                                totalInsurance: totalInsurance,
+                                closedBy: user.username,
+                                pdfBase64: base64Content
+                            }
+                        })
+                    });
+
+                    if (!res.ok && res.status === 413) {
+                        // Fallback if PDF too large
                         await fetch(emailUrl, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -110,16 +115,13 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
                             })
                         });
                     }
+                } catch (e) {
+                    console.error("Failed executing background email logic:", e);
                 }
-            } catch (err) {
-                console.error("Failed to send Daily Close email:", err);
-            }
-            
-            // 2. Trigger browser download
-            worker.save().then(() => {
-                onCloseComplete(`Daily Close completed. Revenue: $${totalMethods.toFixed(2)}. Patients: ${totalInsurance}.`);
             });
-        });
+        } catch (e) {
+            console.error("Failed executing html2pdf output:", e);
+        }
     };
 
     // --- RENDER HELPERS ---
