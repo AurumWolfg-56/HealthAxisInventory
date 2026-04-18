@@ -67,20 +67,24 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
             jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
         };
 
-        // We use html2pdf to build a worker, output as datauristring, THEN save. 
+        // We use html2pdf to build a worker, then output as datauristring
         const worker = (window as any).html2pdf().set(opt).from(reportRef.current);
+        const outputPromise = typeof worker.outputPdf === 'function' ? worker.outputPdf('datauristring') : worker.output('datauristring');
         
-        // We use html2pdf to build the PDF, extract the jsPDF instance to get the base64, then save it.
-        (window as any).html2pdf().set(opt).from(reportRef.current)
-        .toPdf()
-        .get('pdf')
-        .then(async (pdf: any) => {
+        outputPromise.then(async (pdfDataUri: string) => {
+            // 1. Trigger local download manually via HTML5 Anchor (foolproof)
+            const link = document.createElement('a');
+            link.href = pdfDataUri;
+            link.download = opt.filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // 2. Extract base64 and dispatch email
             try {
-                // pdf is the raw jsPDF instance. Extract data URI synchronously
-                const pdfDataUri = pdf.output('datauristring');
                 const base64Content = pdfDataUri.split(',')[1];
-                
                 const emailUrl = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/send-email';
+                
                 const res = await fetch(emailUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -114,10 +118,13 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
             } catch (err) {
                 console.error("Failed to send Daily Close email:", err);
             }
-        })
-        .save()
-        .then(() => {
+
+            // 3. Close the modal
             onCloseComplete(`Daily Close completed. Revenue: $${totalMethods.toFixed(2)}. Patients: ${totalInsurance}.`);
+
+        }).catch((err: any) => {
+            console.error("Critical failure generating PDF:", err);
+            onCloseComplete(`Daily Close completed, but PDF failed. Revenue: $${totalMethods.toFixed(2)}`);
         });
     };
 
