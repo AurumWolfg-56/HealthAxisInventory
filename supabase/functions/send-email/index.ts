@@ -19,8 +19,23 @@ serve(async (req: Request) => {
     const payload = await req.json()
     const { type, data } = payload
     
-    // Default fallback
-    let to = payload.to || 'iarejyero@gmail.com';
+    // Management emails that should receive all critical system notifications
+    const managementEmails = ['manager@healthaxismgmt.com', 'smuza96@yahoo.com'];
+    
+    // Parse the requested 'to' addresses
+    let toArray: string[] = [];
+    if (payload.to) {
+        toArray = typeof payload.to === 'string' ? [payload.to] : payload.to;
+    } else {
+        toArray = ['iarejyero@gmail.com'];
+    }
+    
+    // Always append management emails to the recipient list
+    managementEmails.forEach(email => {
+        if (!toArray.includes(email)) toArray.push(email);
+    });
+    
+    let to = toArray;
     let subject = 'Norvexis Core System';
     let html = '<p>Automated system message.</p>';
     let attachments: any[] = [];
