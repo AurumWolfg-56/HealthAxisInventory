@@ -108,7 +108,7 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
 
                 const emailUrl = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/send-email';
                 
-                await fetch(emailUrl, {
+                const res = await fetch(emailUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -122,8 +122,15 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
                         }
                     })
                 });
-            } catch (err) {
+
+                if (!res.ok) {
+                    const txt = await res.text();
+                    throw new Error(`Edge Function returned ${res.status}: ${txt}`);
+                }
+
+            } catch (err: any) {
                 console.error("Failed to send Daily Close email:", err);
+                alert(`Error enviando correo/PDF: ${err.message || 'Error desconocido'}`);
             }
 
             // 3. Close the modal
