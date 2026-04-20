@@ -7,6 +7,7 @@ import CalculatorModal from './CalculatorModal';
 import SmartDictationInput from '../src/components/dictation/SmartDictationInput';
 import { DailyReportService } from '../services/DailyReportService';
 import { formatDateForFilename, formatDate, formatDateTime } from '../utils/dateUtils';
+import { supabase } from '../src/lib/supabase';
 
 interface DailyCloseWizardProps {
     user: User;
@@ -446,16 +447,59 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
         setIsSubmitting(true);
 
         try {
-            // 1. Generate PDF FIRST and wait for it to finish!
-            // If we don't await, the component might unmount while html2pdf is running, creating corrupted PDFs.
-            await generatePDF();
-
-            // 2. Construct Report Object
+            // 1. Construct Report Object
             const report = getTempReport();
 
-            // 3. Save to Supabase (or local storage if offline)
+            // 2. Save to Supabase (or local storage if offline)
             if (user?.id) {
                 await DailyReportService.createReport(report, user.id);
+            }
+            
+            // 3. Generate PDF, Upload to Storage, Send Email
+            const pdfBlob = await generatePDFBlob();
+            if (pdfBlob) {
+                const uniqueFileName = `close_${new Date().getTime()}.pdf`;
+                const filePath = `${new Date().toISOString().split('T')[0]}/${uniqueFileName}`;
+                
+                const { error: uploadError } = await supabase.storage
+                    .from('daily_reports')
+                    .upload(filePath, pdfBlob, {
+                        contentType: 'application/pdf',
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+
+                if (uploadError) {
+                    console.error("Failed to upload Daily Close PDF to Storage:", uploadError);
+                    alert(`Upload Error: ${uploadError.message}`);
+                } else {
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('daily_reports')
+                        .getPublicUrl(filePath);
+
+                    const emailUrl = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/send-email';
+                    
+                    const res = await fetch(emailUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: 'daily_close',
+                            data: {
+                                date: new Date().toLocaleDateString(),
+                                totalMethods: totalMethods.toFixed(2),
+                                totalInsurance: totalIns,
+                                closedBy: user.username,
+                                pdfUrl: publicUrl
+                            }
+                        })
+                    });
+                    
+                    if (!res.ok) {
+                        const txt = await res.text();
+                        console.error(`Edge Function returned ${res.status}: ${txt}`);
+                        alert(`Error sending email: ${txt}`);
+                    }
+                }
             }
 
             // 4. Complete
@@ -468,10 +512,10 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
         }
     };
 
-    const generatePDF = async () => {
+    const generatePDFBlob = async (): Promise<Blob | null> => {
         if (!reportRef.current || !(window as any).html2pdf) {
             alert("PDF generator not ready. Please wait.");
-            return;
+            return null;
         }
 
         const opt = {
@@ -491,8 +535,18 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
             jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
         };
 
-        // MUST return the promise so we can await it
-        return (window as any).html2pdf().set(opt).from(reportRef.current).save();
+        const worker = (window as any).html2pdf().set(opt).from(reportRef.current);
+        const dataUri = await (typeof worker.outputPdf === 'function' ? worker.outputPdf('datauristring') : worker.output('datauristring'));
+        
+        // Trigger local manual download via HTML anchor
+        const link = document.createElement('a');
+        link.href = dataUri;
+        link.download = opt.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        return await (await fetch(dataUri)).blob();
     };
 
     const openCalculator = (category: 'methods' | 'types', key: string, currentValue: number) => {
