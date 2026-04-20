@@ -80,12 +80,37 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
             link.click();
             document.body.removeChild(link);
 
-            // 2. Extract base64 and dispatch email
+            // 2. Extract Blob, Upload to Storage, and dispatch email
             try {
-                const base64Content = pdfDataUri.split(',')[1];
+                // Convert Data URI to Blob for upload
+                const pdfBlob = await (await fetch(pdfDataUri)).blob();
+                
+                // Dynamically import supabase client to avoid circular/init issues
+                const { supabase } = await import('../src/lib/supabase');
+                
+                const uniqueFileName = `close_${new Date().getTime()}.pdf`;
+                const filePath = `${new Date().toISOString().split('T')[0]}/${uniqueFileName}`;
+                
+                const { error: uploadError } = await supabase.storage
+                    .from('daily_reports')
+                    .upload(filePath, pdfBlob, {
+                        contentType: 'application/pdf',
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+
+                if (uploadError) {
+                    console.error("Failed to upload Daily Close PDF to Storage:", uploadError);
+                    throw uploadError;
+                }
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('daily_reports')
+                    .getPublicUrl(filePath);
+
                 const emailUrl = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/send-email';
                 
-                const res = await fetch(emailUrl, {
+                await fetch(emailUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -95,26 +120,10 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
                             totalMethods: totalMethods.toFixed(2),
                             totalInsurance: totalInsurance,
                             closedBy: user.username,
-                            pdfBase64: base64Content
+                            pdfUrl: publicUrl
                         }
                     })
                 });
-
-                if (!res.ok && res.status === 413) {
-                    await fetch(emailUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            type: 'daily_close',
-                            data: {
-                                date: new Date().toLocaleDateString(),
-                                totalMethods: totalMethods.toFixed(2),
-                                totalInsurance: totalInsurance,
-                                closedBy: user.username
-                            }
-                        })
-                    });
-                }
             } catch (err) {
                 console.error("Failed to send Daily Close email:", err);
             }

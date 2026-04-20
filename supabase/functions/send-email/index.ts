@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { Resend } from 'npm:resend'
+import { encode } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -64,6 +65,12 @@ serve(async (req: Request) => {
        html = `<div style="font-family: sans-serif; padding: 20px;"><h2>Successful Connection!</h2><p>The notification system is operating optimally.</p></div>`
     } else if (type === 'daily_close') {
        subject = `[Norvexis] Daily Close Report - ${data.date || new Date().toLocaleDateString()}`;
+       
+       let downloadLinkHtml = '';
+       if (data.pdfUrl) {
+           downloadLinkHtml = `<p style="margin-top:20px; font-size:16px;"><strong>📎 <a href="${data.pdfUrl}" target="_blank" style="color: #4f46e5; text-decoration: none;">Download PDF Report</a></strong></p>`;
+       }
+
        html = `
         <div style="font-family: sans-serif; padding: 20px;">
             <h2 style="color: #0f172a;">Daily Medical Close Complete</h2>
@@ -74,11 +81,25 @@ serve(async (req: Request) => {
                 <li><strong>Closed By:</strong> ${data.closedBy || 'Admin'}</li>
             </ul>
             <p>The official PDF report is attached to this email.</p>
+            ${downloadLinkHtml}
         </div>
        `;
-       if (data.pdfBase64) {
+       
+       if (data.pdfUrl) {
+           try {
+               const pdfRes = await fetch(data.pdfUrl);
+               const pdfBuffer = await pdfRes.arrayBuffer();
+               const base64Content = encode(new Uint8Array(pdfBuffer));
+               attachments.push({
+                   filename: `DailyClose_${data.date ? data.date.replace(/\//g, '-') : 'Report'}.pdf`,
+                   content: base64Content
+               });
+           } catch (e) {
+               console.error('[send-email] Failed to fetch PDF from URL:', e);
+           }
+       } else if (data.pdfBase64) {
            attachments.push({
-               filename: `DailyClose_${data.date || 'Report'}.pdf`,
+               filename: `DailyClose_${data.date ? data.date.replace(/\//g, '-') : 'Report'}.pdf`,
                content: data.pdfBase64
            });
        }
