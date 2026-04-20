@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, UserRole } from '../types';
+import { supabase } from '../src/lib/supabase';
 
 interface DailyCloseProps {
     user: User;
@@ -84,9 +85,6 @@ const DailyClose: React.FC<DailyCloseProps> = ({ user, usersDb, onCloseComplete,
             try {
                 // Convert Data URI to Blob for upload
                 const pdfBlob = await (await fetch(pdfDataUri)).blob();
-                
-                // Dynamically import supabase client to avoid circular/init issues
-                const { supabase } = await import('../src/lib/supabase');
                 
                 const uniqueFileName = `close_${new Date().getTime()}.pdf`;
                 const filePath = `${new Date().toISOString().split('T')[0]}/${uniqueFileName}`;
