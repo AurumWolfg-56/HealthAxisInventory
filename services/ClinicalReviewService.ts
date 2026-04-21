@@ -31,26 +31,28 @@ OUTPUT — Return ONLY valid JSON:
   "diagnoses": "Numbered list of diagnoses WITH suggested ICD-10 codes. Format:\\n1. ICD-10 code - Diagnosis description\\n2. ICD-10 code - Diagnosis description\\nUse the most specific and appropriate ICD-10 code for each diagnosis.",
   "plan": "Comprehensive numbered plan organized BY DIAGNOSIS. For EACH diagnosis include:\\n\\n1. [Diagnosis Name - description only, no codes]\\n   a) Medications: drug, dose, route, frequency, duration with rationale\\n   b) Diagnostic workup: labs/imaging with medical necessity justification\\n   c) Non-pharmacological: lifestyle modifications, activity restrictions\\n   d) Patient education: warning signs, when to return to clinic/ER\\n   e) Follow-up: specific timeline and purpose\\n   f) [SUGGESTED] Additional evidence-based interventions commonly recommended for this specific condition that the provider may want to consider based on current clinical guidelines",
   "suggestedCPT": "99213, 99214, or 99215",
-  "mdmLevel": "Brief explanation of why this E/M level was chosen based on the '2 out of 3 MDM Rule' (Problems, Data, Risk). Provide the highest 2 elements that justify this code.",
+  "mdmLevel": "Provide a brief explanation of why this E/M level was chosen. You MUST explicitly state which 2 of the 3 MDM elements (Problems, Data, Risk) meet or exceed the selected level.",
   "upcodingSuggestions": ["If level is 99213, provide 3-5 SPECIFIC suggestions tailored to THIS case that could legitimately bring documentation to 99214. (e.g. 'Document prescription drug management to increase Risk to Moderate'). If already 99214+, return empty array."],
   "conductAlerts": ["Any clinical logic issues specific to THIS case. Examples: medication interaction concerns, missing safety assessments, incomplete evaluation given the symptoms. Leave empty if none found."]
 }
 
-CRITICAL RULES FOR E/M LEVEL (MDM):
-Evaluate Medical Decision Making (MDM) using the "2 out of 3" Rule: Choose the visit level based on the highest 2 of the 3 MDM elements (Problems, Data, Risk) supported by documentation.
+CRITICAL RULES FOR E/M LEVEL (MDM - CPT 2026 Guidelines):
+Evaluate Medical Decision Making (MDM) using the "2 out of 3" Rule: Choose the visit level based on the HIGHEST 2 of the 3 MDM elements (Problems, Data, Risk) supported by documentation.
 
-- Level 99213 (Low Complexity): 
-  * Problems: Low (1 stable chronic illness OR 1 uncomplicated acute illness)
-  * Data: Minimal / Low (Little or no data, limited data)
-  * Risk: Low (Low-risk treatment or management)
-- Level 99214 (Moderate Complexity): 
-  * Problems: Moderate (2+ stable chronic illnesses, 1 chronic illness w/ exacerbation, 1 new problem w/ uncertain prognosis, 1 acute illness w/ systemic symptoms)
-  * Data: Moderate (Ordering multiple tests, reviewing outside records, independent interpretation, discussion w/ external source)
-  * Risk: Moderate (Prescription drug management is very commonly here)
-- Level 99215 (High Complexity): 
-  * Problems: High (Life-threatening condition OR threat to bodily function)
-  * Data: High (Extensive data from multiple categories)
-  * Risk: High (Decision for hospitalization, intensive monitoring for toxicity, high-risk treatment)
+- Level 99213 (Low Complexity): Requires 2 out of 3 of the following:
+  * Problems (Low): 2+ minor/self-limited problems, OR 1 stable chronic illness, OR 1 acute uncomplicated illness/injury, OR 1 stable acute illness.
+  * Data (Low): Minimal/Low data. (e.g., ordering 1-2 unique tests, or assessing an independent historian).
+  * Risk (Low): Low risk of morbidity from additional diagnostic testing or treatment.
+
+- Level 99214 (Moderate Complexity): Requires 2 out of 3 of the following:
+  * Problems (Moderate): 1+ chronic illnesses with exacerbation/progression/side effects, OR 2+ stable chronic illnesses, OR 1 undiagnosed new problem with uncertain prognosis, OR 1 acute illness with systemic symptoms, OR 1 acute complicated injury.
+  * Data (Moderate): Must meet 1 of 3 categories: (1) Any combination of 3 from: review external notes, review unique tests, order unique tests, independent historian. (2) Independent interpretation of tests. (3) Discussion of management/test with external physician/appropriate source.
+  * Risk (Moderate): Prescription drug management, decision regarding minor surgery with identified risk factors, decision regarding elective major surgery without identified risk factors, OR diagnosis/treatment significantly limited by social determinants of health.
+
+- Level 99215 (High Complexity): Requires 2 out of 3 of the following:
+  * Problems (High): 1+ chronic illnesses with severe exacerbation/progression, OR 1 acute/chronic illness or injury that poses a threat to life or bodily function.
+  * Data (High): Extensive data (Must meet at least 2 of the 3 categories mentioned in Moderate).
+  * Risk (High): Drug therapy requiring intensive monitoring for toxicity, decision regarding elective major surgery with identified risk factors, emergency major surgery, decision regarding hospitalization or escalation of hospital-level care, DNR/de-escalate care, parenteral controlled substances.
 
 OTHER CRITICAL RULES:
 1. HPI MUST start with patient demographics (age, sex) if mentioned in dictation
