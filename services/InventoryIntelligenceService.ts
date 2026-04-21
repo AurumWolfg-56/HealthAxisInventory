@@ -125,47 +125,81 @@ export class InventoryIntelligenceService {
     // ── AI Smart Cart Integration ─────────────────────────────────────────────
     static async generateAIOrderDraft(itemsToReview: ItemMetrics[], rawInventory: InventoryItem[]): Promise<AIOrderDraftResponse> {
         // Prepare simplified data payload for LLM to avoid context limits
-        const payload = itemsToReview.map(m => {
+        // 14k tokens is too big for local models, so we heavily compress the data.
+        const idMap = new Map<number, string>();
+        
+        const payload = itemsToReview.map((m, idx) => {
+            idMap.set(idx, m.itemId);
             const fullItem = rawInventory.find(i => i.id === m.itemId);
+            
+            // Truncate names to 45 chars to save tokens
+            const name = fullItem?.name || m.itemName;
+            const shortName = name.length > 45 ? name.substring(0, 42) + '...' : name;
+
             return {
-                id: m.itemId,
-                name: fullItem?.name || m.itemName,
-                category: fullItem?.category || 'General',
-                stock: m.currentStock,
-                minRequired: fullItem?.minStock || 0,
-                expiry: fullItem?.expiryDate || 'None',
-                statusTrigger: m.status,
-                systemRecommendedQty: m.recommendedQuantity
+                id: idx, // Use cheap int IDs instead of massive UUIDs
+                n: shortName,
+                c: fullItem?.category || 'Gen',
+                s: m.currentStock,
+                min: fullItem?.minStock || 0,
+                x: fullItem?.expiryDate || 'N/A'
             };
         });
 
+        // To prevent catastrophic token overflows, if we have > 80 items, we might still hit limits
+        // We will process max 80 at a time to ensure it fits in ~4k context 
+        const chunk = payload.slice(0, 80);
+
         const prompt = `
-You are the Chief Medical Supply Officer. You must build a Smart Cart based on the following items that have hit threshold warnings.
+Act as Chief Medical Supply Officer. Build a Prioritized Cart for these vulnerable items.
 
-RULES:
-1. "Clinical Vital" items are life-saving or absolutely critical for daily operations (e.g. syringes, local anesthesia, gauze, tests). If these hit minStock, they must be ordered TODAY.
-2. "Secondary Consumable" items are clerical or non-emergency (e.g. gloves, paper, general cleaning).
-3. "Review Only" items are those with plenty of stock but expiring soon. They don't need immediate purchase but require a physical audit.
-4. Output STRICTLY as a JSON matching the interface.
+CRITERIA:
+1. "Clinical Vital": Life-saving/critical medical supplies hitting min stock.
+2. "Secondary Consumable": Clerical, non-emergency, office, or general supplies.
+3. "Review Only": High stock but expiring soon.
 
-RAW VULNERABLE ITEMS:
-${JSON.stringify(payload, null, 2)}
+RAW DATA:
+${JSON.stringify(chunk)}
         `;
 
-        const system = `You are a clinical logistic AI. Return this exact JSON shape:
+        const system = `You are an AI logistic assistant. Output STRICTLY raw JSON matching this interface:
 {
-  "strategyNotes": "string (brief summary of urgency)",
+  "strategyNotes": "string (brief summary)",
   "prioritizedCart": [
     {
       "categoryName": "Clinical Vital (Order Today)" | "Secondary Consumable (Order This Week)" | "Review Only (Expiring)",
       "items": [
-        { "itemId": "string", "itemName": "string", "proposedQuantity": number, "aiJustification": "string (e.g. 'Only 5 left vs Min 20, critical supply')" }
+        { "id": number (match the raw input id), "itemName": "string", "proposedQuantity": number, "aiJustification": "string (brief reason)" }
       ]
     }
   ]
 }`;
 
-        return await jsonChat<AIOrderDraftResponse>(system, prompt);
+        // Ask the local AI
+        const rawResponse = await jsonChat<any>(system, prompt);
+
+        // Map integer IDs back to UUIDs
+        try {
+            if (rawResponse && Array.isArray(rawResponse.prioritizedCart)) {
+                rawResponse.prioritizedCart.forEach((cat: any) => {
+                    if (Array.isArray(cat.items)) {
+                        cat.items.forEach((item: any) => {
+                            // Recover the real string ID
+                            item.itemId = idMap.get(item.id) || item.id;
+                            delete item.id;
+                        });
+                    }
+                });
+            }
+            // If we sliced the array due to being too large, warn in the strategy notes
+            if (payload.length > 80 && rawResponse?.strategyNotes) {
+                rawResponse.strategyNotes = "(Note: To prevent memory limits, only the first 80 items were analyzed) " + rawResponse.strategyNotes;
+            }
+            return rawResponse as AIOrderDraftResponse;
+        } catch (e) {
+            console.error("Failed to map IDs back", e);
+            throw e;
+        }
     }
 
     // ── Dormant Fallback ──────────────────────────────────────────────────────
