@@ -240,12 +240,15 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
                     </div>
                   )}
 
-                  {/* Upcoding Suggestions — case-specific */}
+                  {/* Upcoding Suggestions & Defensibility Tips */}
                   {structuredNote.upcodingSuggestions && structuredNote.upcodingSuggestions.length > 0 && (
                     <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/20 overflow-hidden">
                       <div className="px-4 py-2 bg-white/50 dark:bg-gray-800/50 border-b border-inherit">
                         <h4 className="text-[11px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2">
-                          <i className="fa-solid fa-arrow-trend-up"></i> Documentation Opportunities → Reach 99214
+                          <i className="fa-solid fa-arrow-trend-up"></i> 
+                          {structuredNote.suggestedCPT === '99214' || structuredNote.suggestedCPT === '99215' 
+                            ? `Documentation Tips → Defend ${structuredNote.suggestedCPT}` 
+                            : 'Documentation Opportunities → Reach 99214'}
                         </h4>
                       </div>
                       <div className="p-3 space-y-2">

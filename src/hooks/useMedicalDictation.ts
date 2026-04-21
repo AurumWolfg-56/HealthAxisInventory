@@ -18,6 +18,7 @@ export const useMedicalDictation = (): UseMedicalDictationReturn => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [liveText, setLiveText] = useState('');
+  const liveTextRef = useRef('');
 
   // Audio References
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -66,11 +67,15 @@ export const useMedicalDictation = (): UseMedicalDictationReturn => {
   const start = async (prompt?: string) => {
     try {
       setLiveText('');
+      liveTextRef.current = '';
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       // 1. Setup Whisper Stream
       const whisper = new WhisperStream();
-      whisper.onText = (text) => setLiveText(text);
+      whisper.onText = (text) => {
+        setLiveText(text);
+        liveTextRef.current = text;
+      };
       whisper.onError = (err) => console.error("WhisperStream error:", err);
       whisper.connect(prompt);
       whisperStreamRef.current = whisper;
@@ -123,7 +128,7 @@ export const useMedicalDictation = (): UseMedicalDictationReturn => {
       mediaRecorderRef.current!.onstop = async () => {
         // Wait briefly for final text chunks to arrive via WebSocket
         setTimeout(() => {
-            const finalLiveText = liveText;
+            const finalLiveText = liveTextRef.current;
             
             // Clean up
             cleanup();
