@@ -24,9 +24,9 @@ let LM_STUDIO_URL = LM_STUDIO_DIRECT_URL;
 
 // Model identifiers (must match LM Studio model IDs exactly)
 const MODELS = {
-  fast: 'bartowski/meta-llama-3.1-8b-instruct',
-  smart: 'qwen2.5-14b-instruct',
-  vision: 'qwen2.5-vl-7b-instruct',
+  fast: 'google/gemma-4-e4b',
+  smart: 'google/gemma-4-e4b',
+  vision: 'google/gemma-4-e4b',
   embed: 'text-embedding-nomic-embed-text-v1.5',
 } as const;
 
