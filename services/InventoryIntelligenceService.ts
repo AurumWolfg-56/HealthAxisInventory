@@ -1,6 +1,7 @@
 
 import { supabase } from '../src/lib/supabase';
 import { InventoryItem, DBIntelligenceOverride, ItemMetrics } from '../types';
+import { jsonChat } from './LocalAIService';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Exported Governance Constants
@@ -27,144 +28,144 @@ interface PurchaseCycle {
     source: 'CONSUMED_LOGS' | 'SNAPSHOT' | 'FALLBACK_ORDER_QTY';
 }
 
+export interface AIOrderDraftResponse {
+    strategyNotes: string;
+    prioritizedCart: {
+        categoryName: 'Clinical Vital (Order Today)' | 'Secondary Consumable (Order This Week)' | 'Review Only (Expiring)';
+        items: {
+            itemId: string;
+            itemName: string;
+            proposedQuantity: number;
+            aiJustification: string;
+        }[];
+    }[];
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Service
 // ─────────────────────────────────────────────────────────────────────────────
 export class InventoryIntelligenceService {
 
-    // ── Core Public Method ────────────────────────────────────────────────────
+    // ── Core Public Method (Updated for Fast Actionability based on Rules) ──
     static async calculateItemMetrics(
         item: InventoryItem,
         options?: { targetCoverageCycles?: number }
     ): Promise<ItemMetrics> {
         try {
-            // 1. Build purchase cycles from order history + audit logs
-            const rawCycles = await this.getItemHistory(item.id);
+            const minStock = item.minStock || 5;
+            const maxStock = item.maxStock || minStock * 3;
+            const leadTime = item.leadTime || 7;
 
-            // 2. Anomaly detection — returns valid cycles + stability index
-            //    stabilityIndex is NOT yet computed here (done after rolling window)
-            const { validCycles, rawCycles: markedRaw } = this.analyzeCycles(rawCycles);
+            let status: ItemMetrics['status'] = 'HEALTHY';
+            let recommendedQuantity = 0;
+            let anomaliesDetected = 0;
+            let isVolatile = false;
 
-            // 3. Rolling Window — sort newest first, take top ENGINE_ROLLING_WINDOW
-            const sortedValid = [...validCycles].sort((a, b) => b.endDate.getTime() - a.endDate.getTime());
-            const predictionCycles = sortedValid.slice(0, ENGINE_ROLLING_WINDOW);
-
-            // ── Fix #6: No silent 30-day fallback if no viable prediction cycles ──
-            if (predictionCycles.length < 1) {
-                return this.getDormantMetrics(item, markedRaw.length);
+            // 1. Check Expiration
+            const now = new Date();
+            let daysUntilExpiry = Infinity;
+            if (item.expiryDate) {
+                const expiryDate = new Date(item.expiryDate);
+                daysUntilExpiry = (expiryDate.getTime() - now.getTime()) / 86400000;
+                
+                if (daysUntilExpiry < 0) {
+                    anomaliesDetected += 1; // It has expired
+                } else if (daysUntilExpiry <= 30) {
+                    isVolatile = true; // Flag as volatile if expiring within 30 days
+                }
             }
 
-            // 4. Usage Rate (total qty / total days in rolling window)
-            const totalQty = predictionCycles.reduce((s, c) => s + c.quantityConsumed, 0);
-            const totalDays = predictionCycles.reduce((s, c) => s + c.durationDays, 0);
-            const dailyUsageRate = totalQty / totalDays;
-
-            if (dailyUsageRate < 0.01) {
-                return this.getDormantMetrics(item, markedRaw.length - validCycles.length);
-            }
-
-            // 5. Predicted cycle duration = median of rolling window durations
-            //    No 30-day fallback — if we have cycles, use their data.
-            const predictedCycleDuration = this.getMedian(predictionCycles.map(c => c.durationDays));
-
-            // ── Fix #5: Stability index computed on rolling window only ───────────
-            const stabilityIndex = this.computeCV(predictionCycles.map(c => c.usageRate));
-            const isVolatile = stabilityIndex > 40;
-
-            // 6. Days remaining
-            const daysRemaining = item.stock / dailyUsageRate;
-
-            // 7. Lead time & buffer from governance constants
-            const LEAD_TIME_DAYS = item.leadTime || 7;
-            const BUFFER_DAYS = ENGINE_BUFFER_DAYS;
-
-            // ── Fix #9: Tightened confidence — HIGH requires full rolling window AND
-            //    zero anomalies AND low stability ──────────────────────────────────
-            const anomaliesDetected = markedRaw.length - validCycles.length;
-            let confidence: 'HIGH' | 'MEDIUM' | 'LOW' = 'LOW';
-            if (
-                predictionCycles.length === ENGINE_ROLLING_WINDOW &&
-                stabilityIndex < 20 &&
-                anomaliesDetected === 0
-            ) {
-                confidence = 'HIGH';
-            } else if (predictionCycles.length >= 2 && stabilityIndex < 40) {
-                confidence = 'MEDIUM';
-            }
-
-            // 8. Reorder arithmetic (all as floats, rounded only at return)
-            const safetyStock = dailyUsageRate * LEAD_TIME_DAYS * ENGINE_CRITICALITY_FACTOR;
-            const reorderPoint = (dailyUsageRate * LEAD_TIME_DAYS) + safetyStock;
-            const daysUntilReorder = Math.max(0, (item.stock - reorderPoint) / dailyUsageRate);
-            const today = new Date();
-            const recommendedReorderDate = new Date(today.getTime() + daysUntilReorder * 86400_000);
-
-            // 9. Capital Protection — float precision throughout
-            const targetCoverage = options?.targetCoverageCycles || 1;
-            const rawRecQtyFloat = dailyUsageRate * predictedCycleDuration * targetCoverage;
-            const capitalCapFloat = ENGINE_CRITICALITY_FACTOR * (dailyUsageRate * predictedCycleDuration);
-            const capApplied = rawRecQtyFloat > capitalCapFloat;
-            const recommendedQuantity = Math.min(rawRecQtyFloat, capitalCapFloat);
-
-            // 10. Strict Status — evaluated in this exact precedence order:
-            //   CRITICAL   : daysRemaining <= LEAD_TIME_DAYS
-            //   ORDER_SOON : daysRemaining <= LEAD_TIME_DAYS + BUFFER_DAYS
-            //   OVERSTOCK  : daysRemaining >  2 × predictedCycleDuration
-            //   HEALTHY    : otherwise
-            let status: ItemMetrics['status'];
-            if (daysRemaining <= LEAD_TIME_DAYS) {
+            // 2. Evaluate Status based on thresholds
+            // CRITICAL: Stock is below or equal to minStock
+            // ORDER_SOON: Stock is below minStock * 1.5
+            // OVERSTOCK: Stock is way above maxStock
+            if (item.stock <= minStock) {
                 status = 'CRITICAL';
-            } else if (daysRemaining <= LEAD_TIME_DAYS + BUFFER_DAYS) {
+                recommendedQuantity = Math.max(0, maxStock - item.stock);
+            } else if (item.stock <= minStock * 1.5) {
                 status = 'ORDER_SOON';
-            } else if (daysRemaining > 2 * predictedCycleDuration) {
+                recommendedQuantity = Math.max(0, maxStock - item.stock);
+            } else if (item.stock >= maxStock) {
                 status = 'OVERSTOCK';
-            } else {
-                status = 'HEALTHY';
+            }
+
+            // If it's about to expire, it overrides and becomes CRITICAL
+            if (daysUntilExpiry <= 30 && status !== 'CRITICAL') {
+                status = 'CRITICAL';
+                // We assume we need to replace all stock that is about to expire
+                recommendedQuantity = maxStock;
             }
 
             return {
                 itemId: item.id,
                 itemName: item.name,
                 currentStock: item.stock,
-                dailyUsageRate,
-                predictedCycleDuration,
-                daysRemaining,
-                recommendedReorderDate,
-                recommendedQuantity: Math.ceil(recommendedQuantity),
+                dailyUsageRate: 0,
+                predictedCycleDuration: 30, // Placeholder
+                daysRemaining: status === 'CRITICAL' ? 0 : (daysUntilExpiry !== Infinity ? daysUntilExpiry : 999), 
+                recommendedReorderDate: status === 'CRITICAL' ? new Date() : null,
+                recommendedQuantity,
                 status,
-                confidence,
-                stabilityIndex,
+                confidence: 'HIGH', // We have high confidence in explicit rules
+                stabilityIndex: 0,
                 anomaliesDetected,
                 isVolatile,
-                leadTime: LEAD_TIME_DAYS,
+                leadTime,
                 savingsOpportunity_usageBased: 0,
-                // ── Debug / Audit ──────────────────────────────────────────────
-                debug_rawCycleCount: markedRaw.length,
-                debug_validCycleCount: validCycles.length,
-                debug_cycleCount: validCycles.length,       // alias
-                debug_totalCycleCount: markedRaw.length,         // alias
-                debug_cyclesUsed: predictionCycles.map(c => c.endDate.toISOString()),
-                debug_anomalies: markedRaw.filter(c => c.isAnomaly).map(c => ({
-                    reason: c.anomalyReason || 'UNKNOWN',
-                    date: c.endDate.toISOString(),
-                })),
-                // Capital protection — floats exposed before any rounding
-                debug_rawRecommendationFloat: rawRecQtyFloat,
-                debug_capitalCapFloat: capitalCapFloat,
-                debug_rawRecommendation: Math.ceil(rawRecQtyFloat),
-                debug_capitalCap: Math.ceil(capitalCapFloat),
-                debug_capApplied: capApplied,
-                debug_bufferDays: BUFFER_DAYS,
-                // Reorder audit
-                debug_safetyStock: safetyStock,
-                debug_reorderPoint: reorderPoint,
-                debug_daysUntilReorder: daysUntilReorder,
+                debug_rawCycleCount: 0,
+                debug_validCycleCount: 0,
             };
 
         } catch (error) {
             console.error(`[InventoryIntelligence] Error for ${item.name}:`, error);
             return this.getDormantMetrics(item, 0);
         }
+    }
+
+    // ── AI Smart Cart Integration ─────────────────────────────────────────────
+    static async generateAIOrderDraft(itemsToReview: ItemMetrics[], rawInventory: InventoryItem[]): Promise<AIOrderDraftResponse> {
+        // Prepare simplified data payload for LLM to avoid context limits
+        const payload = itemsToReview.map(m => {
+            const fullItem = rawInventory.find(i => i.id === m.itemId);
+            return {
+                id: m.itemId,
+                name: fullItem?.name || m.itemName,
+                category: fullItem?.category || 'General',
+                stock: m.currentStock,
+                minRequired: fullItem?.minStock || 0,
+                expiry: fullItem?.expiryDate || 'None',
+                statusTrigger: m.status,
+                systemRecommendedQty: m.recommendedQuantity
+            };
+        });
+
+        const prompt = `
+You are the Chief Medical Supply Officer. You must build a Smart Cart based on the following items that have hit threshold warnings.
+
+RULES:
+1. "Clinical Vital" items are life-saving or absolutely critical for daily operations (e.g. syringes, local anesthesia, gauze, tests). If these hit minStock, they must be ordered TODAY.
+2. "Secondary Consumable" items are clerical or non-emergency (e.g. gloves, paper, general cleaning).
+3. "Review Only" items are those with plenty of stock but expiring soon. They don't need immediate purchase but require a physical audit.
+4. Output STRICTLY as a JSON matching the interface.
+
+RAW VULNERABLE ITEMS:
+${JSON.stringify(payload, null, 2)}
+        `;
+
+        const system = `You are a clinical logistic AI. Return this exact JSON shape:
+{
+  "strategyNotes": "string (brief summary of urgency)",
+  "prioritizedCart": [
+    {
+      "categoryName": "Clinical Vital (Order Today)" | "Secondary Consumable (Order This Week)" | "Review Only (Expiring)",
+      "items": [
+        { "itemId": "string", "itemName": "string", "proposedQuantity": number, "aiJustification": "string (e.g. 'Only 5 left vs Min 20, critical supply')" }
+      ]
+    }
+  ]
+}`;
+
+        return await jsonChat<AIOrderDraftResponse>(system, prompt);
     }
 
     // ── Dormant Fallback ──────────────────────────────────────────────────────

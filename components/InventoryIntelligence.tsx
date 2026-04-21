@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { InventoryItem, ItemMetrics } from '../types';
 import { InventoryIntelligenceService } from '../services/InventoryIntelligenceService';
 import { supabase } from '../src/lib/supabase';
+import { AISmartCartModal } from './AISmartCartModal';
 
 interface InventoryIntelligenceProps {
     inventory: InventoryItem[];
@@ -13,6 +14,7 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'actionable' | 'all' | 'anomalies'>('actionable');
     const [overrides, setOverrides] = useState<Record<string, { qty: number; reason: string }>>({});
+    const [isCartModalOpen, setIsCartModalOpen] = useState(false);
 
     useEffect(() => {
         calculateAllMetrics();
@@ -84,47 +86,15 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
         .filter(m => m.status === 'OVERSTOCK')
         .reduce((sum, m) => sum + (m.currentStock * (inventory.find(i => i.id === m.itemId)?.averageCost || 0)), 0);
 
-    const handleGeneratePurchaseList = async () => {
-        const itemsToProcess = activeTab === 'all' ? metrics : [...criticalItems, ...warningItems];
-        const toOrder: { itemId: string, quantity: number }[] = [];
-        const overridesToLog: { itemId: string, recommended: number, ordered: number, reason: string }[] = [];
+    const handleGeneratePurchaseList = () => {
+        // We no longer trigger order directly. We open the smart cart!
+        setIsCartModalOpen(true);
+    };
 
-        for (const m of itemsToProcess) {
-            const override = overrides[m.itemId];
-            const finalQty = override !== undefined ? override.qty : m.recommendedQuantity;
-            if (finalQty > 0) {
-                toOrder.push({ itemId: m.itemId, quantity: finalQty });
-                if (override && override.qty !== m.recommendedQuantity) {
-                    if (!override.reason || override.reason.trim().length < 3) {
-                        alert(`Please provide a reason for overriding ${m.itemName} (min 3 chars)`);
-                        return;
-                    }
-                    overridesToLog.push({
-                        itemId: m.itemId,
-                        recommended: m.recommendedQuantity,
-                        ordered: override.qty,
-                        reason: override.reason
-                    });
-                }
-            }
-        }
-
-        if (toOrder.length > 0) {
-            for (const log of overridesToLog) {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
-                    await InventoryIntelligenceService.logOverride({
-                        item_id: log.itemId,
-                        user_id: user.id,
-                        recommended_qty: log.recommended,
-                        ordered_qty: log.ordered,
-                        justification: log.reason
-                    });
-                }
-            }
-            onAddToOrder(toOrder);
-        } else {
-            alert("No items selected for reorder.");
+    const handleConfirmAICart = async (items: { itemId: string, quantity: number }[]) => {
+        if (items.length > 0) {
+            // Note: Overrides tracking logic could be added here later if needed
+            onAddToOrder(items);
         }
     };
 
@@ -319,9 +289,9 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                                 <tr>
                                     <th className="table-header rounded-tl-none">Item</th>
                                     <th className="table-header">Status</th>
-                                    <th className="table-header">Coverage</th>
+                                    <th className="table-header">Expiry Track</th>
                                     <th className="table-header">Confidence</th>
-                                    <th className="table-header w-44">Reorder Qty</th>
+                                    <th className="table-header w-44">Reorder Target</th>
                                     {activeTab === 'anomalies' && <th className="table-header">Detected Issues</th>}
                                 </tr>
                             </thead>
@@ -355,13 +325,15 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                                                 </div>
                                             </td>
 
-                                            {/* Coverage */}
+                                            {/* Expiry Track */}
                                             <td className="md:table-cell p-0 md:p-4 flex justify-between items-center md:table-cell border-b border-slate-50 dark:border-slate-800/50 md:border-none py-2 md:py-0 text-sm text-slate-600 dark:text-slate-300 font-medium">
-                                                <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">Coverage</div>
-                                                {m.daysRemaining === Infinity ? (
-                                                    <span className="text-slate-400">∞ days</span>
+                                                <div className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expiry Track</div>
+                                                {m.daysRemaining === 999 ? (
+                                                    <span className="text-slate-400">No date set</span>
                                                 ) : (
-                                                    <span>{Math.round(m.daysRemaining)} days</span>
+                                                    <span className={m.daysRemaining <= 30 ? 'text-amber-500 font-bold' : ''}>
+                                                        Expires in {Math.round(m.daysRemaining)} days
+                                                    </span>
                                                 )}
                                             </td>
 
@@ -439,6 +411,14 @@ export const InventoryIntelligenceDashboard: React.FC<InventoryIntelligenceProps
                     )}
                 </div>
             </div>
+
+            <AISmartCartModal
+                isOpen={isCartModalOpen}
+                onClose={() => setIsCartModalOpen(false)}
+                vulnerableItems={[...criticalItems, ...warningItems, ...anomalyItems]} // Give AI everything actionable/expiring
+                rawInventory={inventory}
+                onCommitCart={handleConfirmAICart}
+            />
         </div>
     );
 };
