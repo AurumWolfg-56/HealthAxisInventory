@@ -8,8 +8,8 @@
  */
 
 // Local Whisper server (faster-whisper + FastAPI)
-const LOCAL_WHISPER_URL = 'http://localhost:8765/v1/audio/transcriptions';
-const LOCAL_WHISPER_WS_URL = 'ws://localhost:8765/v1/audio/transcriptions/stream';
+const LOCAL_WHISPER_URL = 'http://127.0.0.1:8765/v1/audio/transcriptions';
+const LOCAL_WHISPER_WS_URL = 'ws://127.0.0.1:8765/v1/audio/transcriptions/stream';
 
 // Medical context prompt for better accuracy
 const MEDICAL_PROMPT = "Medical Dictation. Patient History, SOAP Note, Cardiology, Oncology, Dermatology. Common drugs: Lisinopril, Metformin, Atorvastatin. CPT Codes. ICD-10. Urgent Care. Inventory management. Professional casing and punctuation.";
