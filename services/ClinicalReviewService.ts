@@ -50,7 +50,11 @@ CRITICAL RULES:
 
 // ─── Main Function ──────────────────────────────────────────────────────────
 
-export async function generateStructuredNote(rawDictation: string): Promise<StructuredNote> {
+export async function generateStructuredNote(
+  rawDictation: string,
+  patientContext: string = "",
+  onUpdate?: (partialNote: Partial<StructuredNote>) => void
+): Promise<StructuredNote> {
   console.log('[NoteGen] Generating structured note...');
 
   // Fast pre-check: fail immediately if AI gateway is unreachable
@@ -59,10 +63,46 @@ export async function generateStructuredNote(rawDictation: string): Promise<Stru
     throw new Error('Cannot connect to Local AI Gateway. Ensure LM Studio and whisper_server.py are running.');
   }
   
+  const contextBlock = patientContext ? `\n\nPATIENT CONTEXT:\n${patientContext}` : '';
+  let accumulatedJson = '';
+  let partialNote: Partial<StructuredNote> = {};
+
   const response = await chat(
     STRUCTURED_NOTE_PROMPT,
-    `RAW DICTATION:\n\n${rawDictation}`,
-    { model: 'fast', temperature: 0.2, maxTokens: 4096 }
+    `RAW DICTATION:\n\n${rawDictation}${contextBlock}`,
+    { 
+      model: 'fast', 
+      temperature: 0.2, 
+      maxTokens: 4096,
+      stream: !!onUpdate,
+      onChunk: (chunk) => {
+        accumulatedJson += chunk;
+        if (onUpdate) {
+            // Rough regex extraction for partial JSON fields
+            const extractString = (key: string) => {
+                const match = accumulatedJson.match(new RegExp(`"${key}"\\s*:\\s*"([^"]*)`));
+                return match ? match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"') : undefined;
+            };
+            const extractArray = (key: string) => {
+                const match = accumulatedJson.match(new RegExp(`"${key}"\\s*:\\s*\\[(.*?)\\]`, 's'));
+                if (match) {
+                    try { return JSON.parse(`[${match[1]}]`); } catch { return []; }
+                }
+                return undefined;
+            };
+
+            partialNote = {
+                chiefComplaint: extractString('chiefComplaint') || partialNote.chiefComplaint,
+                hpi: extractString('hpi') || partialNote.hpi,
+                diagnoses: extractString('diagnoses') || partialNote.diagnoses,
+                plan: extractString('plan') || partialNote.plan,
+                suggestedCPT: extractString('suggestedCPT') || partialNote.suggestedCPT,
+                mdmLevel: extractString('mdmLevel') || partialNote.mdmLevel,
+            };
+            onUpdate({ ...partialNote });
+        }
+      }
+    }
   );
 
   let clean = response.trim();
@@ -76,12 +116,18 @@ export async function generateStructuredNote(rawDictation: string): Promise<Stru
   try {
     const result = JSON.parse(clean) as StructuredNote;
     console.log(`[NoteGen] ✅ CPT ${result.suggestedCPT}`);
+    if (onUpdate) onUpdate(result);
     return result;
-  } catch {
-    console.error('[NoteGen] JSON parse failed');
+  } catch (e) {
+    console.error('[NoteGen] JSON parse failed', e);
+    // Return best effort from partial Note
     return {
-      chiefComplaint: '', hpi: response, diagnoses: '', plan: '',
-      suggestedCPT: '99213', mdmLevel: 'Review manually',
+      chiefComplaint: partialNote.chiefComplaint || '',
+      hpi: partialNote.hpi || response,
+      diagnoses: partialNote.diagnoses || '',
+      plan: partialNote.plan || '',
+      suggestedCPT: partialNote.suggestedCPT || '99213',
+      mdmLevel: partialNote.mdmLevel || 'Review manually',
       upcodingSuggestions: [], conductAlerts: [],
     };
   }

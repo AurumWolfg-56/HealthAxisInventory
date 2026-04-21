@@ -41,14 +41,15 @@ interface ChatOptions {
   temperature?: number;
   maxTokens?: number;
   jsonMode?: boolean;
+  stream?: boolean;
+  onChunk?: (chunk: string) => void;
 }
 
 // ─── Core API Call ──────────────────────────────────────────────────────────
 
 /**
  * Send a chat completion request to LM Studio.
- * Handles timeouts, endpoint fallback, and JSON extraction.
- * Vision requests get a longer timeout since OCR processing is heavier.
+ * Handles timeouts, endpoint fallback, JSON extraction, and Streaming.
  */
 const chatCompletion = async (
   messages: ChatMessage[],
@@ -59,6 +60,8 @@ const chatCompletion = async (
     temperature = 0.1,
     maxTokens = 2048,
     jsonMode = false,
+    stream = false,
+    onChunk
   } = options;
 
   // Resolve model ID
@@ -78,18 +81,24 @@ const chatCompletion = async (
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      console.log(`[LocalAI] Request → ${modelId} @ ${endpoint} (json=${jsonMode}, vision=${isVision})`);
+      console.log(`[LocalAI] Request → ${modelId} @ ${endpoint} (json=${jsonMode}, vision=${isVision}, stream=${stream})`);
+
+      const requestBody: any = {
+        model: modelId,
+        messages,
+        temperature,
+        max_tokens: maxTokens,
+      };
+
+      if (stream) {
+          requestBody.stream = true;
+      }
 
       const response = await fetch(`${endpoint}/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
-        body: JSON.stringify({
-          model: modelId,
-          messages,
-          temperature,
-          max_tokens: maxTokens,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       clearTimeout(timeoutId);
@@ -99,17 +108,46 @@ const chatCompletion = async (
         throw new Error(`LM Studio error ${response.status}: ${errText}`);
       }
 
-      const data = await response.json();
-      const text = data.choices?.[0]?.message?.content || '';
-      console.log(`[LocalAI] ✅ Response (${text.length} chars) from ${endpoint}`);
-
       // Remember which endpoint worked
       if (endpoint !== LM_STUDIO_URL) {
         console.log(`[LocalAI] Switching primary endpoint to ${endpoint}`);
         LM_STUDIO_URL = endpoint;
       }
 
-      return text;
+      if (stream && response.body && onChunk) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let fullText = '';
+        
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+            
+            for (const line of lines) {
+                if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                    try {
+                        const data = JSON.parse(line.substring(6));
+                        const content = data.choices[0]?.delta?.content || '';
+                        if (content) {
+                            fullText += content;
+                            onChunk(content);
+                        }
+                    } catch (e) {
+                        // ignore parse errors for partial json
+                    }
+                }
+            }
+        }
+        return fullText;
+      } else {
+          const data = await response.json();
+          const text = data.choices?.[0]?.message?.content || '';
+          console.log(`[LocalAI] ✅ Response (${text.length} chars) from ${endpoint}`);
+          return text;
+      }
     } catch (error: any) {
       clearTimeout(timeoutId);
       lastError = error;

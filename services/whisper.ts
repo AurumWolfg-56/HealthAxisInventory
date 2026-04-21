@@ -1,4 +1,3 @@
-
 /**
  * Whisper Service
  * 100% Local speech-to-text via faster-whisper server.
@@ -10,12 +9,72 @@
 
 // Local Whisper server (faster-whisper + FastAPI)
 const LOCAL_WHISPER_URL = 'http://localhost:8765/v1/audio/transcriptions';
+const LOCAL_WHISPER_WS_URL = 'ws://localhost:8765/v1/audio/transcriptions/stream';
 
 // Medical context prompt for better accuracy
 const MEDICAL_PROMPT = "Medical Dictation. Patient History, SOAP Note, Cardiology, Oncology, Dermatology. Common drugs: Lisinopril, Metformin, Atorvastatin. CPT Codes. ICD-10. Urgent Care. Inventory management. Professional casing and punctuation.";
 
+export class WhisperStream {
+    private ws: WebSocket | null = null;
+    public onText: (text: string) => void = () => {};
+    public onError: (error: Error) => void = () => {};
+
+    connect(prompt: string = MEDICAL_PROMPT) {
+        if (this.ws) {
+            this.ws.close();
+        }
+
+        try {
+            this.ws = new WebSocket(LOCAL_WHISPER_WS_URL);
+            
+            this.ws.onopen = () => {
+                console.log('[WhisperStream] Connected');
+                // Send the context prompt
+                this.ws?.send(JSON.stringify({ prompt }));
+            };
+
+            this.ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.text) {
+                        this.onText(data.text);
+                    } else if (data.error) {
+                        this.onError(new Error(data.error));
+                    }
+                } catch (e) {
+                    console.error('[WhisperStream] Parse error:', e);
+                }
+            };
+
+            this.ws.onerror = (e) => {
+                console.error('[WhisperStream] Connection error');
+                this.onError(new Error('Cannot connect to local Whisper stream. Ensure whisper_server.py is running.'));
+            };
+
+            this.ws.onclose = () => {
+                console.log('[WhisperStream] Disconnected');
+            };
+        } catch (e: any) {
+            this.onError(e);
+        }
+    }
+
+    sendAudioChunk(chunk: Blob) {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(chunk);
+        }
+    }
+
+    stop() {
+        if (this.ws) {
+            this.ws.close();
+            this.ws = null;
+        }
+    }
+}
+
 /**
- * Transcribe audio using local Whisper server (100% private).
+ * Transcribe audio using local Whisper server (100% private) (Legacy HTTP fallback).
  * @throws Error if local server is not running.
  */
 export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
@@ -36,7 +95,6 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
             method: 'POST',
             body: formData,
             signal: controller.signal
-            // No Authorization header — local server, no API key
         });
 
         clearTimeout(timeoutId);
@@ -57,7 +115,6 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
             throw new Error('Transcription timed out. Is the Whisper server running? (python whisper_server.py)');
         }
 
-        // Connection refused = server not running
         if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
             throw new Error('Cannot connect to local Whisper server. Start it with: python whisper_server.py');
         }

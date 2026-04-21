@@ -24,7 +24,7 @@ for p in cuda_paths:
         os.environ["PATH"] = p + os.pathsep + os.environ.get("PATH", "")
         print(f"[CUDA] Added to PATH: {p}")
 
-from fastapi import FastAPI, UploadFile, File, Form, Request
+from fastapi import FastAPI, UploadFile, File, Form, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -228,6 +228,78 @@ async def transcribe(
     finally:
         # Clean up temp file
         if tmp_path:
+            try:
+                os.unlink(tmp_path)
+            except:
+                pass
+
+# ─── WebSocket Streaming Transcription Endpoint ─────────────────────────────
+@app.websocket("/v1/audio/transcriptions/stream")
+async def websocket_transcribe(websocket: WebSocket):
+    await websocket.accept()
+    if whisper_model is None:
+        await websocket.send_json({"error": "Model not loaded"})
+        await websocket.close()
+        return
+
+    # We will accumulate the audio chunks into a temporary file
+    # This allows faster-whisper (via ffmpeg) to read the valid WebM container
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".webm")
+    tmp_path = tmp_file.name
+    
+    # Context prompt setup
+    initial_prompt = "Medical Dictation. Patient History, SOAP Note, Cardiology, Oncology, Dermatology. Common drugs: Lisinopril, Metformin, Atorvastatin. CPT Codes. ICD-10. Urgent Care. Inventory management. Professional casing and punctuation."
+    
+    try:
+        while True:
+            # Receive text or binary data
+            message = await websocket.receive()
+            
+            if "text" in message:
+                # Configuration or commands sent as JSON text
+                import json
+                try:
+                    data = json.loads(message["text"])
+                    if "prompt" in data and data["prompt"]:
+                        initial_prompt = data["prompt"]
+                except:
+                    pass
+                continue
+                
+            if "bytes" in message:
+                # Append audio chunk
+                chunk = message["bytes"]
+                tmp_file.write(chunk)
+                tmp_file.flush() # ensure it's written to disk
+                
+                # Transcribe the accumulated file
+                try:
+                    segments, info = whisper_model.transcribe(
+                        tmp_path,
+                        language="en",
+                        initial_prompt=initial_prompt,
+                        temperature=0.0,
+                        beam_size=5,
+                        vad_filter=True,
+                        vad_parameters=dict(min_silence_duration_ms=300, speech_pad_ms=200),
+                    )
+                    
+                    text_parts = [segment.text.strip() for segment in segments]
+                    full_text = " ".join(text_parts)
+                    
+                    await websocket.send_json({"text": full_text})
+                except Exception as e:
+                    logger.error(f"[WebSocket] Transcription error: {e}")
+                    # Don't fail the websocket, just log. ffmpeg might fail if the chunk cuts mid-frame.
+                    pass
+                
+    except WebSocketDisconnect:
+        logger.info("[WebSocket] Client disconnected")
+    except Exception as e:
+        logger.error(f"[WebSocket] Error: {e}")
+    finally:
+        tmp_file.close()
+        if os.path.exists(tmp_path):
             try:
                 os.unlink(tmp_path)
             except:

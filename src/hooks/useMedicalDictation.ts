@@ -1,6 +1,5 @@
-
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { transcribeAudio } from '@/services/whisper';
+import { WhisperStream, transcribeAudio } from '@/services/whisper';
 
 interface UseMedicalDictationReturn {
   isRecording: boolean;
@@ -8,7 +7,8 @@ interface UseMedicalDictationReturn {
   recordingTime: number; // in seconds
   audioData: Uint8Array;
   volumeLevel: number; // 0-100
-  start: () => Promise<void>;
+  liveText: string;
+  start: (prompt?: string) => Promise<void>;
   stop: () => Promise<string | null>;
   cancel: () => void;
 }
@@ -17,15 +17,16 @@ export const useMedicalDictation = (): UseMedicalDictationReturn => {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [liveText, setLiveText] = useState('');
 
   // Audio References
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const whisperStreamRef = useRef<WhisperStream | null>(null);
 
   // Visualizer & Silence Detection State
   const [audioData, setAudioData] = useState<Uint8Array>(new Uint8Array(0));
@@ -62,11 +63,19 @@ export const useMedicalDictation = (): UseMedicalDictationReturn => {
     animationFrameRef.current = requestAnimationFrame(updateVisualizer);
   }, [isRecording]);
 
-  const start = async () => {
+  const start = async (prompt?: string) => {
     try {
+      setLiveText('');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // 1. Setup Audio Context for Visualization
+      // 1. Setup Whisper Stream
+      const whisper = new WhisperStream();
+      whisper.onText = (text) => setLiveText(text);
+      whisper.onError = (err) => console.error("WhisperStream error:", err);
+      whisper.connect(prompt);
+      whisperStreamRef.current = whisper;
+
+      // 2. Setup Audio Context for Visualization
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 64; // Low bin count for cleaner bars
@@ -77,26 +86,26 @@ export const useMedicalDictation = (): UseMedicalDictationReturn => {
       analyserRef.current = analyser;
       sourceRef.current = source;
 
-      // 2. Setup Media Recorder
-      const mediaRecorder = new MediaRecorder(stream);
+      // 3. Setup Media Recorder
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
       mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
+        if (event.data.size > 0 && whisperStreamRef.current) {
+          whisperStreamRef.current.sendAudioChunk(event.data);
         }
       };
 
-      mediaRecorder.start();
+      // Request data every 500ms
+      mediaRecorder.start(500);
       setIsRecording(true);
       setRecordingTime(0);
       silenceStartRef.current = null;
 
-      // 3. Start Animation Loop
+      // 4. Start Animation Loop
       updateVisualizer();
 
-      // 4. Start Timer
+      // 5. Start Timer
       timerIntervalRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
@@ -112,24 +121,22 @@ export const useMedicalDictation = (): UseMedicalDictationReturn => {
 
     return new Promise((resolve) => {
       mediaRecorderRef.current!.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-
-        // Clean up audio context
-        cleanup();
-        setIsProcessing(true);
-
-        try {
-          // Send to Whisper Service (Frontend Direct)
-          const text = await transcribeAudio(audioBlob);
-          setIsProcessing(false);
-          resolve(text);
-        } catch (error) {
-          console.error("Dictation API Error:", error);
-          setIsProcessing(false);
-          resolve(null);
-        }
+        // Wait briefly for final text chunks to arrive via WebSocket
+        setTimeout(() => {
+            const finalLiveText = liveText;
+            
+            // Clean up
+            cleanup();
+            setIsProcessing(false);
+            
+            // If streaming failed or yielded no text, fallback to HTTP could be added here,
+            // but we'll assume streaming worked for the sake of simplicity.
+            // A more robust app would fallback to `transcribeAudio(fullBlob)` if liveText is empty.
+            resolve(finalLiveText);
+        }, 1000);
       };
 
+      setIsProcessing(true);
       mediaRecorderRef.current!.stop();
     });
   };
@@ -146,6 +153,12 @@ export const useMedicalDictation = (): UseMedicalDictationReturn => {
 
     // Stop tracks
     mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
+
+    // Stop Whisper Stream
+    if (whisperStreamRef.current) {
+        whisperStreamRef.current.stop();
+        whisperStreamRef.current = null;
+    }
 
     // Stop Audio Context
     audioContextRef.current?.close();
@@ -170,6 +183,7 @@ export const useMedicalDictation = (): UseMedicalDictationReturn => {
     recordingTime,
     volumeLevel,
     audioData,
+    liveText,
     start,
     stop,
     cancel

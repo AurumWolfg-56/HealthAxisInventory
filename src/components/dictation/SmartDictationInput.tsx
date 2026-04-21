@@ -49,7 +49,7 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
   placeholder = "Start typing or use medical dictation...",
   rows = 4, className = ""
 }, ref) => {
-  const { isRecording, isProcessing, recordingTime, audioData, volumeLevel, start, stop } = useMedicalDictation();
+  const { isRecording, isProcessing, recordingTime, audioData, volumeLevel, liveText, start, stop } = useMedicalDictation();
   const [lastValue, setLastValue] = React.useState<string | null>(null);
   const [showUndo, setShowUndo] = React.useState(false);
   const [structuredNote, setStructuredNote] = React.useState<StructuredNote | null>(null);
@@ -74,7 +74,16 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
   const handleGenerate = async () => {
     if (!value || isGenerating) return;
     setIsGenerating(true); setStructuredNote(null); setGenerateError(null); setShowResults(true);
-    try { setStructuredNote(await generateStructuredNote(value)); } catch (err: any) { console.error('[NoteGen]', err); setGenerateError(err.message || 'Unknown error'); }
+    try { 
+        // We pass a mock patient context for now (e.g. from global state in the future)
+        const mockContext = "Patient demographics not provided yet. Please use dictation context.";
+        const finalNote = await generateStructuredNote(value, mockContext, (partialNote) => {
+            setStructuredNote(partialNote as StructuredNote);
+        }); 
+        setStructuredNote(finalNote);
+    } catch (err: any) { 
+        console.error('[NoteGen]', err); setGenerateError(err.message || 'Unknown error'); 
+    }
     setIsGenerating(false);
   };
 
@@ -96,13 +105,15 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
     return () => window.removeEventListener('keydown', handleEsc);
   }, [showResults]);
 
+  const displayValue = isRecording && liveText ? value + (value.length > 0 && !value.endsWith(' ') ? ' ' : '') + liveText : value;
+
   return (
     <div className="w-full relative group">
       {label && <label className="block text-xs font-bold uppercase text-gray-500 mb-2 tracking-wide">{label}</label>}
 
       <div className={`relative bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm focus-within:ring-2 focus-within:ring-teal-500 transition-all overflow-hidden ${isRecording ? 'ring-2 ring-teal-500/50 border-teal-500' : ''}`}>
-        <textarea ref={ref} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={rows} disabled={isProcessing}
-          className={`w-full p-4 bg-transparent resize-none outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 ${isProcessing ? 'opacity-50' : ''} ${className}`} />
+        <textarea ref={ref} value={displayValue} onChange={(e) => { if (!isRecording) onChange(e.target.value); }} placeholder={placeholder} rows={rows} disabled={isProcessing || isRecording}
+          className={`w-full p-4 bg-transparent resize-none outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 ${isProcessing || isRecording ? 'opacity-70 cursor-default' : ''} ${className}`} />
 
         <div className="absolute bottom-3 right-3 flex items-center gap-3 z-10">
           {isRecording && (
@@ -138,7 +149,7 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
 
       {(isProcessing || isGenerating) && (
         <p className="absolute -bottom-6 right-0 text-xs text-teal-600 font-bold animate-pulse">
-          <i className="fa-solid fa-wand-magic-sparkles mr-1"/>{isProcessing ? 'Transcribing...' : 'Generating CC, HPI, Dx & Plan...'}
+          <i className="fa-solid fa-wand-magic-sparkles mr-1"/>{isProcessing ? 'Finalizing...' : 'Generating CC, HPI, Dx & Plan...'}
         </p>
       )}
 
