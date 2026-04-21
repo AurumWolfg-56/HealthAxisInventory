@@ -242,10 +242,8 @@ async def websocket_transcribe(websocket: WebSocket):
         await websocket.close()
         return
 
-    # We will accumulate the audio chunks into a temporary file
-    # This allows faster-whisper (via ffmpeg) to read the valid WebM container
-    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".webm")
-    tmp_path = tmp_file.name
+    # Accumulate the audio chunks in memory
+    audio_buffer = bytearray()
     
     # Context prompt setup
     initial_prompt = "Medical Dictation. Patient History, SOAP Note, Cardiology, Oncology, Dermatology. Common drugs: Lisinopril, Metformin, Atorvastatin. CPT Codes. ICD-10. Urgent Care. Inventory management. Professional casing and punctuation."
@@ -256,7 +254,6 @@ async def websocket_transcribe(websocket: WebSocket):
             message = await websocket.receive()
             
             if "text" in message:
-                # Configuration or commands sent as JSON text
                 import json
                 try:
                     data = json.loads(message["text"])
@@ -267,10 +264,14 @@ async def websocket_transcribe(websocket: WebSocket):
                 continue
                 
             if "bytes" in message:
-                # Append audio chunk
-                chunk = message["bytes"]
-                tmp_file.write(chunk)
-                tmp_file.flush() # ensure it's written to disk
+                # Append audio chunk to memory buffer
+                audio_buffer.extend(message["bytes"])
+                
+                # Write to a temporary file just for this transcription pass
+                # Windows requires the file to be closed before ffmpeg can read it
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
+                    tmp.write(audio_buffer)
+                    tmp_path = tmp.name
                 
                 # Transcribe the accumulated file
                 try:
@@ -290,20 +291,18 @@ async def websocket_transcribe(websocket: WebSocket):
                     await websocket.send_json({"text": full_text})
                 except Exception as e:
                     logger.error(f"[WebSocket] Transcription error: {e}")
-                    # Don't fail the websocket, just log. ffmpeg might fail if the chunk cuts mid-frame.
-                    pass
+                finally:
+                    # Clean up the temp file after transcription
+                    if os.path.exists(tmp_path):
+                        try:
+                            os.unlink(tmp_path)
+                        except:
+                            pass
                 
     except WebSocketDisconnect:
         logger.info("[WebSocket] Client disconnected")
     except Exception as e:
         logger.error(f"[WebSocket] Error: {e}")
-    finally:
-        tmp_file.close()
-        if os.path.exists(tmp_path):
-            try:
-                os.unlink(tmp_path)
-            except:
-                pass
 
 # ─── Run Server ─────────────────────────────────────────────────────────────
 if __name__ == "__main__":

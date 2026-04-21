@@ -21,7 +21,7 @@ export interface StructuredNote {
 
 // ─── Prompt ─────────────────────────────────────────────────────────────────
 
-const STRUCTURED_NOTE_PROMPT = `You are a US outpatient/urgent care clinical documentation expert. Take the raw provider dictation and produce properly structured medical documentation.
+const STRUCTURED_NOTE_PROMPT = `You are a US outpatient/urgent care clinical documentation expert and certified medical coder. Take the raw provider dictation and produce properly structured medical documentation.
 
 OUTPUT — Return ONLY valid JSON:
 
@@ -31,22 +31,35 @@ OUTPUT — Return ONLY valid JSON:
   "diagnoses": "Numbered list of diagnoses WITH suggested ICD-10 codes. Format:\\n1. ICD-10 code - Diagnosis description\\n2. ICD-10 code - Diagnosis description\\nUse the most specific and appropriate ICD-10 code for each diagnosis.",
   "plan": "Comprehensive numbered plan organized BY DIAGNOSIS. For EACH diagnosis include:\\n\\n1. [Diagnosis Name - description only, no codes]\\n   a) Medications: drug, dose, route, frequency, duration with rationale\\n   b) Diagnostic workup: labs/imaging with medical necessity justification\\n   c) Non-pharmacological: lifestyle modifications, activity restrictions\\n   d) Patient education: warning signs, when to return to clinic/ER\\n   e) Follow-up: specific timeline and purpose\\n   f) [SUGGESTED] Additional evidence-based interventions commonly recommended for this specific condition that the provider may want to consider based on current clinical guidelines",
   "suggestedCPT": "99213, 99214, or 99215",
-  "mdmLevel": "Brief explanation of why this E/M level",
-  "upcodingSuggestions": ["If level is 99213, provide 3-5 SPECIFIC suggestions tailored to THIS particular case that could legitimately bring documentation to 99214. These must be relevant to the patient's actual conditions. For example, if patient has URI: 'Document if patient has underlying asthma or COPD that complicates this URI'. NEVER use generic suggestions. If already 99214+, return empty array."],
+  "mdmLevel": "Brief explanation of why this E/M level was chosen based on the '2 out of 3 MDM Rule' (Problems, Data, Risk). Provide the highest 2 elements that justify this code.",
+  "upcodingSuggestions": ["If level is 99213, provide 3-5 SPECIFIC suggestions tailored to THIS case that could legitimately bring documentation to 99214. (e.g. 'Document prescription drug management to increase Risk to Moderate'). If already 99214+, return empty array."],
   "conductAlerts": ["Any clinical logic issues specific to THIS case. Examples: medication interaction concerns, missing safety assessments, incomplete evaluation given the symptoms. Leave empty if none found."]
 }
 
-CRITICAL RULES:
+CRITICAL RULES FOR E/M LEVEL (MDM):
+Evaluate Medical Decision Making (MDM) using the "2 out of 3" Rule: Choose the visit level based on the highest 2 of the 3 MDM elements (Problems, Data, Risk) supported by documentation.
+
+- Level 99213 (Low Complexity): 
+  * Problems: Low (1 stable chronic illness OR 1 uncomplicated acute illness)
+  * Data: Minimal / Low (Little or no data, limited data)
+  * Risk: Low (Low-risk treatment or management)
+- Level 99214 (Moderate Complexity): 
+  * Problems: Moderate (2+ stable chronic illnesses, 1 chronic illness w/ exacerbation, 1 new problem w/ uncertain prognosis, 1 acute illness w/ systemic symptoms)
+  * Data: Moderate (Ordering multiple tests, reviewing outside records, independent interpretation, discussion w/ external source)
+  * Risk: Moderate (Prescription drug management is very commonly here)
+- Level 99215 (High Complexity): 
+  * Problems: High (Life-threatening condition OR threat to bodily function)
+  * Data: High (Extensive data from multiple categories)
+  * Risk: High (Decision for hospitalization, intensive monitoring for toxicity, high-risk treatment)
+
+OTHER CRITICAL RULES:
 1. HPI MUST start with patient demographics (age, sex) if mentioned in dictation
 2. HPI must follow OLDCARTS — gold standard for US insurance
 3. Diagnoses section: INCLUDE suggested ICD-10 codes with each diagnosis
 4. Plan: use diagnosis DESCRIPTION only, NO ICD codes in the plan
 5. Plan must be organized BY DIAGNOSIS with complete sub-items
 6. For each diagnosis, include [SUGGESTED] items based on CURRENT clinical guidelines for THAT SPECIFIC condition
-7. Include pertinent negatives in HPI
-8. The plan should be as COMPREHENSIVE as possible
-9. upcodingSuggestions must be SPECIFIC to the patient's conditions — never generic
-10. Return ONLY valid JSON, no markdown`;
+7. Return ONLY valid JSON, no markdown`;
 
 // ─── Main Function ──────────────────────────────────────────────────────────
 
