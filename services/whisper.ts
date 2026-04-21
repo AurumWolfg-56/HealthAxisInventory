@@ -16,6 +16,7 @@ const MEDICAL_PROMPT = "Medical Dictation. Patient History, SOAP Note, Cardiolog
 
 export class WhisperStream {
     private ws: WebSocket | null = null;
+    private chunkQueue: Blob[] = [];
     public onText: (text: string) => void = () => {};
     public onError: (error: Error) => void = () => {};
 
@@ -24,6 +25,8 @@ export class WhisperStream {
             this.ws.close();
         }
 
+        this.chunkQueue = [];
+
         try {
             this.ws = new WebSocket(LOCAL_WHISPER_WS_URL);
             
@@ -31,6 +34,12 @@ export class WhisperStream {
                 console.log('[WhisperStream] Connected');
                 // Send the context prompt
                 this.ws?.send(JSON.stringify({ prompt }));
+                
+                // Drain the queue
+                while (this.chunkQueue.length > 0) {
+                    const chunk = this.chunkQueue.shift();
+                    if (chunk) this.ws?.send(chunk);
+                }
             };
 
             this.ws.onmessage = (event) => {
@@ -62,6 +71,8 @@ export class WhisperStream {
     sendAudioChunk(chunk: Blob) {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(chunk);
+        } else if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
+            this.chunkQueue.push(chunk);
         }
     }
 
