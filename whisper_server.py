@@ -258,9 +258,60 @@ async def websocket_transcribe(websocket: WebSocket):
     # Context prompt setup
     initial_prompt = "Medical Dictation. Patient History, SOAP Note, Cardiology, Oncology, Dermatology. Common drugs: Lisinopril, Metformin, Atorvastatin. CPT Codes. ICD-10. Urgent Care. Inventory management. Professional casing and punctuation."
     
+    # Background transcription loop
+    async def transcribe_loop():
+        last_size = 0
+        while True:
+            current_size = len(audio_buffer)
+            if current_size <= last_size:
+                await asyncio.sleep(0.3)
+                continue
+                
+            # Copy buffer for this iteration
+            buffer_copy = bytearray(audio_buffer)
+            
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
+                tmp.write(buffer_copy)
+                tmp_path = tmp.name
+                
+            def run_transcribe():
+                segs, _ = whisper_model.transcribe(
+                    tmp_path,
+                    language="en",
+                    initial_prompt=initial_prompt,
+                    temperature=0.0,
+                    beam_size=5,
+                    vad_filter=True,
+                    vad_parameters=dict(min_silence_duration_ms=300, speech_pad_ms=200),
+                )
+                # Iterate the generator INSIDE the thread to avoid blocking event loop
+                return " ".join([s.text.strip() for s in segs])
+
+            try:
+                full_text = await asyncio.to_thread(run_transcribe)
+                
+                try:
+                    await websocket.send_json({"text": full_text})
+                except RuntimeError:
+                    # WebSocket closed
+                    break
+                    
+                last_size = len(buffer_copy)
+                
+            except Exception as e:
+                logger.error(f"[WebSocket] Transcription error: {e}")
+            finally:
+                if os.path.exists(tmp_path):
+                    try:
+                        os.unlink(tmp_path)
+                    except:
+                        pass
+
+    transcription_task = asyncio.create_task(transcribe_loop())
+    
     try:
         while True:
-            # Receive text or binary data
+            # Receive text or binary data continuously
             message = await websocket.receive()
             
             if "text" in message:
@@ -274,45 +325,19 @@ async def websocket_transcribe(websocket: WebSocket):
                 continue
                 
             if "bytes" in message:
-                # Append audio chunk to memory buffer
                 audio_buffer.extend(message["bytes"])
                 
-                # Write to a temporary file just for this transcription pass
-                # Windows requires the file to be closed before ffmpeg can read it
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
-                    tmp.write(audio_buffer)
-                    tmp_path = tmp.name
-                
-                # Transcribe the accumulated file
-                try:
-                    segments, info = whisper_model.transcribe(
-                        tmp_path,
-                        language="en",
-                        initial_prompt=initial_prompt,
-                        temperature=0.0,
-                        beam_size=5,
-                        vad_filter=True,
-                        vad_parameters=dict(min_silence_duration_ms=300, speech_pad_ms=200),
-                    )
-                    
-                    text_parts = [segment.text.strip() for segment in segments]
-                    full_text = " ".join(text_parts)
-                    
-                    await websocket.send_json({"text": full_text})
-                except Exception as e:
-                    logger.error(f"[WebSocket] Transcription error: {e}")
-                finally:
-                    # Clean up the temp file after transcription
-                    if os.path.exists(tmp_path):
-                        try:
-                            os.unlink(tmp_path)
-                        except:
-                            pass
-                
     except WebSocketDisconnect:
-        logger.info("[WebSocket] Client disconnected")
+        logger.info("[WebSocket] Client disconnected cleanly")
+    except RuntimeError as e:
+        if "disconnect message has been received" in str(e):
+            logger.info("[WebSocket] Client finished streaming")
+        else:
+            logger.error(f"[WebSocket] RuntimeError: {e}")
     except Exception as e:
         logger.error(f"[WebSocket] Error: {e}")
+    finally:
+        transcription_task.cancel()
 
 # ─── Run Server ─────────────────────────────────────────────────────────────
 if __name__ == "__main__":

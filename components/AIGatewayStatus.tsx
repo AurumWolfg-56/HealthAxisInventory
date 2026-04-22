@@ -24,7 +24,7 @@ export const AIGatewayStatus: React.FC = () => {
 
         // Check Whisper / Gateway
         try {
-            const res = await fetch('http://localhost:8765/health', { method: 'GET', signal: AbortSignal.timeout(2000) });
+            const res = await fetch('http://127.0.0.1:8765/health', { method: 'GET', signal: AbortSignal.timeout(2000) });
             if (res.ok) whisperOk = true;
         } catch {
             whisperOk = false;
