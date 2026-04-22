@@ -112,7 +112,16 @@ async def load_model():
         try:
             import numpy as np
             dummy_audio = np.zeros(16000, dtype=np.float32)
-            segs, _ = whisper_model.transcribe(dummy_audio, language="en", vad_filter=False)
+            initial_prompt = "Medical Dictation. Patient History, SOAP Note, Cardiology, Oncology, Dermatology. Common drugs: Lisinopril, Metformin, Atorvastatin. CPT Codes. ICD-10. Urgent Care. Inventory management. Professional casing and punctuation."
+            segs, _ = whisper_model.transcribe(
+                dummy_audio,
+                language="en",
+                initial_prompt=initial_prompt,
+                temperature=0.0,
+                beam_size=5,
+                vad_filter=True,
+                vad_parameters=dict(min_silence_duration_ms=300, speech_pad_ms=200)
+            )
             list(segs)
             logger.info("✅ Warmup complete!")
         except Exception as warmup_e:
