@@ -26,7 +26,7 @@ for p in cuda_paths:
 
 from fastapi import FastAPI, UploadFile, File, Form, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 import uvicorn
 import httpx
@@ -47,11 +47,22 @@ logger = logging.getLogger("whisper-server")
 # ─── FastAPI App ────────────────────────────────────────────────────────────
 app = FastAPI(title="Norvexis Local AI Gateway", version="2.0.0")
 
-class PrivateNetworkMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        response.headers["Access-Control-Allow-Private-Network"] = "true"
-        return response
+class PrivateNetworkASGIMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            async def send_wrapper(message):
+                if message["type"] == "http.response.start":
+                    message["headers"].append((b"access-control-allow-private-network", b"true"))
+                await send(message)
+            await self.app(scope, receive, send_wrapper)
+        else:
+            await self.app(scope, receive, send)
+
+# Add our custom ASGI middleware for PNA
+app.add_middleware(PrivateNetworkASGIMiddleware)
 
 # Allow CORS from any origin (production site + localhost)
 app.add_middleware(
@@ -61,23 +72,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.middleware("http")
-async def add_pna_headers(request: Request, call_next):
-    # If it's a preflight request from Chrome for Private Network Access
-    if request.method == "OPTIONS" and request.headers.get("Access-Control-Request-Private-Network"):
-        response = Response(status_code=200)
-        response.headers["Access-Control-Allow-Origin"] = request.headers.get("origin", "*")
-        response.headers["Access-Control-Allow-Private-Network"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "*"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        return response
-    
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Private-Network"] = "true"
-    return response
-app.add_middleware(PrivateNetworkMiddleware)
-
 # ─── HTTP client for LM Studio proxy ───────────────────────────────────────
 # Vision requests with large images can take 2-5 minutes on 7B models
 http_client = httpx.AsyncClient(
@@ -249,15 +243,6 @@ async def transcribe(
                 pass
 
 # ─── WebSocket Streaming Transcription Endpoint ─────────────────────────────
-@app.options("/v1/audio/transcriptions/stream")
-async def preflight_websocket_pna(request: Request):
-    """Handle Private Network Access (PNA) preflight from Chrome for WebSockets."""
-    response = Response()
-    response.headers["Access-Control-Allow-Origin"] = request.headers.get("origin", "*")
-    response.headers["Access-Control-Allow-Private-Network"] = "true"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    return response
 
 @app.websocket("/v1/audio/transcriptions/stream")
 async def websocket_transcribe(websocket: WebSocket):
