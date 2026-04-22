@@ -9,6 +9,7 @@ import { OrderService } from '../services/OrderService';
 import { BillingRuleService } from '../services/BillingRuleService';
 import { BudgetService } from '../services/BudgetService';
 import { ProtocolService } from '../services/ProtocolService';
+import { DictationProtocolService } from '../services/DictationProtocolService';
 import { PriceService } from '../services/PriceService';
 import { MedicalCodeService } from '../services/MedicalCodeService';
 import { PettyCashService } from '../services/PettyCashService';
@@ -211,6 +212,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
             BillingRuleService.setAccessToken(accessToken);
             BudgetService.setAccessToken(accessToken);
             ProtocolService.setAccessToken(accessToken);
+            DictationProtocolService.setAccessToken(accessToken);
             MedicalCodeService.setAccessToken(accessToken);
             PriceService.setAccessToken(accessToken);
             PettyCashService.setAccessToken(accessToken);
