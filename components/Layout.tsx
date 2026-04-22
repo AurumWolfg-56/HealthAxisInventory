@@ -130,6 +130,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 { route: AppRoute.DAILY_HISTORY, icon: "fa-calendar-check", label: t('nav_daily'), perm: 'reports.create', moduleFlag: 'mod_daily_close' as FeatureFlagKey },
                 { route: AppRoute.PETTY_CASH, icon: "fa-vault", label: "Petty Cash", perm: 'finance.view', moduleFlag: 'mod_petty_cash' as FeatureFlagKey },
                 { route: AppRoute.ADMIN, icon: "fa-shield-halved", label: t('nav_admin'), perm: 'admin.access' },
+                { route: AppRoute.DICTATION_PROTOCOLS, icon: "fa-list-check", label: "Protocol Config", perm: 'admin.access' },
                 { route: AppRoute.SETTINGS, icon: "fa-gear", label: t('nav_settings'), perm: '' },
             ]
         }

@@ -192,6 +192,7 @@ export interface OrderItem {
   name: string;
   category?: string;
   quantity: number;
+  unitsPerPackage?: number; // Added to convert boxes to units
   unitCost: number;
   unitType: string;
   total: number;
@@ -268,7 +269,8 @@ export enum AppRoute {
   BUDGETS = 'BUDGETS', // New
   PROTOCOLS = 'PROTOCOLS', // New
   SCHEDULE = 'SCHEDULE', // New Smart Scheduler
-  PLATFORM = 'PLATFORM' // Norvexis Core Command Center
+  PLATFORM = 'PLATFORM', // Norvexis Core Command Center
+  DICTATION_PROTOCOLS = 'DICTATION_PROTOCOLS' // New Dictation Protocols UI
 }
 
 export interface ChartDataPoint {
@@ -402,6 +404,7 @@ export interface DBOrderItem {
   item_id: string | null; // Link to public.items
   item_name: string; // Snapshot name
   quantity: number;
+  units_per_package?: number; // Convert boxes to units
   unit_cost: number;
   unit_type: string;
   line_total: number;
@@ -453,4 +456,27 @@ export interface DBIntelligenceOverride {
   ordered_qty: number;
   justification: string | null;
   created_at: string;
+}
+
+export interface ProtocolBundleItem {
+  inventoryItemId: string; // References InventoryItem.id
+  quantity: number;
+}
+
+export interface DictationProtocol {
+  id: string;
+  name: string; // e.g. "Upper Respiratory Infection"
+  keywords: string[]; // Triggers for the AI
+  items: ProtocolBundleItem[];
+  createdBy?: string;
+  createdAt?: string;
+}
+
+export interface DBDictationProtocol {
+  id: string;
+  name: string;
+  keywords: string[];
+  items: any; // JSONB array of { inventoryItemId, quantity }
+  created_by?: string;
+  created_at?: string;
 }

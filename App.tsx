@@ -30,6 +30,7 @@ import PettyCashLedger from './components/PettyCashLedger';
 import VoiceMemos from './components/VoiceMemos';
 import Budgets from './components/Budgets';
 import Protocols from './components/Protocols';
+import DictationProtocols from './components/DictationProtocols';
 import { SmartScheduler } from './components/SmartScheduler';
 import { InventoryIntelligenceDashboard } from './components/InventoryIntelligence';
 import { InventoryIntelligenceVerification } from './components/InventoryIntelligenceVerification';
@@ -721,7 +722,8 @@ const App: React.FC = () => {
 
                                             if (existingItem) {
                                                 // ── Existing item ──────────────────────────────────────
-                                                const newStock = existingItem.stock + orderItem.quantity;
+                                                const receivedQuantity = orderItem.quantity * (orderItem.unitsPerPackage || 1);
+                                                const newStock = existingItem.stock + receivedQuantity;
                                                 const currentTotalValue = existingItem.stock * (existingItem.averageCost || 0);
                                                 const newOrderValue = orderItem.quantity * (orderItem.unitCost || 0);
                                                 const newAverageCost = newStock > 0
@@ -739,7 +741,7 @@ const App: React.FC = () => {
                                                 // Audit log (used by Intelligence Engine for cycle detection)
                                                 await InventoryService.logAction(
                                                     user.id, 'RESTOCKED', existingItem.id,
-                                                    { new_stock: newStock, added: orderItem.quantity, source_order: order.id }
+                                                    { new_stock: newStock, added: receivedQuantity, source_order: order.id }
                                                 );
 
                                                 // Immediately commit to local state
@@ -752,12 +754,13 @@ const App: React.FC = () => {
 
                                             } else {
                                                 // ── New item ───────────────────────────────────────────
+                                                const receivedQuantity = orderItem.quantity * (orderItem.unitsPerPackage || 1);
                                                 const newItemConfig: Omit<InventoryItem, 'id'> = {
                                                     name: orderItem.name,
                                                     category: orderItem.category || 'Uncategorized',
-                                                    stock: orderItem.quantity,
+                                                    stock: receivedQuantity,
                                                     unit: orderItem.unitType || 'unit_each',
-                                                    averageCost: orderItem.unitCost || 0,
+                                                    averageCost: orderItem.unitCost ? orderItem.unitCost / (orderItem.unitsPerPackage || 1) : 0,
                                                     minStock: 10,
                                                     maxStock: 100,
                                                     expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
@@ -773,7 +776,7 @@ const App: React.FC = () => {
                                                 // Audit log for new item (Intelligence Engine needs this)
                                                 await InventoryService.logAction(
                                                     user.id, 'RESTOCKED', newItem.id,
-                                                    { new_stock: orderItem.quantity, added: orderItem.quantity, source_order: order.id }
+                                                    { new_stock: receivedQuantity, added: receivedQuantity, source_order: order.id }
                                                 );
 
                                                 // Back-fill order_items.item_id so future fetches can link the row
@@ -1181,6 +1184,7 @@ const App: React.FC = () => {
                         />
                     )}
                     {currentRoute === AppRoute.SETTINGS && <Settings user={user} onUpdateUser={updateUser} isDarkMode={isDarkMode} toggleTheme={toggleTheme} onResetData={() => { }} language={language} setLanguage={setLanguage} t={t} />}
+                    {currentRoute === AppRoute.DICTATION_PROTOCOLS && hasPermission('admin.access') && <DictationProtocols inventory={inventory} user={user} t={t} />}
                     {currentRoute === AppRoute.ADMIN && hasPermission('admin.access') && <Admin roleConfigs={roleConfigs} onUpdateRoleConfig={updateRoleConfig} currentUser={user} t={t} />}
                     {currentRoute === AppRoute.PLATFORM && user?.platformRole && (
                         <div className="max-w-none -mx-4 md:-mx-8">

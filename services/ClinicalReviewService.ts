@@ -15,6 +15,7 @@ export interface StructuredNote {
   plan: string;
   suggestedCPT: string;
   mdmLevel: string;
+  procedures_performed: string[];
   upcodingSuggestions: string[];
   conductAlerts: string[];
 }
@@ -26,14 +27,15 @@ const STRUCTURED_NOTE_PROMPT = `You are a US outpatient/urgent care clinical doc
 OUTPUT — Return ONLY valid JSON:
 
 {
-  "chiefComplaint": "Brief 1-2 sentence CC using patient's own words when possible",
-  "hpi": "Start with patient demographics if mentioned (e.g., 'A 34-year-old male presents with...'). Follow OLDCARTS format: Onset, Location, Duration, Character, Aggravating factors, Relieving factors, Timing, Severity. Include pertinent positives AND negatives. Include ROS elements if mentioned. Use professional medical terminology. Include any exam findings or vitals mentioned.",
-  "diagnoses": "Numbered list of diagnoses WITH suggested ICD-10 codes. Format:\\n1. ICD-10 code - Diagnosis description\\n2. ICD-10 code - Diagnosis description\\nUse the most specific and appropriate ICD-10 code for each diagnosis.",
-  "plan": "Comprehensive numbered plan organized BY DIAGNOSIS. For EACH diagnosis include:\\n\\n1. [Diagnosis Name - description only, no codes]\\n   a) Medications: drug, dose, route, frequency, duration with rationale\\n   b) Diagnostic workup: labs/imaging with medical necessity justification\\n   c) Non-pharmacological: lifestyle modifications, activity restrictions\\n   d) Patient education: warning signs, when to return to clinic/ER\\n   e) Follow-up: specific timeline and purpose\\n   f) [SUGGESTED] Additional evidence-based interventions commonly recommended for this specific condition that the provider may want to consider based on current clinical guidelines",
+  "chiefComplaint": "Brief 1-2 sentence CC using patient's own words",
+  "hpi": "Start with patient demographics if mentioned. Follow OLDCARTS format. Use highly concise bullet points to maximize generation speed.",
+  "diagnoses": "Numbered list of diagnoses WITH suggested ICD-10 codes. Extremely concise.",
+  "plan": "Numbered plan organized BY DIAGNOSIS. Use EXTREMELY CONCISE bullet points. For EACH diagnosis include: a) Medications, b) Diagnostic workup, c) Non-pharmacological, d) Patient education, e) Follow-up, f) [SUGGESTED] guidelines.",
   "suggestedCPT": "99213, 99214, or 99215",
-  "mdmLevel": "Provide a brief explanation of why this E/M level was chosen. You MUST explicitly state which 2 of the 3 MDM elements (Problems, Data, Risk) meet or exceed the selected level.",
-  "upcodingSuggestions": ["If level is 99213, provide 3-5 SPECIFIC suggestions tailored to THIS case that could legitimately bring documentation to 99214. If level is 99214 or 99215, provide 3-5 SPECIFIC documentation tips to guarantee the quality of the note and defend this level in an audit (e.g. 'Ensure the specific medical necessity for the antibiotics is explicitly documented to defend Moderate Risk')."],
-  "conductAlerts": ["Any clinical logic issues specific to THIS case. Examples: medication interaction concerns, missing safety assessments, incomplete evaluation given the symptoms. Leave empty if none found."]
+  "mdmLevel": "Briefly explain why this E/M level was chosen. Explicitly state which 2 of the 3 MDM elements (Problems, Data, Risk) meet or exceed the selected level.",
+  "procedures_performed": ["Identify any specific clinical procedures performed during the visit based on the dictation. Return an array of procedure names (e.g. ['Suture', 'EKG', 'Rapid Strep Test']). Keep it extremely concise. Leave empty if none."],
+  "upcodingSuggestions": ["If level is 99213, provide 3-5 concise suggestions to bring it to 99214. If 99214/99215, provide concise tips to defend this level."],
+  "conductAlerts": ["Any clinical logic issues specific to THIS case. Leave empty if none."]
 }
 
 CRITICAL RULES FOR E/M LEVEL (MDM - CPT 2026 Guidelines):
@@ -41,27 +43,26 @@ Evaluate Medical Decision Making (MDM) using the "2 out of 3" Rule: Choose the v
 
 - Level 99213 (Low Complexity): Requires 2 out of 3 of the following:
   * Problems (Low): 2+ minor/self-limited problems, OR 1 stable chronic illness, OR 1 acute uncomplicated illness/injury, OR 1 stable acute illness.
-  * Data (Low): Minimal/Low data. (e.g., ordering 1-2 unique tests, or assessing an independent historian).
+  * Data (Low): Minimal/Low data. (e.g., ordering 1-2 unique tests).
   * Risk (Low): Low risk of morbidity from additional diagnostic testing or treatment.
 
 - Level 99214 (Moderate Complexity): Requires 2 out of 3 of the following:
-  * Problems (Moderate): 1+ chronic illnesses with exacerbation/progression/side effects, OR 2+ stable chronic illnesses, OR 1 undiagnosed new problem with uncertain prognosis, OR 1 acute illness with systemic symptoms, OR 1 acute complicated injury.
-  * Data (Moderate): Must meet 1 of 3 categories: (1) Any combination of 3 from: review external notes, review unique tests, order unique tests, independent historian. (2) Independent interpretation of tests. (3) Discussion of management/test with external physician/appropriate source.
-  * Risk (Moderate): Prescription drug management, decision regarding minor surgery with identified risk factors, decision regarding elective major surgery without identified risk factors, OR diagnosis/treatment significantly limited by social determinants of health.
+  * Problems (Moderate): 1+ chronic illnesses with exacerbation/progression/side effects, OR 2+ stable chronic illnesses, OR 1 undiagnosed new problem with uncertain prognosis, OR 1 acute illness with systemic symptoms.
+  * Data (Moderate): ORDERING AND/OR REVIEWING 3 OR MORE UNIQUE TESTS equals Moderate Data. Independent interpretation of tests.
+  * Risk (Moderate): PRESCRIPTION DRUG MANAGEMENT equals Moderate Risk. Decision regarding minor surgery with identified risk factors.
 
 - Level 99215 (High Complexity): Requires 2 out of 3 of the following:
-  * Problems (High): 1+ chronic illnesses with severe exacerbation/progression, OR 1 acute/chronic illness or injury that poses a threat to life or bodily function.
-  * Data (High): Extensive data (Must meet at least 2 of the 3 categories mentioned in Moderate).
-  * Risk (High): Drug therapy requiring intensive monitoring for toxicity, decision regarding elective major surgery with identified risk factors, emergency major surgery, decision regarding hospitalization or escalation of hospital-level care, DNR/de-escalate care, parenteral controlled substances.
+  * Problems (High): 1+ chronic illnesses with severe exacerbation/progression, OR 1 acute/chronic illness posing a threat to life.
+  * Data (High): Extensive data.
+  * Risk (High): Drug therapy requiring intensive monitoring for toxicity, decision regarding elective major surgery with identified risk factors.
 
 OTHER CRITICAL RULES:
-1. HPI MUST start with patient demographics (age, sex) if mentioned in dictation
-2. HPI must follow OLDCARTS — gold standard for US insurance
-3. Diagnoses section: INCLUDE suggested ICD-10 codes with each diagnosis
-4. Plan: use diagnosis DESCRIPTION only, NO ICD codes in the plan
-5. Plan must be organized BY DIAGNOSIS with complete sub-items
-6. For each diagnosis, include [SUGGESTED] items based on CURRENT clinical guidelines for THAT SPECIFIC condition
-7. Return ONLY valid JSON, no markdown`;
+1. EXTREME CONCISENESS: To improve speed, use brief, punchy sentences and bullet points. Avoid all filler words.
+2. HPI MUST start with patient demographics (age, sex) if mentioned in dictation.
+3. Diagnoses section: INCLUDE suggested ICD-10 codes with each diagnosis.
+4. Plan: use diagnosis DESCRIPTION only, NO ICD codes in the plan.
+5. Plan must be organized BY DIAGNOSIS with complete sub-items.
+6. Return ONLY valid JSON, no markdown`;
 
 // ─── Main Function ──────────────────────────────────────────────────────────
 
@@ -94,8 +95,9 @@ export async function generateStructuredNote(
         accumulatedJson += chunk;
         if (onUpdate) {
             // Rough regex extraction for partial JSON fields
+            // More robust regex to match strings containing escaped quotes, stopping at unescaped quotes
             const extractString = (key: string) => {
-                const match = accumulatedJson.match(new RegExp(`"${key}"\\s*:\\s*"([^"]*)`));
+                const match = accumulatedJson.match(new RegExp(`"${key}"\\s*:\\s*"((?:\\\\.|[^"\\\\])*)`));
                 return match ? match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"') : undefined;
             };
             const extractArray = (key: string) => {
@@ -113,6 +115,7 @@ export async function generateStructuredNote(
                 plan: extractString('plan') || partialNote.plan,
                 suggestedCPT: extractString('suggestedCPT') || partialNote.suggestedCPT,
                 mdmLevel: extractString('mdmLevel') || partialNote.mdmLevel,
+                procedures_performed: extractArray('procedures_performed') || partialNote.procedures_performed,
             };
             onUpdate({ ...partialNote });
         }
@@ -143,6 +146,7 @@ export async function generateStructuredNote(
       plan: partialNote.plan || '',
       suggestedCPT: partialNote.suggestedCPT || '99213',
       mdmLevel: partialNote.mdmLevel || 'Review manually',
+      procedures_performed: partialNote.procedures_performed || [],
       upcodingSuggestions: [], conductAlerts: [],
     };
   }

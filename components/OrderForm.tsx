@@ -136,6 +136,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
             name: '',
             category: INVENTORY_CATEGORIES[0],
             quantity: 1,
+            unitsPerPackage: 1, // New field for boxes
             unitCost: 0,
             unitType: 'unit_each',
             total: 0
@@ -459,9 +460,10 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                 {/* Table Header */}
                 <div className="hidden md:grid grid-cols-12 gap-4 px-4 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                     <div className="col-span-1 text-center">#</div>
-                    <div className="col-span-4">{t('th_details')}</div>
+                    <div className="col-span-3">{t('th_details')}</div>
                     <div className="col-span-2">{t('th_category')}</div>
                     <div className="col-span-1 text-center">{t('th_qty')}</div>
+                    <div className="col-span-1 text-center" title="Units per Package">U/PKG</div>
                     <div className="col-span-2 text-right">{t('th_cost')}</div>
                     <div className="col-span-1 text-right">{t('th_total')}</div>
                     <div className="col-span-1"></div>
@@ -484,7 +486,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                                 </div>
 
                                 {/* Autocomplete Item Input */}
-                                <div className="md:col-span-4 relative w-full">
+                                <div className="md:col-span-3 relative w-full">
                                     <div className="flex items-center gap-3">
                                         <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm shadow-md transition-colors ${item.inventoryItemId ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}>
                                             <i className={`fa-solid ${item.inventoryItemId ? 'fa-link' : 'fa-box-open'}`}></i>
@@ -525,7 +527,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                                 </div>
 
                                 {/* Mobile Row for Qty, Cost, Total */}
-                                <div className="grid grid-cols-3 gap-3 md:hidden w-full mt-2">
+                                <div className="grid grid-cols-4 gap-3 md:hidden w-full mt-2">
                                     <div className="col-span-1">
                                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Qty</div>
                                         <input
@@ -537,30 +539,40 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                                         />
                                     </div>
                                     <div className="col-span-1">
+                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1" title="Units per Package">U/Pkg</div>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={item.unitsPerPackage || 1}
+                                            onChange={e => handleItemChange(item.id, 'unitsPerPackage', parseInt(e.target.value) || 1)}
+                                            className="w-full h-11 bg-slate-50 dark:bg-slate-900/50 rounded-xl py-2 px-2 text-center font-medium text-slate-900 dark:text-white focus:bg-white dark:focus:bg-black transition-colors outline-none border border-slate-100 dark:border-slate-800"
+                                        />
+                                    </div>
+                                    <div className="col-span-1">
                                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Cost</div>
                                         <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
+                                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
                                             <input
                                                 type="number"
                                                 min="0"
                                                 step="0.0001"
                                                 value={item.unitCost}
                                                 onChange={e => handleItemChange(item.id, 'unitCost', parseFloat(e.target.value) || 0)}
-                                                className="w-full h-11 bg-slate-50 dark:bg-slate-900/50 rounded-xl py-2 pl-7 pr-2 text-right font-mono text-sm text-slate-900 dark:text-white focus:bg-white dark:focus:bg-black transition-colors outline-none border border-slate-100 dark:border-slate-800"
+                                                className="w-full h-11 bg-slate-50 dark:bg-slate-900/50 rounded-xl py-2 pl-5 pr-1 text-right font-mono text-sm text-slate-900 dark:text-white focus:bg-white dark:focus:bg-black transition-colors outline-none border border-slate-100 dark:border-slate-800"
                                             />
                                         </div>
                                     </div>
                                     <div className="col-span-1">
                                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Total</div>
                                         <div className="relative">
-                                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-medical-500 text-xs font-bold">$</span>
+                                            <span className="absolute left-1 top-1/2 -translate-y-1/2 text-medical-500 text-xs font-bold">$</span>
                                             <input
                                                 type="number"
                                                 min="0"
                                                 step="0.01"
                                                 value={item.total}
                                                 onChange={e => handleItemChange(item.id, 'total', parseFloat(e.target.value) || 0)}
-                                                className="w-full h-12 bg-medical-50 dark:bg-medical-900/10 border border-medical-100 dark:border-medical-900/50 rounded-xl py-2.5 pl-6 pr-2 text-right font-mono text-sm font-bold text-medical-700 dark:text-medical-400 focus:border-medical-500 transition-colors outline-none shadow-inner"
+                                                className="w-full h-11 bg-medical-50 dark:bg-medical-900/10 border border-medical-100 dark:border-medical-900/50 rounded-xl py-2 pl-4 pr-1 text-right font-mono text-sm font-bold text-medical-700 dark:text-medical-400 focus:border-medical-500 transition-colors outline-none shadow-inner"
                                             />
                                         </div>
                                     </div>
@@ -594,6 +606,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                                         value={item.quantity}
                                         onChange={e => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)}
                                         className="w-full bg-slate-50 dark:bg-slate-900/50 rounded-xl py-2 px-2 text-center font-medium text-slate-900 dark:text-white focus:bg-white dark:focus:bg-black transition-colors outline-none"
+                                        title="Boxes/Packs Ordered"
                                     />
                                     <select
                                         value={item.unitType}
@@ -602,6 +615,19 @@ const OrderForm: React.FC<OrderFormProps> = ({ onSave, onCancel, existingInvento
                                     >
                                         {UNITS.map(u => <option key={u} value={u}>{t(u).substring(0, 6)}..</option>)}
                                     </select>
+                                </div>
+
+                                {/* Units Per Package (Desktop) */}
+                                <div className="hidden md:block md:col-span-1 w-full">
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={item.unitsPerPackage || 1}
+                                        onChange={e => handleItemChange(item.id, 'unitsPerPackage', parseInt(e.target.value) || 1)}
+                                        className="w-full bg-slate-50 dark:bg-slate-900/50 rounded-xl py-2 px-2 text-center font-medium text-slate-900 dark:text-white focus:bg-white dark:focus:bg-black transition-colors outline-none"
+                                        title="Items inside each box"
+                                    />
+                                    <div className="w-full text-center mt-1 text-[9px] font-bold text-slate-400 uppercase">Per Box</div>
                                 </div>
 
                                 {/* Unit Cost + Comparison (Desktop) */}

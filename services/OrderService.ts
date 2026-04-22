@@ -57,6 +57,7 @@ export class OrderService {
                     quantity: i.quantity,
                     unitCost: i.unit_cost,
                     unitType: i.unit_type,
+                    unitsPerPackage: i.units_per_package,
                     total: i.line_total
                 })),
                 subtotal: order.subtotal,
@@ -112,6 +113,7 @@ export class OrderService {
                 item_id: item.inventoryItemId || null,
                 item_name: item.name,
                 quantity: item.quantity,
+                units_per_package: item.unitsPerPackage || 1,
                 unit_cost: item.unitCost,
                 unit_type: item.unitType,
                 line_total: item.total
@@ -145,6 +147,7 @@ export class OrderService {
                     inventoryItemId: i.item_id || undefined,
                     name: i.item_name,
                     quantity: i.quantity,
+                    unitsPerPackage: i.units_per_package,
                     unitCost: i.unit_cost,
                     unitType: i.unit_type,
                     total: i.line_total

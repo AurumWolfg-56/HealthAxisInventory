@@ -4,6 +4,7 @@ import { useMedicalDictation } from '../../hooks/useMedicalDictation';
 import { generateStructuredNote, type StructuredNote } from '@/services/ClinicalReviewService';
 import { playStartCue, playStopCue } from '@/services/audioService';
 import AudioVisualizer from './AudioVisualizer';
+import InventoryDeductionWidget from './InventoryDeductionWidget';
 
 interface SmartDictationInputProps {
   value: string;
@@ -56,13 +57,18 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [showResults, setShowResults] = React.useState(false);
   const [generateError, setGenerateError] = React.useState<string | null>(null);
+  const [hasDeducted, setHasDeducted] = React.useState(false);
 
   const handleMicClick = async () => {
     if (isRecording) {
       playStopCue(); setLastValue(value);
       const text = await stop();
       if (text) { onChange(value + (value.length > 0 && !value.endsWith(' ') ? ' ' : '') + text); setShowUndo(true); setTimeout(() => setShowUndo(false), 5000); }
-    } else { playStartCue(); await start(); }
+    } else { 
+      setHasDeducted(false); // Reset deduction state for new dictation session
+      playStartCue(); 
+      await start(); 
+    }
   };
 
   React.useEffect(() => {
@@ -269,6 +275,15 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
                     </span>
                     <span className="text-xs text-gray-600 dark:text-gray-300">{structuredNote.mdmLevel}</span>
                   </div>
+
+                  {/* Inventory Deduction Widget */}
+                  {structuredNote.procedures_performed && structuredNote.procedures_performed.length > 0 && (
+                      <InventoryDeductionWidget 
+                          procedures={structuredNote.procedures_performed} 
+                          hasDeducted={hasDeducted}
+                          onDeducted={() => setHasDeducted(true)}
+                      />
+                  )}
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-gray-400 max-w-sm mx-auto text-center">
