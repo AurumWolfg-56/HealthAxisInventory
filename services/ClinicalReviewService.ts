@@ -5,6 +5,7 @@
  */
 
 import { chat, checkConnection } from './LocalAIService';
+import { DictationProtocolService } from './DictationProtocolService';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -22,7 +23,7 @@ export interface StructuredNote {
 
 // ─── Prompt ─────────────────────────────────────────────────────────────────
 
-const STRUCTURED_NOTE_PROMPT = `You are a US outpatient/urgent care clinical documentation expert and certified medical coder. Take the raw provider dictation and produce properly structured medical documentation.
+const getStructuredNotePrompt = (knownProtocols: string[] = []) => `You are a US outpatient/urgent care clinical documentation expert and certified medical coder. Take the raw provider dictation and produce properly structured medical documentation.
 
 OUTPUT — Return ONLY valid JSON:
 
@@ -33,7 +34,7 @@ OUTPUT — Return ONLY valid JSON:
   "plan": "Numbered plan organized BY DIAGNOSIS. Use EXTREMELY CONCISE bullet points. For EACH diagnosis include: a) Medications, b) Diagnostic workup, c) Non-pharmacological, d) Patient education, e) Follow-up, f) [SUGGESTED] guidelines.",
   "suggestedCPT": "99213, 99214, or 99215",
   "mdmLevel": "Briefly explain why this E/M level was chosen. Explicitly state which 2 of the 3 MDM elements (Problems, Data, Risk) meet or exceed the selected level.",
-  "procedures_performed": ["Identify any specific clinical procedures performed during the visit based on the dictation. Return an array of procedure names (e.g. ['Suture', 'EKG', 'Rapid Strep Test']). Keep it extremely concise. Leave empty if none."],
+  "procedures_performed": ["Identify any specific clinical procedures performed during the visit based on the dictation. Return an array of procedure names. Keep it extremely concise. Leave empty if none.${knownProtocols.length > 0 ? ` IMPORTANT: Map any performed procedure to one of these EXACT known protocols if applicable: [${knownProtocols.join(', ')}].` : ''}"],
   "upcodingSuggestions": ["If level is 99213, provide 3-5 concise suggestions to bring it to 99214. If 99214/99215, provide concise tips to defend this level."],
   "conductAlerts": ["Any clinical logic issues specific to THIS case. Leave empty if none."]
 }
@@ -83,8 +84,16 @@ export async function generateStructuredNote(
   let accumulatedJson = '';
   let partialNote: Partial<StructuredNote> = {};
 
+  let knownProtocols: string[] = [];
+  try {
+    const protocols = await DictationProtocolService.fetchAll();
+    knownProtocols = protocols.map(p => p.name);
+  } catch (e) {
+    console.warn('[NoteGen] Failed to fetch known protocols for prompt injection', e);
+  }
+
   const response = await chat(
-    STRUCTURED_NOTE_PROMPT,
+    getStructuredNotePrompt(knownProtocols),
     `RAW DICTATION:\n\n${rawDictation}${contextBlock}`,
     { 
       model: 'fast', 
