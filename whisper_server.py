@@ -61,6 +61,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def add_pna_headers(request: Request, call_next):
+    # If it's a preflight request from Chrome for Private Network Access
+    if request.method == "OPTIONS" and request.headers.get("Access-Control-Request-Private-Network"):
+        response = Response(status_code=200)
+        response.headers["Access-Control-Allow-Origin"] = request.headers.get("origin", "*")
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return response
+    
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Private-Network"] = "true"
+    return response
 app.add_middleware(PrivateNetworkMiddleware)
 
 # ─── HTTP client for LM Studio proxy ───────────────────────────────────────
@@ -234,6 +249,16 @@ async def transcribe(
                 pass
 
 # ─── WebSocket Streaming Transcription Endpoint ─────────────────────────────
+@app.options("/v1/audio/transcriptions/stream")
+async def preflight_websocket_pna(request: Request):
+    """Handle Private Network Access (PNA) preflight from Chrome for WebSockets."""
+    response = Response()
+    response.headers["Access-Control-Allow-Origin"] = request.headers.get("origin", "*")
+    response.headers["Access-Control-Allow-Private-Network"] = "true"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
+
 @app.websocket("/v1/audio/transcriptions/stream")
 async def websocket_transcribe(websocket: WebSocket):
     await websocket.accept()
@@ -307,7 +332,7 @@ async def websocket_transcribe(websocket: WebSocket):
 # ─── Run Server ─────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     print("=" * 60)
-    print("  🎤 Norvexis Local Whisper Server")
+    print("  [MIC] Norvexis Local Whisper Server")
     print("  Model: whisper-large-v3-turbo")
     print(f"  Mode:  CPU float32 ({CPU_THREADS} threads)")
     print(f"  URL:   http://localhost:{PORT}")
