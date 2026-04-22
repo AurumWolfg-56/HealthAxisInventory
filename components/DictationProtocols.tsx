@@ -200,10 +200,14 @@ const DictationProtocols: React.FC<DictationProtocolsProps> = ({ inventory, user
                                                 <input
                                                     type="number"
                                                     value={item.quantity}
-                                                    min="1"
-                                                    onChange={e => updateBundleItemQuantity(index, parseFloat(e.target.value) || 1)}
+                                                    min="0.01"
+                                                    step="any"
+                                                    onChange={e => updateBundleItemQuantity(index, parseFloat(e.target.value) || 0)}
                                                     className="w-20 h-10 px-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-center font-bold text-medical-600 focus:ring-2 ring-medical-500/20 outline-none"
                                                 />
+                                                <span className="text-xs font-bold text-slate-500 uppercase min-w-[40px] truncate">
+                                                    {invItem?.unit || 'UND'}
+                                                </span>
                                             </div>
                                             <button
                                                 onClick={() => removeBundleItem(index)}
