@@ -77,8 +77,19 @@ export class WhisperStream {
     }
 
     stop() {
-        if (this.ws) {
-            this.ws.close();
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            // Signal the server implicitly by stopping the audio flow.
+            // Give the server 3 seconds to finish the last transcription chunk before closing the socket.
+            setTimeout(() => {
+                if (this.ws) {
+                    this.ws.close();
+                    this.ws = null;
+                }
+            }, 3000);
+        } else {
+            if (this.ws) {
+                this.ws.close();
+            }
             this.ws = null;
         }
     }

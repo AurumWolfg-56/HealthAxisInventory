@@ -106,6 +106,18 @@ async def load_model():
         )
         actual_device = DEVICE
         logger.info(f"✅ Whisper model loaded on {DEVICE} ({COMPUTE_TYPE}, {CPU_THREADS} threads)")
+        
+        # Warm up the model to prevent the first transcription from taking 6+ seconds
+        logger.info("Warming up model to compile execution graphs...")
+        try:
+            import numpy as np
+            dummy_audio = np.zeros(16000, dtype=np.float32)
+            segs, _ = whisper_model.transcribe(dummy_audio, language="en", vad_filter=False)
+            list(segs)
+            logger.info("✅ Warmup complete!")
+        except Exception as warmup_e:
+            logger.warning(f"Warmup skipped/failed: {warmup_e}")
+
     except Exception as e:
         logger.error(f"❌ Failed to load model: {e}")
         sys.exit(1)
