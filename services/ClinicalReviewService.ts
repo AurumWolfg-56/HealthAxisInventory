@@ -29,9 +29,9 @@ OUTPUT — Return ONLY valid JSON:
 
 {
   "chiefComplaint": "Brief 1-2 sentence CC using patient's own words",
-  "hpi": "Start with patient demographics if mentioned. Follow OLDCARTS format. Use highly concise bullet points to maximize generation speed.",
+  "hpi": "Start with patient demographics ONLY if mentioned. Group symptoms cohesively. Use EXCLUSIVELY advanced professional medical terminology (e.g., erythema, edema, dyspnea, diaphoresis). DO NOT explain medical terms. Explicitly document pertinent negatives if implied. DO NOT write 'not provided' or 'N/A' for missing info; just omit it.",
   "diagnoses": "Numbered list of diagnoses WITH suggested ICD-10 codes. Extremely concise.",
-  "plan": "Numbered plan organized BY DIAGNOSIS. Use EXTREMELY CONCISE bullet points. For EACH diagnosis include: a) Medications, b) Diagnostic workup, c) Non-pharmacological, d) Patient education, e) Follow-up, f) [SUGGESTED] guidelines.",
+  "plan": "Numbered plan organized BY DIAGNOSIS. Instead of rigid sub-categories, write a highly condensed bulleted list of actions for each diagnosis (e.g., '• COVID test ordered. • Supportive care with hydration. • Return precautions given.'). Omit any action not performed.",
   "suggestedCPT": "99213, 99214, or 99215",
   "mdmLevel": "Briefly explain why this E/M level was chosen. Explicitly state which 2 of the 3 MDM elements (Problems, Data, Risk) meet or exceed the selected level.",
   "procedures_performed": ["Identify any specific clinical procedures performed during the visit based on the dictation. Return an array of procedure names. Keep it extremely concise. Leave empty if none.${knownProtocols.length > 0 ? ` IMPORTANT: Map any performed procedure to one of these EXACT known protocols if applicable: [${knownProtocols.join(', ')}].` : ''}"],
@@ -58,11 +58,11 @@ Evaluate Medical Decision Making (MDM) using the "2 out of 3" Rule: Choose the v
   * Risk (High): Drug therapy requiring intensive monitoring for toxicity, decision regarding elective major surgery with identified risk factors.
 
 OTHER CRITICAL RULES:
-1. EXTREME CONCISENESS: To improve speed, use brief, punchy sentences and bullet points. Avoid all filler words.
-2. HPI MUST start with patient demographics (age, sex) if mentioned in dictation.
-3. Diagnoses section: INCLUDE suggested ICD-10 codes with each diagnosis.
-4. Plan: use diagnosis DESCRIPTION only, NO ICD codes in the plan.
-5. Plan must be organized BY DIAGNOSIS with complete sub-items.
+1. EXTREME CONCISENESS & ZERO FLUFF: Omit any unmentioned details. NEVER use phrases like "not provided", "none prescribed", or "N/A".
+2. PROFESSIONAL TONE: Use strict medical terminology. No conversational or layperson terms except in CC.
+3. PERTINENT NEGATIVES: Ensure the HPI naturally includes relevant negative findings.
+4. Diagnoses section: INCLUDE suggested ICD-10 codes with each diagnosis.
+5. Plan: use diagnosis DESCRIPTION only, NO ICD codes in the plan.
 6. Return ONLY valid JSON, no markdown`;
 
 // ─── Main Function ──────────────────────────────────────────────────────────
