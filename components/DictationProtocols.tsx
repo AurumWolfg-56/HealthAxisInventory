@@ -19,6 +19,17 @@ const DictationProtocols: React.FC<DictationProtocolsProps> = ({ inventory, user
         items: []
     });
 
+    const [showProcedureDropdown, setShowProcedureDropdown] = useState(false);
+    const [itemSearch, setItemSearch] = useState('');
+    const [showItemDropdown, setShowItemDropdown] = useState(false);
+
+    const COMMON_PROCEDURES = [
+        "Suture", "Incision and Drainage", "EKG", "Covid Test", "Flu Test",
+        "Urine Test", "Pregnancy Test", "RSV Test", "Mono Test",
+        "Strep Test", "Ear Lavage", "Pap Smear", "Blood Draw (CBC)", 
+        "Drug Test", "TB Test", "TDAP", "Quantiferon"
+    ].sort();
+
     useEffect(() => {
         loadProtocols();
     }, []);
@@ -144,15 +155,34 @@ const DictationProtocols: React.FC<DictationProtocolsProps> = ({ inventory, user
                     </div>
 
                     <div className="space-y-6">
-                        <div>
+                        <div className="relative">
                             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Protocol Name</label>
                             <input
                                 type="text"
                                 value={editForm.name}
-                                onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                                onChange={e => { setEditForm({ ...editForm, name: e.target.value }); setShowProcedureDropdown(true); }}
+                                onFocus={() => setShowProcedureDropdown(true)}
+                                onBlur={() => setTimeout(() => setShowProcedureDropdown(false), 200)}
                                 placeholder="e.g. Suture, Upper Respiratory Infection, EKG"
-                                className="w-full h-12 px-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-4 ring-medical-500/20 focus:border-medical-500 outline-none transition-all font-medium text-slate-900 dark:text-white"
+                                className="w-full h-12 px-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-4 ring-medical-500/20 focus:border-medical-500 outline-none transition-all font-medium text-slate-900 dark:text-white relative z-20"
                             />
+                            {showProcedureDropdown && (
+                                <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-60 overflow-y-auto custom-scrollbar">
+                                    <div className="p-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">Common Procedures</div>
+                                    {COMMON_PROCEDURES.filter(p => p.toLowerCase().includes((editForm.name || '').toLowerCase())).map(proc => (
+                                        <div 
+                                            key={proc} 
+                                            onClick={() => { setEditForm({ ...editForm, name: proc }); setShowProcedureDropdown(false); }}
+                                            className="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors"
+                                        >
+                                            {proc}
+                                        </div>
+                                    ))}
+                                    {COMMON_PROCEDURES.filter(p => p.toLowerCase().includes((editForm.name || '').toLowerCase())).length === 0 && (
+                                        <div className="px-4 py-3 text-sm text-slate-500 italic">Press enter to use custom name: "{editForm.name}"</div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <div>
@@ -187,21 +217,51 @@ const DictationProtocols: React.FC<DictationProtocolsProps> = ({ inventory, user
                             </div>
 
                             <div className="relative">
-                                <select
-                                    onChange={(e) => {
-                                        if (e.target.value) {
-                                            addItemToBundle(e.target.value);
-                                            e.target.value = ''; // Reset select
+                                <div className="relative z-20">
+                                    <i className="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-medical-500 opacity-60"></i>
+                                    <input 
+                                        type="text"
+                                        value={itemSearch}
+                                        onChange={e => { setItemSearch(e.target.value); setShowItemDropdown(true); }}
+                                        onFocus={() => setShowItemDropdown(true)}
+                                        onBlur={() => setTimeout(() => setShowItemDropdown(false), 200)}
+                                        placeholder="+ Search and add item to bundle... (e.g. covid, gloves)"
+                                        className="w-full h-12 pl-12 pr-4 rounded-xl bg-medical-50 dark:bg-medical-900/20 border border-medical-200 dark:border-medical-800 text-medical-700 dark:text-medical-300 font-bold focus:ring-4 ring-medical-500/20 focus:border-medical-500 outline-none transition-all placeholder:text-medical-500/60"
+                                    />
+                                    <i className="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-medical-500 pointer-events-none"></i>
+                                </div>
+                                
+                                {showItemDropdown && (
+                                    <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl max-h-64 overflow-y-auto custom-scrollbar">
+                                        {inventory
+                                            .filter(i => !editForm.items?.some(ei => ei.inventoryItemId === i.id))
+                                            .filter(i => i.name.toLowerCase().includes(itemSearch.toLowerCase()) || (i.category || '').toLowerCase().includes(itemSearch.toLowerCase()))
+                                            .sort((a,b) => a.name.localeCompare(b.name))
+                                            .map(item => (
+                                                <div 
+                                                    key={item.id}
+                                                    onClick={() => {
+                                                        addItemToBundle(item.id);
+                                                        setItemSearch('');
+                                                        setShowItemDropdown(false);
+                                                    }}
+                                                    className="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700/50 last:border-0 flex justify-between items-center transition-colors"
+                                                >
+                                                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{item.name}</span>
+                                                    <span className={`text-xs font-black px-2 py-1 rounded-md ${item.stock > 0 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                                                        {item.stock} in stock
+                                                    </span>
+                                                </div>
+                                            ))
                                         }
-                                    }}
-                                    className="w-full h-12 px-4 appearance-none rounded-xl bg-medical-50 dark:bg-medical-900/10 border border-medical-200 dark:border-medical-800 text-medical-700 dark:text-medical-300 font-bold focus:ring-4 ring-medical-500/20 outline-none transition-all cursor-pointer"
-                                >
-                                    <option value="">+ Add Item to Protocol Bundle...</option>
-                                    {inventory.filter(i => !editForm.items?.some(ei => ei.inventoryItemId === i.id)).sort((a,b) => a.name.localeCompare(b.name)).map(item => (
-                                        <option key={item.id} value={item.id}>{item.name} ({item.stock} in stock)</option>
-                                    ))}
-                                </select>
-                                <i className="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-medical-500 pointer-events-none"></i>
+                                        {/* Handle empty state */}
+                                        {inventory.filter(i => i.name.toLowerCase().includes(itemSearch.toLowerCase())).length === 0 && (
+                                            <div className="px-4 py-6 text-center text-slate-500 text-sm">
+                                                No items found matching "{itemSearch}"
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
