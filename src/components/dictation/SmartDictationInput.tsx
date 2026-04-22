@@ -224,6 +224,9 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
 
                   <NoteCard title="Chief Complaint" icon="fa-comment-medical" content={structuredNote.chiefComplaint} color="blue" />
                   <NoteCard title="History of Present Illness" icon="fa-notes-medical" content={structuredNote.hpi} color="teal" />
+                  {structuredNote.objective && (
+                    <NoteCard title="Objective / Physical Exam" icon="fa-microscope" content={structuredNote.objective} color="indigo" />
+                  )}
                   <NoteCard title="Assessment / Diagnoses" icon="fa-stethoscope" content={structuredNote.diagnoses} color="amber" />
                   <NoteCard title="Plan" icon="fa-clipboard-list" content={structuredNote.plan} color="purple" />
 
@@ -318,7 +321,8 @@ const SmartDictationInput = forwardRef<HTMLTextAreaElement, SmartDictationInputP
               <div className="shrink-0 px-4 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex items-center gap-3">
                 <button
                   onClick={async () => {
-                    const full = `CHIEF COMPLAINT:\n${structuredNote.chiefComplaint}\n\nHISTORY OF PRESENT ILLNESS:\n${structuredNote.hpi}\n\nASSESSMENT / DIAGNOSES:\n${structuredNote.diagnoses}\n\nPLAN:\n${structuredNote.plan}`;
+                    const objectiveText = structuredNote.objective ? `\n\nOBJECTIVE / PHYSICAL EXAM:\n${structuredNote.objective}` : '';
+                    const full = `CHIEF COMPLAINT:\n${structuredNote.chiefComplaint}\n\nHISTORY OF PRESENT ILLNESS:\n${structuredNote.hpi}${objectiveText}\n\nASSESSMENT / DIAGNOSES:\n${structuredNote.diagnoses}\n\nPLAN:\n${structuredNote.plan}`;
                     await navigator.clipboard.writeText(full);
                   }}
                   className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 text-white text-sm font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"

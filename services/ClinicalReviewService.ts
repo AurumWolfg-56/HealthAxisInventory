@@ -12,6 +12,7 @@ import { DictationProtocolService } from './DictationProtocolService';
 export interface StructuredNote {
   chiefComplaint: string;
   hpi: string;
+  objective: string;
   diagnoses: string;
   plan: string;
   suggestedCPT: string;
@@ -30,13 +31,14 @@ OUTPUT — Return ONLY valid JSON:
 {
   "chiefComplaint": "Brief 1-2 sentence CC using patient's own words",
   "hpi": "Start with patient demographics ONLY if mentioned. Group symptoms cohesively. Use EXCLUSIVELY advanced professional medical terminology (e.g., erythema, edema, dyspnea, diaphoresis). DO NOT explain medical terms. Explicitly document pertinent negatives if implied. DO NOT write 'not provided' or 'N/A' for missing info; just omit it.",
+  "objective": "Physical exam findings. If the provider dictates a 'macro' or 'dot phrase' (e.g., 'insert normal neuro macro'), generate a comprehensive, highly professional normal physical exam for that system.",
   "diagnoses": "Numbered list of diagnoses WITH suggested ICD-10 codes. Extremely concise.",
   "plan": "Numbered plan organized BY DIAGNOSIS. Instead of rigid sub-categories, write a highly condensed bulleted list of actions for each diagnosis (e.g., '• COVID test ordered. • Supportive care with hydration. • Return precautions given.'). Omit any action not performed.",
   "suggestedCPT": "99213, 99214, or 99215",
   "mdmLevel": "Briefly explain why this E/M level was chosen. Explicitly state which 2 of the 3 MDM elements (Problems, Data, Risk) meet or exceed the selected level.",
   "procedures_performed": ["Identify any specific clinical procedures performed during the visit based on the dictation. Return an array of procedure names. Keep it extremely concise. Leave empty if none.${knownProtocols.length > 0 ? ` IMPORTANT: Map any performed procedure to one of these EXACT known protocols if applicable: [${knownProtocols.join(', ')}].` : ''}"],
   "upcodingSuggestions": ["If level is 99213, provide 3-5 concise suggestions to bring it to 99214. If 99214/99215, provide concise tips to defend this level."],
-  "conductAlerts": ["Any clinical logic issues specific to THIS case. Leave empty if none."]
+  "conductAlerts": ["CRITICAL MEDICAL/LEGAL RISK ALERTS. If 'Red Flag' symptoms are dictated (e.g., thunderclap headache, chest pain radiating to back), trigger a warning to document a thorough exam or justify ER transfer to prevent malpractice. Leave empty if no high-risk symptoms."]
 }
 
 CRITICAL RULES FOR E/M LEVEL (MDM - CPT 2026 Guidelines):
@@ -61,9 +63,10 @@ OTHER CRITICAL RULES:
 1. EXTREME CONCISENESS & ZERO FLUFF: Omit any unmentioned details. NEVER use phrases like "not provided", "none prescribed", or "N/A".
 2. PROFESSIONAL TONE: Use strict medical terminology. No conversational or layperson terms except in CC.
 3. PERTINENT NEGATIVES: Ensure the HPI naturally includes relevant negative findings.
-4. Diagnoses section: INCLUDE suggested ICD-10 codes with each diagnosis.
-5. Plan: use diagnosis DESCRIPTION only, NO ICD codes in the plan.
-6. Return ONLY valid JSON, no markdown`;
+4. ABBREVIATIONS: Recognize standard medical abbreviations (e.g., BID, PRN, c/o, SOB, WNL). Translate conversational abbreviations into formal medical terminology (e.g., 'dyspnea' instead of 'SOB'), but retain universally accepted safe abbreviations (like PRN or BID) in the Plan section.
+5. Diagnoses section: INCLUDE suggested ICD-10 codes with each diagnosis.
+6. Plan: use diagnosis DESCRIPTION only, NO ICD codes in the plan.
+7. Return ONLY valid JSON, no markdown`;
 
 // ─── Main Function ──────────────────────────────────────────────────────────
 
