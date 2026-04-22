@@ -14,6 +14,7 @@ import sys
 import tempfile
 import logging
 import glob
+import asyncio
 from typing import Optional
 
 # ─── Ensure CUDA DLLs are findable ─────────────────────────────────────────
