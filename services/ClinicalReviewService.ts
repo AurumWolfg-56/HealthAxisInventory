@@ -44,13 +44,13 @@ Evaluate Medical Decision Making (MDM) using the "2 out of 3" Rule: Choose the v
 
 - Level 99213 (Low Complexity): Requires 2 out of 3 of the following:
   * Problems (Low): 2+ minor/self-limited problems, OR 1 stable chronic illness, OR 1 acute uncomplicated illness/injury, OR 1 stable acute illness.
-  * Data (Low): Minimal/Low data. (e.g., ordering 1-2 unique tests).
-  * Risk (Low): Low risk of morbidity from additional diagnostic testing or treatment.
+  * Data (Low): Minimal/Low data (e.g., ordering 1-2 unique tests).
+  * Risk (Low): Low risk. (NOTE: Over-The-Counter (OTC) meds like Loratadine/Ibuprofen = LOW risk).
 
 - Level 99214 (Moderate Complexity): Requires 2 out of 3 of the following:
-  * Problems (Moderate): 1+ chronic illnesses with exacerbation/progression/side effects, OR 2+ stable chronic illnesses, OR 1 undiagnosed new problem with uncertain prognosis, OR 1 acute illness with systemic symptoms (CRITICAL: Systemic symptoms MUST affect the ENTIRE body systemically, such as high fever, general malaise, chills, or severe generalized body aches. A localized rash, localized swelling, local pain, or multiple local issues are explicitly NOT systemic symptoms. Do NOT classify contact dermatitis or local allergic reactions as systemic!).
-  * Data (Moderate): ORDERING AND/OR REVIEWING 3 OR MORE UNIQUE TESTS equals Moderate Data. Independent interpretation of tests.
-  * Risk (Moderate): PRESCRIPTION DRUG MANAGEMENT equals Moderate Risk. Decision regarding minor surgery with identified risk factors.
+  * Problems (Moderate): 1+ chronic illnesses with exacerbation, 2+ stable chronic illnesses, 1 undiagnosed new problem, OR 1 acute illness with systemic symptoms (CRITICAL: Systemic symptoms MUST affect ENTIRE body e.g., fever, chills. Localized rash/swelling is NEVER systemic).
+  * Data (Moderate): 3+ UNIQUE TESTS. Independent interpretation of tests.
+  * Risk (Moderate): PRESCRIPTION DRUG MANAGEMENT (CRITICAL: OTC drugs are NOT prescription management, even if the word 'prescribed' is used).
 
 - Level 99215 (High Complexity): Requires 2 out of 3 of the following:
   * Problems (High): 1+ chronic illnesses with severe exacerbation/progression, OR 1 acute/chronic illness posing a threat to life.
