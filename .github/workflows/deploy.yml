@@ -39,9 +39,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y lftp
           lftp -c "
+          set cmd:fail-exit true
           set ssl:verify-certificate no
           set ftp:ssl-allow true
+          set ftp:ssl-force true
           set ftp:passive-mode true
-          open -u '${{ secrets.FTP_USER }}','${{ secrets.FTP_PASSWORD }}' ftp://${{ secrets.FTP_HOST }}
-          mirror -R ./dist/ ./ --ignore-time --parallel=10
+          open -u '${{ secrets.FTP_USER }}','${{ secrets.FTP_PASSWORD }}' ${{ secrets.FTP_HOST }}
+          mirror -R -v ./dist/ ./ --ignore-time
           quit"
