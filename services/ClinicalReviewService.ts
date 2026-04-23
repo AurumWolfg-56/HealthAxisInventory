@@ -48,7 +48,7 @@ Evaluate Medical Decision Making (MDM) using the "2 out of 3" Rule: Choose the v
   * Risk (Low): Low risk of morbidity from additional diagnostic testing or treatment.
 
 - Level 99214 (Moderate Complexity): Requires 2 out of 3 of the following:
-  * Problems (Moderate): 1+ chronic illnesses with exacerbation/progression/side effects, OR 2+ stable chronic illnesses, OR 1 undiagnosed new problem with uncertain prognosis, OR 1 acute illness with systemic symptoms (Note: Systemic symptoms MUST be severe and affect the whole body, e.g., high fever, severe fatigue. Localized swelling/rash is NOT systemic).
+  * Problems (Moderate): 1+ chronic illnesses with exacerbation/progression/side effects, OR 2+ stable chronic illnesses, OR 1 undiagnosed new problem with uncertain prognosis, OR 1 acute illness with systemic symptoms (CRITICAL: Systemic symptoms MUST affect the ENTIRE body systemically, such as high fever, general malaise, chills, or severe generalized body aches. A localized rash, localized swelling, local pain, or multiple local issues are explicitly NOT systemic symptoms. Do NOT classify contact dermatitis or local allergic reactions as systemic!).
   * Data (Moderate): ORDERING AND/OR REVIEWING 3 OR MORE UNIQUE TESTS equals Moderate Data. Independent interpretation of tests.
   * Risk (Moderate): PRESCRIPTION DRUG MANAGEMENT equals Moderate Risk. Decision regarding minor surgery with identified risk factors.
 
