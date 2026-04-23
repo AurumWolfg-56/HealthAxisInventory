@@ -3,6 +3,7 @@ import { DictationProtocolService } from '@/services/DictationProtocolService';
 import { DictationProtocol, InventoryItem } from '@/types';
 import { useInventory } from '@/contexts/InventoryContext';
 import { useAppData } from '@/contexts/AppDataContext';
+import { InventoryService } from '@/services/InventoryService';
 
 interface InventoryDeductionWidgetProps {
     procedures: string[];
@@ -11,7 +12,7 @@ interface InventoryDeductionWidgetProps {
 }
 
 const InventoryDeductionWidget: React.FC<InventoryDeductionWidgetProps> = ({ procedures, hasDeducted, onDeducted }) => {
-    const { inventory, updateItem } = useInventory();
+    const { inventory, setInventory } = useInventory();
     const { addLog } = useAppData();
     const [protocols, setProtocols] = useState<DictationProtocol[]>([]);
     const [matchedProtocols, setMatchedProtocols] = useState<DictationProtocol[]>([]);
@@ -78,14 +79,13 @@ const InventoryDeductionWidget: React.FC<InventoryDeductionWidgetProps> = ({ pro
             for (const deduction of allDeductions) {
                 const invItem = inventory.find(i => i.id === deduction.inventoryItemId);
                 if (invItem && invItem.stock >= deduction.totalQuantity) {
-                    await updateItem(invItem.id, {
-                        stock: invItem.stock - deduction.totalQuantity
-                    });
+                    const newStock = invItem.stock - deduction.totalQuantity;
+                    await InventoryService.updateItem(invItem.id, { stock: newStock });
+                    setInventory(prev => prev.map(i => i.id === invItem.id ? { ...i, stock: newStock } : i));
                 } else if (invItem) {
                      // Deduct whatever is left
-                     await updateItem(invItem.id, {
-                        stock: 0
-                    });
+                     await InventoryService.updateItem(invItem.id, { stock: 0 });
+                     setInventory(prev => prev.map(i => i.id === invItem.id ? { ...i, stock: 0 } : i));
                 }
             }
 
