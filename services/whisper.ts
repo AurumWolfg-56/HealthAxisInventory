@@ -8,8 +8,9 @@
  */
 
 // Local Whisper server (faster-whisper + FastAPI)
-const LOCAL_WHISPER_URL = 'http://127.0.0.1:8765/v1/audio/transcriptions';
-const LOCAL_WHISPER_WS_URL = 'ws://127.0.0.1:8765/v1/audio/transcriptions/stream';
+const LOCAL_WHISPER_URL = 'https://ai.norvexiscore.com/v1/audio/transcriptions';
+const LOCAL_WHISPER_WS_URL = 'wss://ai.norvexiscore.com/v1/audio/transcriptions/stream';
+const NVX_AI_TOKEN = 'nvx_clinic_ai_secret_2026';
 
 // Medical context prompt for better accuracy
 const MEDICAL_PROMPT = "Medical Dictation. Patient History, SOAP Note, Cardiology, Oncology, Dermatology. Common drugs: Lisinopril, Metformin, Atorvastatin. CPT Codes. ICD-10. Urgent Care. Inventory management. Professional casing and punctuation.";
@@ -32,8 +33,8 @@ export class WhisperStream {
             
             this.ws.onopen = () => {
                 console.log('[WhisperStream] Connected');
-                // Send the context prompt
-                this.ws?.send(JSON.stringify({ prompt }));
+                // Send the context prompt and auth token
+                this.ws?.send(JSON.stringify({ prompt, token: NVX_AI_TOKEN }));
                 
                 // Drain the queue
                 while (this.chunkQueue.length > 0) {
@@ -115,6 +116,9 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
     try {
         const response = await fetch(LOCAL_WHISPER_URL, {
             method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${NVX_AI_TOKEN}`
+            },
             body: formData,
             signal: controller.signal
         });

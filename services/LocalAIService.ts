@@ -19,7 +19,8 @@
 // Fallback: AI Gateway (whisper_server.py) — proxy with CORS (also serves Whisper STT)
 // Both endpoints now support CORS for norvexiscore.com
 const LM_STUDIO_DIRECT_URL = 'http://127.0.0.1:1234/v1';
-const LM_STUDIO_GATEWAY_URL = 'http://localhost:8765/v1';
+const LM_STUDIO_GATEWAY_URL = 'https://ai.norvexiscore.com/v1';
+const NVX_AI_TOKEN = 'nvx_clinic_ai_secret_2026';
 let LM_STUDIO_URL = LM_STUDIO_DIRECT_URL;
 
 // Model identifiers (must match LM Studio model IDs exactly)
@@ -96,7 +97,10 @@ const chatCompletion = async (
 
       const response = await fetch(`${endpoint}/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${NVX_AI_TOKEN}`
+        },
         signal: controller.signal,
         body: JSON.stringify(requestBody),
       });

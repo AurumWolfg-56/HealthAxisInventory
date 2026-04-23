@@ -25,9 +25,10 @@ for p in cuda_paths:
         os.environ["PATH"] = p + os.pathsep + os.environ.get("PATH", "")
         print(f"[CUDA] Added to PATH: {p}")
 
-from fastapi import FastAPI, UploadFile, File, Form, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, UploadFile, File, Form, Request, WebSocket, WebSocketDisconnect, Depends, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse, Response
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.base import BaseHTTPMiddleware
 import uvicorn
 import httpx
@@ -44,6 +45,16 @@ LM_STUDIO_URL = "http://127.0.0.1:1234"  # LM Studio API
 # ─── Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("whisper-server")
+
+# ─── Security ───────────────────────────────────────────────────────────────
+API_SECRET_TOKEN = "nvx_clinic_ai_secret_2026"
+security = HTTPBearer()
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):
+    if credentials.credentials != API_SECRET_TOKEN:
+        logger.warning("Unauthorized access attempt")
+        raise HTTPException(status_code=401, detail="Invalid API Token")
+    return credentials.credentials
 
 # ─── FastAPI App ────────────────────────────────────────────────────────────
 app = FastAPI(title="Norvexis Local AI Gateway", version="2.0.0")
@@ -145,7 +156,7 @@ async def health():
     }
 
 # ─── LM Studio Proxy: /v1/chat/completions ─────────────────────────────────
-@app.post("/v1/chat/completions")
+@app.post("/v1/chat/completions", dependencies=[Depends(verify_token)])
 async def proxy_chat_completions(request: Request):
     """Proxy chat completion requests to LM Studio with vision support."""
     import json as _json
@@ -185,7 +196,7 @@ async def proxy_chat_completions(request: Request):
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 # ─── LM Studio Proxy: /v1/models ───────────────────────────────────────────
-@app.get("/v1/models")
+@app.get("/v1/models", dependencies=[Depends(verify_token)])
 async def proxy_models():
     """Proxy model list from LM Studio."""
     try:
@@ -197,7 +208,7 @@ async def proxy_models():
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 # ─── OpenAI-Compatible Transcription Endpoint ──────────────────────────────
-@app.post("/v1/audio/transcriptions")
+@app.post("/v1/audio/transcriptions", dependencies=[Depends(verify_token)])
 async def transcribe(
     file: UploadFile = File(...),
     model: Optional[str] = Form(None),
@@ -269,6 +280,21 @@ async def transcribe(
 @app.websocket("/v1/audio/transcriptions/stream")
 async def websocket_transcribe(websocket: WebSocket):
     await websocket.accept()
+    
+    # ─── Authenticate First Message ─────────────────────────────────────────
+    try:
+        auth_message = await websocket.receive_json()
+        if auth_message.get("token") != API_SECRET_TOKEN:
+            logger.warning("[WebSocket] Unauthorized connection attempt")
+            await websocket.send_json({"error": "Unauthorized"})
+            await websocket.close()
+            return
+        initial_prompt = auth_message.get("prompt", "Medical Dictation. Patient History, SOAP Note, Cardiology, Oncology, Dermatology. Common drugs: Lisinopril, Metformin, Atorvastatin. CPT Codes. ICD-10. Urgent Care. Inventory management. Professional casing and punctuation.")
+    except Exception as e:
+        logger.error(f"[WebSocket] Authentication failed: {e}")
+        await websocket.close()
+        return
+
     if whisper_model is None:
         await websocket.send_json({"error": "Model not loaded"})
         await websocket.close()
@@ -276,9 +302,6 @@ async def websocket_transcribe(websocket: WebSocket):
 
     # Accumulate the audio chunks in memory
     audio_buffer = bytearray()
-    
-    # Context prompt setup
-    initial_prompt = "Medical Dictation. Patient History, SOAP Note, Cardiology, Oncology, Dermatology. Common drugs: Lisinopril, Metformin, Atorvastatin. CPT Codes. ICD-10. Urgent Care. Inventory management. Professional casing and punctuation."
     
     # Background transcription loop
     async def transcribe_loop():
@@ -341,7 +364,8 @@ async def websocket_transcribe(websocket: WebSocket):
                 try:
                     data = json.loads(message["text"])
                     if "prompt" in data and data["prompt"]:
-                        initial_prompt = data["prompt"]
+                        # We already extracted prompt in auth, but can update it dynamically if needed
+                        pass
                 except:
                     pass
                 continue
