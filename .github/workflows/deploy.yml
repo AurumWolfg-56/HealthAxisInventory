@@ -34,12 +34,14 @@ jobs:
       - name: Wait for Hostinger auto-deploy to finish
         run: sleep 120
 
-      - name: Deploy to Hostinger via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          server-dir: ./
-          local-dir: ./dist/
+      - name: Deploy to Hostinger via LFTP
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lftp
+          lftp -c "
+          set ssl:verify-certificate no
+          set ftp:ssl-allow true
+          set ftp:passive-mode true
+          open -u '${{ secrets.FTP_USER }}','${{ secrets.FTP_PASSWORD }}' ftp://${{ secrets.FTP_HOST }}
+          mirror -R ./dist/ ./ --ignore-time --parallel=10
+          quit"
