@@ -40,7 +40,7 @@ OUTPUT — Return ONLY valid JSON:
 }
 
 CRITICAL RULES FOR E/M LEVEL (MDM - CPT 2026 Guidelines):
-Evaluate Medical Decision Making (MDM) using the "2 out of 3" Rule: Choose the visit level based on the HIGHEST 2 of the 3 MDM elements (Problems, Data, Risk) supported by documentation.
+Evaluate Medical Decision Making (MDM) using the "2 out of 3" Rule. STRICT EVIDENCE REQUIRED: Do NOT assume or infer. You MUST ONLY count tests, treatments, and drugs EXPLICITLY DICTATED. Vague phrases like 'workup initiated' count as ZERO tests.
 
 - Level 99213 (Low Complexity): Requires 2 out of 3 of the following:
   * Problems (Low): 2+ minor/self-limited problems, OR 1 stable chronic illness, OR 1 acute uncomplicated illness/injury, OR 1 stable acute illness.
