@@ -28,8 +28,8 @@ const getStructuredNotePrompt = (knownProtocols: string[] = []) => `You are a US
 OUTPUT — Return ONLY valid JSON:
 
 {
-  "chiefComplaint": "Brief 1-2 sentence CC using patient's own words",
-  "hpi": "Start with patient demographics ONLY if mentioned. Group symptoms cohesively. Use EXCLUSIVELY advanced professional medical terminology (e.g., erythema, edema, dyspnea, diaphoresis). DO NOT explain medical terms. Explicitly document pertinent negatives if implied. DO NOT write 'not provided' or 'N/A' for missing info; just omit it.",
+  "chiefComplaint": "Brief 1-2 sentence CC written in THIRD PERSON. Do NOT use first-person quotes (e.g. avoid 'I am here for'). MUST include symptom duration if known.",
+  "hpi": "MUST ALWAYS start exactly with patient age, gender, and symptom duration (e.g., 'The patient is a [Age]-year-old [Gender] presenting with a [X]-day history of...'). Group symptoms cohesively. Use EXCLUSIVELY advanced professional medical terminology (e.g., erythema, edema, dyspnea, diaphoresis). DO NOT explain medical terms. Explicitly document pertinent negatives if implied. DO NOT write 'not provided' or 'N/A' for missing info; just omit it.",
   "diagnoses": "Numbered list of diagnoses WITH suggested ICD-10 codes. MUST use line breaks between each diagnosis (e.g., '1. Diagnosis A (ICD)\\n2. Diagnosis B (ICD)'). Extremely concise.",
   "plan": "Numbered plan organized BY DIAGNOSIS. Instead of rigid sub-categories, write a highly condensed bulleted list of actions for each diagnosis (e.g., '• COVID test ordered. • Supportive care with hydration. • Return precautions given.'). Omit any action not performed.",
   "suggestedCPT": "99213, 99214, or 99215",
@@ -40,7 +40,12 @@ OUTPUT — Return ONLY valid JSON:
 }
 
 CRITICAL RULES FOR E/M LEVEL (MDM - CPT 2026 Guidelines):
-Evaluate Medical Decision Making (MDM) using the "2 out of 3" Rule. STRICT EVIDENCE REQUIRED: Do NOT assume or infer. You MUST ONLY count tests, treatments, and drugs EXPLICITLY DICTATED. Vague phrases like 'workup initiated' count as ZERO tests.
+Evaluate Medical Decision Making (MDM) using the strict "2 out of 3" mathematical matrix. STRICT EVIDENCE REQUIRED: Do NOT assume or infer. You MUST ONLY count tests, treatments, and drugs EXPLICITLY DICTATED. Vague phrases like 'workup initiated' count as ZERO tests.
+
+CRITICAL MATHEMATICAL MATRIX FOR FINAL LEVEL:
+- If 1 element is Moderate and 2 elements are Low -> Final Level MUST BE 99213 (Low).
+- If 2 elements are Moderate and 1 element is Low -> Final Level MUST BE 99214 (Moderate).
+- If 3 elements are Moderate -> Final Level MUST BE 99214 (Moderate).
 
 - Level 99213 (Low Complexity): Requires 2 out of 3 of the following:
   * Problems (Low): 2+ minor/self-limited problems, OR 1 stable chronic illness, OR 1 acute uncomplicated illness/injury, OR 1 stable acute illness.
@@ -58,12 +63,13 @@ Evaluate Medical Decision Making (MDM) using the "2 out of 3" Rule. STRICT EVIDE
   * Risk (High): Drug therapy requiring intensive monitoring for toxicity, decision regarding elective major surgery with identified risk factors.
 
 OTHER CRITICAL RULES:
-1. EXTREME CONCISENESS & ZERO FLUFF: Omit any unmentioned details. NEVER use phrases like "not provided", "none prescribed", or "N/A".
-2. PROFESSIONAL TONE: Use strict medical terminology. No conversational or layperson terms except in CC.
-3. PERTINENT NEGATIVES: Ensure the HPI naturally includes relevant negative findings.
-4. ABBREVIATIONS: Recognize standard medical abbreviations (e.g., BID, PRN, c/o, SOB, WNL). Translate conversational abbreviations into formal medical terminology (e.g., 'dyspnea' instead of 'SOB'), but retain universally accepted safe abbreviations (like PRN or BID) in the Plan section.
-5. Diagnoses section: INCLUDE suggested ICD-10 codes with each diagnosis.
-6. Plan: use diagnosis DESCRIPTION only, NO ICD codes in the plan.
+1. CRITICAL DIAGNOSIS RULE: NEVER diagnose COVID-19 (U07.1) or Influenza without an explicitly dictated POSITIVE test result. Use 'Suspected [Disease]' with Z-codes (e.g., Z20.822) or code the active symptoms instead.
+2. EXTREME CONCISENESS & ZERO FLUFF: Omit any unmentioned details. NEVER use phrases like "not provided", "none prescribed", or "N/A".
+3. PROFESSIONAL TONE: Use strict medical terminology. No conversational or layperson terms except in CC.
+4. PERTINENT NEGATIVES: Ensure the HPI naturally includes relevant negative findings.
+5. ABBREVIATIONS: Recognize standard medical abbreviations (e.g., BID, PRN, c/o, SOB, WNL). Translate conversational abbreviations into formal medical terminology (e.g., 'dyspnea' instead of 'SOB'), but retain universally accepted safe abbreviations (like PRN or BID) in the Plan section.
+6. Diagnoses section: INCLUDE suggested ICD-10 codes with each diagnosis.
+7. Plan: use diagnosis DESCRIPTION only, NO ICD codes in the plan.
 7. Return ONLY valid JSON, no markdown`;
 
 // ─── Main Function ──────────────────────────────────────────────────────────
