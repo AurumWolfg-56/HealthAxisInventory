@@ -12,7 +12,6 @@ import { DictationProtocolService } from './DictationProtocolService';
 export interface StructuredNote {
   chiefComplaint: string;
   hpi: string;
-  objective: string;
   diagnoses: string;
   plan: string;
   suggestedCPT: string;
@@ -31,7 +30,6 @@ OUTPUT — Return ONLY valid JSON:
 {
   "chiefComplaint": "Brief 1-2 sentence CC using patient's own words",
   "hpi": "Start with patient demographics ONLY if mentioned. Group symptoms cohesively. Use EXCLUSIVELY advanced professional medical terminology (e.g., erythema, edema, dyspnea, diaphoresis). DO NOT explain medical terms. Explicitly document pertinent negatives if implied. DO NOT write 'not provided' or 'N/A' for missing info; just omit it.",
-  "objective": "Physical exam findings. Format as a strict list separated by body system (e.g., '**General:**...', '**HEENT:**...'). If the provider dictates a 'macro' or 'dot phrase' (e.g., 'insert normal neuro macro'), generate a comprehensive, structured normal physical exam for that system. EXTREMELY CONCISE to maximize generation speed.",
   "diagnoses": "Numbered list of diagnoses WITH suggested ICD-10 codes. MUST use line breaks between each diagnosis (e.g., '1. Diagnosis A (ICD)\\n2. Diagnosis B (ICD)'). Extremely concise.",
   "plan": "Numbered plan organized BY DIAGNOSIS. Instead of rigid sub-categories, write a highly condensed bulleted list of actions for each diagnosis (e.g., '• COVID test ordered. • Supportive care with hydration. • Return precautions given.'). Omit any action not performed.",
   "suggestedCPT": "99213, 99214, or 99215",
