@@ -31,8 +31,8 @@ OUTPUT — Return ONLY valid JSON:
 {
   "chiefComplaint": "Brief 1-2 sentence CC using patient's own words",
   "hpi": "Start with patient demographics ONLY if mentioned. Group symptoms cohesively. Use EXCLUSIVELY advanced professional medical terminology (e.g., erythema, edema, dyspnea, diaphoresis). DO NOT explain medical terms. Explicitly document pertinent negatives if implied. DO NOT write 'not provided' or 'N/A' for missing info; just omit it.",
-  "objective": "Physical exam findings. If the provider dictates a 'macro' or 'dot phrase' (e.g., 'insert normal neuro macro'), generate a comprehensive, highly professional normal physical exam for that system.",
-  "diagnoses": "Numbered list of diagnoses WITH suggested ICD-10 codes. Extremely concise.",
+  "objective": "Physical exam findings. Format as a strict list separated by body system (e.g., '**General:**...', '**HEENT:**...'). If the provider dictates a 'macro' or 'dot phrase' (e.g., 'insert normal neuro macro'), generate a comprehensive, structured normal physical exam for that system. EXTREMELY CONCISE to maximize generation speed.",
+  "diagnoses": "Numbered list of diagnoses WITH suggested ICD-10 codes. MUST use line breaks between each diagnosis (e.g., '1. Diagnosis A (ICD)\\n2. Diagnosis B (ICD)'). Extremely concise.",
   "plan": "Numbered plan organized BY DIAGNOSIS. Instead of rigid sub-categories, write a highly condensed bulleted list of actions for each diagnosis (e.g., '• COVID test ordered. • Supportive care with hydration. • Return precautions given.'). Omit any action not performed.",
   "suggestedCPT": "99213, 99214, or 99215",
   "mdmLevel": "Briefly explain why this E/M level was chosen. Explicitly state which 2 of the 3 MDM elements (Problems, Data, Risk) meet or exceed the selected level.",
@@ -50,7 +50,7 @@ Evaluate Medical Decision Making (MDM) using the "2 out of 3" Rule: Choose the v
   * Risk (Low): Low risk of morbidity from additional diagnostic testing or treatment.
 
 - Level 99214 (Moderate Complexity): Requires 2 out of 3 of the following:
-  * Problems (Moderate): 1+ chronic illnesses with exacerbation/progression/side effects, OR 2+ stable chronic illnesses, OR 1 undiagnosed new problem with uncertain prognosis, OR 1 acute illness with systemic symptoms.
+  * Problems (Moderate): 1+ chronic illnesses with exacerbation/progression/side effects, OR 2+ stable chronic illnesses, OR 1 undiagnosed new problem with uncertain prognosis, OR 1 acute illness with systemic symptoms (Note: Systemic symptoms MUST be severe and affect the whole body, e.g., high fever, severe fatigue. Localized swelling/rash is NOT systemic).
   * Data (Moderate): ORDERING AND/OR REVIEWING 3 OR MORE UNIQUE TESTS equals Moderate Data. Independent interpretation of tests.
   * Risk (Moderate): PRESCRIPTION DRUG MANAGEMENT equals Moderate Risk. Decision regarding minor surgery with identified risk factors.
 
