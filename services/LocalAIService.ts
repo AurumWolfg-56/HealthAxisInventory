@@ -600,6 +600,9 @@ export const checkConnection = async (): Promise<{
   for (const endpoint of endpoints) {
     try {
       const response = await fetch(`${endpoint}/models`, {
+        headers: {
+          'Authorization': `Bearer ${NVX_AI_TOKEN}`
+        },
         signal: AbortSignal.timeout(5000),
       });
       if (!response.ok) continue;
