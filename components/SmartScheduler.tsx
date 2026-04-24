@@ -187,9 +187,15 @@ Output strictly a valid JSON array, without markdown blocks.`;
             const responseText = await chatCompletion([
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: textToProcess }
-            ], { model: 'fast', jsonMode: true, maxTokens: 1024 });
+            ], { model: 'fast', jsonMode: true, maxTokens: 512 });
 
-            let shiftsToCreate = JSON.parse(responseText);
+            let cleanedText = responseText.trim();
+            if (cleanedText.includes('```')) {
+                const match = cleanedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                if (match) cleanedText = match[1];
+            }
+            
+            let shiftsToCreate = JSON.parse(cleanedText);
             if (!Array.isArray(shiftsToCreate)) {
                 if (shiftsToCreate.shifts && Array.isArray(shiftsToCreate.shifts)) {
                     shiftsToCreate = shiftsToCreate.shifts;
@@ -918,7 +924,9 @@ Output strictly a valid JSON array, without markdown blocks.`;
                                     }}
                                 >
                                     <option value="" disabled>Select Employee</option>
-                                    {users.map(u => (
+                                    {users
+                                        .filter(u => activeTab === 'providers' ? ['DOCTOR'].includes(u.role) : ['MANAGER', 'OWNER', 'MA', 'FRONT_DESK'].includes(u.role))
+                                        .map(u => (
                                         <option key={u.id} value={u.id}>{u.username || u.full_name} ({(u.role || '').replace('_', ' ').toLowerCase()})</option>
                                     ))}
                                 </select>
