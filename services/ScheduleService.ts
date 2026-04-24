@@ -130,6 +130,29 @@ export class ScheduleService {
     }
 
     /**
+     * Bulk Delete shifts for a specific user and date range
+     */
+    static async bulkDeleteShifts(userId: string, startDate: string, endDate: string): Promise<boolean> {
+        try {
+            const locFilter = this.locationId ? `&location_id=eq.${this.locationId}` : '';
+            const query = `?user_id=eq.${userId}&date=gte.${startDate}&date=lte.${endDate}${locFilter}`;
+            
+            const response = await fetch(`${this.apiUrl}/shifts${query}`, {
+                method: 'DELETE',
+                headers: this.getHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to bulk delete shifts (${response.status})`);
+            }
+            return true;
+        } catch (error) {
+            console.error('[ScheduleService] Bulk delete failed:', error);
+            return false;
+        }
+    }
+
+    /**
      * Bulk Upsert: Deletes existing shifts for a given array of IDs (if provided) 
      * and inserts the new ones. Useful for "Time Machine" week duplications.
      */

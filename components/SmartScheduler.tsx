@@ -255,11 +255,12 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
             const systemPrompt = `You are a clinical scheduling assistant. The current local date is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
 Parse the user's scheduling request and return a JSON array of intent objects.
 Users in system: ${users.map(u => u.username || u.full_name).join(', ')}.
-Each object MUST strictly have: { "employee_name": "string", "days": ["string"], "start_time": "HH:MM", "end_time": "HH:MM", "notes": "string" }. DO NOT include a "date" field.
+Each object MUST strictly have: { "intent": "CREATE_RECURRING" | "CREATE_SINGLE" | "MARK_TIME_OFF" | "CLEAR_SCHEDULE", "employee_name": "string", "days": ["string"], "start_time": "HH:MM", "end_time": "HH:MM", "notes": "string" }. DO NOT include a "date" field.
 CRITICAL RULES:
-1. 'start_time' and 'end_time' MUST be valid 24-hour time strings (e.g. "09:00", "17:00"). NEVER use null.
-2. The 'days' array must contain full day names in English or Spanish (e.g. ["Monday", "Wednesday"]). 
-3. If the user specifies a recurring pattern like "every Monday" or "Mondays of this month", output "Monday" in the days array.
+1. 'intent' MUST be one of the 4 exact options. Use MARK_TIME_OFF for vacations/PTO. Use CLEAR_SCHEDULE to delete or clear shifts.
+2. 'start_time' and 'end_time' MUST be valid 24-hour time strings (e.g. "09:00", "17:00"). Use "00:00" if not specified. NEVER use null.
+3. The 'days' array must contain full day names in English or Spanish (e.g. ["Monday", "Wednesday"]). 
+4. If the user specifies a recurring pattern like "every Monday", output "Monday" in the days array.
 Output strictly a valid JSON array, without markdown blocks.`;
 
             const responseText = await chatCompletion([
@@ -285,36 +286,70 @@ Output strictly a valid JSON array, without markdown blocks.`;
             }
 
             const newShifts: Omit<Shift, 'id'>[] = [];
+            const timeOffToCreate: Omit<TimeOffRequest, 'id' | 'created_at' | 'updated_at'>[] = [];
+            let clearScheduleCount = 0;
+
             for (const s of shiftsToCreate) {
-                // Validate required fields to prevent database constraint errors
+                // Validate required fields
                 if (!s.start_time || !s.end_time) {
-                    console.warn("Skipping AI shift missing start/end times:", s);
-                    continue;
+                    s.start_time = "00:00";
+                    s.end_time = "23:59";
                 }
 
                 const userMatch = findBestUserMatch(s.employee_name || s.user_name, users as ExtendedUser[]);
                 if (!userMatch) {
                     console.warn("Could not find matching user for:", s.employee_name);
-                    continue; // Skip if no confident match
+                    continue; 
                 }
 
                 // Map intention days to exact calendar dates
                 const exactDates = mapDayToDates(s.days || [], activeDates);
-                
-                // Fallback for legacy format or direct date string
                 if (exactDates.length === 0 && s.date) {
                     exactDates.push(s.date);
                 }
 
-                for (const dateStr of exactDates) {
-                    newShifts.push({
-                        user_id: userMatch.id,
-                        date: dateStr,
-                        start_time: s.start_time,
-                        end_time: s.end_time,
-                        notes: s.notes || 'AI Scheduled',
-                        role_type: userMatch.role === 'DOCTOR' || userMatch.role === 'OWNER' ? 'provider' : 'staff'
-                    });
+                if (exactDates.length === 0) continue;
+
+                if (s.intent === 'CLEAR_SCHEDULE') {
+                    // Find min and max date to bulk delete
+                    exactDates.sort();
+                    const startDate = exactDates[0];
+                    const endDate = exactDates[exactDates.length - 1];
+                    const success = await ScheduleService.bulkDeleteShifts(userMatch.id, startDate, endDate);
+                    if (success) {
+                        setShifts(prev => prev.filter(sh => !(sh.user_id === userMatch.id && sh.date >= startDate && sh.date <= endDate)));
+                        clearScheduleCount++;
+                    }
+                } else if (s.intent === 'MARK_TIME_OFF') {
+                    for (const dateStr of exactDates) {
+                        timeOffToCreate.push({
+                            user_id: userMatch.id,
+                            start_date: dateStr,
+                            end_date: dateStr,
+                            reason: s.notes || 'AI Blocked/PTO',
+                            status: 'approved'
+                        });
+                    }
+                } else {
+                    // CREATE_RECURRING or CREATE_SINGLE (default behavior)
+                    for (const dateStr of exactDates) {
+                        newShifts.push({
+                            user_id: userMatch.id,
+                            date: dateStr,
+                            start_time: s.start_time,
+                            end_time: s.end_time,
+                            notes: s.notes || 'AI Scheduled',
+                            role_type: userMatch.role === 'DOCTOR' || userMatch.role === 'OWNER' ? 'provider' : 'staff'
+                        });
+                    }
+                }
+            }
+
+            // Execute batch creations
+            if (timeOffToCreate.length > 0) {
+                for (const to of timeOffToCreate) {
+                    const saved = await ScheduleService.createTimeOffRequest(to);
+                    if (saved) setTimeOffRequests(prev => [...prev, saved]);
                 }
             }
 
@@ -322,9 +357,20 @@ Output strictly a valid JSON array, without markdown blocks.`;
                 const savedArr = await ScheduleService.bulkCreateShifts(newShifts);
                 if (savedArr) {
                     setShifts(prev => [...prev, ...savedArr]);
-                    alert(`Successfully scheduled ${savedArr.length} shift(s).`);
                 }
+            }
+
+            // Summary Feedback
+            let msg = [];
+            if (newShifts.length > 0) msg.push(`Scheduled ${newShifts.length} shift(s).`);
+            if (timeOffToCreate.length > 0) msg.push(`Blocked ${timeOffToCreate.length} day(s) off.`);
+            if (clearScheduleCount > 0) msg.push(`Cleared schedule data.`);
+            
+            if (msg.length > 0) {
+                alert(msg.join(' '));
                 setAiQuery('');
+            } else if (shiftsToCreate.length > 0) {
+                 alert("No valid dates could be resolved in the current view.");
             }
         } catch (error) {
             console.error("AI Scheduling Error:", error);
