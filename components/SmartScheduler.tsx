@@ -255,8 +255,11 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
             const systemPrompt = `You are a clinical scheduling assistant. The current local date is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
 Parse the user's scheduling request and return a JSON array of intent objects.
 Users in system: ${users.map(u => u.username || u.full_name).join(', ')}.
-Each object MUST have: { employee_name: string, days: string[], start_time: "HH:MM", end_time: "HH:MM", notes: string }.
-The 'days' array must contain full day names in English or Spanish (e.g. ["Monday", "Wednesday"]). If the user specifies a specific date (e.g. "tomorrow", "April 28th"), figure out what day of the week that is and put it in the 'days' array.
+Each object MUST strictly have: { "employee_name": "string", "days": ["string"], "start_time": "HH:MM", "end_time": "HH:MM", "notes": "string" }. DO NOT include a "date" field.
+CRITICAL RULES:
+1. 'start_time' and 'end_time' MUST be valid 24-hour time strings (e.g. "09:00", "17:00"). NEVER use null.
+2. The 'days' array must contain full day names in English or Spanish (e.g. ["Monday", "Wednesday"]). 
+3. If the user specifies a recurring pattern like "every Monday" or "Mondays of this month", output "Monday" in the days array.
 Output strictly a valid JSON array, without markdown blocks.`;
 
             const responseText = await chatCompletion([
@@ -283,6 +286,12 @@ Output strictly a valid JSON array, without markdown blocks.`;
 
             const newShifts: Omit<Shift, 'id'>[] = [];
             for (const s of shiftsToCreate) {
+                // Validate required fields to prevent database constraint errors
+                if (!s.start_time || !s.end_time) {
+                    console.warn("Skipping AI shift missing start/end times:", s);
+                    continue;
+                }
+
                 const userMatch = findBestUserMatch(s.employee_name || s.user_name, users as ExtendedUser[]);
                 if (!userMatch) {
                     console.warn("Could not find matching user for:", s.employee_name);
