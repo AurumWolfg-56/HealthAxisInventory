@@ -917,7 +917,7 @@ Output strictly a valid JSON array, without markdown blocks.`;
                             <input 
                                 type="text"
                                 className="flex-1 bg-transparent border-none outline-none text-white placeholder-slate-500 font-medium text-sm"
-                                placeholder={isRecording ? "Listening..." : "E.g. Schedule Dr. Smith 8am-5pm on Monday..."}
+                                placeholder={isRecording ? "Listening..." : "E.g. Schedule Faiza on Monday 10am-6pm..."}
                                 value={aiQuery}
                                 onChange={e => setAiQuery(e.target.value)}
                                 onKeyDown={e => {
@@ -926,6 +926,43 @@ Output strictly a valid JSON array, without markdown blocks.`;
                                 disabled={aiProcessing || isRecording}
                             />
                             
+                            <div className="relative group flex items-center">
+                                <button type="button" className="text-slate-500 hover:text-indigo-400 p-2 transition-colors">
+                                    <i className="fa-solid fa-circle-question"></i>
+                                </button>
+                                <div className="absolute bottom-full mb-4 right-0 w-[340px] bg-slate-800 border border-slate-700/50 shadow-2xl rounded-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 pointer-events-none z-[100]">
+                                    <h3 className="text-white font-black text-sm mb-3 flex items-center gap-2"><i className="fa-solid fa-wand-magic-sparkles text-indigo-400"></i> AI Command Guide</h3>
+                                    <ul className="space-y-3">
+                                        <li className="flex gap-2 items-start">
+                                            <span className="bg-emerald-500/20 text-emerald-400 p-1 rounded"><i className="fa-solid fa-calendar-plus text-[10px]"></i></span>
+                                            <div>
+                                                <p className="text-slate-200 font-bold text-[11px] leading-tight mb-0.5">Recurring / Single Shift</p>
+                                                <p className="text-slate-400 text-[10px] italic">"Schedule [Name] every [Monday] from [10am] to [6pm]"</p>
+                                            </div>
+                                        </li>
+                                        <li className="flex gap-2 items-start">
+                                            <span className="bg-amber-500/20 text-amber-400 p-1 rounded"><i className="fa-solid fa-umbrella-beach text-[10px]"></i></span>
+                                            <div>
+                                                <p className="text-slate-200 font-bold text-[11px] leading-tight mb-0.5">Time Off / Vacation</p>
+                                                <p className="text-slate-400 text-[10px] italic">"Mark [Name] as Time Off next week"</p>
+                                            </div>
+                                        </li>
+                                        <li className="flex gap-2 items-start">
+                                            <span className="bg-rose-500/20 text-rose-400 p-1 rounded"><i className="fa-solid fa-eraser text-[10px]"></i></span>
+                                            <div>
+                                                <p className="text-slate-200 font-bold text-[11px] leading-tight mb-0.5">Clear Schedule</p>
+                                                <p className="text-slate-400 text-[10px] italic">"Clear all shifts for [Name] this month"</p>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                    <div className="mt-3 pt-3 border-t border-slate-700/50 text-[9px] text-slate-500 font-medium">
+                                        <i className="fa-solid fa-globe mr-1"></i> You can use English or Spanish!
+                                    </div>
+                                    {/* Tooltip Arrow */}
+                                    <div className="absolute -bottom-2 right-4 w-4 h-4 bg-slate-800 border-b border-r border-slate-700/50 transform rotate-45"></div>
+                                </div>
+                            </div>
+
                             <button 
                                 onClick={() => handleAiSchedule()}
                                 disabled={aiProcessing || isRecording || !aiQuery.trim()}
