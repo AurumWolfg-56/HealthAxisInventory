@@ -178,7 +178,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
 
         setAiProcessing(true);
         try {
-            const systemPrompt = `You are a clinical scheduling assistant. The current date is ${new Date().toISOString()}.
+            const systemPrompt = `You are a clinical scheduling assistant. The current local date is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
 Parse the user's scheduling request and return a JSON array of shifts to create.
 Users in system: ${users.map(u => u.username || u.full_name).join(', ')}.
 Each object MUST have: { user_name: string, date: "YYYY-MM-DD", start_time: "HH:MM", end_time: "HH:MM", notes: string }.
@@ -283,8 +283,8 @@ Output strictly a valid JSON array, without markdown blocks.`;
             themeColor: userColorOverrides[u.id] || u.themeColor || SHIFT_COLORS[i % SHIFT_COLORS.length]
         }));
     }, [users, userColorOverrides]);
-    const providers = colorMappedUsers.filter(u => ['DOCTOR'].includes(u.role));
-    const supportStaff = colorMappedUsers.filter(u => ['MANAGER', 'OWNER', 'MA', 'FRONT_DESK'].includes(u.role));
+    const providers = colorMappedUsers.filter(u => ['DOCTOR', 'OWNER'].includes(u.role));
+    const supportStaff = colorMappedUsers.filter(u => ['MANAGER', 'MA', 'FRONT_DESK'].includes(u.role));
 
     const pendingRequests = timeOffRequests.filter(r => r.status === 'pending');
 
@@ -914,7 +914,7 @@ Output strictly a valid JSON array, without markdown blocks.`;
                             <div className="mb-4">
                                 <select 
                                     name="user_id" 
-                                    defaultValue={shiftEditor.user?.id || ''}
+                                    value={shiftEditor.user?.id || ''}
                                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all cursor-pointer"
                                     onChange={(e) => {
                                         const u = users.find(user => user.id === e.target.value);
@@ -925,7 +925,7 @@ Output strictly a valid JSON array, without markdown blocks.`;
                                 >
                                     <option value="" disabled>Select Employee</option>
                                     {users
-                                        .filter(u => activeTab === 'providers' ? ['DOCTOR'].includes(u.role) : ['MANAGER', 'OWNER', 'MA', 'FRONT_DESK'].includes(u.role))
+                                        .filter(u => activeTab === 'providers' ? ['DOCTOR', 'OWNER'].includes(u.role) : ['MANAGER', 'MA', 'FRONT_DESK'].includes(u.role))
                                         .map(u => (
                                         <option key={u.id} value={u.id}>{u.username || u.full_name} ({(u.role || '').replace('_', ' ').toLowerCase()})</option>
                                     ))}
