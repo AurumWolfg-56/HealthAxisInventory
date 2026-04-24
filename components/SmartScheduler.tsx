@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { User, Shift, AppRoute, TimeOffRequest } from '../types';
 import { ScheduleService } from '../services/ScheduleService';
 import { ScheduleReportDocument } from './ScheduleReportDocument';
+import { transcribeAudio } from '../services/whisper';
+import { chatCompletion } from '../services/LocalAIService';
 
 type ExtendedUser = User & { full_name?: string };
 
@@ -29,6 +31,14 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     });
     const [aiQuery, setAiQuery] = useState('');
     const [aiProcessing, setAiProcessing] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const chunksRef = useRef<Blob[]>([]);
+    
+    // Audit & Replacements State
+    const [callOutSuggestions, setCallOutSuggestions] = useState<ExtendedUser[]>([]);
+    const [showAuditModal, setShowAuditModal] = useState(false);
+    const [auditResults, setAuditResults] = useState<{understaffed: string[], overtime: string[]}>({understaffed: [], overtime: []});
     
     // Modals
     const [showTimeOffModal, setShowTimeOffModal] = useState(false);
@@ -107,6 +117,157 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
         if (viewMode === 'week') newDate.setDate(newDate.getDate() + 7);
         else newDate.setMonth(newDate.getMonth() + 1);
         setCurrentDate(newDate);
+    };
+
+    // AUDIT & REPLACEMENT LOGIC //
+    const runCoverageAudit = () => {
+        const understaffed: string[] = [];
+        const overtime: string[] = [];
+        
+        // Check understaffed (no doctor on a weekday)
+        for (const date of activeDates) {
+            const dateStr = date.toISOString().split('T')[0];
+            const localDStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+            const dayShifts = shifts.filter(s => s.date === dateStr || s.date === localDStr);
+            const doctors = dayShifts.filter(s => s.role_type === 'provider');
+            if (date.getDay() >= 1 && date.getDay() <= 5 && doctors.length === 0) {
+                understaffed.push(localDStr);
+            }
+        }
+        
+        // Check overtime (>40 hours a week)
+        const userHours: Record<string, number> = {};
+        for (const s of shifts) {
+            // Only count shifts that are in the active viewing period (which is 1 week for week view)
+            const sStart = new Date(`1970-01-01T${s.start_time}`);
+            const sEnd = new Date(`1970-01-01T${s.end_time}`);
+            const hours = (sEnd.getTime() - sStart.getTime()) / (1000 * 60 * 60);
+            userHours[s.user_id] = (userHours[s.user_id] || 0) + hours;
+        }
+        for (const [userId, hours] of Object.entries(userHours)) {
+            if (hours > 40) {
+                const u = users.find(user => user.id === userId);
+                if (u) overtime.push(`${u.username || u.full_name} (${hours.toFixed(1)} hrs)`);
+            }
+        }
+        
+        setAuditResults({ understaffed, overtime });
+        setShowAuditModal(true);
+    };
+
+    const findReplacements = () => {
+        if (!shiftEditor.shift) return;
+        setAiProcessing(true);
+        const targetRole = users.find(u => u.id === shiftEditor.shift!.user_id)?.role;
+        
+        const suggestions = users.filter(u => 
+            u.id !== shiftEditor.shift!.user_id && 
+            u.role === targetRole &&
+            !shifts.some(s => s.user_id === u.id && (s.date === shiftEditor.shift!.date || s.date === shiftEditor.tmpDate)) &&
+            !timeOffRequests.some(t => t.user_id === u.id && t.status === 'approved' && t.start_date <= (shiftEditor.tmpDate || shiftEditor.shift!.date) && t.end_date >= (shiftEditor.tmpDate || shiftEditor.shift!.date))
+        );
+        
+        setCallOutSuggestions(suggestions as ExtendedUser[]);
+        setTimeout(() => setAiProcessing(false), 500); // UI feedback
+    };
+
+    // AI & VOICE INTEGRATION //
+    const handleAiSchedule = async (queryText?: string) => {
+        const textToProcess = queryText || aiQuery;
+        if (!textToProcess.trim() || !canManage) return;
+
+        setAiProcessing(true);
+        try {
+            const systemPrompt = `You are a clinical scheduling assistant. The current date is ${new Date().toISOString()}.
+Parse the user's scheduling request and return a JSON array of shifts to create.
+Users in system: ${users.map(u => u.username || u.full_name).join(', ')}.
+Each object MUST have: { user_name: string, date: "YYYY-MM-DD", start_time: "HH:MM", end_time: "HH:MM", notes: string }.
+Output strictly a valid JSON array, without markdown blocks.`;
+
+            const responseText = await chatCompletion([
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: textToProcess }
+            ], { model: 'fast', jsonMode: true, maxTokens: 1024 });
+
+            let shiftsToCreate = JSON.parse(responseText);
+            if (!Array.isArray(shiftsToCreate)) {
+                if (shiftsToCreate.shifts && Array.isArray(shiftsToCreate.shifts)) {
+                    shiftsToCreate = shiftsToCreate.shifts;
+                } else if (typeof shiftsToCreate === 'object') {
+                    shiftsToCreate = [shiftsToCreate];
+                } else {
+                    throw new Error("Invalid output format");
+                }
+            }
+
+            const newShifts: Omit<Shift, 'id'>[] = [];
+            for (const s of shiftsToCreate) {
+                // Find user by fuzzy match
+                const userMatch = users.find(u => 
+                    (u.username && s.user_name && u.username.toLowerCase().includes(s.user_name.toLowerCase())) ||
+                    (u.full_name && s.user_name && u.full_name.toLowerCase().includes(s.user_name.toLowerCase()))
+                ) || users[0]; // fallback
+                
+                if (userMatch) {
+                    newShifts.push({
+                        user_id: userMatch.id,
+                        date: s.date,
+                        start_time: s.start_time,
+                        end_time: s.end_time,
+                        notes: s.notes || 'AI Scheduled',
+                        role_type: userMatch.role === 'DOCTOR' ? 'provider' : 'staff'
+                    });
+                }
+            }
+
+            if (newShifts.length > 0) {
+                const savedArr = await ScheduleService.bulkCreateShifts(newShifts);
+                if (savedArr) {
+                    setShifts(prev => [...prev, ...savedArr]);
+                    alert(`Successfully scheduled ${savedArr.length} shift(s).`);
+                }
+                setAiQuery('');
+            }
+        } catch (error) {
+            console.error("AI Scheduling Error:", error);
+            alert("Failed to parse scheduling request. Try being more specific.");
+        } finally {
+            setAiProcessing(false);
+        }
+    };
+
+    const toggleRecording = async () => {
+        if (isRecording) {
+            mediaRecorderRef.current?.stop();
+            setIsRecording(false);
+            return;
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            mediaRecorderRef.current = mediaRecorder;
+            chunksRef.current = [];
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+            mediaRecorder.onstop = async () => {
+                const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+                stream.getTracks().forEach(t => t.stop());
+                setAiProcessing(true);
+                try {
+                    const text = await transcribeAudio(blob);
+                    setAiQuery(text);
+                    await handleAiSchedule(text);
+                } catch (err) {
+                    console.error("Transcription error", err);
+                    alert("Transcription failed. Please try again.");
+                    setAiProcessing(false);
+                }
+            };
+            mediaRecorder.start();
+            setIsRecording(true);
+        } catch (err) {
+            console.error("Mic error:", err);
+            alert("Microphone access denied.");
+        }
     };
 
     // USERS MAPPING //
@@ -298,6 +459,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
             }
 
             setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null, tmpStart: '10:00', tmpEnd: '18:00', tmpColor: 'blue', applyDays: {}, notifyStaff: false });
+            setCallOutSuggestions([]);
         } catch (e) {
             console.error(e);
             alert("Failed to save shift");
@@ -431,6 +593,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                                         if (!canManage) return;
                                                         const applyDaysMap: Record<number, boolean> = {};
                                                         applyDaysMap[d.getDay()] = true;
+                                                        setCallOutSuggestions([]);
                                                         setShiftEditor({ isOpen: true, user: u, dateObj: d, shift, tmpStart: shift.start_time, tmpEnd: shift.end_time, tmpDate: shift.date, applyDays: applyDaysMap });
                                                     }}
                                                     className={`p-1.5 rounded-md border-l-[3px] shrink-0 text-left transition-all ${getThemeClasses(userColorOverrides[u.id] || u.themeColor || 'blue')} ${canManage ? 'cursor-grab active:cursor-grabbing hover:brightness-95 dark:hover:brightness-110' : ''}`}
@@ -501,6 +664,12 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                     <button onClick={handlePrint} className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition shadow-sm flex items-center gap-2">
                         <i className="fa-solid fa-print"></i> Export
                     </button>
+
+                    {canManage && viewMode === 'week' && (
+                        <button onClick={runCoverageAudit} className="px-4 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-sm rounded-xl transition shadow-sm flex items-center gap-2">
+                            <i className="fa-solid fa-shield-halved"></i> Audit Coverage
+                        </button>
+                    )}
 
                     {canManage && (
                         <>
@@ -590,18 +759,37 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
 
             {/* AI Assistant Console */}
             {canManage && viewMode === 'week' && (
-                <div className="fixed bottom-0 left-0 right-0 p-4 pointer-events-none z-50">
+                <div className="fixed bottom-0 left-0 right-0 p-4 pointer-events-none z-50 animate-fade-in-up">
                     <div className="max-w-4xl mx-auto pointer-events-auto">
-                        <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl flex items-center gap-4 group hover:border-indigo-500/50 transition">
-                            <div className="bg-indigo-500/20 p-3 rounded-xl"><i className="fa-solid fa-wand-magic-sparkles text-indigo-400"></i></div>
+                        <div className={`bg-slate-900/95 backdrop-blur-xl border ${isRecording ? 'border-rose-500/50 shadow-rose-500/20' : 'border-white/10 hover:border-indigo-500/50'} rounded-2xl p-4 shadow-2xl flex items-center gap-4 transition-all duration-300`}>
+                            <button 
+                                onClick={toggleRecording}
+                                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isRecording ? 'bg-rose-500 text-white animate-pulse' : 'bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-400'}`}
+                                title={isRecording ? "Stop Recording" : "Voice Command"}
+                            >
+                                <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'}`}></i>
+                            </button>
+                            
                             <input 
                                 type="text"
                                 className="flex-1 bg-transparent border-none outline-none text-white placeholder-slate-500 font-medium text-sm"
-                                placeholder="E.g. Schedule Dr. Smith 8am-5pm on Monday... (AI Integration Layer Ready)"
+                                placeholder={isRecording ? "Listening..." : "E.g. Schedule Dr. Smith 8am-5pm on Monday..."}
                                 value={aiQuery}
                                 onChange={e => setAiQuery(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') handleAiSchedule();
+                                }}
+                                disabled={aiProcessing || isRecording}
                             />
-                            <button className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold uppercase transition">Generate</button>
+                            
+                            <button 
+                                onClick={() => handleAiSchedule()}
+                                disabled={aiProcessing || isRecording || !aiQuery.trim()}
+                                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-2 shadow-lg shadow-indigo-600/20"
+                            >
+                                {aiProcessing ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-wand-magic-sparkles"></i>}
+                                {aiProcessing ? 'Processing' : 'Generate'}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -660,6 +848,47 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                      facilityName: 'Immediate Care Plus'
                  }} />
             </div>
+
+            {/* COVERAGE AUDIT MODAL */}
+            {showAuditModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg p-6 overflow-hidden flex flex-col max-h-[80vh] border border-slate-200 dark:border-slate-800">
+                        <div className="flex items-center gap-3 mb-4 text-rose-600 dark:text-rose-500">
+                            <div className="bg-rose-100 dark:bg-rose-500/20 p-2 rounded-xl"><i className="fa-solid fa-shield-heart text-xl"></i></div>
+                            <h2 className="text-xl font-black">Coverage Audit Report</h2>
+                        </div>
+                        <div className="overflow-y-auto pr-2 scrollbar-thin">
+                            <div className="mb-6">
+                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-2"><i className="fa-solid fa-triangle-exclamation text-amber-500"></i> Understaffed Days (No Provider)</h3>
+                                {auditResults.understaffed.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {auditResults.understaffed.map(d => (
+                                            <li key={d} className="bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 text-amber-800 dark:text-amber-400 px-3 py-2 rounded-lg text-sm font-bold shadow-sm">{new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric'})}</li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-sm text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 rounded-lg font-bold border border-emerald-100 dark:border-emerald-500/20 shadow-sm"><i className="fa-solid fa-check-circle"></i> All weekdays have provider coverage.</p>
+                                )}
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-2"><i className="fa-solid fa-clock text-rose-500"></i> Overtime Risk ({'>'}40 Hours)</h3>
+                                {auditResults.overtime.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {auditResults.overtime.map(o => (
+                                            <li key={o} className="bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 text-rose-800 dark:text-rose-400 px-3 py-2 rounded-lg text-sm font-bold shadow-sm">{o}</li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-sm text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 rounded-lg font-bold border border-emerald-100 dark:border-emerald-500/20 shadow-sm"><i className="fa-solid fa-check-circle"></i> No staff exceeding 40 hours this week.</p>
+                                )}
+                            </div>
+                        </div>
+                        <div className="mt-6 flex justify-end">
+                            <button onClick={() => setShowAuditModal(false)} className="px-5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold transition">Close Report</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* SHIFT EDITOR MODAL (POPOVER STYLE) */}
             {shiftEditor.isOpen && shiftEditor.dateObj && (
@@ -792,7 +1021,33 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
                                 </label>
                             </div>
 
-                            <div className="flex justify-between items-center">
+                            {/* Call Out Resolver */}
+                            {shiftEditor.shift && (
+                                <div className="mb-5 pt-1 border-t border-slate-100 dark:border-slate-800">
+                                    <button type="button" onClick={findReplacements} className="px-4 py-2 mt-4 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs rounded-xl flex items-center justify-center gap-2 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors border border-amber-100 dark:border-amber-500/20 w-full shadow-sm">
+                                        <i className="fa-solid fa-user-nurse"></i> {aiProcessing && callOutSuggestions.length === 0 ? 'Searching...' : 'Find Replacement (Call-Out)'}
+                                    </button>
+                                    
+                                    {callOutSuggestions.length > 0 && (
+                                        <div className="mt-3 bg-amber-50/50 dark:bg-amber-900/10 p-3 rounded-xl border border-amber-100 dark:border-amber-800/30">
+                                            <p className="text-[10px] uppercase font-black text-amber-700 dark:text-amber-500 mb-2">Available Replacements:</p>
+                                            <div className="flex flex-col gap-2 max-h-32 overflow-y-auto scrollbar-thin">
+                                                {callOutSuggestions.map(u => (
+                                                    <div key={u.id} className="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700">
+                                                        <span className="text-xs font-bold dark:text-slate-200">{u.username || u.full_name}</span>
+                                                        <button type="button" onClick={() => {
+                                                            setShiftEditor(prev => ({...prev, user: u as ExtendedUser, tmpColor: userColorOverrides[u.id] || u.themeColor || 'blue'}));
+                                                            setCallOutSuggestions([]);
+                                                        }} className="text-[10px] bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-700 transition shadow-sm">Assign</button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="flex justify-between items-center mt-6">
                                 <div className="flex gap-2">
                                     {shiftEditor.shift && (
                                         <>

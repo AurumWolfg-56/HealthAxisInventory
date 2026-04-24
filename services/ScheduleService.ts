@@ -238,7 +238,7 @@ export class ScheduleService {
     /**
      * NOTIFICATIONS
      */
-    static async notifyScheduleChange(email?: string): Promise<boolean> {
+    static async notifyScheduleChange(email?: string, shiftDetails?: any): Promise<boolean> {
         try {
             const url = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/send-email';
             const response = await fetch(url, {
@@ -248,7 +248,8 @@ export class ScheduleService {
                 },
                 body: JSON.stringify({
                     type: 'schedule_change',
-                    to: email
+                    to: email,
+                    data: shiftDetails
                 })
             });
             return response.ok;

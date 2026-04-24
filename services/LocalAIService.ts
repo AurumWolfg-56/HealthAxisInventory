@@ -52,7 +52,7 @@ interface ChatOptions {
  * Send a chat completion request to LM Studio.
  * Handles timeouts, endpoint fallback, JSON extraction, and Streaming.
  */
-const chatCompletion = async (
+export const chatCompletion = async (
   messages: ChatMessage[],
   options: ChatOptions = {}
 ): Promise<string> => {

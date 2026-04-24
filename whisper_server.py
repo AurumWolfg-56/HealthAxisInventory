@@ -171,17 +171,42 @@ async def proxy_chat_completions(request: Request):
         if is_vision:
             logger.info(f"[LLM Proxy] 🖼️  Vision request detected — using extended timeout")
 
-        response = await http_client.post(
-            "/v1/chat/completions",
-            content=body,
-            headers={"Content-Type": "application/json"},
-        )
+        # Detect if this is a streaming request
+        is_stream = False
+        try:
+            body_json = _json.loads(body.decode("utf-8"))
+            is_stream = body_json.get("stream", False)
+        except:
+            pass
 
-        logger.info(f"[LLM Proxy] ✅ Response {response.status_code} ({len(response.content)} bytes)")
-        return JSONResponse(
-            status_code=response.status_code,
-            content=response.json(),
-        )
+        if is_stream:
+            # We must use httpx streaming to return Server-Sent Events (SSE)
+            async def stream_generator():
+                try:
+                    async with http_client.stream(
+                        "POST", 
+                        "/v1/chat/completions", 
+                        content=body, 
+                        headers={"Content-Type": "application/json"}
+                    ) as r:
+                        async for chunk in r.aiter_bytes():
+                            yield chunk
+                except Exception as stream_e:
+                    logger.error(f"[LLM Proxy Stream] ❌ Error: {stream_e}")
+
+            return StreamingResponse(stream_generator(), media_type="text/event-stream")
+        else:
+            response = await http_client.post(
+                "/v1/chat/completions",
+                content=body,
+                headers={"Content-Type": "application/json"},
+            )
+
+            logger.info(f"[LLM Proxy] ✅ Response {response.status_code} ({len(response.content)} bytes)")
+            return JSONResponse(
+                status_code=response.status_code,
+                content=response.json(),
+            )
     except httpx.ConnectError:
         logger.error("[LLM Proxy] ❌ Cannot connect to LM Studio at 127.0.0.1:1234")
         return JSONResponse(status_code=502, content={"error": "LM Studio is not running at 127.0.0.1:1234"})
