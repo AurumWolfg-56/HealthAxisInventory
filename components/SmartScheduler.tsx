@@ -16,6 +16,80 @@ interface SmartSchedulerProps {
 
 const SHIFT_COLORS = ['blue', 'emerald', 'rose', 'amber', 'purple', 'indigo', 'cyan', 'fuchsia', 'orange', 'teal'];
 
+// FUZZY MATCHING HELPERS
+const levenshteinDistance = (a: string, b: string): number => {
+    const matrix = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+    for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+    for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+
+    for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+            matrix[i][j] = Math.min(
+                matrix[i - 1][j] + 1,
+                matrix[i][j - 1] + 1,
+                matrix[i - 1][j - 1] + cost
+            );
+        }
+    }
+    return matrix[a.length][b.length];
+};
+
+const findBestUserMatch = (targetName: string, users: ExtendedUser[]): ExtendedUser | null => {
+    if (!targetName) return null;
+    const target = targetName.toLowerCase();
+    
+    // Exact match
+    const exact = users.find(u => (u.username?.toLowerCase() === target) || (u.full_name?.toLowerCase() === target));
+    if (exact) return exact;
+
+    // Partial match
+    const partial = users.find(u => (u.username?.toLowerCase().includes(target)) || (u.full_name?.toLowerCase().includes(target)));
+    if (partial) return partial;
+
+    // Levenshtein fuzzy match
+    let bestUser: ExtendedUser | null = null;
+    let minDistance = Infinity;
+
+    for (const u of users) {
+        const name1 = (u.username || '').toLowerCase();
+        const name2 = (u.full_name || '').toLowerCase();
+        
+        const d1 = levenshteinDistance(target, name1);
+        const d2 = levenshteinDistance(target, name2);
+        
+        const bestD = Math.min(d1, name2 ? d2 : Infinity);
+        
+        if (bestD < minDistance && bestD <= Math.max(3, Math.floor(target.length * 0.4))) {
+            minDistance = bestD;
+            bestUser = u;
+        }
+    }
+    return bestUser;
+};
+
+// DATE RESOLUTION HELPERS
+const mapDayToDates = (daysArr: string[], activeDates: Date[]): string[] => {
+    if (!daysArr || daysArr.length === 0) return [];
+    
+    const dayMap: Record<string, number> = {
+        'sunday': 0, 'monday': 1, 'tuesday': 2, 'wednesday': 3, 'thursday': 4, 'friday': 5, 'saturday': 6,
+        'domingo': 0, 'lunes': 1, 'martes': 2, 'miercoles': 3, 'miércoles': 3, 'jueves': 4, 'viernes': 5, 'sabado': 6, 'sábado': 6
+    };
+
+    const targetDays = daysArr.map(d => dayMap[d.toLowerCase()]).filter(d => d !== undefined);
+    
+    const exactDates: string[] = [];
+    for (const d of activeDates) {
+        if (targetDays.includes(d.getDay())) {
+            // Local date string to avoid timezone offset issues (e.g. 2026-04-28)
+            const localDStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            exactDates.push(localDStr);
+        }
+    }
+    return exactDates;
+};
+
 export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUser, hasPermission, t }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
@@ -179,9 +253,10 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
         setAiProcessing(true);
         try {
             const systemPrompt = `You are a clinical scheduling assistant. The current local date is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
-Parse the user's scheduling request and return a JSON array of shifts to create.
+Parse the user's scheduling request and return a JSON array of intent objects.
 Users in system: ${users.map(u => u.username || u.full_name).join(', ')}.
-Each object MUST have: { user_name: string, date: "YYYY-MM-DD", start_time: "HH:MM", end_time: "HH:MM", notes: string }.
+Each object MUST have: { employee_name: string, days: string[], start_time: "HH:MM", end_time: "HH:MM", notes: string }.
+The 'days' array must contain full day names in English or Spanish (e.g. ["Monday", "Wednesday"]). If the user specifies a specific date (e.g. "tomorrow", "April 28th"), figure out what day of the week that is and put it in the 'days' array.
 Output strictly a valid JSON array, without markdown blocks.`;
 
             const responseText = await chatCompletion([
@@ -208,20 +283,28 @@ Output strictly a valid JSON array, without markdown blocks.`;
 
             const newShifts: Omit<Shift, 'id'>[] = [];
             for (const s of shiftsToCreate) {
-                // Find user by fuzzy match
-                const userMatch = users.find(u => 
-                    (u.username && s.user_name && u.username.toLowerCase().includes(s.user_name.toLowerCase())) ||
-                    (u.full_name && s.user_name && u.full_name.toLowerCase().includes(s.user_name.toLowerCase()))
-                ) || users[0]; // fallback
+                const userMatch = findBestUserMatch(s.employee_name || s.user_name, users as ExtendedUser[]);
+                if (!userMatch) {
+                    console.warn("Could not find matching user for:", s.employee_name);
+                    continue; // Skip if no confident match
+                }
+
+                // Map intention days to exact calendar dates
+                const exactDates = mapDayToDates(s.days || [], activeDates);
                 
-                if (userMatch) {
+                // Fallback for legacy format or direct date string
+                if (exactDates.length === 0 && s.date) {
+                    exactDates.push(s.date);
+                }
+
+                for (const dateStr of exactDates) {
                     newShifts.push({
                         user_id: userMatch.id,
-                        date: s.date,
+                        date: dateStr,
                         start_time: s.start_time,
                         end_time: s.end_time,
                         notes: s.notes || 'AI Scheduled',
-                        role_type: userMatch.role === 'DOCTOR' ? 'provider' : 'staff'
+                        role_type: userMatch.role === 'DOCTOR' || userMatch.role === 'OWNER' ? 'provider' : 'staff'
                     });
                 }
             }
