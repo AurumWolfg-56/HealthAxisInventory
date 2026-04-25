@@ -308,9 +308,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log('[AuthContext] 🔔 Auth event:', event, '| hasSession:', !!session);
 
             if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+                let activeToken = session.access_token;
+                
+                // CRITICAL FIX: INITIAL_SESSION synchronously returns cached session, which might be expired.
+                // Calling getSession() forces the client to check expiry and refresh if needed.
+                if (event === 'INITIAL_SESSION') {
+                    const { data: { session: freshSession }, error } = await supabase.auth.getSession();
+                    if (error || !freshSession) {
+                        console.warn('[AuthContext] ⚠️ Cached session was expired and could not be refreshed.');
+                        setAccessToken(null);
+                        setUser(null);
+                        if (roleConfigsLoaded) setIsLoading(false);
+                        return;
+                    }
+                    activeToken = freshSession.access_token;
+                }
+
                 console.log('[AuthContext] ✅ Session via', event, '— caching token + fetching profile');
-                setAccessToken(session.access_token);
-                await fetchProfile(session.user, session.access_token);
+                setAccessToken(activeToken);
+                await fetchProfile(session.user, activeToken);
             } else if (event === 'INITIAL_SESSION' && !session) {
                 console.log('[AuthContext] ⚠️ No session on init');
                 setAccessToken(null);
