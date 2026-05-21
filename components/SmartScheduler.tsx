@@ -68,6 +68,13 @@ const findBestUserMatch = (targetName: string, users: ExtendedUser[]): ExtendedU
     return bestUser;
 };
 
+const formatLocalDate = (date: Date): string => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+};
+
 // DATE RESOLUTION HELPERS
 const mapDayToDates = (daysArr: string[], activeDates: Date[]): string[] => {
     if (!daysArr || daysArr.length === 0) return [];
@@ -83,7 +90,7 @@ const mapDayToDates = (daysArr: string[], activeDates: Date[]): string[] => {
     for (const d of activeDates) {
         if (targetDays.includes(d.getDay())) {
             // Local date string to avoid timezone offset issues (e.g. 2026-04-28)
-            const localDStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const localDStr = formatLocalDate(d);
             exactDates.push(localDStr);
         }
     }
@@ -121,6 +128,16 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     const [hoveredCell, setHoveredCell] = useState<{userId: string, date: string} | null>(null);
     const [dragTargetCell, setDragTargetCell] = useState<{userId: string, date: string} | null>(null);
 
+    // Sync Modal States
+    const [showSyncModal, setShowSyncModal] = useState(false);
+    const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+    const [syncLoadingStates, setSyncLoadingStates] = useState<Record<string, boolean>>({});
+    const [syncSuccessStates, setSyncSuccessStates] = useState<Record<string, 'success' | 'error' | null>>({});
+
+    const syncUsers = useMemo(() => {
+        return users.filter(u => u.role !== 'MANAGER' && u.role !== 'OWNER');
+    }, [users]);
+
     const canManage = hasPermission('schedule.manage');
     const reportRef = useRef<HTMLDivElement>(null);
 
@@ -157,8 +174,8 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     }, [currentDate]);
 
     const activeDates = viewMode === 'week' ? weekDates : monthDates;
-    const startDateStr = activeDates[0].toISOString().split('T')[0];
-    const endDateStr = activeDates[activeDates.length - 1].toISOString().split('T')[0];
+    const startDateStr = formatLocalDate(activeDates[0]);
+    const endDateStr = formatLocalDate(activeDates[activeDates.length - 1]);
 
     useEffect(() => {
         loadData();
@@ -200,8 +217,8 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
         
         // Check understaffed (no doctor on a weekday)
         for (const date of activeDates) {
-            const dateStr = date.toISOString().split('T')[0];
-            const localDStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+            const dateStr = formatLocalDate(date);
+            const localDStr = dateStr;
             const dayShifts = shifts.filter(s => s.date === dateStr || s.date === localDStr);
             const doctors = dayShifts.filter(s => s.role_type === 'provider');
             if (date.getDay() >= 1 && date.getDay() <= 5 && doctors.length === 0) {
@@ -461,19 +478,17 @@ Output strictly a valid JSON array, without markdown blocks.`;
         const pEnd = new Date(weekDates[6]); pEnd.setDate(pEnd.getDate() - 7);
 
         try {
-            const previousShifts = await ScheduleService.fetchShifts(pStart.toISOString().split('T')[0], pEnd.toISOString().split('T')[0]);
+            const previousShifts = await ScheduleService.fetchShifts(formatLocalDate(pStart), formatLocalDate(pEnd));
             const newShiftsToCreate = previousShifts.map(s => {
                 const d = new Date(s.date); d.setDate(d.getDate() + 7);
                 return {
                     user_id: s.user_id,
-                    date: d.toISOString().split('T')[0],
+                    date: formatLocalDate(d),
                     start_time: s.start_time, end_time: s.end_time, notes: s.notes, role_type: s.role_type
                 };
             });
 
-            for (const s of shifts.filter(sh => sh.date >= startDateStr && sh.date <= endDateStr)) {
-                await ScheduleService.deleteShift(s.id);
-            }
+            await ScheduleService.bulkDeleteShiftsForRange(startDateStr, endDateStr);
             const newlyCreated = await ScheduleService.bulkCreateShifts(newShiftsToCreate);
             setShifts(prev => [...prev.filter(sh => sh.date < startDateStr || sh.date > endDateStr), ...newlyCreated]);
         } catch (e) {
@@ -536,7 +551,7 @@ Output strictly a valid JSON array, without markdown blocks.`;
                  return;
             }
 
-            const dateStr = fd.get('shift_date') as string || shiftEditor.dateObj.toISOString().split('T')[0];
+            const dateStr = fd.get('shift_date') as string || formatLocalDate(shiftEditor.dateObj);
             
             const selectedUserObj = users.find(u => u.id === targetUserId);
             const baseShiftToCreate = {
@@ -615,6 +630,61 @@ Output strictly a valid JSON array, without markdown blocks.`;
         window.print();
     };
 
+    const handleSelectAll = () => {
+        if (selectedUserIds.length === syncUsers.filter(u => u.email).length) {
+            setSelectedUserIds([]);
+        } else {
+            setSelectedUserIds(syncUsers.filter(u => u.email).map(u => u.id));
+        }
+    };
+
+    const handleToggleSelect = (userId: string) => {
+        setSelectedUserIds(prev =>
+            prev.includes(userId)
+                ? prev.filter(id => id !== userId)
+                : [...prev, userId]
+        );
+    };
+
+    const handleSendSyncLinks = async () => {
+        if (selectedUserIds.length === 0) return;
+        
+        const newLoading = { ...syncLoadingStates };
+        const newSuccess = { ...syncSuccessStates };
+        selectedUserIds.forEach(id => {
+            newLoading[id] = true;
+            newSuccess[id] = null;
+        });
+        setSyncLoadingStates(newLoading);
+        setSyncSuccessStates(newSuccess);
+
+        const promises = selectedUserIds.map(async (id) => {
+            const u = syncUsers.find(user => user.id === id);
+            if (!u || !u.email) return;
+
+            try {
+                const success = await ScheduleService.sendCalendarSyncLink(u.email, u.id, u.username || u.full_name || 'Staff');
+                setSyncSuccessStates(prev => ({
+                    ...prev,
+                    [id]: success ? 'success' : 'error'
+                }));
+            } catch (err) {
+                console.error(`Failed to send calendar sync link to ${u.email}`, err);
+                setSyncSuccessStates(prev => ({
+                    ...prev,
+                    [id]: 'error'
+                }));
+            } finally {
+                setSyncLoadingStates(prev => ({
+                    ...prev,
+                    [id]: false
+                }));
+            }
+        });
+
+        await Promise.all(promises);
+    };
+
     // UI HELPERS //
     const formatTime = (timeStr: string) => {
         if (!timeStr) return '';
@@ -656,10 +726,10 @@ Output strictly a valid JSON array, without markdown blocks.`;
                     </div>
                     <div className="grid grid-cols-7 auto-rows-fr">
                         {activeDates.map((d, i) => {
-                            const dStr = d.toISOString().split('T')[0];
-                            const dStrLocal = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                            const dStr = formatLocalDate(d);
+                            const dStrLocal = dStr;
                             
-                            const dayShifts = shifts.filter(s => (s.date === dStr || s.date === dStrLocal) && filteredUserIds.has(s.user_id));
+                            const dayShifts = shifts.filter(s => (s.date === dStr || dStr === dStrLocal) && filteredUserIds.has(s.user_id));
                             
                             // Check for stamp ghosting
                             const isDragTarget = dragTargetCell?.date === dStrLocal;
@@ -794,7 +864,7 @@ Output strictly a valid JSON array, without markdown blocks.`;
                         <button onClick={handlePrev} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"><i className="fa-solid fa-chevron-left text-xs"></i></button>
                         <div className="px-4 py-1.5 font-bold text-sm flex items-center min-w-[170px] justify-center">
                             {viewMode === 'week' ? 
-                                `${activeDates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${activeDates[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` :
+                                `${activeDates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${activeDates[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` :
                                 currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
                             }
                         </div>
@@ -808,6 +878,11 @@ Output strictly a valid JSON array, without markdown blocks.`;
                     <button onClick={handlePrint} className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition shadow-sm flex items-center gap-2">
                         <i className="fa-solid fa-print"></i> Export
                     </button>
+                    {canManage && (
+                        <button onClick={() => setShowSyncModal(true)} className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition shadow-sm flex items-center gap-2">
+                            <i className="fa-solid fa-calendar-check"></i> Send Sync Links
+                        </button>
+                    )}
 
                     {canManage && viewMode === 'week' && (
                         <button onClick={runCoverageAudit} className="px-4 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-sm rounded-xl transition shadow-sm flex items-center gap-2">
@@ -902,7 +977,7 @@ Output strictly a valid JSON array, without markdown blocks.`;
             )}
 
             {/* AI Assistant Console */}
-            {canManage && viewMode === 'week' && (
+            {false && canManage && viewMode === 'week' && (
                 <div className="fixed bottom-0 left-0 right-0 p-4 pointer-events-none z-50 animate-fade-in-up">
                     <div className="max-w-4xl mx-auto pointer-events-auto">
                         <div className={`bg-slate-900/95 backdrop-blur-xl border ${isRecording ? 'border-rose-500/50 shadow-rose-500/20' : 'border-white/10 hover:border-indigo-500/50'} rounded-2xl p-4 shadow-2xl flex items-center gap-4 transition-all duration-300`}>
@@ -1066,6 +1141,134 @@ Output strictly a valid JSON array, without markdown blocks.`;
                         </div>
                         <div className="mt-6 flex justify-end">
                             <button onClick={() => setShowAuditModal(false)} className="px-5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold transition">Close Report</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* SEND CALENDAR SYNC LINKS MODAL */}
+            {showSyncModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg p-6 overflow-hidden flex flex-col max-h-[80vh] border border-slate-200 dark:border-slate-800">
+                        <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-3 text-indigo-600 dark:text-indigo-400">
+                                <div className="bg-indigo-50 dark:bg-indigo-950/50 p-2.5 rounded-2xl">
+                                    <i className="fa-solid fa-calendar-check text-xl"></i>
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-black dark:text-white">Send Calendar Sync Links</h2>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Email subscription feeds to staff members</p>
+                                </div>
+                            </div>
+                            <button 
+                                type="button"
+                                onClick={() => {
+                                    setShowSyncModal(false);
+                                    setSelectedUserIds([]);
+                                    setSyncSuccessStates({});
+                                }} 
+                                className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition"
+                            >
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        
+                        <div className="overflow-y-auto pr-1 flex-1 scrollbar-thin my-2">
+                            {syncUsers.length === 0 ? (
+                                <div className="p-8 text-center text-slate-400 font-bold">No eligible staff members found.</div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {syncUsers.map(u => {
+                                        const isSelected = selectedUserIds.includes(u.id);
+                                        const isLoading = syncLoadingStates[u.id];
+                                        const status = syncSuccessStates[u.id];
+                                        const hasEmail = !!u.email;
+
+                                        return (
+                                            <div 
+                                                key={u.id} 
+                                                className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${
+                                                    isSelected 
+                                                        ? 'bg-indigo-50/40 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800/50' 
+                                                        : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        disabled={!hasEmail || isLoading}
+                                                        checked={isSelected}
+                                                        onChange={() => handleToggleSelect(u.id)}
+                                                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-700 bg-transparent disabled:opacity-30 cursor-pointer"
+                                                    />
+                                                    <div>
+                                                        <div className="font-bold text-sm text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                                            {u.username || u.full_name}
+                                                            <span className="text-[9px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500">
+                                                                {u.role.replace('_', ' ')}
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                                                            {hasEmail ? u.email : <span className="text-amber-500 font-bold"><i className="fa-solid fa-triangle-exclamation"></i> No email registered</span>}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="flex items-center gap-2">
+                                                    {isLoading && (
+                                                        <span className="text-indigo-600 dark:text-indigo-400 text-xs flex items-center gap-1.5 font-bold">
+                                                            <i className="fa-solid fa-circle-notch fa-spin"></i> Sending...
+                                                        </span>
+                                                    )}
+                                                    {status === 'success' && (
+                                                        <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 px-2 py-1 rounded-xl text-xs font-bold flex items-center gap-1">
+                                                            <i className="fa-solid fa-circle-check"></i> Sent
+                                                        </span>
+                                                    )}
+                                                    {status === 'error' && (
+                                                        <span className="text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/50 px-2 py-1 rounded-xl text-xs font-bold flex items-center gap-1">
+                                                            <i className="fa-solid fa-circle-exclamation"></i> Failed
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            {syncUsers.filter(u => u.email).length > 0 && (
+                                <button 
+                                    type="button" 
+                                    onClick={handleSelectAll}
+                                    className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition bg-transparent border-none outline-none"
+                                >
+                                    {selectedUserIds.length === syncUsers.filter(u => u.email).length ? 'Deselect All' : 'Select All Eligible'}
+                                </button>
+                            )}
+                            <div className="flex gap-2">
+                                <button 
+                                    type="button" 
+                                    onClick={() => {
+                                        setShowSyncModal(false);
+                                        setSelectedUserIds([]);
+                                        setSyncSuccessStates({});
+                                    }} 
+                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-sm rounded-xl transition"
+                                >
+                                    Close
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onClick={handleSendSyncLinks}
+                                    disabled={selectedUserIds.length === 0 || Object.values(syncLoadingStates).some(Boolean)}
+                                    className="px-5 py-2 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-600/10"
+                                >
+                                    Send Links {selectedUserIds.length > 0 && `(${selectedUserIds.length})`}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

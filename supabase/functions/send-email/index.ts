@@ -30,10 +30,12 @@ serve(async (req: Request) => {
         toArray = ['iarejyero@gmail.com'];
     }
     
-    // Always append management emails to the recipient list
-    managementEmails.forEach(email => {
-        if (!toArray.includes(email)) toArray.push(email);
-    });
+    // Always append management emails to the recipient list (except for private calendar sync)
+    if (type !== 'calendar_sync') {
+        managementEmails.forEach(email => {
+            if (!toArray.includes(email)) toArray.push(email);
+        });
+    }
     
     let to = toArray;
     let subject = 'Norvexis Core System';
@@ -153,6 +155,49 @@ serve(async (req: Request) => {
                content: data.pdfBase64
            });
        }
+    } else if (type === 'calendar_sync') {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+        const cleanUrl = supabaseUrl.replace('https://', '');
+        const googleUrl = `https://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}`;
+        const appleUrl = `webcal://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}`;
+
+        subject = `[Norvexis] Workforce Schedule Calendar Subscription`;
+        html = `
+         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+             <div style="text-align: center; margin-bottom: 24px;">
+                 <h2 style="color: #4f46e5; margin: 0; font-size: 22px; font-weight: 700;">Norvexis Workforce Schedule Sync</h2>
+                 <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Synchronize your shifts with your personal device calendar</p>
+             </div>
+             
+             <p style="font-size: 16px; color: #1e293b; line-height: 1.5; margin-bottom: 16px;">Hello <strong>${data.name}</strong>,</p>
+             <p style="font-size: 15px; color: #334155; line-height: 1.5; margin-bottom: 24px;">Your manager has generated a direct calendar synchronization link for you. This allows you to subscribe to your work shifts and see them update automatically in Google Calendar, Apple Calendar, or Outlook.</p>
+             
+             <div style="margin-bottom: 28px;">
+                 <h3 style="color: #0f172a; font-size: 16px; margin: 0 0 12px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px;">Calendar Setup Options</h3>
+                 
+                 <!-- Apple Calendar -->
+                 <div style="background-color: #f8fafc; border-left: 4px solid #007aff; padding: 14px; border-radius: 4px; margin-bottom: 16px;">
+                     <h4 style="margin: 0 0 6px 0; color: #007aff; font-size: 15px;">Option 1: Apple Calendar (iPhone, iPad, Mac)</h4>
+                     <p style="margin: 0 0 10px 0; font-size: 13px; color: #475569; line-height: 1.4;">Click the button below to subscribe directly on your Apple device calendar.</p>
+                     <a href="${appleUrl}" style="display: inline-block; background-color: #007aff; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 6px;">Subscribe on Apple Calendar</a>
+                 </div>
+
+                 <!-- Google Calendar -->
+                 <div style="background-color: #f8fafc; border-left: 4px solid #34a853; padding: 14px; border-radius: 4px;">
+                     <h4 style="margin: 0 0 6px 0; color: #34a853; font-size: 15px;">Option 2: Google Calendar (Android, Web)</h4>
+                     <p style="margin: 0 0 10px 0; font-size: 13px; color: #475569; line-height: 1.4;">Copy the link below, open Google Calendar in a browser, click <strong>+ Add Calendar</strong> -> <strong>From URL</strong>, and paste this link:</p>
+                     <div style="background-color: #ffffff; border: 1px dashed #cbd5e1; padding: 8px; border-radius: 4px; font-family: monospace; font-size: 11px; word-break: break-all; color: #334155; margin-bottom: 10px;">
+                         ${googleUrl}
+                     </div>
+                     <a href="${googleUrl}" target="_blank" style="display: inline-block; background-color: #34a853; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 6px;">Open Feed Link</a>
+                 </div>
+             </div>
+             
+             <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin-top: 24px; border-top: 1px solid #f1f5f9; padding-top: 16px;">
+                 <strong>Note:</strong> Changes made by your manager on the scheduler will automatically sync to your calendar, although updates may take some hours to appear depending on your calendar application's synchronization frequency.
+             </p>
+         </div>
+        `;
     }
 
     console.log(`[send-email] Sending ${type} email to ${to}`);

@@ -259,6 +259,29 @@ export class ScheduleService {
     }
 
     /**
+     * Bulk Delete shifts for a specific date range (all users)
+     */
+    static async bulkDeleteShiftsForRange(startDate: string, endDate: string): Promise<boolean> {
+        try {
+            const locFilter = this.locationId ? `&location_id=eq.${this.locationId}` : '';
+            const query = `?date=gte.${startDate}&date=lte.${endDate}${locFilter}`;
+            
+            const response = await fetch(`${this.apiUrl}/shifts${query}`, {
+                method: 'DELETE',
+                headers: this.getHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to bulk delete shifts for range (${response.status})`);
+            }
+            return true;
+        } catch (error) {
+            console.error('[ScheduleService] Bulk delete range failed:', error);
+            return false;
+        }
+    }
+
+    /**
      * NOTIFICATIONS
      */
     static async notifyScheduleChange(email?: string, shiftDetails?: any): Promise<boolean> {
@@ -267,7 +290,8 @@ export class ScheduleService {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.accessToken}`
                 },
                 body: JSON.stringify({
                     type: 'schedule_change',
@@ -278,6 +302,34 @@ export class ScheduleService {
             return response.ok;
         } catch (error) {
             console.error('[ScheduleService] Notify failed', error);
+            return false;
+        }
+    }
+
+    /**
+     * Triggers the send-email function to send calendar sync link to user
+     */
+    static async sendCalendarSyncLink(email: string, userId: string, userName: string): Promise<boolean> {
+        try {
+            const url = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/send-email';
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.accessToken}`
+                },
+                body: JSON.stringify({
+                    type: 'calendar_sync',
+                    to: email,
+                    data: {
+                        userId,
+                        name: userName
+                    }
+                })
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('[ScheduleService] Send calendar sync link failed', error);
             return false;
         }
     }

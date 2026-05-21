@@ -34,10 +34,15 @@ const DeleteUserSchema = z.object({
   })
 });
 
+const ListUsersSchema = z.object({
+  action: z.literal('list_users')
+});
+
 const RootSchema = z.discriminatedUnion('action', [
   InviteUserSchema,
   UpdatePermissionsSchema,
-  DeleteUserSchema
+  DeleteUserSchema,
+  ListUsersSchema
 ]);
 
 serve(async (req) => {
@@ -180,6 +185,22 @@ serve(async (req) => {
         if (error) throw error
 
         return new Response(JSON.stringify({ success: true }), {
+          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        })
+      }
+
+      case 'list_users': {
+        const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers()
+        if (listError) throw listError
+
+        const mappedUsers = users.map((u: any) => ({
+          id: u.id,
+          email: u.email,
+          created_at: u.created_at,
+          last_sign_in_at: u.last_sign_in_at
+        }))
+
+        return new Response(JSON.stringify({ success: true, users: mappedUsers }), {
           headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
         })
       }
