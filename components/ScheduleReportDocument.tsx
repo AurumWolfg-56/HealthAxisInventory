@@ -309,16 +309,16 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                             z-index: 9999 !important;
                         }
                         .month-page {
-                            page-break-after: avoid !important;
-                            break-after: avoid !important;
-                            page-break-inside: avoid !important;
-                            break-inside: avoid !important;
                             box-sizing: border-box !important;
                             background-color: #ffffff !important;
                             width: 297mm !important;
                             min-height: 200mm !important;
                             padding: 10mm 12mm !important;
                             margin: 0 !important;
+                        }
+                        tr {
+                            page-break-inside: avoid !important;
+                            break-inside: avoid !important;
                         }
                         * {
                             -webkit-print-color-adjust: exact !important;
@@ -455,7 +455,7 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                     </div>
 
                     {/* Calendar Grid Table */}
-                    <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', flex: 1, margin: '8px 0' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', margin: '12px 0' }}>
                         <thead>
                             <tr>
                                 {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(dayName => (
@@ -523,7 +523,7 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                 <div style={{ 
                                                     display: 'flex', 
                                                     flexDirection: 'column', 
-                                                    gap: '2px'
+                                                    gap: '3px'
                                                 }}>
                                                     {dayShifts.map(s => {
                                                         const u = users.find(user => user.id === s.user_id);
@@ -532,24 +532,22 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                         return (
                                                             <div key={s.id} style={{
                                                                 backgroundColor: theme.bg,
-                                                                borderLeft: `2.5px solid ${theme.border}`,
-                                                                borderRadius: '2px',
-                                                                padding: '1.5px 3px',
-                                                                fontSize: '7px',
+                                                                borderLeft: `3px solid ${theme.border}`,
+                                                                borderRadius: '3px',
+                                                                padding: '2.5px 5px',
+                                                                fontSize: '8px',
                                                                 fontWeight: '700',
                                                                 color: theme.text,
-                                                                whiteSpace: 'nowrap',
-                                                                overflow: 'hidden',
-                                                                textOverflow: 'ellipsis',
                                                                 display: 'flex',
-                                                                justifyContent: 'space-between',
-                                                                alignItems: 'center'
+                                                                flexDirection: 'column',
+                                                                gap: '1px',
+                                                                boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
                                                             }} title={`${u.username}: ${formatCompactTime(s.start_time)} - ${formatCompactTime(s.end_time)}`}>
-                                                                <span style={{ fontWeight: '800', marginRight: '3px' }}>
+                                                                <span style={{ fontWeight: '800', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                                     {u.username}
                                                                 </span>
-                                                                <span style={{ fontSize: '6.5px', opacity: 0.9 }}>
-                                                                    {formatCompactTime(s.start_time)}-{formatCompactTime(s.end_time)}
+                                                                <span style={{ fontSize: '7px', opacity: 0.85, whiteSpace: 'nowrap' }}>
+                                                                    {formatCompactTime(s.start_time)} - {formatCompactTime(s.end_time)}
                                                                 </span>
                                                             </div>
                                                         );
@@ -561,17 +559,23 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                         return (
                                                             <div key={t.id} style={{
                                                                 backgroundColor: '#fff1f2',
-                                                                borderLeft: '2.5px solid #f43f5e',
-                                                                borderRadius: '2px',
-                                                                padding: '1.5px 3px',
-                                                                fontSize: '7px',
+                                                                borderLeft: '3px solid #f43f5e',
+                                                                borderRadius: '3px',
+                                                                padding: '2.5px 5px',
+                                                                fontSize: '8px',
                                                                 fontWeight: '700',
                                                                 color: '#9f1239',
-                                                                whiteSpace: 'nowrap',
-                                                                overflow: 'hidden',
-                                                                textOverflow: 'ellipsis'
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                gap: '1px',
+                                                                boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
                                                             }} title={`${u.username} Off: ${t.reason || 'Approved'}`}>
-                                                                🚫 {u.username} Off
+                                                                <span style={{ fontWeight: '800', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                    🚫 {u.username}
+                                                                </span>
+                                                                <span style={{ fontSize: '7px', opacity: 0.85, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                    {t.reason || 'Off'}
+                                                                </span>
                                                             </div>
                                                         );
                                                     })}
