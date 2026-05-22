@@ -141,15 +141,14 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     const canManage = hasPermission('schedule.manage');
     const reportRef = useRef<HTMLDivElement>(null);
 
-    // DATES LOGIC //
     const weekDates = useMemo(() => {
         const date = new Date(currentDate);
         const day = date.getDay();
-        const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-        const monday = new Date(date.setDate(diff));
+        const diff = date.getDate() - day; // Starts on Sunday (day 0)
+        const sunday = new Date(date.setDate(diff));
         return Array.from({ length: 7 }).map((_, i) => {
-            const d = new Date(monday);
-            d.setDate(monday.getDate() + i);
+            const d = new Date(sunday);
+            d.setDate(sunday.getDate() + i);
             return d;
         });
     }, [currentDate]);
@@ -158,15 +157,14 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         const firstDayOfMonth = new Date(year, month, 1);
-        const lastDayOfMonth = new Date(year, month + 1, 0);
         
-        // Find the Monday of the first week
+        // Find the Sunday of the first week (starts on Sunday to match column headers)
         const startDate = new Date(firstDayOfMonth);
         const startDay = startDate.getDay();
-        startDate.setDate(startDate.getDate() - (startDay === 0 ? 6 : startDay - 1));
+        startDate.setDate(startDate.getDate() - startDay);
         
-        // Generate exactly 35 days (5 weeks)
-        return Array.from({ length: 35 }).map((_, i) => {
+        // Generate exactly 42 days (6 weeks) to prevent monthly overflow from clipping days
+        return Array.from({ length: 42 }).map((_, i) => {
             const d = new Date(startDate);
             d.setDate(startDate.getDate() + i);
             return d;
@@ -554,17 +552,25 @@ Output strictly a valid JSON array, without markdown blocks.`;
             const dateStr = fd.get('shift_date') as string || formatLocalDate(shiftEditor.dateObj);
             
             const selectedUserObj = users.find(u => u.id === targetUserId);
+            const targetRoleType = (selectedUserObj?.role === 'DOCTOR' || selectedUserObj?.role === 'OWNER') ? 'provider' as const : 'staff' as const;
             const baseShiftToCreate = {
                 user_id: targetUserId,
                 start_time: start,
                 end_time: end,
                 notes: notes,
-                role_type: selectedUserObj?.role === 'DOCTOR' ? 'provider' as const : 'staff' as const
+                role_type: targetRoleType
             };
 
             if (shiftEditor.shift && !repeatMonth) {
                 // Update
-                const updated = await ScheduleService.updateShift(shiftEditor.shift.id, { date: dateStr, start_time: start, end_time: end, notes });
+                const updated = await ScheduleService.updateShift(shiftEditor.shift.id, {
+                    date: dateStr,
+                    start_time: start,
+                    end_time: end,
+                    notes,
+                    user_id: targetUserId,
+                    role_type: targetRoleType
+                });
                 if (updated) {
                     setShifts(prev => {
                         const filtered = prev.filter(s => s.id !== updated.id);
@@ -728,8 +734,10 @@ Output strictly a valid JSON array, without markdown blocks.`;
                         {activeDates.map((d, i) => {
                             const dStr = formatLocalDate(d);
                             const dStrLocal = dStr;
+                            const isToday = dStr === formatLocalDate(new Date());
+                            const showMonthLabel = d.getDate() === 1 || i === 0;
                             
-                            const dayShifts = shifts.filter(s => (s.date === dStr || dStr === dStrLocal) && filteredUserIds.has(s.user_id));
+                            const dayShifts = shifts.filter(s => s.date === dStr && filteredUserIds.has(s.user_id));
                             
                             // Check for stamp ghosting
                             const isDragTarget = dragTargetCell?.date === dStrLocal;
@@ -738,7 +746,7 @@ Output strictly a valid JSON array, without markdown blocks.`;
                             return (
                                 <div 
                                     key={dStr}
-                                    className={`min-h-[140px] border-b border-r border-slate-100/60 dark:border-slate-800/60 p-1.5 relative group transition-colors ${i % 7 === 6 ? 'border-r-0' : ''} ${canManage && clipboardShift ? 'cursor-cell hover:bg-indigo-50/40 dark:hover:bg-indigo-900/20' : 'hover:bg-slate-50/40 dark:hover:bg-slate-800/40'} ${isDragTarget ? 'bg-indigo-50/50 dark:bg-indigo-900/30 shadow-inner' : ''}`}
+                                    className={`min-h-[140px] border-b border-r border-slate-100/60 dark:border-slate-800/60 p-1.5 relative group transition-colors ${i % 7 === 6 ? 'border-r-0' : ''} ${isToday ? 'bg-indigo-50/20 dark:bg-indigo-950/15' : ''} ${canManage && clipboardShift ? 'cursor-cell hover:bg-indigo-50/40 dark:hover:bg-indigo-900/20' : 'hover:bg-slate-50/40 dark:hover:bg-slate-800/40'} ${isDragTarget ? 'bg-indigo-50/50 dark:bg-indigo-900/30 shadow-inner' : ''}`}
                                     onClick={() => {
                                         if (!canManage) return;
                                         if (clipboardShift) {
@@ -777,7 +785,27 @@ Output strictly a valid JSON array, without markdown blocks.`;
                                     } : undefined}
                                 >
                                     <div className="flex justify-between items-center mb-1.5 px-1">
-                                        <span className={`text-xs font-black ${d.getMonth() !== currentDate.getMonth() ? 'text-slate-300 dark:text-slate-600' : 'text-slate-600 dark:text-slate-300'}`}>{d.getDate()}{i < 7 && d.getDate() === 1 ? ` ${d.toLocaleDateString('en-US',{month:'short'})}` : ''}</span>
+                                        {isToday ? (
+                                            <span className="flex items-center gap-1.5">
+                                                <span className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black shadow-sm">
+                                                    {d.getDate()}
+                                                </span>
+                                                {showMonthLabel && (
+                                                    <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                                                        {d.toLocaleDateString('en-US', { month: 'short' })}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        ) : (
+                                            <span className={`text-xs font-black ${d.getMonth() !== currentDate.getMonth() ? 'text-slate-300 dark:text-slate-600' : 'text-slate-600 dark:text-slate-300'}`}>
+                                                {d.getDate()}
+                                                {showMonthLabel && (
+                                                    <span className="ml-1 text-[10px] font-black opacity-80 uppercase tracking-wider">
+                                                        {d.toLocaleDateString('en-US', { month: 'short' })}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        )}
                                         {canManage && !clipboardShift && (
                                             <button className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded-full bg-slate-100 hover:bg-indigo-100 text-slate-400 hover:text-indigo-600 dark:bg-slate-800 dark:hover:bg-indigo-900/50 flex items-center justify-center text-[10px] transition-all"><i className="fa-solid fa-plus"></i></button>
                                         )}
@@ -861,6 +889,9 @@ Output strictly a valid JSON array, without markdown blocks.`;
 
                     {/* Date Navigation */}
                     <div className="flex bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-1">
+                        <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-lg transition mr-1">
+                            Today
+                        </button>
                         <button onClick={handlePrev} className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"><i className="fa-solid fa-chevron-left text-xs"></i></button>
                         <div className="px-4 py-1.5 font-bold text-sm flex items-center min-w-[170px] justify-center">
                             {viewMode === 'week' ? 
