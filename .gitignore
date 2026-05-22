@@ -26,3 +26,6 @@ dist-ssr
 *.sln
 *.sw?
 eng.traineddata
+
+# Local Git multi-account guide
+MULTIPLE_GITHUB_ACCOUNTS_GUIDE.md
