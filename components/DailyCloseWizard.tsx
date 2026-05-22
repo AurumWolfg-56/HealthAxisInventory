@@ -477,11 +477,17 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                         .from('daily_reports')
                         .getPublicUrl(filePath);
 
+                    const { data: { session } } = await supabase.auth.getSession();
+                    const token = session?.access_token;
+
                     const emailUrl = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/send-email';
                     
                     const res = await fetch(emailUrl, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
                         body: JSON.stringify({
                             type: 'daily_close',
                             data: {
