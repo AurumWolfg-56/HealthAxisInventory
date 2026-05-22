@@ -82,6 +82,42 @@ const getPrintTheme = (colorName: string): PrintTheme => {
             border: '#f97316',
             text: '#7c2d12',
             timeText: '#ea580c'
+        },
+        pink: {
+            bg: '#fdf2f8',
+            border: '#ec4899',
+            text: '#9d174d',
+            timeText: '#db2777'
+        },
+        sky: {
+            bg: '#f0f9ff',
+            border: '#0ea5e9',
+            text: '#075985',
+            timeText: '#0284c7'
+        },
+        violet: {
+            bg: '#f5f3ff',
+            border: '#8b5cf6',
+            text: '#5b21b6',
+            timeText: '#7c3aed'
+        },
+        lime: {
+            bg: '#f7fee7',
+            border: '#84cc16',
+            text: '#3f6212',
+            timeText: '#65a30d'
+        },
+        red: {
+            bg: '#fef2f2',
+            border: '#ef4444',
+            text: '#991b1b',
+            timeText: '#dc2626'
+        },
+        slate: {
+            bg: '#f8fafc',
+            border: '#64748b',
+            text: '#334155',
+            timeText: '#475569'
         }
     };
     return map[colorName] || map['blue'];

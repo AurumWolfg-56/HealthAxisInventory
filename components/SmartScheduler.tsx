@@ -14,7 +14,7 @@ interface SmartSchedulerProps {
     t: any;
 }
 
-const SHIFT_COLORS = ['blue', 'emerald', 'rose', 'amber', 'purple', 'indigo', 'cyan', 'fuchsia', 'orange', 'teal'];
+const SHIFT_COLORS = ['blue', 'emerald', 'rose', 'amber', 'purple', 'indigo', 'teal', 'cyan', 'fuchsia', 'orange', 'pink', 'sky', 'violet', 'lime', 'red', 'slate'];
 
 // FUZZY MATCHING HELPERS
 const levenshteinDistance = (a: string, b: string): number => {
@@ -737,6 +737,12 @@ Output strictly a valid JSON array, without markdown blocks.`;
             cyan: 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-l-cyan-500 dark:border-l-cyan-400',
             fuchsia: 'bg-fuchsia-100 dark:bg-fuchsia-500/20 text-fuchsia-700 dark:text-fuchsia-300 border-l-fuchsia-500 dark:border-l-fuchsia-400',
             orange: 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 border-l-orange-500 dark:border-l-orange-400',
+            pink: 'bg-pink-100 dark:bg-pink-500/20 text-pink-700 dark:text-pink-300 border-l-pink-500 dark:border-l-pink-400',
+            sky: 'bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 border-l-sky-500 dark:border-l-sky-400',
+            violet: 'bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 border-l-violet-500 dark:border-l-violet-400',
+            lime: 'bg-lime-100 dark:bg-lime-500/20 text-lime-700 dark:text-lime-300 border-l-lime-500 dark:border-l-lime-400',
+            red: 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 border-l-red-500 dark:border-l-red-400',
+            slate: 'bg-slate-100 dark:bg-slate-500/20 text-slate-700 dark:text-slate-300 border-l-slate-500 dark:border-l-slate-400',
         };
         return map[colorName] || map['blue'];
     };
@@ -1412,27 +1418,31 @@ Output strictly a valid JSON array, without markdown blocks.`;
                             </div>
 
                             {/* Color & Presets */}
-                            <div className="flex items-center justify-between mb-5">
-                                <div className="flex items-center gap-1">
-                                    {SHIFT_COLORS.slice(0, 5).map(color => (
-                                        <button 
-                                            key={color} 
-                                            type="button"
-                                            onClick={() => {
-                                                setShiftEditor(prev => ({...prev, tmpColor: color}));
-                                                if (shiftEditor.user) {
-                                                    const newOverrides = { ...userColorOverrides, [shiftEditor.user.id]: color };
-                                                    setUserColorOverrides(newOverrides);
-                                                    localStorage.setItem('HA_USER_COLORS', JSON.stringify(newOverrides));
-                                                }
-                                            }}
-                                            className={`w-5 h-5 rounded-full border-2 transition-all ${shiftEditor.tmpColor === color ? 'border-slate-800 dark:border-white scale-110' : 'border-transparent hover:scale-110'} ${getThemeClasses(color).split(' ')[0]}`}
-                                        />
-                                    ))}
-                                </div>
-                                <div className="flex gap-1">
-                                    <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '10:00', tmpEnd: '20:00'}))} className="px-2 py-1 bg-slate-100 text-[9px] font-bold uppercase rounded text-slate-500">10-8</button>
-                                    <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '10:00', tmpEnd: '18:00'}))} className="px-2 py-1 bg-slate-100 text-[9px] font-bold uppercase rounded text-slate-500">10-6</button>
+                            <div className="flex flex-col gap-2 mb-5">
+                                <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Staff Member Theme Color</label>
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="flex flex-wrap gap-1.5 max-w-[280px]">
+                                        {SHIFT_COLORS.map(color => (
+                                            <button 
+                                                key={color} 
+                                                type="button"
+                                                onClick={() => {
+                                                    setShiftEditor(prev => ({...prev, tmpColor: color}));
+                                                    if (shiftEditor.user) {
+                                                        const newOverrides = { ...userColorOverrides, [shiftEditor.user.id]: color };
+                                                        setUserColorOverrides(newOverrides);
+                                                        localStorage.setItem('HA_USER_COLORS', JSON.stringify(newOverrides));
+                                                    }
+                                                }}
+                                                className={`w-5 h-5 rounded-full border-2 transition-all ${shiftEditor.tmpColor === color ? 'border-slate-800 dark:border-white scale-110' : 'border-transparent hover:scale-110'} ${getThemeClasses(color).split(' ')[0]}`}
+                                                title={color}
+                                            />
+                                        ))}
+                                    </div>
+                                    <div className="flex gap-1 shrink-0 self-end">
+                                        <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '10:00', tmpEnd: '20:00'}))} className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-[9px] font-bold uppercase rounded text-slate-500 dark:text-slate-400">10-8</button>
+                                        <button type="button" onClick={() => setShiftEditor(prev => ({...prev, tmpStart: '10:00', tmpEnd: '18:00'}))} className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-[9px] font-bold uppercase rounded text-slate-500 dark:text-slate-400">10-6</button>
+                                    </div>
                                 </div>
                             </div>
 
