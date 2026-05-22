@@ -523,6 +523,7 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                         const u = users.find(user => user.id === s.user_id);
                                                         if (!u) return null;
                                                         const theme = getPrintTheme(u.themeColor || 'blue');
+                                                        const uName = u.username || (u as any).full_name || 'Unknown';
                                                         return (
                                                             <div key={s.id} style={{
                                                                 backgroundColor: theme.bg,
@@ -541,8 +542,8 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                                 overflow: 'hidden',
                                                                 textOverflow: 'ellipsis',
                                                                 lineHeight: '1.2'
-                                                            }} title={`${u.username}: ${formatCompactTime(s.start_time)} - ${formatCompactTime(s.end_time)}`}>
-                                                                <span style={{ fontWeight: '800' }}>{u.username}</span>
+                                                            }} title={`${uName}: ${formatCompactTime(s.start_time)} - ${formatCompactTime(s.end_time)}`}>
+                                                                <span style={{ fontWeight: '800' }}>{uName}</span>
                                                                 <span style={{ fontSize: '7.5px', opacity: 0.85, marginLeft: '3px' }}>
                                                                     ({formatCompactTime(s.start_time)}-{formatCompactTime(s.end_time)})
                                                                 </span>
@@ -553,6 +554,7 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                     {dayTimeOffs.map(t => {
                                                         const u = users.find(user => user.id === t.user_id);
                                                         if (!u) return null;
+                                                        const uName = u.username || (u as any).full_name || 'Unknown';
                                                         return (
                                                             <div key={t.id} style={{
                                                                 backgroundColor: '#fff1f2',
@@ -571,8 +573,8 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                                 overflow: 'hidden',
                                                                 textOverflow: 'ellipsis',
                                                                 lineHeight: '1.2'
-                                                            }} title={`${u.username} Off: ${t.reason || 'Approved'}`}>
-                                                                <span style={{ fontWeight: '800' }}>🚫 {u.username}</span>
+                                                            }} title={`${uName} Off: ${t.reason || 'Approved'}`}>
+                                                                <span style={{ fontWeight: '800' }}>🚫 {uName}</span>
                                                                 <span style={{ fontSize: '7.5px', opacity: 0.85, marginLeft: '3px' }}>
                                                                     ({t.reason || 'Off'})
                                                                 </span>
