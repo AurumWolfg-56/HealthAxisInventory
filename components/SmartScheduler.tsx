@@ -120,6 +120,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     const [callOutSuggestions, setCallOutSuggestions] = useState<ExtendedUser[]>([]);
     const [showAuditModal, setShowAuditModal] = useState(false);
     const [auditResults, setAuditResults] = useState<{understaffed: string[], overtime: string[]}>({understaffed: [], overtime: []});
+    const [isExporting, setIsExporting] = useState(false);
     
     // Modals
     const [showTimeOffModal, setShowTimeOffModal] = useState(false);
@@ -633,7 +634,31 @@ Output strictly a valid JSON array, without markdown blocks.`;
     };
 
     const handlePrint = () => {
-        window.print();
+        if (!reportRef.current || !(window as any).html2pdf) {
+            alert("PDF generator not ready. Please wait.");
+            return;
+        }
+        setIsExporting(true);
+        setTimeout(() => {
+            const opt = {
+                margin: 0,
+                filename: `Schedule_Roster_${viewMode === 'week' ? 'Week' : 'Month'}_${startDateStr}_to_${endDateStr}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+                pagebreak: { mode: ['css', 'legacy'] }
+            };
+            (window as any).html2pdf()
+                .set(opt)
+                .from(reportRef.current)
+                .save()
+                .then(() => setIsExporting(false))
+                .catch((e: any) => {
+                    console.error(e);
+                    setIsExporting(false);
+                    alert("Failed to export PDF.");
+                });
+        }, 150);
     };
 
     const handleSelectAll = () => {
@@ -906,8 +931,17 @@ Output strictly a valid JSON array, without markdown blocks.`;
                     <button onClick={() => setShowTimeOffModal(true)} className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition shadow-sm flex items-center gap-2">
                         <i className="fa-regular fa-calendar-xmark"></i> Request Block
                     </button>
-                    <button onClick={handlePrint} className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition shadow-sm flex items-center gap-2">
-                        <i className="fa-solid fa-print"></i> Export
+                    <button 
+                        onClick={handlePrint} 
+                        disabled={isExporting}
+                        className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isExporting ? (
+                            <i className="fa-solid fa-circle-notch animate-spin"></i>
+                        ) : (
+                            <i className="fa-solid fa-file-pdf text-rose-500"></i>
+                        )}
+                        {isExporting ? 'Exporting...' : 'Export PDF'}
                     </button>
                     {canManage && (
                         <button onClick={() => setShowSyncModal(true)} className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition shadow-sm flex items-center gap-2">
@@ -1122,18 +1156,30 @@ Output strictly a valid JSON array, without markdown blocks.`;
                 </div>
             )}
 
-            {/* NATIVE CSS PRINT DOCUMENT */}
-            <div id="schedule-report-document-container" className="hidden print:block absolute inset-0 w-full min-h-screen bg-white z-[999]">
-                 <ScheduleReportDocument data={{
-                     users: colorMappedUsers,
-                     shifts,
-                     timeOffRequests,
-                     startDate: startDateStr,
-                     endDate: endDateStr,
-                     reportDate: new Date().toLocaleDateString(),
-                     author: currentUser?.username || 'Unknown',
-                     facilityName: 'Immediate Care Plus'
-                 }} />
+            {/* HIDDEN PRINT/EXPORT CONTAINER */}
+            <div 
+                id="schedule-report-document-container" 
+                className="print:block"
+                style={{ 
+                    position: 'absolute', 
+                    top: '-10000px', 
+                    left: '-10000px', 
+                    width: '1122px', 
+                    backgroundColor: '#ffffff' 
+                }}
+            >
+                <div ref={reportRef}>
+                     <ScheduleReportDocument data={{
+                         users: colorMappedUsers,
+                         shifts,
+                         timeOffRequests,
+                         startDate: startDateStr,
+                         endDate: endDateStr,
+                         reportDate: new Date().toLocaleDateString(),
+                         author: currentUser?.username || 'Unknown',
+                         facilityName: 'Immediate Care Plus'
+                     }} />
+                </div>
             </div>
 
             {/* COVERAGE AUDIT MODAL */}

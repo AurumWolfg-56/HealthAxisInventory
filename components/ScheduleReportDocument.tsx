@@ -161,7 +161,9 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                 {/* Staff Member Info Column */}
                 <td style={{ 
                     padding: '10px 12px', 
-                    border: '1px solid #cbd5e1', 
+                    borderBottom: '1px solid #cbd5e1',
+                    borderLeft: '1px solid #cbd5e1',
+                    borderRight: '1px solid #cbd5e1',
                     fontWeight: 'bold', 
                     color: '#334155',
                     verticalAlign: 'middle',
@@ -196,7 +198,8 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                         <td key={d.toISOString()} style={{ 
                             padding: '6px 6px', 
                             textAlign: 'center', 
-                            border: '1px solid #cbd5e1',
+                            borderBottom: '1px solid #cbd5e1',
+                            borderRight: '1px solid #cbd5e1',
                             verticalAlign: 'middle',
                             backgroundColor: d.getDay() === 0 || d.getDay() === 6 ? '#f8fafc' : '#ffffff'
                         }}>
@@ -292,6 +295,8 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
             return !shifts.some(s => s.date === dStrLocal && users.some(u => u.id === s.user_id && ['DOCTOR', 'OWNER'].includes(u.role)));
         });
 
+        const cellHeight = weekRows.length === 6 ? 90 : 108;
+
         return (
             <div id="schedule-report-document" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 <style dangerouslySetInnerHTML={{ __html: `
@@ -309,12 +314,10 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                             z-index: 9999 !important;
                         }
                         .month-page {
-                            box-sizing: border-box !important;
-                            background-color: #ffffff !important;
                             width: 297mm !important;
-                            min-height: 200mm !important;
+                            height: 210mm !important;
+                            min-height: 210mm !important;
                             padding: 10mm 12mm !important;
-                            margin: 0 !important;
                         }
                         tr {
                             page-break-inside: avoid !important;
@@ -328,24 +331,12 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                     .month-page {
                         box-sizing: border-box;
                         background-color: #ffffff;
-                        width: 297mm;
-                        min-height: 210mm;
-                        padding: 12mm 15mm;
-                        margin: 0 auto 20px auto;
-                        border: 1px solid #e2e8f0;
-                        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-                        border-radius: 8px;
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: space-between;
-                    }
-                    @media print {
-                        .month-page {
-                            border: none !important;
-                            box-shadow: none !important;
-                            margin: 0 !important;
-                            border-radius: 0 !important;
-                        }
+                        width: 1122px;
+                        height: 793px;
+                        padding: 24px 32px 48px 32px;
+                        margin: 0;
+                        position: relative;
+                        overflow: hidden;
                     }
                 `}} />
 
@@ -455,10 +446,10 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                     </div>
 
                     {/* Calendar Grid Table */}
-                    <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', margin: '12px 0' }}>
+                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed', margin: '12px 0 0 0' }}>
                         <thead>
                             <tr>
-                                {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(dayName => (
+                                {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((dayName, dayIdx) => (
                                     <th key={dayName} style={{
                                         padding: '5px',
                                         backgroundColor: '#0f172a',
@@ -466,7 +457,10 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                         fontSize: '8.5px',
                                         fontWeight: '800',
                                         textAlign: 'center',
-                                        border: '1px solid #334155',
+                                        borderTop: '1px solid #334155',
+                                        borderBottom: '1px solid #334155',
+                                        borderRight: '1px solid #334155',
+                                        borderLeft: dayIdx === 0 ? '1px solid #334155' : 'none',
                                         letterSpacing: '0.05em'
                                     }}>
                                         {dayName}
@@ -476,8 +470,8 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                         </thead>
                         <tbody>
                             {weekRows.map((weekDates, weekIdx) => (
-                                <tr key={weekIdx} style={{ height: '23mm' }}>
-                                    {weekDates.map(d => {
+                                <tr key={weekIdx} style={{ height: `${cellHeight}px` }}>
+                                    {weekDates.map((d, dayIdx) => {
                                         const dStrLocal = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
                                         const dayShifts = shifts.filter(s => s.date === dStrLocal && users.some(u => u.id === s.user_id));
                                         const dayTimeOffs = timeOffRequests.filter(t => t.status === 'approved' && t.start_date <= dStrLocal && t.end_date >= dStrLocal && users.some(u => u.id === t.user_id));
@@ -487,13 +481,17 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
 
                                         return (
                                             <td key={d.toISOString()} style={{
-                                                border: '1px solid #cbd5e1',
+                                                borderBottom: '1px solid #cbd5e1',
+                                                borderRight: '1px solid #cbd5e1',
+                                                borderLeft: dayIdx === 0 ? '1px solid #cbd5e1' : 'none',
                                                 padding: '4px 6px',
                                                 verticalAlign: 'top',
-                                                backgroundColor: isWeekend ? '#f8fafc' : '#ffffff',
-                                                opacity: isDayInPrimaryMonth ? 1 : 0.45,
-                                                height: '23mm',
-                                                position: 'relative'
+                                                backgroundColor: !isDayInPrimaryMonth
+                                                    ? (isWeekend ? '#f1f5f9' : '#f8fafc')
+                                                    : (isWeekend ? '#f8fafc' : '#ffffff'),
+                                                height: `${cellHeight}px`,
+                                                position: 'relative',
+                                                boxSizing: 'border-box'
                                             }}>
                                                 <div style={{ 
                                                     display: 'flex', 
@@ -520,11 +518,7 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                     )}
                                                 </div>
 
-                                                <div style={{ 
-                                                    display: 'flex', 
-                                                    flexDirection: 'column', 
-                                                    gap: '3px'
-                                                }}>
+                                                <div style={{ display: 'block' }}>
                                                     {dayShifts.map(s => {
                                                         const u = users.find(user => user.id === s.user_id);
                                                         if (!u) return null;
@@ -534,20 +528,23 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                                 backgroundColor: theme.bg,
                                                                 borderLeft: `3px solid ${theme.border}`,
                                                                 borderRadius: '3px',
-                                                                padding: '2.5px 5px',
+                                                                padding: '2px 4px',
                                                                 fontSize: '8px',
                                                                 fontWeight: '700',
                                                                 color: theme.text,
-                                                                display: 'flex',
-                                                                flexDirection: 'column',
-                                                                gap: '1px',
-                                                                boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                                                                display: 'block',
+                                                                marginBottom: '2px',
+                                                                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                                                                textAlign: 'left',
+                                                                boxSizing: 'border-box',
+                                                                whiteSpace: 'nowrap',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                                lineHeight: '1.2'
                                                             }} title={`${u.username}: ${formatCompactTime(s.start_time)} - ${formatCompactTime(s.end_time)}`}>
-                                                                <span style={{ fontWeight: '800', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                    {u.username}
-                                                                </span>
-                                                                <span style={{ fontSize: '7px', opacity: 0.85, whiteSpace: 'nowrap' }}>
-                                                                    {formatCompactTime(s.start_time)} - {formatCompactTime(s.end_time)}
+                                                                <span style={{ fontWeight: '800' }}>{u.username}</span>
+                                                                <span style={{ fontSize: '7.5px', opacity: 0.85, marginLeft: '3px' }}>
+                                                                    ({formatCompactTime(s.start_time)}-{formatCompactTime(s.end_time)})
                                                                 </span>
                                                             </div>
                                                         );
@@ -561,20 +558,23 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                                 backgroundColor: '#fff1f2',
                                                                 borderLeft: '3px solid #f43f5e',
                                                                 borderRadius: '3px',
-                                                                padding: '2.5px 5px',
+                                                                padding: '2px 4px',
                                                                 fontSize: '8px',
                                                                 fontWeight: '700',
                                                                 color: '#9f1239',
-                                                                display: 'flex',
-                                                                flexDirection: 'column',
-                                                                gap: '1px',
-                                                                boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                                                                display: 'block',
+                                                                marginBottom: '2px',
+                                                                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                                                                textAlign: 'left',
+                                                                boxSizing: 'border-box',
+                                                                whiteSpace: 'nowrap',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                                lineHeight: '1.2'
                                                             }} title={`${u.username} Off: ${t.reason || 'Approved'}`}>
-                                                                <span style={{ fontWeight: '800', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                    🚫 {u.username}
-                                                                </span>
-                                                                <span style={{ fontSize: '7px', opacity: 0.85, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                    {t.reason || 'Off'}
+                                                                <span style={{ fontWeight: '800' }}>🚫 {u.username}</span>
+                                                                <span style={{ fontSize: '7.5px', opacity: 0.85, marginLeft: '3px' }}>
+                                                                    ({t.reason || 'Off'})
                                                                 </span>
                                                             </div>
                                                         );
@@ -590,6 +590,10 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
 
                     {/* Footer */}
                     <div style={{
+                        position: 'absolute',
+                        bottom: '24px',
+                        left: '32px',
+                        right: '32px',
                         paddingTop: '8px',
                         borderTop: '1px solid #f1f5f9',
                         display: 'flex',
@@ -609,7 +613,22 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
         );
     } else {
         // Week Roster View (existing weekly paginated layout)
-        const weekChunks: Date[][] = [dates]; // since it's <= 7 days, there's only 1 chunk
+        const combinedUsers = [
+            ...providers.map(u => ({ ...u, isProvider: true })),
+            ...supportStaff.map(u => ({ ...u, isProvider: false }))
+        ];
+
+        const USERS_PER_PAGE = 8;
+        const userChunks: typeof combinedUsers[] = [];
+        if (combinedUsers.length === 0) {
+            userChunks.push([]);
+        } else {
+            for (let i = 0; i < combinedUsers.length; i += USERS_PER_PAGE) {
+                userChunks.push(combinedUsers.slice(i, i + USERS_PER_PAGE));
+            }
+        }
+        
+        const totalPages = userChunks.length;
 
         return (
             <div id="schedule-report-document" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -627,53 +646,42 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                             background-color: #ffffff !important;
                             z-index: 9999 !important;
                         }
-                        .weekly-page {
-                            page-break-after: always !important;
-                            break-after: page !important;
-                            box-sizing: border-box !important;
-                            background-color: #ffffff !important;
-                            width: 297mm !important;
-                            min-height: 200mm !important;
-                            padding: 10mm 12mm !important;
-                            margin: 0 !important;
-                        }
-                        .weekly-page:last-child {
-                            page-break-after: auto !important;
-                            break-after: auto !important;
-                        }
                         * {
                             -webkit-print-color-adjust: exact !important;
                             print-color-adjust: exact !important;
+                        }
+                        .weekly-page {
+                            width: 297mm !important;
+                            height: 210mm !important;
+                            min-height: 210mm !important;
+                            padding: 10mm 12mm !important;
                         }
                     }
                     
                     .weekly-page {
                         box-sizing: border-box;
                         background-color: #ffffff;
-                        width: 297mm;
-                        min-height: 210mm;
-                        padding: 12mm 15mm;
-                        margin: 0 auto 20px auto;
-                        border: 1px solid #e2e8f0;
-                        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-                        border-radius: 8px;
+                        width: 1122px;
+                        height: 793px;
+                        padding: 24px 32px 48px 32px;
+                        margin: 0;
+                        position: relative;
+                        overflow: hidden;
+                        page-break-after: always;
+                        break-after: page;
                     }
-                    @media print {
-                        .weekly-page {
-                            border: none !important;
-                            box-shadow: none !important;
-                            margin: 0 !important;
-                            border-radius: 0 !important;
-                        }
+                    .weekly-page:last-child {
+                        page-break-after: auto;
+                        break-after: auto;
                     }
                 `}} />
 
-                {weekChunks.map((weekDates, chunkIdx) => {
-                    const weekRangeStr = formatWeekRange(weekDates);
+                {userChunks.map((userChunk, pageIdx) => {
+                    const weekRangeStr = formatWeekRange(dates);
 
-                    // Compute KPI variables for this specific week chunk
+                    // Compute KPI variables for this week
                     const weekShifts = shifts.filter(s => {
-                        return weekDates.some(d => {
+                        return dates.some(d => {
                             const dStrLocal = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
                             return s.date === dStrLocal;
                         });
@@ -684,7 +692,7 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
 
                     const weekTotalHours = weekShifts.reduce((sum, s) => sum + getShiftHours(s), 0);
 
-                    const weekdays = weekDates.filter(d => d.getDay() >= 1 && d.getDay() <= 5);
+                    const weekdays = dates.filter(d => d.getDay() >= 1 && d.getDay() <= 5);
                     const unstaffedDays = weekdays.filter(d => {
                         const dStrLocal = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
                         const hasProvider = shifts.some(s => s.date === dStrLocal && users.some(u => u.id === s.user_id && ['DOCTOR', 'OWNER'].includes(u.role)));
@@ -692,7 +700,7 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                     });
 
                     return (
-                        <div key={chunkIdx} className="weekly-page">
+                        <div key={pageIdx} className="weekly-page">
                             {/* Header Strip */}
                             <div style={{ 
                                 backgroundColor: '#0f172a', 
@@ -702,18 +710,18 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                 display: 'flex', 
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                marginBottom: '16px'
+                                marginBottom: '12px'
                             }}>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#ffffff' }}>
+                                    <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#ffffff' }}>
                                         Health<span style={{ color: '#38bdf8' }}>Axis</span>
                                     </h1>
-                                    <span style={{ fontSize: '8px', fontWeight: 'bold', color: '#94a3b8', letterSpacing: '0.2em', textTransform: 'uppercase', marginTop: '4px' }}>
+                                    <span style={{ fontSize: '7.5px', fontWeight: 'bold', color: '#94a3b8', letterSpacing: '0.2em', textTransform: 'uppercase', marginTop: '3px' }}>
                                         Official Operations Roster
                                     </span>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: '8px', fontWeight: 'bold', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    <div style={{ fontSize: '7.5px', fontWeight: 'bold', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         {facilityName || 'Immediate Care Plus'}
                                     </div>
                                     <div style={{ fontSize: '13px', fontWeight: '800', color: '#ffffff', marginTop: '2px' }}>
@@ -727,109 +735,111 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                 backgroundColor: '#f8fafc',
                                 border: '1px solid #e2e8f0',
                                 borderRadius: '6px',
-                                padding: '8px 12px',
+                                padding: '6px 12px',
                                 display: 'flex',
                                 justifyContent: 'space-between',
-                                fontSize: '8.5px',
+                                fontSize: '8px',
                                 fontWeight: 'bold',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.05em',
                                 color: '#64748b',
-                                marginBottom: '16px'
+                                marginBottom: '12px'
                             }}>
                                 <div>Period: <span style={{ color: '#0ea5e9' }}>{startDate} to {endDate}</span></div>
                                 <div>Generated By: <span style={{ color: '#0f172a' }}>{author}</span></div>
                                 <div>Timestamp: <span style={{ color: '#0f172a' }}>{reportDate} {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span></div>
                             </div>
 
-                            {/* Dashboard KPIs Strip */}
-                            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-                                <div style={{
-                                    flex: 1,
-                                    backgroundColor: '#f8fafc',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '8px',
-                                    padding: '10px 14px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px'
-                                }}>
+                            {/* Dashboard KPIs Strip - only on pageIdx === 0 */}
+                            {pageIdx === 0 && (
+                                <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
                                     <div style={{
-                                        width: '32px',
-                                        height: '32px',
-                                        borderRadius: '50%',
-                                        backgroundColor: '#e0f2fe',
-                                        color: '#0284c7',
+                                        flex: 1,
+                                        backgroundColor: '#f8fafc',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
+                                        padding: '10px 14px',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '14px'
-                                    }}>👥</div>
-                                    <div>
-                                        <div style={{ fontSize: '8px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Scheduled Staff</div>
-                                        <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', marginTop: '2px' }}>{activeStaffCount} Active</div>
+                                        gap: '12px'
+                                    }}>
+                                        <div style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            backgroundColor: '#e0f2fe',
+                                            color: '#0284c7',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '14px'
+                                        }}>👥</div>
+                                        <div>
+                                            <div style={{ fontSize: '8px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Scheduled Staff</div>
+                                            <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', marginTop: '2px' }}>{activeStaffCount} Active</div>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div style={{
-                                    flex: 1,
-                                    backgroundColor: '#f8fafc',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '8px',
-                                    padding: '10px 14px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px'
-                                }}>
                                     <div style={{
-                                        width: '32px',
-                                        height: '32px',
-                                        borderRadius: '50%',
-                                        backgroundColor: '#f3e8ff',
-                                        color: '#7e22ce',
+                                        flex: 1,
+                                        backgroundColor: '#f8fafc',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
+                                        padding: '10px 14px',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '14px'
-                                    }}>⏱️</div>
-                                    <div>
-                                        <div style={{ fontSize: '8px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Hours</div>
-                                        <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', marginTop: '2px' }}>{weekTotalHours.toFixed(1)} hrs</div>
+                                        gap: '12px'
+                                    }}>
+                                        <div style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            backgroundColor: '#f3e8ff',
+                                            color: '#7e22ce',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '14px'
+                                        }}>⏱️</div>
+                                        <div>
+                                            <div style={{ fontSize: '8px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Hours</div>
+                                            <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', marginTop: '2px' }}>{weekTotalHours.toFixed(1)} hrs</div>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div style={{
-                                    flex: 1.2,
-                                    backgroundColor: unstaffedDays.length === 0 ? '#f0fdf4' : '#fffbeb',
-                                    border: unstaffedDays.length === 0 ? '1px solid #bbf7d0' : '1px solid #fde68a',
-                                    borderRadius: '8px',
-                                    padding: '10px 14px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px'
-                                }}>
                                     <div style={{
-                                        width: '32px',
-                                        height: '32px',
-                                        borderRadius: '50%',
-                                        backgroundColor: unstaffedDays.length === 0 ? '#dcfce7' : '#fef3c7',
-                                        color: unstaffedDays.length === 0 ? '#15803d' : '#d97706',
+                                        flex: 1.2,
+                                        backgroundColor: unstaffedDays.length === 0 ? '#f0fdf4' : '#fffbeb',
+                                        border: unstaffedDays.length === 0 ? '1px solid #bbf7d0' : '1px solid #fde68a',
+                                        borderRadius: '8px',
+                                        padding: '10px 14px',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '14px'
-                                    }}>{unstaffedDays.length === 0 ? '🛡️' : '⚠️'}</div>
-                                    <div>
-                                        <div style={{ fontSize: '8px', color: unstaffedDays.length === 0 ? '#166534' : '#92400e', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Coverage Status</div>
-                                        <div style={{ fontSize: '11px', fontWeight: '800', color: unstaffedDays.length === 0 ? '#14532d' : '#78350f', marginTop: '2px' }}>
-                                            {unstaffedDays.length === 0 ? 'Fully Provider Staffed' : `Understaffed: ${unstaffedDays.map(d => d.toLocaleDateString('en-US', { weekday: 'short' })).join(', ')}`}
+                                        gap: '12px'
+                                    }}>
+                                        <div style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            backgroundColor: unstaffedDays.length === 0 ? '#dcfce7' : '#fef3c7',
+                                            color: unstaffedDays.length === 0 ? '#15803d' : '#d97706',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '14px'
+                                        }}>{unstaffedDays.length === 0 ? '🛡️' : '⚠️'}</div>
+                                        <div>
+                                            <div style={{ fontSize: '8px', color: unstaffedDays.length === 0 ? '#166534' : '#92400e', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Coverage Status</div>
+                                            <div style={{ fontSize: '11px', fontWeight: '800', color: unstaffedDays.length === 0 ? '#14532d' : '#78350f', marginTop: '2px' }}>
+                                                {unstaffedDays.length === 0 ? 'Fully Provider Staffed' : `Understaffed: ${unstaffedDays.map(d => d.toLocaleDateString('en-US', { weekday: 'short' })).join(', ')}`}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Week Table */}
-                            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed' }}>
                                 <thead>
                                     <tr>
                                         <th style={{ 
@@ -841,17 +851,22 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                             fontSize: '10px', 
                                             textTransform: 'uppercase', 
                                             letterSpacing: '0.05em',
-                                            border: '1px solid #334155'
+                                            borderTop: '1px solid #334155',
+                                            borderBottom: '1px solid #334155',
+                                            borderLeft: '1px solid #334155',
+                                            borderRight: '1px solid #334155'
                                         }}>
                                             Staff Member
                                         </th>
-                                        {weekDates.map(d => (
+                                        {dates.map(d => (
                                             <th key={d.toISOString()} style={{ 
                                                 padding: '10px 6px', 
                                                 textAlign: 'center', 
                                                 backgroundColor: '#0f172a', 
                                                 color: '#ffffff',
-                                                border: '1px solid #334155',
+                                                borderTop: '1px solid #334155',
+                                                borderBottom: '1px solid #334155',
+                                                borderRight: '1px solid #334155',
                                                 verticalAlign: 'middle'
                                             }}>
                                                 <div style={{ fontSize: '8px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>
@@ -865,70 +880,76 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {/* Clinical Providers Section */}
-                                    {providers.length > 0 && (
-                                        <>
-                                            <tr style={{ backgroundColor: '#f1f5f9' }}>
-                                                <td colSpan={weekDates.length + 1} style={{ 
-                                                    padding: '8px 12px', 
-                                                    fontWeight: '800', 
-                                                    fontSize: '9px', 
-                                                    color: '#475569', 
-                                                    textTransform: 'uppercase', 
-                                                    letterSpacing: '0.08em',
-                                                    border: '1px solid #cbd5e1',
-                                                    borderLeft: '4px solid #64748b',
-                                                    backgroundColor: '#f1f5f9',
-                                                    textAlign: 'left'
-                                                }}>
-                                                    Clinical Providers
-                                                </td>
-                                            </tr>
-                                            {providers.map((u, idx) => renderUserRow(u, idx, weekDates))}
-                                        </>
-                                    )}
-
-                                    {/* Support Staff Section */}
-                                    {supportStaff.length > 0 && (
-                                        <>
-                                            <tr style={{ backgroundColor: '#f1f5f9' }}>
-                                                <td colSpan={weekDates.length + 1} style={{ 
-                                                    padding: '8px 12px', 
-                                                    fontWeight: '800', 
-                                                    fontSize: '9px', 
-                                                    color: '#475569', 
-                                                    textTransform: 'uppercase', 
-                                                    letterSpacing: '0.08em',
-                                                    border: '1px solid #cbd5e1',
-                                                    borderLeft: '4px solid #64748b',
-                                                    backgroundColor: '#f1f5f9',
-                                                    textAlign: 'left'
-                                                }}>
-                                                    Support Staff
-                                                </td>
-                                            </tr>
-                                            {supportStaff.map((u, idx) => renderUserRow(u, idx, weekDates))}
-                                        </>
-                                    )}
+                                    {userChunk.map((u, idx) => {
+                                        const showProviderHeader = u.isProvider && (idx === 0 || !userChunk[idx - 1].isProvider);
+                                        const showSupportHeader = !u.isProvider && (idx === 0 || userChunk[idx - 1].isProvider);
+                                        
+                                        return (
+                                            <React.Fragment key={u.id}>
+                                                {showProviderHeader && (
+                                                    <tr style={{ backgroundColor: '#f1f5f9' }}>
+                                                        <td colSpan={dates.length + 1} style={{ 
+                                                            padding: '8px 12px', 
+                                                            fontWeight: '800', 
+                                                            fontSize: '9px', 
+                                                            color: '#475569', 
+                                                            textTransform: 'uppercase', 
+                                                            letterSpacing: '0.08em',
+                                                            borderBottom: '1px solid #cbd5e1',
+                                                            borderRight: '1px solid #cbd5e1',
+                                                            borderLeft: '4px solid #64748b',
+                                                            backgroundColor: '#f1f5f9',
+                                                            textAlign: 'left'
+                                                        }}>
+                                                            Clinical Providers
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                                {showSupportHeader && (
+                                                    <tr style={{ backgroundColor: '#f1f5f9' }}>
+                                                        <td colSpan={dates.length + 1} style={{ 
+                                                            padding: '8px 12px', 
+                                                            fontWeight: '800', 
+                                                            fontSize: '9px', 
+                                                            color: '#475569', 
+                                                            textTransform: 'uppercase', 
+                                                            letterSpacing: '0.08em',
+                                                            borderBottom: '1px solid #cbd5e1',
+                                                            borderRight: '1px solid #cbd5e1',
+                                                            borderLeft: '4px solid #64748b',
+                                                            backgroundColor: '#f1f5f9',
+                                                            textAlign: 'left'
+                                                        }}>
+                                                            Support Staff
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                                {renderUserRow(u, idx, dates)}
+                                            </React.Fragment>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
 
                             {/* Page Footer */}
                             <div style={{
-                                marginTop: '24px',
-                                paddingTop: '12px',
+                                position: 'absolute',
+                                bottom: '24px',
+                                left: '32px',
+                                right: '32px',
+                                paddingTop: '8px',
                                 borderTop: '1px solid #f1f5f9',
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                fontSize: '8px',
+                                fontSize: '7.5px',
                                 color: '#94a3b8',
                                 textTransform: 'uppercase',
                                 fontWeight: 'bold',
                                 letterSpacing: '0.05em'
                             }}>
                                 <div>CONFIDENTIAL - FOR INTERNAL USE ONLY</div>
-                                <div>Page {chunkIdx + 1} of {weekChunks.length}</div>
+                                <div>Page {pageIdx + 1} of {totalPages}</div>
                             </div>
                         </div>
                     );
