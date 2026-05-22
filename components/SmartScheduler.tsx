@@ -1125,7 +1125,7 @@ Output strictly a valid JSON array, without markdown blocks.`;
             {/* NATIVE CSS PRINT DOCUMENT */}
             <div id="schedule-report-document-container" className="hidden print:block absolute inset-0 w-full min-h-screen bg-white z-[999]">
                  <ScheduleReportDocument data={{
-                     users: colorMappedUsers.filter(u => activeTab === 'providers' ? ['DOCTOR'].includes(u.role) : ['MANAGER', 'OWNER', 'MA', 'FRONT_DESK'].includes(u.role)),
+                     users: colorMappedUsers,
                      shifts,
                      timeOffRequests,
                      startDate: startDateStr,
