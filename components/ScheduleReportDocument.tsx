@@ -599,8 +599,8 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                         border: '1px solid #fca5a5',
                                                         color: '#991b1b',
                                                         borderRadius: '3px',
-                                                        padding: '2px 4px',
-                                                        fontSize: '8px',
+                                                        padding: '3px 4px',
+                                                        fontSize: '9.5px',
                                                         fontWeight: '800',
                                                         textAlign: 'center',
                                                         marginTop: '4px'
@@ -620,8 +620,8 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                                 backgroundColor: theme.bg,
                                                                 borderLeft: `3px solid ${theme.border}`,
                                                                 borderRadius: '3px',
-                                                                padding: '2px 4px',
-                                                                fontSize: '8px',
+                                                                padding: '3px 5px',
+                                                                fontSize: '10px',
                                                                 fontWeight: '700',
                                                                 color: theme.text,
                                                                 display: 'block',
@@ -635,7 +635,7 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                                 lineHeight: '1.2'
                                                             }} title={`${uName}: ${formatCompactTime(s.start_time)} - ${formatCompactTime(s.end_time)}`}>
                                                                 <span style={{ fontWeight: '800' }}>{uName}</span>
-                                                                <span style={{ fontSize: '7.5px', opacity: 0.85, marginLeft: '3px' }}>
+                                                                <span style={{ fontSize: '9px', opacity: 0.85, marginLeft: '3px' }}>
                                                                     ({formatCompactTime(s.start_time)}-{formatCompactTime(s.end_time)})
                                                                 </span>
                                                             </div>
@@ -651,8 +651,8 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                                 backgroundColor: '#fff1f2',
                                                                 borderLeft: '3px solid #f43f5e',
                                                                 borderRadius: '3px',
-                                                                padding: '2px 4px',
-                                                                fontSize: '8px',
+                                                                padding: '3px 5px',
+                                                                fontSize: '10px',
                                                                 fontWeight: '700',
                                                                 color: '#9f1239',
                                                                 display: 'block',
@@ -666,7 +666,7 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                                 lineHeight: '1.2'
                                                             }} title={`${uName} Off: ${t.reason || 'Approved'}`}>
                                                                 <span style={{ fontWeight: '800' }}>🚫 {uName}</span>
-                                                                <span style={{ fontSize: '7.5px', opacity: 0.85, marginLeft: '3px' }}>
+                                                                <span style={{ fontSize: '9px', opacity: 0.85, marginLeft: '3px' }}>
                                                                     ({t.reason || 'Off'})
                                                                 </span>
                                                             </div>
