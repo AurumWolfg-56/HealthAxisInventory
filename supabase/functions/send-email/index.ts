@@ -8,7 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const RESEND_API_KEY = "re_6H9Qq4rL_8U485mAfZTUddFSV37v2319g";
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || '';
 const resend = new Resend(RESEND_API_KEY);
 
 // Helper to generate VTIMEZONE block for common US timezones

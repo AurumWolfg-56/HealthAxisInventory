@@ -255,5 +255,38 @@ export const UserService = {
             console.error('[UserService] ❌ Error updating permissions:', error);
             throw error;
         }
+    },
+
+    async updateUserEmail(userId: string, email: string): Promise<void> {
+        console.log('[UserService] Updating user email...', userId, email);
+        try {
+            const url = `${SUPABASE_URL}/functions/v1/admin-api`;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({
+                    action: 'update_user_email',
+                    payload: { user_id: userId, email }
+                }),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorBody = await response.text();
+                throw new Error(`Email update failed (${response.status}): ${errorBody}`);
+            }
+
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+
+        } catch (error: any) {
+            console.error('[UserService] ❌ Error updating user email:', error);
+            throw error;
+        }
     }
 };

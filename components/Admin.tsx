@@ -115,9 +115,18 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
         }
     };
 
-    const handleUpdateUser = async (userId: string, updates: { full_name: string; role: UserRole }) => {
+    const handleUpdateUser = async (userId: string, updates: { full_name: string; role: UserRole; email: string }) => {
         try {
-            await UserService.updateUser(userId, updates);
+            const originalUser = users.find(u => u.id === userId);
+            
+            // 1. Update full_name and role
+            await UserService.updateUser(userId, { full_name: updates.full_name, role: updates.role });
+            
+            // 2. Update email if changed and not empty
+            if (originalUser && originalUser.email !== 'N/A' && originalUser.email !== updates.email) {
+                await UserService.updateUserEmail(userId, updates.email);
+            }
+            
             setEditingUser(null);
             fetchUsers();
             showToast(`${updates.full_name} updated successfully`);
@@ -666,10 +675,13 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
 
                             {editingUser.email !== 'N/A' && (
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email <span className="text-slate-300">(read-only)</span></label>
-                                    <div className="w-full px-5 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-sm font-medium text-slate-400 cursor-not-allowed">
-                                        {editingUser.email}
-                                    </div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email</label>
+                                    <input
+                                        type="email"
+                                        value={editingUser.email}
+                                        onChange={e => setEditingUser({ ...editingUser, email: e.target.value })}
+                                        className="w-full px-5 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-medical-500 outline-none font-bold placeholder:text-slate-400 transition-all dark:text-white text-sm"
+                                    />
                                 </div>
                             )}
 
@@ -695,7 +707,7 @@ const Admin: React.FC<AdminProps> = ({ roleConfigs, onUpdateRoleConfig, currentU
                                     Discard
                                 </button>
                                 <button
-                                    onClick={() => handleUpdateUser(editingUser.id, { full_name: editingUser.full_name, role: editingUser.role })}
+                                    onClick={() => handleUpdateUser(editingUser.id, { full_name: editingUser.full_name, role: editingUser.role, email: editingUser.email })}
                                     className="flex-1 py-3.5 bg-medical-600 text-white font-bold rounded-xl shadow-lg shadow-medical-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase text-xs tracking-widest"
                                 >
                                     Save Changes

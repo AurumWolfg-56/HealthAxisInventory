@@ -38,11 +38,20 @@ const ListUsersSchema = z.object({
   action: z.literal('list_users')
 });
 
+const UpdateEmailSchema = z.object({
+  action: z.literal('update_user_email'),
+  payload: z.object({
+    user_id: z.string().uuid(),
+    email: z.string().email()
+  })
+});
+
 const RootSchema = z.discriminatedUnion('action', [
   InviteUserSchema,
   UpdatePermissionsSchema,
   DeleteUserSchema,
-  ListUsersSchema
+  ListUsersSchema,
+  UpdateEmailSchema
 ]);
 
 serve(async (req) => {
@@ -201,6 +210,20 @@ serve(async (req) => {
         }))
 
         return new Response(JSON.stringify({ success: true, users: mappedUsers }), {
+          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+        })
+      }
+
+      case 'update_user_email': {
+        const { user_id, email } = payload
+
+        const { data, error } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
+          email,
+          email_confirm: true
+        })
+        if (error) throw error
+
+        return new Response(JSON.stringify({ success: true, user: data.user }), {
           headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
         })
       }
