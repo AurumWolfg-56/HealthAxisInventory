@@ -620,8 +620,15 @@ Output strictly a valid JSON array, without markdown blocks.`;
             }
 
             if (notifyStaff && selectedUserObj?.email) {
-                // Background notification
-                ScheduleService.notifyScheduleChange(selectedUserObj.email);
+                // Background notification with shift details
+                const shiftDetails = {
+                    date: dateStr,
+                    start_time: start,
+                    end_time: end,
+                    role_type: targetRoleType === 'provider' ? 'Provider' : 'Staff',
+                    notes: notes
+                };
+                ScheduleService.notifyScheduleChange(selectedUserObj.email, shiftDetails);
             }
 
             setShiftEditor({ isOpen: false, user: null, dateObj: null, shift: null, tmpStart: '10:00', tmpEnd: '18:00', tmpColor: 'blue', applyDays: {}, notifyStaff: false });
