@@ -99,8 +99,8 @@ serve(async (req: Request) => {
         toArray = ['iarejyero@gmail.com'];
     }
     
-    // Always append management emails to the recipient list (except for private calendar sync)
-    if (type !== 'calendar_sync') {
+    // Always append management emails to the recipient list (except for private calendar sync and schedule updates/summaries)
+    if (type !== 'calendar_sync' && type !== 'schedule_summary' && type !== 'schedule_change') {
         managementEmails.forEach(email => {
             if (!toArray.includes(email)) toArray.push(email);
         });
@@ -271,6 +271,7 @@ serve(async (req: Request) => {
         const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
         const cleanUrl = supabaseUrl.replace('https://', '');
         const googleUrl = `https://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}`;
+        const googleRenderUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(googleUrl)}`;
         const appleUrl = `webcal://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}`;
 
         subject = `[Norvexis] Workforce Schedule Calendar Subscription`;
@@ -292,6 +293,9 @@ serve(async (req: Request) => {
                      <h4 style="margin: 0 0 6px 0; color: #007aff; font-size: 15px;">Option 1: Apple Calendar (iPhone, iPad, Mac)</h4>
                      <p style="margin: 0 0 10px 0; font-size: 13px; color: #475569; line-height: 1.4;">Click the button below to subscribe directly on your Apple device calendar.</p>
                      <a href="${appleUrl}" style="display: inline-block; background-color: #007aff; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 6px;">Subscribe on Apple Calendar</a>
+                     <p style="margin: 8px 0 0 0; font-size: 11px; color: #64748b; font-style: italic; line-height: 1.4;">
+                         * iPhone users: If clicking the button does not work within your email client app, please copy the Apple link or open this email in Safari to subscribe.
+                     </p>
                  </div>
 
                  <!-- Google Calendar -->
@@ -301,7 +305,7 @@ serve(async (req: Request) => {
                      <div style="background-color: #ffffff; border: 1px dashed #cbd5e1; padding: 8px; border-radius: 4px; font-family: monospace; font-size: 11px; word-break: break-all; color: #334155; margin-bottom: 10px;">
                          ${googleUrl}
                      </div>
-                     <a href="${googleUrl}" target="_blank" style="display: inline-block; background-color: #34a853; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 6px;">Open Feed Link</a>
+                     <a href="${googleRenderUrl}" target="_blank" style="display: inline-block; background-color: #34a853; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 6px;">Open Feed Link</a>
                  </div>
              </div>
              
@@ -314,6 +318,7 @@ serve(async (req: Request) => {
          const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
          const cleanUrl = supabaseUrl.replace('https://', '');
          const googleUrl = `https://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}`;
+         const googleRenderUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(googleUrl)}`;
          const appleUrl = `webcal://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}`;
 
          subject = `[Norvexis] Workforce Schedule Summary - ${data.monthName}`;
@@ -360,8 +365,11 @@ serve(async (req: Request) => {
                   <p style="margin: 0 0 12px 0; font-size: 13px; color: #475569; line-height: 1.4;">Add this schedule to your phone or Google calendar to see automatic updates.</p>
                   <div style="margin-top: 10px;">
                       <a href="${appleUrl}" style="display: inline-block; background-color: #007aff; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 6px; margin-right: 8px;">Subscribe on iPhone</a>
-                      <a href="${googleUrl}" target="_blank" style="display: inline-block; background-color: #34a853; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 6px;">Add to Google Calendar</a>
+                      <a href="${googleRenderUrl}" target="_blank" style="display: inline-block; background-color: #34a853; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 6px;">Add to Google Calendar</a>
                   </div>
+                  <p style="margin: 12px 0 0 0; font-size: 11px; color: #64748b; font-style: italic; line-height: 1.4;">
+                      * iPhone users: If clicking the button does not work within your email client app, please copy the URL or open this email in Safari to subscribe.
+                  </p>
               </div>
               
               <p style="color: #64748b; font-size: 12px; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 15px; text-align: center;">This is an automated message. For questions or modifications, please contact your supervisor.</p>
