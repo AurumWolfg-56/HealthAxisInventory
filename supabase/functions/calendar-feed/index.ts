@@ -66,6 +66,111 @@ serve(async (req) => {
       throw shiftsError
     }
 
+    // Fetch timezone dynamically based on user location assignment
+    let timezone = 'America/New_York'
+    try {
+      const { data: assignment } = await supabaseAdmin
+        .from('user_location_assignments')
+        .select('location_id')
+        .eq('user_id', userId)
+        .eq('is_default', true)
+        .limit(1)
+        .maybeSingle()
+
+      const targetLocationId = assignment?.location_id
+      if (targetLocationId) {
+        const { data: loc } = await supabaseAdmin
+          .from('clinic_locations')
+          .select('timezone')
+          .eq('id', targetLocationId)
+          .limit(1)
+          .maybeSingle()
+        if (loc?.timezone) {
+          timezone = loc.timezone
+        }
+      } else {
+        // Fallback to first available clinic location timezone
+        const { data: loc } = await supabaseAdmin
+          .from('clinic_locations')
+          .select('timezone')
+          .limit(1)
+          .maybeSingle()
+        if (loc?.timezone) {
+          timezone = loc.timezone
+        }
+      }
+    } catch (tzErr) {
+      console.error('Failed to resolve timezone, defaulting to America/New_York:', tzErr)
+    }
+
+    // Helper to generate VTIMEZONE block for common US timezones
+    const getTimezoneComponent = (tz: string): string[] => {
+      let stdOffset = '-0500'
+      let dstOffset = '-0400'
+      let hasDst = true
+      let stdName = 'EST'
+      let dstName = 'EDT'
+      
+      if (tz === 'America/Chicago') {
+        stdOffset = '-0600'
+        dstOffset = '-0500'
+        stdName = 'CST'
+        dstName = 'CDT'
+      } else if (tz === 'America/Denver') {
+        stdOffset = '-0700'
+        dstOffset = '-0600'
+        stdName = 'MST'
+        dstName = 'MDT'
+      } else if (tz === 'America/Los_Angeles') {
+        stdOffset = '-0800'
+        dstOffset = '-0700'
+        stdName = 'PST'
+        dstName = 'PDT'
+      } else if (tz === 'America/Phoenix') {
+        stdOffset = '-0700'
+        dstOffset = '-0700'
+        stdName = 'MST'
+        hasDst = false
+      }
+      
+      const rules = [
+        'BEGIN:VTIMEZONE',
+        `TZID:${tz}`,
+        `X-LIC-LOCATION:${tz}`,
+      ]
+      
+      if (hasDst) {
+        rules.push(
+          'BEGIN:DAYLIGHT',
+          `TZOFFSETFROM:${stdOffset}`,
+          `TZOFFSETTO:${dstOffset}`,
+          `TZNAME:${dstName}`,
+          'DTSTART:19700308T020000',
+          'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU',
+          'END:DAYLIGHT',
+          'BEGIN:STANDARD',
+          `TZOFFSETFROM:${dstOffset}`,
+          `TZOFFSETTO:${stdOffset}`,
+          `TZNAME:${stdName}`,
+          'DTSTART:19701101T020000',
+          'RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU',
+          'END:STANDARD'
+        )
+      } else {
+        rules.push(
+          'BEGIN:STANDARD',
+          `TZOFFSETFROM:${stdOffset}`,
+          `TZOFFSETTO:${stdOffset}`,
+          `TZNAME:${stdName}`,
+          'DTSTART:19700101T000000',
+          'END:STANDARD'
+        )
+      }
+      
+      rules.push('END:VTIMEZONE')
+      return rules
+    }
+
     const icsContent = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
@@ -73,25 +178,8 @@ serve(async (req) => {
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH',
       `X-WR-CALNAME:${calendarName}`,
-      'X-WR-TIMEZONE:America/New_York',
-      'BEGIN:VTIMEZONE',
-      'TZID:America/New_York',
-      'X-LIC-LOCATION:America/New_York',
-      'BEGIN:DAYLIGHT',
-      'TZOFFSETFROM:-0500',
-      'TZOFFSETTO:-0400',
-      'TZNAME:EDT',
-      'DTSTART:19700308T020000',
-      'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU',
-      'END:DAYLIGHT',
-      'BEGIN:STANDARD',
-      'TZOFFSETFROM:-0400',
-      'TZOFFSETTO:-0500',
-      'TZNAME:EST',
-      'DTSTART:19701101T020000',
-      'RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU',
-      'END:STANDARD',
-      'END:VTIMEZONE'
+      `X-WR-TIMEZONE:${timezone}`,
+      ...getTimezoneComponent(timezone)
     ]
 
     for (const shift of (shifts || [])) {
@@ -120,8 +208,8 @@ serve(async (req) => {
       icsContent.push('BEGIN:VEVENT')
       icsContent.push(`UID:shift-${shift.id}@healthaxis.com`)
       icsContent.push(`DTSTAMP:${dtStamp}`)
-      icsContent.push(`DTSTART;TZID=America/New_York:${dateNoDash}T${startTimeNoColon}`)
-      icsContent.push(`DTEND;TZID=America/New_York:${endDateNoDash}T${endTimeNoColon}`)
+      icsContent.push(`DTSTART;TZID=${timezone}:${dateNoDash}T${startTimeNoColon}`)
+      icsContent.push(`DTEND;TZID=${timezone}:${endDateNoDash}T${endTimeNoColon}`)
       icsContent.push(`SUMMARY:${summary}`)
       icsContent.push(`DESCRIPTION:${description}`)
       icsContent.push('END:VEVENT')

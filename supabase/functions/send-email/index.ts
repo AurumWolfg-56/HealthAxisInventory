@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { Resend } from 'npm:resend'
 import { encode } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +10,74 @@ const corsHeaders = {
 
 const RESEND_API_KEY = "re_6H9Qq4rL_8U485mAfZTUddFSV37v2319g";
 const resend = new Resend(RESEND_API_KEY);
+
+// Helper to generate VTIMEZONE block for common US timezones
+const getTimezoneComponent = (tz: string): string[] => {
+  let stdOffset = '-0500'
+  let dstOffset = '-0400'
+  let hasDst = true
+  let stdName = 'EST'
+  let dstName = 'EDT'
+  
+  if (tz === 'America/Chicago') {
+    stdOffset = '-0600'
+    dstOffset = '-0500'
+    stdName = 'CST'
+    dstName = 'CDT'
+  } else if (tz === 'America/Denver') {
+    stdOffset = '-0700'
+    dstOffset = '-0600'
+    stdName = 'MST'
+    dstName = 'MDT'
+  } else if (tz === 'America/Los_Angeles') {
+    stdOffset = '-0800'
+    dstOffset = '-0700'
+    stdName = 'PST'
+    dstName = 'PDT'
+  } else if (tz === 'America/Phoenix') {
+    stdOffset = '-0700'
+    stdOffset = '-0700'
+    stdName = 'MST'
+    hasDst = false
+  }
+  
+  const rules = [
+    'BEGIN:VTIMEZONE',
+    `TZID:${tz}`,
+    `X-LIC-LOCATION:${tz}`,
+  ]
+  
+  if (hasDst) {
+    rules.push(
+      'BEGIN:DAYLIGHT',
+      `TZOFFSETFROM:${stdOffset}`,
+      `TZOFFSETTO:${dstOffset}`,
+      `TZNAME:${dstName}`,
+      'DTSTART:19700308T020000',
+      'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU',
+      'END:DAYLIGHT',
+      'BEGIN:STANDARD',
+      `TZOFFSETFROM:${dstOffset}`,
+      `TZOFFSETTO:${stdOffset}`,
+      `TZNAME:${stdName}`,
+      'DTSTART:19701101T020000',
+      'RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU',
+      'END:STANDARD'
+    )
+  } else {
+    rules.push(
+      'BEGIN:STANDARD',
+      `TZOFFSETFROM:${stdOffset}`,
+      `TZOFFSETTO:${stdOffset}`,
+      `TZNAME:${stdName}`,
+      'DTSTART:19700101T000000',
+      'END:STANDARD'
+    )
+  }
+  
+  rules.push('END:VTIMEZONE')
+  return rules
+}
 
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
@@ -56,6 +125,48 @@ serve(async (req: Request) => {
 
        if (data && data.date && data.start_time && data.end_time) {
            try {
+               let timezone = 'America/New_York'
+               if (data.userId) {
+                   try {
+                       const supabaseAdmin = createClient(
+                           Deno.env.get('SUPABASE_URL') ?? '',
+                           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+                       )
+                       
+                       const { data: assignment } = await supabaseAdmin
+                           .from('user_location_assignments')
+                           .select('location_id')
+                           .eq('user_id', data.userId)
+                           .eq('is_default', true)
+                           .limit(1)
+                           .maybeSingle()
+
+                       const targetLocationId = assignment?.location_id
+                       if (targetLocationId) {
+                           const { data: loc } = await supabaseAdmin
+                               .from('clinic_locations')
+                               .select('timezone')
+                               .eq('id', targetLocationId)
+                               .limit(1)
+                               .maybeSingle()
+                           if (loc?.timezone) {
+                               timezone = loc.timezone
+                           }
+                       } else {
+                           const { data: loc } = await supabaseAdmin
+                               .from('clinic_locations')
+                               .select('timezone')
+                               .limit(1)
+                               .maybeSingle()
+                           if (loc?.timezone) {
+                               timezone = loc.timezone
+                           }
+                       }
+                   } catch (tzErr) {
+                       console.error('[send-email] Failed to resolve timezone, defaulting to America/New_York:', tzErr)
+                   }
+               }
+
                const formatDT = (dateStr: string, timeStr: string) => {
                    return `${dateStr.replace(/-/g, '')}T${timeStr.replace(/:/g, '')}00`;
                };
@@ -68,10 +179,11 @@ serve(async (req: Request) => {
                    'VERSION:2.0',
                    'PRODID:-//Norvexis//Core//EN',
                    'CALSCALE:GREGORIAN',
+                   ...getTimezoneComponent(timezone),
                    'BEGIN:VEVENT',
                    `SUMMARY:Norvexis Shift - ${data.role_type || 'Staff'}`,
-                   `DTSTART;TZID=America/New_York:${dtStart}`,
-                   `DTEND;TZID=America/New_York:${dtEnd}`,
+                   `DTSTART;TZID=${timezone}:${dtStart}`,
+                   `DTEND;TZID=${timezone}:${dtEnd}`,
                    `DESCRIPTION:Norvexis Core Scheduled Shift. ${data.notes || ''}`,
                    'END:VEVENT',
                    'END:VCALENDAR'
@@ -198,7 +310,64 @@ serve(async (req: Request) => {
              </p>
          </div>
         `;
-    }
+     } else if (type === 'schedule_summary') {
+         const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+         const cleanUrl = supabaseUrl.replace('https://', '');
+         const googleUrl = `https://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}`;
+         const appleUrl = `webcal://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}`;
+
+         subject = `[Norvexis] Workforce Schedule Summary - ${data.monthName}`;
+         
+         const shiftsHtml = data.shifts && data.shifts.length > 0
+             ? data.shifts.map((s: any) => `
+                 <tr style="border-bottom: 1px solid #e2e8f0;">
+                     <td style="padding: 10px 0; font-size: 14px; color: #334155;"><strong>${s.date}</strong></td>
+                     <td style="padding: 10px 0; font-size: 14px; color: #334155; text-align: right;">${s.start_time} - ${s.end_time}</td>
+                 </tr>
+             `).join('')
+             : '<tr><td colspan="2" style="padding: 15px 0; text-align: center; color: #64748b; font-style: italic;">No shifts scheduled for this period.</td></tr>';
+             
+         html = `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+              <div style="text-align: center; border-bottom: 2px solid #4f46e5; padding-bottom: 16px; margin-bottom: 20px;">
+                  <h2 style="color: #4f46e5; margin: 0; font-size: 22px; font-weight: 700;">Immediate Care Plus</h2>
+                  <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Your Work Schedule for ${data.monthName}</p>
+              </div>
+              
+              <p style="font-size: 16px; color: #1e293b; line-height: 1.5; margin-bottom: 16px;">Hello <strong>${data.name}</strong>,</p>
+              <p style="font-size: 15px; color: #334155; line-height: 1.5; margin-bottom: 20px;">The schedule for <strong>${data.monthName}</strong> has been finalized. Below is a summary of your assigned shifts and hours.</p>
+              
+              <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+                  <thead>
+                      <tr style="border-bottom: 2px solid #cbd5e1; text-align: left;">
+                          <th style="padding-bottom: 8px; font-size: 13px; text-transform: uppercase; color: #475569; letter-spacing: 0.05em;">Date</th>
+                          <th style="padding-bottom: 8px; font-size: 13px; text-transform: uppercase; color: #475569; letter-spacing: 0.05em; text-align: right;">Hours</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      ${shiftsHtml}
+                  </tbody>
+                  <tfoot>
+                      <tr style="border-top: 2px solid #cbd5e1; font-weight: bold;">
+                          <td style="padding-top: 12px; font-size: 15px; color: #0f172a;">Total Scheduled Hours</td>
+                          <td style="padding-top: 12px; font-size: 15px; color: #0f172a; text-align: right;">${data.totalHours} hrs</td>
+                      </tr>
+                  </tfoot>
+              </table>
+              
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-top: 24px;">
+                  <h4 style="margin: 0 0 8px 0; color: #4f46e5; font-size: 15px;">Subscribe to your calendar</h4>
+                  <p style="margin: 0 0 12px 0; font-size: 13px; color: #475569; line-height: 1.4;">Add this schedule to your phone or Google calendar to see automatic updates.</p>
+                  <div style="margin-top: 10px;">
+                      <a href="${appleUrl}" style="display: inline-block; background-color: #007aff; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 6px; margin-right: 8px;">Subscribe on iPhone</a>
+                      <a href="${googleUrl}" target="_blank" style="display: inline-block; background-color: #34a853; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 6px;">Add to Google Calendar</a>
+                  </div>
+              </div>
+              
+              <p style="color: #64748b; font-size: 12px; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 15px; text-align: center;">This is an automated message. For questions or modifications, please contact your supervisor.</p>
+          </div>
+         `;
+     }
 
     console.log(`[send-email] Sending ${type} email to ${to}`);
 

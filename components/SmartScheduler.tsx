@@ -135,10 +135,55 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     const [syncLoadingStates, setSyncLoadingStates] = useState<Record<string, boolean>>({});
     const [syncSuccessStates, setSyncSuccessStates] = useState<Record<string, 'success' | 'error' | null>>({});
 
+    // Publish Modal States
+    const [showPublishModal, setShowPublishModal] = useState(false);
+    const [selectedPublishUserIds, setSelectedPublishUserIds] = useState<string[]>([]);
+    const [publishLoadingStates, setPublishLoadingStates] = useState<Record<string, boolean>>({});
+    const [publishSuccessStates, setPublishSuccessStates] = useState<Record<string, 'success' | 'error' | null>>({});
+
     const syncUsers = useMemo(() => {
         return users.filter(u => u.role !== 'MANAGER' && u.role !== 'OWNER');
     }, [users]);
 
+    const userPeriodStats = useMemo(() => {
+        const stats: Record<string, { shiftCount: number; totalHours: number; shifts: any[] }> = {};
+        
+        syncUsers.forEach(u => {
+            const uShifts = shifts.filter(s => s.user_id === u.id);
+            let totalHours = 0;
+            const shiftList = uShifts.map(s => {
+                const sStart = new Date(`1970-01-01T${s.start_time}`);
+                const sEnd = new Date(`1970-01-01T${s.end_time}`);
+                let diff = (sEnd.getTime() - sStart.getTime()) / (1000 * 60 * 60);
+                if (diff < 0) diff += 24;
+                totalHours += diff;
+                
+                // Helper format inside hook using simple 12h representation
+                const formatTimeLocal = (timeStr: string) => {
+                    if (!timeStr) return '';
+                    const [h, m] = timeStr.split(':');
+                    const hr = parseInt(h);
+                    const ampm = hr >= 12 ? 'pm' : 'am';
+                    const displayHr = hr % 12 || 12;
+                    return `${displayHr}:${m} ${ampm}`;
+                };
+                
+                return {
+                    date: new Date(s.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+                    start_time: formatTimeLocal(s.start_time),
+                    end_time: formatTimeLocal(s.end_time)
+                };
+            });
+            
+            stats[u.id] = {
+                shiftCount: uShifts.length,
+                totalHours: parseFloat(totalHours.toFixed(1)),
+                shifts: shiftList
+            };
+        });
+        
+        return stats;
+    }, [syncUsers, shifts]);
     const canManage = hasPermission('schedule.manage');
     const reportRef = useRef<HTMLDivElement>(null);
 
@@ -626,7 +671,8 @@ Output strictly a valid JSON array, without markdown blocks.`;
                     start_time: start,
                     end_time: end,
                     role_type: targetRoleType === 'provider' ? 'Provider' : 'Staff',
-                    notes: notes
+                    notes: notes,
+                    userId: selectedUserObj.id
                 };
                 ScheduleService.notifyScheduleChange(selectedUserObj.email, shiftDetails);
             }
@@ -714,6 +760,74 @@ Output strictly a valid JSON array, without markdown blocks.`;
                 }));
             } finally {
                 setSyncLoadingStates(prev => ({
+                    ...prev,
+                    [id]: false
+                }));
+            }
+        });
+
+        await Promise.all(promises);
+    };
+
+    const handleTogglePublishSelect = (userId: string) => {
+        setSelectedPublishUserIds(prev =>
+            prev.includes(userId)
+                ? prev.filter(id => id !== userId)
+                : [...prev, userId]
+        );
+    };
+
+    const handlePublishSelectAll = () => {
+        const eligibleWithShifts = syncUsers.filter(u => u.email && userPeriodStats[u.id]?.shiftCount > 0);
+        if (selectedPublishUserIds.length === eligibleWithShifts.length) {
+            setSelectedPublishUserIds([]);
+        } else {
+            setSelectedPublishUserIds(eligibleWithShifts.map(u => u.id));
+        }
+    };
+
+    const handlePublishSchedule = async () => {
+        if (selectedPublishUserIds.length === 0) return;
+        
+        const newLoading = { ...publishLoadingStates };
+        const newSuccess = { ...publishSuccessStates };
+        selectedPublishUserIds.forEach(id => {
+            newLoading[id] = true;
+            newSuccess[id] = null;
+        });
+        setPublishLoadingStates(newLoading);
+        setPublishSuccessStates(newSuccess);
+
+        const periodLabel = viewMode === 'week' 
+            ? `Week of ${weekDates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+            : currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+        const promises = selectedPublishUserIds.map(async (id) => {
+            const u = syncUsers.find(user => user.id === id);
+            const stats = userPeriodStats[id];
+            if (!u || !u.email || !stats) return;
+
+            try {
+                const success = await ScheduleService.sendScheduleSummary(
+                    u.email,
+                    u.id,
+                    u.username || u.full_name || 'Staff',
+                    periodLabel,
+                    stats.shifts,
+                    stats.totalHours
+                );
+                setPublishSuccessStates(prev => ({
+                    ...prev,
+                    [id]: success ? 'success' : 'error'
+                }));
+            } catch (err) {
+                console.error(`Failed to send schedule summary to ${u.email}`, err);
+                setPublishSuccessStates(prev => ({
+                    ...prev,
+                    [id]: 'error'
+                }));
+            } finally {
+                setPublishLoadingStates(prev => ({
                     ...prev,
                     [id]: false
                 }));
@@ -957,9 +1071,14 @@ Output strictly a valid JSON array, without markdown blocks.`;
                         {isExporting ? 'Exporting...' : 'Export PDF'}
                     </button>
                     {canManage && (
-                        <button onClick={() => setShowSyncModal(true)} className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition shadow-sm flex items-center gap-2">
-                            <i className="fa-solid fa-calendar-check"></i> Send Sync Links
-                        </button>
+                        <>
+                            <button onClick={() => setShowSyncModal(true)} className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition shadow-sm flex items-center gap-2">
+                                <i className="fa-solid fa-calendar-check"></i> Send Sync Links
+                            </button>
+                            <button onClick={() => setShowPublishModal(true)} className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition shadow-sm flex items-center gap-2">
+                                <i className="fa-solid fa-paper-plane text-indigo-500"></i> Publish / Send Schedule
+                            </button>
+                        </>
                     )}
 
                     {canManage && viewMode === 'week' && (
@@ -1358,6 +1477,144 @@ Output strictly a valid JSON array, without markdown blocks.`;
                                     className="px-5 py-2 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-600/10"
                                 >
                                     Send Links {selectedUserIds.length > 0 && `(${selectedUserIds.length})`}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* SEND CALENDAR PUBLISH MODAL */}
+            {showPublishModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg p-6 overflow-hidden flex flex-col max-h-[80vh] border border-slate-200 dark:border-slate-800">
+                        <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-3 text-indigo-600 dark:text-indigo-400">
+                                <div className="bg-indigo-50 dark:bg-indigo-950/50 p-2.5 rounded-2xl">
+                                    <i className="fa-solid fa-paper-plane text-xl"></i>
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-black dark:text-white">Publish Monthly Schedule</h2>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Send schedule summaries for {viewMode === 'week' ? 'this week' : 'this month'}</p>
+                                </div>
+                            </div>
+                            <button 
+                                type="button"
+                                onClick={() => {
+                                    setShowPublishModal(false);
+                                    setSelectedPublishUserIds([]);
+                                    setPublishSuccessStates({});
+                                }} 
+                                className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition"
+                            >
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        
+                        <div className="overflow-y-auto pr-1 flex-1 scrollbar-thin my-2">
+                            {syncUsers.length === 0 ? (
+                                <div className="p-8 text-center text-slate-400 font-bold">No eligible staff members found.</div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {syncUsers.map(u => {
+                                        const isSelected = selectedPublishUserIds.includes(u.id);
+                                        const isLoading = publishLoadingStates[u.id];
+                                        const status = publishSuccessStates[u.id];
+                                        const hasEmail = !!u.email;
+                                        const stats = userPeriodStats[u.id];
+                                        const hasShifts = stats && stats.shiftCount > 0;
+
+                                        return (
+                                            <div 
+                                                key={u.id} 
+                                                className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${
+                                                    isSelected 
+                                                        ? 'bg-indigo-50/40 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800/50' 
+                                                        : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                                                } ${!hasShifts ? 'opacity-60' : ''}`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        disabled={!hasEmail || isLoading || !hasShifts}
+                                                        checked={isSelected}
+                                                        onChange={() => handleTogglePublishSelect(u.id)}
+                                                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-700 bg-transparent disabled:opacity-30 cursor-pointer"
+                                                    />
+                                                    <div>
+                                                        <div className="font-bold text-sm text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                                            {u.username || u.full_name}
+                                                            <span className="text-[9px] font-black uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500">
+                                                                {u.role.replace('_', ' ')}
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-0.5">
+                                                            {hasEmail ? (
+                                                                hasShifts ? (
+                                                                    <span className="text-indigo-600 dark:text-indigo-400 font-bold">{stats.shiftCount} shifts ({stats.totalHours} hrs scheduled)</span>
+                                                                ) : (
+                                                                    <span className="text-slate-400">No shifts scheduled</span>
+                                                                )
+                                                            ) : (
+                                                                <span className="text-amber-500 font-bold"><i className="fa-solid fa-triangle-exclamation"></i> No email registered</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="flex items-center gap-2">
+                                                    {isLoading && (
+                                                        <span className="text-indigo-600 dark:text-indigo-400 text-xs flex items-center gap-1.5 font-bold">
+                                                            <i className="fa-solid fa-circle-notch fa-spin"></i> Sending...
+                                                        </span>
+                                                    )}
+                                                    {status === 'success' && (
+                                                        <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 px-2 py-1 rounded-xl text-xs font-bold flex items-center gap-1">
+                                                            <i className="fa-solid fa-circle-check"></i> Sent
+                                                        </span>
+                                                    )}
+                                                    {status === 'error' && (
+                                                        <span className="text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/50 px-2 py-1 rounded-xl text-xs font-bold flex items-center gap-1">
+                                                            <i className="fa-solid fa-circle-exclamation"></i> Failed
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            {syncUsers.filter(u => u.email && userPeriodStats[u.id]?.shiftCount > 0).length > 0 && (
+                                <button 
+                                    type="button" 
+                                    onClick={handlePublishSelectAll}
+                                    className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition bg-transparent border-none outline-none"
+                                >
+                                    {selectedPublishUserIds.length === syncUsers.filter(u => u.email && userPeriodStats[u.id]?.shiftCount > 0).length ? 'Deselect All' : 'Select All with Shifts'}
+                                </button>
+                            )}
+                            <div className="flex gap-2">
+                                <button 
+                                    type="button" 
+                                    onClick={() => {
+                                        setShowPublishModal(false);
+                                        setSelectedPublishUserIds([]);
+                                        setPublishSuccessStates({});
+                                    }} 
+                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-sm rounded-xl transition"
+                                >
+                                    Close
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onClick={handlePublishSchedule}
+                                    disabled={selectedPublishUserIds.length === 0 || Object.values(publishLoadingStates).some(Boolean)}
+                                    className="px-5 py-2 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-600/10"
+                                >
+                                    Send Schedule {selectedPublishUserIds.length > 0 && `(${selectedPublishUserIds.length})`}
                                 </button>
                             </div>
                         </div>

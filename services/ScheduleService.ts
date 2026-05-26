@@ -333,4 +333,42 @@ export class ScheduleService {
             return false;
         }
     }
+
+    /**
+     * Triggers the send-email function to send monthly schedule summary
+     */
+    static async sendScheduleSummary(
+        email: string,
+        userId: string,
+        userName: string,
+        monthName: string,
+        shifts: { date: string; start_time: string; end_time: string }[],
+        totalHours: number
+    ): Promise<boolean> {
+        try {
+            const url = import.meta.env.VITE_SUPABASE_URL + '/functions/v1/send-email';
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.accessToken}`
+                },
+                body: JSON.stringify({
+                    type: 'schedule_summary',
+                    to: email,
+                    data: {
+                        userId,
+                        name: userName,
+                        monthName,
+                        shifts,
+                        totalHours
+                    }
+                })
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('[ScheduleService] Send schedule summary failed', error);
+            return false;
+        }
+    }
 }
