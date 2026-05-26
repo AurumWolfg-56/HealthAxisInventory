@@ -11,6 +11,7 @@ interface ScheduleReportDocumentProps {
         reportDate: string;
         author: string;
         facilityName: string;
+        viewType?: 'providers' | 'staff' | 'all';
     };
 }
 
@@ -124,7 +125,7 @@ const getPrintTheme = (colorName: string): PrintTheme => {
 };
 
 export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ data }) => {
-    const { users, shifts, timeOffRequests, startDate, endDate, reportDate, author, facilityName } = data;
+    const { users, shifts, timeOffRequests, startDate, endDate, reportDate, author, facilityName, viewType } = data;
 
     // Parse date range without UTC offset shifting
     const [sYr, sMo, sDa] = startDate.split('-').map(Number);
@@ -392,7 +393,7 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                 Health<span style={{ color: '#38bdf8' }}>Axis</span>
                             </h1>
                             <span style={{ fontSize: '7.5px', fontWeight: 'bold', color: '#94a3b8', letterSpacing: '0.2em', textTransform: 'uppercase', marginTop: '3px' }}>
-                                Official Operations Calendar
+                                {viewType === 'providers' ? 'Clinical Providers Calendar' : viewType === 'staff' ? 'Support Staff Calendar' : 'Official Operations Calendar'}
                             </span>
                         </div>
                         <div style={{ textAlign: 'right' }}>
@@ -755,7 +756,7 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                         Health<span style={{ color: '#38bdf8' }}>Axis</span>
                                     </h1>
                                     <span style={{ fontSize: '7.5px', fontWeight: 'bold', color: '#94a3b8', letterSpacing: '0.2em', textTransform: 'uppercase', marginTop: '3px' }}>
-                                        Official Operations Roster
+                                        {viewType === 'providers' ? 'Clinical Providers Roster' : viewType === 'staff' ? 'Support Staff Roster' : 'Official Operations Roster'}
                                     </span>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>

@@ -642,7 +642,7 @@ Output strictly a valid JSON array, without markdown blocks.`;
         setTimeout(() => {
             const opt = {
                 margin: 0,
-                filename: `Schedule_Roster_${viewMode === 'week' ? 'Week' : 'Month'}_${startDateStr}_to_${endDateStr}.pdf`,
+                filename: `Schedule_${activeTab === 'providers' ? 'Providers' : 'Staff'}_${viewMode === 'week' ? 'Week' : 'Month'}_${startDateStr}_to_${endDateStr}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true, letterRendering: true },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
@@ -1176,14 +1176,15 @@ Output strictly a valid JSON array, without markdown blocks.`;
             >
                 <div ref={reportRef}>
                      <ScheduleReportDocument data={{
-                         users: colorMappedUsers,
+                         users: activeTab === 'providers' ? providers : supportStaff,
                          shifts,
                          timeOffRequests,
                          startDate: startDateStr,
                          endDate: endDateStr,
                          reportDate: new Date().toLocaleDateString(),
                          author: currentUser?.username || 'Unknown',
-                         facilityName: 'Immediate Care Plus'
+                         facilityName: 'Immediate Care Plus',
+                         viewType: activeTab
                      }} />
                 </div>
             </div>
