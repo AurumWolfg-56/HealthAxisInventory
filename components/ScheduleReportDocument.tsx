@@ -317,19 +317,45 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
             weekRows.push(dates.slice(i, i + 7));
         }
 
-        // Metrics for the whole month
-        const monthShifts = shifts.filter(s => dates.some(d => {
-            const dStrLocal = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-            return s.date === dStrLocal;
-        }));
+        // Calibrate primary month limits
+        const primaryYear = sDate.getDate() > 15 && sDate.getMonth() === 11 ? sDate.getFullYear() + 1 : sDate.getFullYear();
+
+        // Metrics for the primary month only, filtered by active users
+        const primaryMonthShifts = shifts.filter(s => {
+            const [y, m, d] = s.date.split('-').map(Number);
+            const sDateObj = new Date(y, m - 1, d);
+            return sDateObj.getMonth() === primaryMonthIndex &&
+                   sDateObj.getFullYear() === primaryYear &&
+                   users.some(u => u.id === s.user_id);
+        });
         
-        const activeStaffCount = new Set(monthShifts.map(s => s.user_id)).size;
-        const monthTotalHours = monthShifts.reduce((sum, s) => sum + getShiftHours(s), 0);
+        const activeStaffCount = new Set(primaryMonthShifts.map(s => s.user_id)).size;
+        const monthTotalHours = primaryMonthShifts.reduce((sum, s) => sum + getShiftHours(s), 0);
         
-        const weekdays = dates.filter(d => d.getDay() >= 1 && d.getDay() <= 5);
-        const unstaffedDays = weekdays.filter(d => {
+        // Calculate understaffed days and total hours short based on the 10h/8h rules in the primary month
+        let understaffedDaysCount = 0;
+        let totalUncoveredHours = 0;
+
+        // Get all days in the primary month
+        const daysInMonth: Date[] = [];
+        const tempDate = new Date(primaryYear, primaryMonthIndex, 1);
+        while (tempDate.getMonth() === primaryMonthIndex) {
+            daysInMonth.push(new Date(tempDate));
+            tempDate.setDate(tempDate.getDate() + 1);
+        }
+
+        daysInMonth.forEach(d => {
             const dStrLocal = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-            return !shifts.some(s => s.date === dStrLocal && users.some(u => u.id === s.user_id && ['DOCTOR', 'OWNER'].includes(u.role)));
+            const dayShifts = shifts.filter(s => s.date === dStrLocal && users.some(u => u.id === s.user_id));
+            const dayScheduledHours = dayShifts.reduce((sum, s) => sum + getShiftHours(s), 0);
+            
+            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+            const requiredHours = isWeekend ? 8 : 10;
+
+            if (dayScheduledHours < requiredHours) {
+                understaffedDaysCount++;
+                totalUncoveredHours += (requiredHours - dayScheduledHours);
+            }
         });
 
         const cellHeight = weekRows.length === 6 ? 90 : 108;
@@ -390,7 +416,7 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                     }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#ffffff' }}>
-                                Health<span style={{ color: '#38bdf8' }}>Axis</span>
+                                Immediate Care <span style={{ color: '#38bdf8' }}>Plus</span>
                             </h1>
                             <span style={{ fontSize: '7.5px', fontWeight: 'bold', color: '#94a3b8', letterSpacing: '0.2em', textTransform: 'uppercase', marginTop: '3px' }}>
                                 {viewType === 'providers' ? 'Clinical Providers Calendar' : viewType === 'staff' ? 'Support Staff Calendar' : 'Official Operations Calendar'}
@@ -440,7 +466,9 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                         }}>
                             <span style={{ fontSize: '12px' }}>👥</span>
                             <div>
-                                <div style={{ fontSize: '7.5px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Scheduled Staff</div>
+                                <div style={{ fontSize: '7.5px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                                    {viewType === 'providers' ? 'Scheduled Providers' : 'Scheduled Staff'}
+                                </div>
                                 <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>{activeStaffCount} Active</div>
                             </div>
                         </div>
@@ -464,19 +492,22 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
 
                         <div style={{
                             flex: 1.2,
-                            backgroundColor: unstaffedDays.length === 0 ? '#f0fdf4' : '#fffbeb',
-                            border: unstaffedDays.length === 0 ? '1px solid #bbf7d0' : '1px solid #fde68a',
+                            backgroundColor: understaffedDaysCount === 0 ? '#f0fdf4' : '#fffbeb',
+                            border: understaffedDaysCount === 0 ? '1px solid #bbf7d0' : '1px solid #fde68a',
                             borderRadius: '6px',
                             padding: '8px 12px',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '10px'
                         }}>
-                            <span style={{ fontSize: '12px' }}>{unstaffedDays.length === 0 ? '🛡️' : '⚠️'}</span>
+                            <span style={{ fontSize: '12px' }}>{understaffedDaysCount === 0 ? '🛡️' : '⚠️'}</span>
                             <div>
-                                <div style={{ fontSize: '7.5px', color: unstaffedDays.length === 0 ? '#166534' : '#92400e', fontWeight: 'bold', textTransform: 'uppercase' }}>Coverage Status</div>
-                                <div style={{ fontSize: '11px', fontWeight: '800', color: unstaffedDays.length === 0 ? '#14532d' : '#78350f' }}>
-                                    {unstaffedDays.length === 0 ? 'Fully Provider Staffed' : `Understaffed: ${unstaffedDays.length} Weekdays`}
+                                <div style={{ fontSize: '7.5px', color: understaffedDaysCount === 0 ? '#166534' : '#92400e', fontWeight: 'bold', textTransform: 'uppercase' }}>Coverage Status</div>
+                                <div style={{ fontSize: '11px', fontWeight: '800', color: understaffedDaysCount === 0 ? '#14532d' : '#78350f' }}>
+                                    {understaffedDaysCount === 0 
+                                        ? (viewType === 'providers' ? 'Fully Provider Staffed' : 'Fully Staffed') 
+                                        : `Understaffed: ${understaffedDaysCount} Days (${totalUncoveredHours.toFixed(0)} hrs short)`
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -515,6 +546,7 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                         
                                         const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                                         const isDayInPrimaryMonth = d.getMonth() === primaryMonthIndex;
+                                        const isUncovered = viewType === 'providers' && isDayInPrimaryMonth && dayShifts.length === 0;
 
                                         return (
                                             <td key={d.toISOString()} style={{
@@ -523,9 +555,11 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                 borderLeft: dayIdx === 0 ? '1px solid #cbd5e1' : 'none',
                                                 padding: '4px 6px',
                                                 verticalAlign: 'top',
-                                                backgroundColor: !isDayInPrimaryMonth
-                                                    ? (isWeekend ? '#f1f5f9' : '#f8fafc')
-                                                    : (isWeekend ? '#f8fafc' : '#ffffff'),
+                                                backgroundColor: isUncovered
+                                                    ? '#fef2f2'
+                                                    : !isDayInPrimaryMonth
+                                                        ? (isWeekend ? '#f1f5f9' : '#f8fafc')
+                                                        : (isWeekend ? '#f8fafc' : '#ffffff'),
                                                 height: `${cellHeight}px`,
                                                 position: 'relative',
                                                 boxSizing: 'border-box'
@@ -539,7 +573,11 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                     <span style={{ 
                                                         fontSize: '10.5px', 
                                                         fontWeight: '800', 
-                                                        color: isDayInPrimaryMonth ? '#1e293b' : '#94a3b8' 
+                                                        color: isUncovered
+                                                            ? '#991b1b'
+                                                            : isDayInPrimaryMonth 
+                                                                ? '#1e293b' 
+                                                                : '#94a3b8' 
                                                     }}>
                                                         {d.getDate()}
                                                     </span>
@@ -547,13 +585,29 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                                         <span style={{ 
                                                             fontSize: '7px', 
                                                             fontWeight: '800', 
-                                                            color: '#64748b', 
+                                                            color: isUncovered ? '#b91c1c' : '#64748b', 
                                                             textTransform: 'uppercase' 
                                                         }}>
                                                             {d.toLocaleDateString('en-US', { month: 'short' })}
                                                         </span>
                                                     )}
                                                 </div>
+
+                                                {isUncovered && (
+                                                    <div style={{
+                                                        backgroundColor: '#fee2e2',
+                                                        border: '1px solid #fca5a5',
+                                                        color: '#991b1b',
+                                                        borderRadius: '3px',
+                                                        padding: '2px 4px',
+                                                        fontSize: '8px',
+                                                        fontWeight: '800',
+                                                        textAlign: 'center',
+                                                        marginTop: '4px'
+                                                    }}>
+                                                        ⚠️ UNCOVERED
+                                                    </div>
+                                                )}
 
                                                 <div style={{ display: 'block' }}>
                                                     {dayShifts.map(s => {
@@ -718,24 +772,36 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                 {userChunks.map((userChunk, pageIdx) => {
                     const weekRangeStr = formatWeekRange(dates);
 
-                    // Compute KPI variables for this week
-                    const weekShifts = shifts.filter(s => {
-                        return dates.some(d => {
+                    // Compute KPI variables for this week, filtered by active users
+                    const weekShifts = shifts.filter(s => 
+                        users.some(u => u.id === s.user_id) &&
+                        dates.some(d => {
                             const dStrLocal = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
                             return s.date === dStrLocal;
-                        });
-                    });
+                        })
+                    );
 
                     const uniqueStaffIds = new Set(weekShifts.map(s => s.user_id));
                     const activeStaffCount = uniqueStaffIds.size;
 
                     const weekTotalHours = weekShifts.reduce((sum, s) => sum + getShiftHours(s), 0);
 
-                    const weekdays = dates.filter(d => d.getDay() >= 1 && d.getDay() <= 5);
-                    const unstaffedDays = weekdays.filter(d => {
+                    // Calculate understaffed days and total hours short based on the 10h/8h rules in the week
+                    let understaffedDaysCount = 0;
+                    let totalUncoveredHours = 0;
+
+                    dates.forEach(d => {
                         const dStrLocal = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                        const hasProvider = shifts.some(s => s.date === dStrLocal && users.some(u => u.id === s.user_id && ['DOCTOR', 'OWNER'].includes(u.role)));
-                        return !hasProvider;
+                        const dayShifts = shifts.filter(s => s.date === dStrLocal && users.some(u => u.id === s.user_id));
+                        const dayScheduledHours = dayShifts.reduce((sum, s) => sum + getShiftHours(s), 0);
+                        
+                        const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                        const requiredHours = isWeekend ? 8 : 10;
+
+                        if (dayScheduledHours < requiredHours) {
+                            understaffedDaysCount++;
+                            totalUncoveredHours += (requiredHours - dayScheduledHours);
+                        }
                     });
 
                     return (
@@ -753,7 +819,7 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                             }}>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#ffffff' }}>
-                                        Health<span style={{ color: '#38bdf8' }}>Axis</span>
+                                        Immediate Care <span style={{ color: '#38bdf8' }}>Plus</span>
                                     </h1>
                                     <span style={{ fontSize: '7.5px', fontWeight: 'bold', color: '#94a3b8', letterSpacing: '0.2em', textTransform: 'uppercase', marginTop: '3px' }}>
                                         {viewType === 'providers' ? 'Clinical Providers Roster' : viewType === 'staff' ? 'Support Staff Roster' : 'Official Operations Roster'}
@@ -814,7 +880,9 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                             fontSize: '14px'
                                         }}>👥</div>
                                         <div>
-                                            <div style={{ fontSize: '8px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Scheduled Staff</div>
+                                            <div style={{ fontSize: '8px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                {viewType === 'providers' ? 'Scheduled Providers' : 'Scheduled Staff'}
+                                            </div>
                                             <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', marginTop: '2px' }}>{activeStaffCount} Active</div>
                                         </div>
                                     </div>
@@ -848,8 +916,8 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
 
                                     <div style={{
                                         flex: 1.2,
-                                        backgroundColor: unstaffedDays.length === 0 ? '#f0fdf4' : '#fffbeb',
-                                        border: unstaffedDays.length === 0 ? '1px solid #bbf7d0' : '1px solid #fde68a',
+                                        backgroundColor: understaffedDaysCount === 0 ? '#f0fdf4' : '#fffbeb',
+                                        border: understaffedDaysCount === 0 ? '1px solid #bbf7d0' : '1px solid #fde68a',
                                         borderRadius: '8px',
                                         padding: '10px 14px',
                                         display: 'flex',
@@ -860,17 +928,20 @@ export const ScheduleReportDocument: React.FC<ScheduleReportDocumentProps> = ({ 
                                             width: '32px',
                                             height: '32px',
                                             borderRadius: '50%',
-                                            backgroundColor: unstaffedDays.length === 0 ? '#dcfce7' : '#fef3c7',
-                                            color: unstaffedDays.length === 0 ? '#15803d' : '#d97706',
+                                            backgroundColor: understaffedDaysCount === 0 ? '#dcfce7' : '#fef3c7',
+                                            color: understaffedDaysCount === 0 ? '#15803d' : '#d97706',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             fontSize: '14px'
-                                        }}>{unstaffedDays.length === 0 ? '🛡️' : '⚠️'}</div>
+                                        }}>{understaffedDaysCount === 0 ? '🛡️' : '⚠️'}</div>
                                         <div>
-                                            <div style={{ fontSize: '8px', color: unstaffedDays.length === 0 ? '#166534' : '#92400e', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Coverage Status</div>
-                                            <div style={{ fontSize: '11px', fontWeight: '800', color: unstaffedDays.length === 0 ? '#14532d' : '#78350f', marginTop: '2px' }}>
-                                                {unstaffedDays.length === 0 ? 'Fully Provider Staffed' : `Understaffed: ${unstaffedDays.map(d => d.toLocaleDateString('en-US', { weekday: 'short' })).join(', ')}`}
+                                            <div style={{ fontSize: '8px', color: understaffedDaysCount === 0 ? '#166534' : '#92400e', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Coverage Status</div>
+                                            <div style={{ fontSize: '11px', fontWeight: '800', color: understaffedDaysCount === 0 ? '#14532d' : '#78350f', marginTop: '2px' }}>
+                                                {understaffedDaysCount === 0 
+                                                    ? (viewType === 'providers' ? 'Fully Provider Staffed' : 'Fully Staffed')
+                                                    : `Understaffed: ${understaffedDaysCount} Days (${totalUncoveredHours.toFixed(0)} hrs short)`
+                                                }
                                             </div>
                                         </div>
                                     </div>
