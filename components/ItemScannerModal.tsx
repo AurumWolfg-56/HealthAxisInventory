@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { ScannedItemData, scanItemLabel } from '../services/LocalAIService';
 import { InventoryItem } from '../types';
 import { CATEGORIES, LOCATIONS, UNITS } from '../utils/constants';
@@ -40,10 +40,8 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                 video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
             });
             streamRef.current = stream;
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-                await videoRef.current.play();
-            }
+            // The <video> element doesn't exist until state is 'camera', so we can't attach it here.
+            // We use a useEffect below to attach it once it renders.
             setState('camera');
         } catch (err) {
             console.error('Camera error:', err);
@@ -51,6 +49,14 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
             setState('error');
         }
     }, []);
+
+    // Attach stream to video tag when entering camera state
+    useEffect(() => {
+        if (state === 'camera' && videoRef.current && streamRef.current) {
+            videoRef.current.srcObject = streamRef.current;
+            videoRef.current.play().catch(e => console.error("Video play failed", e));
+        }
+    }, [state]);
 
     // Stop camera
     const stopCamera = useCallback(() => {
