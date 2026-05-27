@@ -399,6 +399,7 @@ export interface ScannedItemData {
   location: string;
   averageCost: number;
   confidence: number;
+  rawOcrText?: string;
 }
 
 /**
@@ -449,7 +450,9 @@ Parse this text and return a JSON object with exactly these fields:
       { model: 'smart', jsonMode: true, maxTokens: 4096 }
     );
 
-    return parseJsonResponse<ScannedItemData>(response);
+    const parsed = parseJsonResponse<ScannedItemData>(response);
+    parsed.rawOcrText = ocrText;
+    return parsed;
   } catch (error) {
     console.error('[LocalAI] Item scan error:', error);
     throw error;

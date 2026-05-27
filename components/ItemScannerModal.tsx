@@ -121,9 +121,12 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                     console.log(`[Semantic Search] No strong match found for "${result.name}". Showing new item form.`);
                     setDebugMessage(`IA leyó: "${result.name}". No se encontró coincidencia en base de datos.`);
                 }
-            } else {
-                console.log(`[Semantic Search] Could not search. Inventory length: ${inventory?.length}, Extracted name: "${result.name}"`);
-                setDebugMessage(`Error en la IA: No pudo leer el nombre o el inventario está vacío.`);
+            } else if (!inventory || inventory.length === 0) {
+                console.log(`[Semantic Search] Could not search. Inventory is empty.`);
+                setDebugMessage(`El inventario está vacío. IA intentó leer: "${result.name}"`);
+            } else if (!result.name) {
+                console.log(`[Semantic Search] Could not search. AI extracted empty name. Raw OCR: ${result.rawOcrText}`);
+                setDebugMessage(`La IA no pudo extraer un nombre. Texto crudo leído: "${result.rawOcrText?.substring(0, 50)}..."`);
             }
 
             setState('preview');
