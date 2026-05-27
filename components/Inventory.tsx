@@ -35,7 +35,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
-  const [showAIAuditor, setShowAIAuditor] = useState(false);
+  const [activeTab, setActiveTab] = useState<'general' | 'auditor'>('general');
 
   // Clear selection when exiting audit mode
   useEffect(() => {
@@ -298,16 +298,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
                 <span className="tracking-tight font-bold text-sm hidden sm:inline text-medical-700 dark:text-medical-300">Scan</span>
               </button>
             )}
-            {hasPermission('inventory.audit') && !isAuditMode && (
-              <button
-                onClick={() => setShowAIAuditor(true)}
-                className="h-11 px-5 glass-panel text-slate-900 dark:text-white rounded-xl font-semibold shadow-md flex items-center gap-2.5 transition-all hover:scale-105 hover:shadow-lg active:scale-95 group border-purple-200/40 dark:border-purple-800/40"
-                title="AI Auditor"
-              >
-                <i className="fa-solid fa-brain text-base text-purple-500 group-hover:scale-110 transition-transform"></i>
-                <span className="tracking-tight font-bold text-sm hidden sm:inline text-purple-700 dark:text-purple-400">AI Audit</span>
-              </button>
-            )}
+
             {hasPermission('inventory.edit') && !isAuditMode && (
               <button
                 onClick={onAddItem}
@@ -321,7 +312,35 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
         </div>
       </header>
 
-      {/* Audit Mode Banner */}
+      {/* Tabs Navigation */}
+      {hasPermission('inventory.audit') && (
+        <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 rounded-2xl w-fit mb-6">
+          <button
+            onClick={() => setActiveTab('general')}
+            className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${
+              activeTab === 'general' 
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800'
+            }`}
+          >
+            <i className="fa-solid fa-box-open"></i> {t('inv_title')}
+          </button>
+          <button
+            onClick={() => setActiveTab('auditor')}
+            className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${
+              activeTab === 'auditor' 
+                ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm' 
+                : 'text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-900/20'
+            }`}
+          >
+            <i className="fa-solid fa-brain"></i> AI Auditor
+          </button>
+        </div>
+      )}
+
+      {activeTab === 'general' ? (
+        <>
+          {/* Audit Mode Banner */}
       {isAuditMode && (
         <div className="bg-medical-600/10 border border-medical-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 mt-[-1rem] mb-6 animate-fade-in shadow-inner">
           <div className="flex items-center gap-3">
@@ -874,20 +893,22 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
               disabled={currentPage === totalPages}
               className="w-10 h-10 rounded-xl glass-panel flex items-center justify-center text-slate-500 transition-all disabled:opacity-30 text-sm"
             >
-              <i className="fa-solid fa-chevron-right"></i>
             </button>
           </div>
         </div>
       )}
-      {/* Submodules */}
-      <InventoryAIAuditor 
-        isOpen={showAIAuditor} 
-        onClose={() => setShowAIAuditor(false)} 
-        items={items} 
-        onUpdateItem={onUpdateItem} 
-        onEditItem={onEditItem}
-        t={t} 
-      />
+
+      </>
+      ) : (
+        <InventoryAIAuditor 
+          isOpen={true} 
+          onClose={() => setActiveTab('general')} 
+          items={items} 
+          onUpdateItem={onUpdateItem} 
+          onEditItem={onEditItem}
+          t={t} 
+        />
+      )}
 
     </div>
   );

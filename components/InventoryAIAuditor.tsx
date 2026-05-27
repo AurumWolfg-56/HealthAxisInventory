@@ -100,9 +100,7 @@ const InventoryAIAuditor: React.FC<InventoryAIAuditorProps> = ({ isOpen, onClose
   const unresolvedAnomalies = anomalies.filter((_, idx) => !resolvedIndices.has(idx));
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-fade-in">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}></div>
-      <div className="bg-white dark:bg-[#0f172a] w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl relative flex flex-col border border-slate-200 dark:border-slate-800 overflow-hidden">
+    <div className="bg-white dark:bg-[#0f172a] w-full rounded-3xl shadow-sm relative flex flex-col border border-slate-200 dark:border-slate-800 overflow-hidden animate-fade-in min-h-[60vh]">
         
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800/60 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
@@ -309,7 +307,6 @@ const InventoryAIAuditor: React.FC<InventoryAIAuditorProps> = ({ isOpen, onClose
           
         </div>
       </div>
-    </div>
   );
 };
 
