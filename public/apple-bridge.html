@@ -32,7 +32,7 @@
     const domain = urlParams.get('domain'); // e.g. tnwahbelwnhqevbgykxo.supabase.co
     
     if (userId && domain) {
-      const webcalUrl = "webcal://" + domain + "/functions/v1/calendar-feed?user_id=" + userId;
+      const webcalUrl = "webcal://" + domain + "/functions/v1/calendar-feed/schedule.ics?user_id=" + userId;
       document.getElementById('subBtn').href = webcalUrl;
       setTimeout(() => {
         window.location.href = webcalUrl;
