@@ -20,6 +20,7 @@ interface InventoryProps {
 }
 
 import { CATEGORIES, LOCATIONS } from '../utils/constants';
+import InventoryAIAuditor from './InventoryAIAuditor';
 
 type SortOption = 'name' | 'stockAsc' | 'stockDesc' | 'expiry';
 const ITEMS_PER_PAGE = 50;
@@ -34,6 +35,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAIAuditor, setShowAIAuditor] = useState(false);
 
   // Clear selection when exiting audit mode
   useEffect(() => {
@@ -294,6 +296,16 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
               >
                 <i className="fa-solid fa-wand-magic-sparkles text-base text-medical-600 dark:text-medical-400 group-hover:rotate-12 transition-transform"></i>
                 <span className="tracking-tight font-bold text-sm hidden sm:inline text-medical-700 dark:text-medical-300">Scan</span>
+              </button>
+            )}
+            {hasPermission('inventory.audit') && !isAuditMode && (
+              <button
+                onClick={() => setShowAIAuditor(true)}
+                className="h-11 px-5 glass-panel text-slate-900 dark:text-white rounded-xl font-semibold shadow-md flex items-center gap-2.5 transition-all hover:scale-105 hover:shadow-lg active:scale-95 group border-purple-200/40 dark:border-purple-800/40"
+                title="AI Auditor"
+              >
+                <i className="fa-solid fa-brain text-base text-purple-500 group-hover:scale-110 transition-transform"></i>
+                <span className="tracking-tight font-bold text-sm hidden sm:inline text-purple-700 dark:text-purple-400">AI Audit</span>
               </button>
             )}
             {hasPermission('inventory.edit') && !isAuditMode && (
@@ -867,6 +879,15 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
           </div>
         </div>
       )}
+      {/* Submodules */}
+      <InventoryAIAuditor 
+        isOpen={showAIAuditor} 
+        onClose={() => setShowAIAuditor(false)} 
+        items={items} 
+        onUpdateItem={onUpdateItem} 
+        t={t} 
+      />
+
     </div>
   );
 };

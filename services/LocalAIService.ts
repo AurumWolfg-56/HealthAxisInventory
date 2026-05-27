@@ -626,3 +626,71 @@ export const checkConnection = async (): Promise<{
 
   return { connected: false, models: [], endpoint: '', visionReady: false };
 };
+
+// ─── Inventory Auditing ─────────────────────────────────────────────────────
+
+export interface InventoryAnomaly {
+  type: 'DUPLICATE' | 'CATEGORY' | 'LOGIC' | 'MISSING_DATA';
+  itemIds: string[]; // IDs of the items involved
+  reason: string;    // Human-readable explanation
+  suggestion: string; // Actionable suggestion
+  suggestedUpdates?: Partial<import('../types').InventoryItem>; // Proposed field updates for the primary item
+  targetItemId?: string; // If duplicate, the ID of the item to keep
+}
+
+/**
+ * Sends a batch of inventory items to the local AI to audit for anomalies.
+ */
+export const auditInventoryData = async (items: import('../types').InventoryItem[]): Promise<InventoryAnomaly[]> => {
+  if (items.length === 0) return [];
+  
+  console.log(`[LocalAI] 🕵️ Starting audit on batch of ${items.length} items...`);
+
+  const systemPrompt = `You are a medical inventory auditor system.
+You will be provided with a JSON array of inventory items.
+Analyze them strictly for the following 4 types of anomalies:
+1. "DUPLICATE": Items that represent the exact same physical product but are spelled slightly differently (e.g., "Gasa 4x4" vs "Gasas 4x4", "Advil" vs "Advil 200mg").
+2. "CATEGORY": The item's category logically mismatches its name (e.g., "Syringe 5ml" in "Office Supplies"). Valid categories: ${INVENTORY_CATEGORIES.join(', ')}.
+3. "LOGIC": Nonsensical stock values (e.g., minStock is greater than maxStock) or highly improbable unit/stock combinations (e.g., 5000 "Boxes" when it likely means "Each").
+4. "MISSING_DATA": Critical medical items (medicines, lab reagents, perishables) that are missing an expiryDate or batchNumber.
+
+Return ONLY a JSON array of anomalies. If none, return [].
+Format for each anomaly:
+{
+  "type": "DUPLICATE" | "CATEGORY" | "LOGIC" | "MISSING_DATA",
+  "itemIds": ["id1", "id2"], // Include all affected item IDs
+  "reason": "Clear explanation of why this is an anomaly",
+  "suggestion": "What the user should do to fix it",
+  "suggestedUpdates": { "category": "Medical Supplies" }, // ONLY include fields that need changing, if applicable
+  "targetItemId": "id1" // ONLY for DUPLICATE: the ID of the item to keep as the primary
+}`;
+
+  // We only send necessary fields to save tokens
+  const payload = items.map(i => ({
+    id: i.id,
+    name: i.name,
+    category: i.category,
+    stock: i.stock,
+    unit: i.unit,
+    minStock: i.minStock,
+    maxStock: i.maxStock,
+    expiryDate: i.expiryDate,
+    batchNumber: i.batchNumber
+  }));
+
+  try {
+    const response = await chatCompletion(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: JSON.stringify(payload, null, 2) }
+      ],
+      { model: 'smart', jsonMode: true, maxTokens: 4096, temperature: 0.1 }
+    );
+
+    const anomalies = parseJsonResponse<InventoryAnomaly[]>(response);
+    return Array.isArray(anomalies) ? anomalies : [];
+  } catch (error) {
+    console.error('[LocalAI] Audit error:', error);
+    return [];
+  }
+};
