@@ -224,38 +224,45 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
             </div>
 
             {/* --- HIDDEN PROFESSIONAL REPORT TEMPLATE --- */}
-            <div id="professional-report" className="hidden bg-white text-black p-10 max-w-[210mm] mx-auto">
+            <div id="professional-report" className="hidden bg-white text-slate-900 p-12 max-w-[210mm] mx-auto font-sans">
                 {/* 1. Header Header */}
-                <div className="flex justify-between items-end border-b-2 border-gray-800 pb-4 mb-8">
+                <div className="flex justify-between items-end border-b-2 border-medical-500 pb-5 mb-8">
                     <div>
-                        <h1 className="text-4xl font-serif font-black tracking-tight text-gray-900">Orders Analytics Report</h1>
-                        <p className="text-sm text-gray-500 mt-1 uppercase tracking-widest font-bold">Norvexis Core Inventory Management</p>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-8 h-8 bg-medical-600 rounded-lg flex items-center justify-center text-white">
+                                <i className="fa-solid fa-chart-line"></i>
+                            </div>
+                            <h1 className="text-4xl font-serif font-black tracking-tight text-slate-900">Orders Analytics Report</h1>
+                        </div>
+                        <p className="text-sm text-medical-600 mt-1 uppercase tracking-widest font-bold">Immediate Care Plus</p>
                     </div>
-                    <div className="text-right">
-                        <div className="text-xs text-gray-500 uppercase font-bold">Date Generated</div>
-                        <div className="text-lg font-bold">{new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                    <div className="text-right bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div className="text-xs text-slate-400 uppercase font-bold tracking-wider">Date Generated</div>
+                        <div className="text-lg font-black text-medical-700">{new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</div>
                     </div>
                 </div>
 
                 {/* 2. Executive Summary Metrics */}
                 <div className="mb-10">
-                    <h2 className="text-sm font-bold uppercase text-gray-400 border-b border-gray-200 pb-2 mb-4">Executive Summary</h2>
-                    <div className="grid grid-cols-4 gap-4">
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                            <div className="text-xs text-gray-500 uppercase font-bold mb-1">Total Spend</div>
-                            <div className="text-2xl font-black text-gray-900">${metrics.totalSpend.toLocaleString()}</div>
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                        <i className="fa-solid fa-bolt text-medical-500"></i> Executive Summary
+                    </h2>
+                    <div className="grid grid-cols-4 gap-5">
+                        <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm border-l-4 border-l-emerald-500">
+                            <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Total Spend</div>
+                            <div className="text-2xl font-black text-slate-900">${metrics.totalSpend.toLocaleString()}</div>
                         </div>
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                            <div className="text-xs text-gray-500 uppercase font-bold mb-1">Total Orders</div>
-                            <div className="text-2xl font-black text-gray-900">{metrics.totalOrders}</div>
+                        <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm border-l-4 border-l-blue-500">
+                            <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Total Orders</div>
+                            <div className="text-2xl font-black text-slate-900">{metrics.totalOrders}</div>
                         </div>
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                            <div className="text-xs text-gray-500 uppercase font-bold mb-1">Avg Order Value</div>
-                            <div className="text-2xl font-black text-gray-900">${metrics.averageOrderValue.toLocaleString()}</div>
+                        <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm border-l-4 border-l-violet-500">
+                            <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Avg Order Value</div>
+                            <div className="text-2xl font-black text-slate-900">${metrics.averageOrderValue.toLocaleString()}</div>
                         </div>
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                            <div className="text-xs text-gray-500 uppercase font-bold mb-1">Items Received</div>
-                            <div className="text-2xl font-black text-gray-900">{metrics.totalItemsOrdered}</div>
+                        <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm border-l-4 border-l-orange-500">
+                            <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Items Received</div>
+                            <div className="text-2xl font-black text-slate-900">{metrics.totalItemsOrdered}</div>
                         </div>
                     </div>
                 </div>
@@ -264,19 +271,19 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                 <div className="grid grid-cols-2 gap-12 mb-10">
                     {/* Top Vendors Table */}
                     <div>
-                        <h2 className="text-sm font-bold uppercase text-gray-400 border-b border-gray-200 pb-2 mb-4">Top Vendors by Spend</h2>
+                        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-2 mb-4">Top Vendors by Spend</h2>
                         <table className="w-full text-sm text-left">
                             <thead>
-                                <tr className="border-b border-gray-200">
-                                    <th className="py-2 font-black text-gray-900">Vendor</th>
-                                    <th className="py-2 font-black text-gray-900 text-right">Total</th>
+                                <tr>
+                                    <th className="py-3 px-2 font-black text-slate-700 bg-slate-50 rounded-l-lg">Vendor</th>
+                                    <th className="py-3 px-2 font-black text-slate-700 bg-slate-50 text-right rounded-r-lg">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {metrics.vendorData.map((v, i) => (
-                                    <tr key={i} className="border-b border-gray-100">
-                                        <td className="py-2 text-gray-700">{v.name}</td>
-                                        <td className="py-2 text-gray-900 font-bold text-right">${v.value.toLocaleString()}</td>
+                                    <tr key={i} className="border-b border-slate-50">
+                                        <td className="py-3 px-2 text-slate-600 font-medium">{v.name}</td>
+                                        <td className="py-3 px-2 text-slate-900 font-bold text-right">${v.value.toLocaleString()}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -285,19 +292,19 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
 
                     {/* Monthly Trend Table */}
                     <div>
-                        <h2 className="text-sm font-bold uppercase text-gray-400 border-b border-gray-200 pb-2 mb-4">Monthly Spending History</h2>
+                        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-2 mb-4">Monthly Spending History</h2>
                         <table className="w-full text-sm text-left">
                             <thead>
-                                <tr className="border-b border-gray-200">
-                                    <th className="py-2 font-black text-gray-900">Month</th>
-                                    <th className="py-2 font-black text-gray-900 text-right">Total Spend</th>
+                                <tr>
+                                    <th className="py-3 px-2 font-black text-slate-700 bg-slate-50 rounded-l-lg">Month</th>
+                                    <th className="py-3 px-2 font-black text-slate-700 bg-slate-50 text-right rounded-r-lg">Total Spend</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {metrics.trendData.slice(0, 12).map((t, i) => (
-                                    <tr key={i} className="border-b border-gray-100">
-                                        <td className="py-2 text-gray-700">{t.date}</td>
-                                        <td className="py-2 text-gray-900 font-bold text-right">${t.value.toLocaleString()}</td>
+                                    <tr key={i} className="border-b border-slate-50">
+                                        <td className="py-3 px-2 text-slate-600 font-medium">{t.date}</td>
+                                        <td className="py-3 px-2 text-slate-900 font-bold text-right">${t.value.toLocaleString()}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -307,25 +314,25 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
 
                 {/* 4. Recent Orders Snapshot */}
                 <div className="mb-8">
-                    <h2 className="text-sm font-bold uppercase text-gray-400 border-b border-gray-200 pb-2 mb-4">Recent High-Value Orders</h2>
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-2 mb-4">Recent High-Value Orders</h2>
                     <table className="w-full text-sm text-left">
-                        <thead className="bg-gray-100">
+                        <thead className="bg-slate-50">
                             <tr>
-                                <th className="p-3 font-black text-gray-900 rounded-l-lg">Date</th>
-                                <th className="p-3 font-black text-gray-900">PO Number</th>
-                                <th className="p-3 font-black text-gray-900">Vendor</th>
-                                <th className="p-3 font-black text-gray-900">Status</th>
-                                <th className="p-3 font-black text-gray-900 text-right rounded-r-lg">Amount</th>
+                                <th className="p-3 font-black text-slate-700 rounded-l-lg">Date</th>
+                                <th className="p-3 font-black text-slate-700">PO Number</th>
+                                <th className="p-3 font-black text-slate-700">Vendor</th>
+                                <th className="p-3 font-black text-slate-700">Status</th>
+                                <th className="p-3 font-black text-slate-700 text-right rounded-r-lg">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
                             {orders.sort((a, b) => b.grandTotal - a.grandTotal).slice(0, 5).map((order) => (
-                                <tr key={order.id} className="border-b border-gray-100">
-                                    <td className="p-3 text-gray-600">{order.orderDate}</td>
-                                    <td className="p-3 font-mono text-gray-900 font-bold">{order.poNumber}</td>
-                                    <td className="p-3 text-gray-900">{order.vendor}</td>
-                                    <td className="p-3"><span className="px-2 py-1 rounded bg-gray-200 text-xs font-bold text-gray-700">{order.status}</span></td>
-                                    <td className="p-3 text-gray-900 font-black text-right">${order.grandTotal.toLocaleString()}</td>
+                                <tr key={order.id} className="border-b border-slate-50">
+                                    <td className="p-3 text-slate-500 font-medium">{order.orderDate}</td>
+                                    <td className="p-3 font-mono text-slate-900 font-bold">{order.poNumber}</td>
+                                    <td className="p-3 text-slate-700">{order.vendor}</td>
+                                    <td className="p-3"><span className="px-2 py-1 rounded-md bg-slate-100 text-[10px] uppercase tracking-wider font-bold text-slate-600">{order.status}</span></td>
+                                    <td className="p-3 text-slate-900 font-black text-right">${order.grandTotal.toLocaleString()}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -333,8 +340,8 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                 </div>
 
                 {/* Footer */}
-                <div className="text-center text-xs text-gray-400 pt-8 border-t border-gray-100 mt-auto">
-                    <p>Confidential Property of Norvexis Core. Generated via Norvexis Core PWA.</p>
+                <div className="text-center text-xs font-medium text-slate-400 pt-6 border-t border-slate-100 mt-auto">
+                    <p>Confidential Property of Immediate Care Plus.</p>
                 </div>
             </div>
         </div>
