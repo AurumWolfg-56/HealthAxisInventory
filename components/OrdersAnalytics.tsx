@@ -99,14 +99,14 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
             margin: [10, 10, 10, 10], // top, left, bottom, right
             filename: `NervexisCore_Orders_Report_${new Date().toISOString().split('T')[0]}.pdf`,
             image: { type: 'jpeg', quality: 1.0 },
-            html2canvas: { scale: 2, useCORS: true, logging: false },
+            html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1000 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         };
 
         // Temporarily show the report to capture it
         if (element) {
-            element.style.display = 'block';
+            element.style.display = 'flex';
             await (window as any).html2pdf().set(opt).from(element).save();
             element.style.display = 'none'; // Hide again
         }
