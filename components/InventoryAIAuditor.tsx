@@ -18,6 +18,11 @@ const InventoryAIAuditor: React.FC<InventoryAIAuditorProps> = ({ isOpen, onClose
   const [progress, setProgress] = useState(0);
   const [anomalies, setAnomalies] = useState<InventoryAnomaly[]>([]);
   const [resolvedIndices, setResolvedIndices] = useState<Set<number>>(new Set());
+  
+  // Inline edit state
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<InventoryItem>>({});
+  const [editingAnomalyIdx, setEditingAnomalyIdx] = useState<number | null>(null);
 
   useEffect(() => {
     if (isOpen && anomalies.length === 0 && !isAuditing) {
@@ -164,6 +169,7 @@ const InventoryAIAuditor: React.FC<InventoryAIAuditorProps> = ({ isOpen, onClose
               <div className="grid gap-4">
                 {anomalies.map((anomaly, idx) => {
                   if (resolvedIndices.has(idx)) return null;
+                  const isEditingThis = editingAnomalyIdx === idx;
                   
                   return (
                     <div key={idx} className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-5 animate-fade-in">
@@ -187,52 +193,106 @@ const InventoryAIAuditor: React.FC<InventoryAIAuditorProps> = ({ isOpen, onClose
                           {anomaly.suggestion}
                         </div>
                         
-                        {/* Show affected items */}
-                        <div className="flex flex-wrap gap-2 pt-2">
-                          {anomaly.itemIds.map(id => {
-                            const item = items.find(i => i.id === id);
-                            if (!item) return null;
-                            return (
-                              <div key={id} className="bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs flex flex-col">
-                                <span className="font-bold text-slate-700 dark:text-slate-300">{item.name}</span>
-                                <span className="text-slate-500">Stock: {item.stock} | Cat: {item.category}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        {/* Show affected items or Edit Form */}
+                        {isEditingThis ? (
+                          <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-medical-200 dark:border-medical-800 space-y-3 mt-4">
+                            <h4 className="text-xs font-bold uppercase tracking-widest text-medical-600 dark:text-medical-400 mb-2">Manual Edit</h4>
+                            <input
+                              type="text"
+                              value={editForm.name || ''}
+                              onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                              className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold"
+                              placeholder="Item Name"
+                            />
+                            <div className="grid grid-cols-2 gap-3">
+                              <input
+                                type="text"
+                                value={editForm.category || ''}
+                                onChange={e => setEditForm({ ...editForm, category: e.target.value })}
+                                className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
+                                placeholder="Category"
+                              />
+                              <input
+                                type="number"
+                                value={editForm.stock || 0}
+                                onChange={e => setEditForm({ ...editForm, stock: parseInt(e.target.value) || 0 })}
+                                className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
+                                placeholder="Stock"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-2 pt-2">
+                            {anomaly.itemIds.map(id => {
+                              const item = items.find(i => i.id === id);
+                              if (!item) return null;
+                              return (
+                                <div key={id} className="bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs flex flex-col">
+                                  <span className="font-bold text-slate-700 dark:text-slate-300">{item.name}</span>
+                                  <span className="text-slate-500">Stock: {item.stock} | Cat: {item.category}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                       
                       <div className="flex flex-col gap-2 justify-center border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-800 pt-4 md:pt-0 md:pl-5 min-w-[140px]">
-                        {anomaly.suggestedUpdates && (
-                          <button 
-                            onClick={() => handleApply(anomaly, idx)}
-                            className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
-                          >
-                            <i className="fa-solid fa-check"></i> Apply Fix
-                          </button>
+                        {isEditingThis ? (
+                          <>
+                            <button 
+                              onClick={() => {
+                                if (editingItemId) onUpdateItem(editingItemId, editForm);
+                                setEditingAnomalyIdx(null);
+                                setEditingItemId(null);
+                                handleDismiss(idx);
+                              }}
+                              className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
+                            >
+                              <i className="fa-solid fa-check"></i> Save
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setEditingAnomalyIdx(null);
+                                setEditingItemId(null);
+                              }}
+                              className="w-full py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-bold transition-all active:scale-95 text-sm"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            {anomaly.suggestedUpdates && (
+                              <button 
+                                onClick={() => handleApply(anomaly, idx)}
+                                className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
+                              >
+                                <i className="fa-solid fa-check"></i> Apply Fix
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => {
+                                const itemToEditId = anomaly.targetItemId || anomaly.itemIds[0];
+                                const itemToEdit = items.find(i => i.id === itemToEditId);
+                                if (itemToEdit) {
+                                  setEditingItemId(itemToEdit.id);
+                                  setEditForm(itemToEdit);
+                                  setEditingAnomalyIdx(idx);
+                                }
+                              }}
+                              className="w-full py-2 bg-medical-50 dark:bg-medical-900/20 text-medical-600 dark:text-medical-400 hover:bg-medical-100 dark:hover:bg-medical-900/40 rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
+                            >
+                              <i className="fa-solid fa-pen-to-square"></i> Edit Manually
+                            </button>
+                            <button 
+                              onClick={() => handleDismiss(idx)}
+                              className="w-full py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-bold transition-all active:scale-95 text-sm"
+                            >
+                              Ignore
+                            </button>
+                          </>
                         )}
-                        <button 
-                          onClick={() => {
-                            // Find the primary item to edit
-                            const itemToEditId = anomaly.targetItemId || anomaly.itemIds[0];
-                            const itemToEdit = items.find(i => i.id === itemToEditId);
-                            if (itemToEdit) {
-                              onClose(); // Close auditor to show edit modal
-                              onEditItem(itemToEdit);
-                              // Mark as resolved in background so it's gone when they come back
-                              handleDismiss(idx);
-                            }
-                          }}
-                          className="w-full py-2 bg-medical-50 dark:bg-medical-900/20 text-medical-600 dark:text-medical-400 hover:bg-medical-100 dark:hover:bg-medical-900/40 rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
-                        >
-                          <i className="fa-solid fa-pen-to-square"></i> Edit Manually
-                        </button>
-                        <button 
-                          onClick={() => handleDismiss(idx)}
-                          className="w-full py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-bold transition-all active:scale-95 text-sm"
-                        >
-                          Ignore
-                        </button>
                       </div>
                     </div>
                   );
