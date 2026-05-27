@@ -99,16 +99,31 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
             margin: [10, 10, 10, 10], // top, left, bottom, right
             filename: `NervexisCore_Orders_Report_${new Date().toISOString().split('T')[0]}.pdf`,
             image: { type: 'jpeg', quality: 1.0 },
-            html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1000 },
+            html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1000, scrollX: 0, scrollY: 0 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         };
 
         // Temporarily show the report to capture it
         if (element) {
+            const originalPosition = element.style.position;
+            const originalTop = element.style.top;
+            const originalLeft = element.style.left;
+            const originalZIndex = element.style.zIndex;
+
             element.style.display = 'flex';
+            element.style.position = 'absolute';
+            element.style.top = '0';
+            element.style.left = '0';
+            element.style.zIndex = '-9999';
+
             await (window as any).html2pdf().set(opt).from(element).save();
+
             element.style.display = 'none'; // Hide again
+            element.style.position = originalPosition;
+            element.style.top = originalTop;
+            element.style.left = originalLeft;
+            element.style.zIndex = originalZIndex;
         }
     };
 
@@ -234,7 +249,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
             </div>
 
             {/* --- HIDDEN PROFESSIONAL REPORT TEMPLATE --- */}
-            <div id="professional-report" className="hidden bg-white text-slate-900 p-12 w-[210mm] min-h-[277mm] mx-auto font-sans flex flex-col box-border">
+            <div id="professional-report" className="hidden bg-white text-slate-900 p-12 w-[210mm] min-h-[277mm] font-sans flex-col box-border origin-top-left">
                 {/* 1. Header Header */}
                 <div className="flex justify-between items-end border-b-2 border-medical-500 pb-5 mb-8">
                     <div>
