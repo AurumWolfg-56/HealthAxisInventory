@@ -112,10 +112,11 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
             const originalZIndex = element.style.zIndex;
 
             element.style.display = 'flex';
-            element.style.position = 'absolute';
+            element.style.position = 'fixed';
             element.style.top = '0';
             element.style.left = '0';
-            element.style.zIndex = '-9999';
+            element.style.zIndex = '9999';
+            element.style.backgroundColor = 'white';
 
             await (window as any).html2pdf().set(opt).from(element).save();
 
