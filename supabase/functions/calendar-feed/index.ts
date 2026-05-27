@@ -16,6 +16,7 @@ serve(async (req) => {
   try {
     const url = new URL(req.url)
     const userId = url.searchParams.get('user_id')
+    const platform = url.searchParams.get('platform')
 
     if (!userId) {
       return new Response(JSON.stringify({ error: 'Missing user_id parameter' }), {
@@ -25,6 +26,55 @@ serve(async (req) => {
           'Access-Control-Allow-Origin': '*',
         }
       })
+    }
+
+    if (platform === 'apple') {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+      const cleanUrl = supabaseUrl.replace('https://', '');
+      const webcalUrl = `webcal://${cleanUrl}/functions/v1/calendar-feed?user_id=${userId}`;
+
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Norvexis Calendar Sync</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; color: #1e293b; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; max-width: 400px; width: 90%; }
+    .title { color: #4f46e5; font-size: 24px; font-weight: 700; margin-bottom: 10px; margin-top: 0; }
+    .subtitle { color: #64748b; font-size: 15px; margin-bottom: 30px; line-height: 1.5; }
+    .button { display: inline-block; background-color: #007aff; color: white; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 14px rgba(0, 122, 255, 0.3); transition: transform 0.2s; }
+    .button:active { transform: scale(0.97); }
+    .auto-text { margin-top: 20px; font-size: 13px; color: #94a3b8; }
+    @media (prefers-color-scheme: dark) {
+      body { background-color: #0f172a; color: #f1f5f9; }
+      .card { background: #1e293b; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+      .subtitle { color: #94a3b8; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 class="title">Norvexis Schedule</h1>
+    <p class="subtitle">You are about to subscribe to your work shifts on Apple Calendar. This will keep your calendar automatically updated.</p>
+    <a href="${webcalUrl}" class="button">Subscribe Now</a>
+    <p class="auto-text">If you aren't redirected automatically, click the button above.</p>
+  </div>
+  <script>
+    setTimeout(() => {
+      window.location.href = "${webcalUrl}";
+    }, 1500);
+  </script>
+</body>
+</html>`;
+
+      return new Response(html, {
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Access-Control-Allow-Origin': '*',
+        }
+      });
     }
 
     const supabaseAdmin = createClient(

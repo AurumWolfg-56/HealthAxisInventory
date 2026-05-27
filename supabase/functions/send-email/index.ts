@@ -271,6 +271,7 @@ serve(async (req: Request) => {
         const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
         const cleanUrl = supabaseUrl.replace('https://', '');
         const feedUrl = `https://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}`;
+        const appleUrl = `https://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}&platform=apple`;
 
         subject = `[Norvexis] Workforce Schedule Calendar Subscription`;
         html = `
@@ -290,9 +291,9 @@ serve(async (req: Request) => {
                  <div style="background-color: #f8fafc; border-left: 4px solid #007aff; padding: 14px; border-radius: 4px; margin-bottom: 16px;">
                      <h4 style="margin: 0 0 6px 0; color: #007aff; font-size: 15px;">Option 1: Apple Calendar (iPhone, iPad, Mac)</h4>
                      <p style="margin: 0 0 10px 0; font-size: 13px; color: #475569; line-height: 1.4;">Click the button below to subscribe directly on your Apple device calendar.</p>
-                     <a href="${feedUrl}" style="display: inline-block; background-color: #007aff; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 6px;">Subscribe on Apple Calendar</a>
+                     <a href="${appleUrl}" style="display: inline-block; background-color: #007aff; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 6px;">Subscribe on Apple Calendar</a>
                      <p style="margin: 8px 0 0 0; font-size: 11px; color: #64748b; font-style: italic; line-height: 1.4;">
-                         * iPhone users: If you see an error in your email app, please tap the Safari icon (🧭) to open the page in Safari and complete the subscription.
+                         * iPhone users: The button above will open a secure bridge page to automatically configure your subscription.
                      </p>
                  </div>
 
@@ -316,6 +317,7 @@ serve(async (req: Request) => {
          const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
          const cleanUrl = supabaseUrl.replace('https://', '');
          const feedUrl = `https://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}`;
+         const appleUrl = `https://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}&platform=apple`;
 
          subject = `[Norvexis] Workforce Schedule Summary - ${data.monthName}`;
          
@@ -360,11 +362,11 @@ serve(async (req: Request) => {
                   <h4 style="margin: 0 0 8px 0; color: #4f46e5; font-size: 15px;">Subscribe to your calendar</h4>
                   <p style="margin: 0 0 12px 0; font-size: 13px; color: #475569; line-height: 1.4;">Add this schedule to your phone or Google calendar to see automatic updates.</p>
                   <div style="margin-top: 10px;">
-                      <a href="${feedUrl}" style="display: inline-block; background-color: #007aff; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 6px; margin-right: 8px;">Subscribe on iPhone</a>
+                      <a href="${appleUrl}" style="display: inline-block; background-color: #007aff; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 6px; margin-right: 8px;">Subscribe on iPhone</a>
                       <a href="${feedUrl}" target="_blank" style="display: inline-block; background-color: #34a853; color: #ffffff; text-decoration: none; padding: 8px 16px; font-size: 13px; font-weight: bold; border-radius: 6px;">Add to Google Calendar</a>
                   </div>
                   <p style="margin: 12px 0 0 0; font-size: 11px; color: #64748b; font-style: italic; line-height: 1.4;">
-                      * iPhone users: If you see an error in your email app, please tap the Safari icon (🧭) to open the page in Safari and complete the subscription.
+                      * iPhone users: The button above will open a secure bridge page to automatically configure your subscription.
                   </p>
               </div>
               
