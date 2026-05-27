@@ -72,6 +72,8 @@ serve(async (req) => {
       return new Response(html, {
         headers: {
           'Content-Type': 'text/html; charset=utf-8',
+          'Content-Disposition': 'inline',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Access-Control-Allow-Origin': '*',
         }
       });
