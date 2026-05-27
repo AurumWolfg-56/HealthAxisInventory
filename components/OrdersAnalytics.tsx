@@ -62,6 +62,15 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
             .map(([date, value]) => ({ date, value }))
             .sort((a, b) => a.date.localeCompare(b.date));
 
+        // Date Range
+        let dateRange = 'All Time';
+        if (orders.length > 0) {
+            const sortedDates = [...orders].sort((a, b) => new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime());
+            const firstDate = new Date(sortedDates[0].orderDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+            const lastDate = new Date(sortedDates[sortedDates.length - 1].orderDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+            dateRange = `${firstDate} - ${lastDate}`;
+        }
+
         return {
             totalOrders,
             totalSpend,
@@ -69,7 +78,8 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
             totalItemsOrdered,
             vendorData,
             categoryData,
-            trendData
+            trendData,
+            dateRange
         };
     }, [orders, inventory]);
 
@@ -224,7 +234,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
             </div>
 
             {/* --- HIDDEN PROFESSIONAL REPORT TEMPLATE --- */}
-            <div id="professional-report" className="hidden bg-white text-slate-900 p-12 max-w-[210mm] mx-auto font-sans">
+            <div id="professional-report" className="hidden bg-white text-slate-900 p-12 w-[210mm] min-h-[277mm] mx-auto font-sans flex flex-col box-border">
                 {/* 1. Header Header */}
                 <div className="flex justify-between items-end border-b-2 border-medical-500 pb-5 mb-8">
                     <div>
@@ -236,9 +246,10 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                         </div>
                         <p className="text-sm text-medical-600 mt-1 uppercase tracking-widest font-bold">Immediate Care Plus</p>
                     </div>
-                    <div className="text-right bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div className="text-right bg-slate-50 p-3 rounded-xl border border-slate-100 min-w-[200px]">
                         <div className="text-xs text-slate-400 uppercase font-bold tracking-wider">Date Generated</div>
                         <div className="text-lg font-black text-medical-700">{new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                        <div className="text-[10px] text-slate-500 font-bold mt-1 uppercase tracking-widest border-t border-slate-200 pt-1">Period: {metrics.dateRange}</div>
                     </div>
                 </div>
 
