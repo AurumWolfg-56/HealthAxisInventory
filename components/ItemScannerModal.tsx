@@ -2,21 +2,25 @@ import React, { useState, useRef, useCallback } from 'react';
 import { ScannedItemData, scanItemLabel } from '../services/LocalAIService';
 import { InventoryItem } from '../types';
 import { CATEGORIES, LOCATIONS, UNITS } from '../utils/constants';
+import { findBestMatch } from '../utils/semanticSearch';
 
 interface ItemScannerModalProps {
     isOpen: boolean;
     onClose: () => void;
     onAddItem: (item: Omit<InventoryItem, 'id'>) => void;
+    onItemFound?: (item: InventoryItem) => void;
+    inventory?: InventoryItem[];
     t: (key: string) => string;
 }
 
-type ScannerState = 'idle' | 'camera' | 'processing' | 'preview' | 'error';
+type ScannerState = 'idle' | 'camera' | 'processing' | 'preview' | 'error' | 'found_match';
 
-const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, onAddItem, t }) => {
+const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, onAddItem, onItemFound, inventory, t }) => {
     const [state, setState] = useState<ScannerState>('idle');
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [scannedData, setScannedData] = useState<ScannedItemData | null>(null);
     const [editedData, setEditedData] = useState<Partial<ScannedItemData>>({});
+    const [foundItem, setFoundItem] = useState<InventoryItem | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>('');
 
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -83,15 +87,25 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
         }
     }, []);
 
-    // Process image with Local AI Vision
     const processImage = async (imageData: string) => {
         setState('processing');
         setErrorMessage('');
+        setFoundItem(null);
 
         try {
             const result = await scanItemLabel(imageData);
             setScannedData(result);
             setEditedData(result);
+
+            if (inventory && inventory.length > 0 && result.name) {
+                const matchResult = findBestMatch(result.name, inventory);
+                if (matchResult) {
+                    setFoundItem(matchResult.item);
+                    setState('found_match');
+                    return;
+                }
+            }
+
             setState('preview');
         } catch (err: any) {
             console.error('Scan error:', err);
@@ -121,13 +135,13 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
         handleClose();
     };
 
-    // Reset and close modal
     const handleClose = () => {
         stopCamera();
         setState('idle');
         setCapturedImage(null);
         setScannedData(null);
         setEditedData({});
+        setFoundItem(null);
         setErrorMessage('');
         onClose();
     };
@@ -137,6 +151,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
         setCapturedImage(null);
         setScannedData(null);
         setEditedData({});
+        setFoundItem(null);
         setErrorMessage('');
         setState('idle');
     };
@@ -272,6 +287,42 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                             >
                                 <i className="fa-solid fa-rotate-right mr-2"></i> Try Again
                             </button>
+                        </div>
+                    )}
+
+                    {/* FOUND MATCH STATE */}
+                    {state === 'found_match' && foundItem && (
+                        <div className="py-8 flex flex-col items-center gap-6">
+                            <div className="w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                                <i className="fa-solid fa-check-double text-4xl text-emerald-500"></i>
+                            </div>
+                            <div className="text-center">
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Item Found in Inventory</h3>
+                                <p className="text-slate-500 mt-2 max-w-sm">
+                                    We matched the scanned label to an existing item.
+                                </p>
+                            </div>
+                            <div className="w-full max-w-sm p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 flex flex-col gap-2 text-center">
+                                <span className="font-bold text-lg text-slate-900 dark:text-white">{foundItem.name}</span>
+                                <span className="text-sm text-slate-500">Current Stock: <strong className="text-slate-700 dark:text-slate-300">{foundItem.stock}</strong> {foundItem.unit}</span>
+                            </div>
+                            <div className="flex gap-4 w-full max-w-sm mt-4">
+                                <button
+                                    onClick={() => setState('preview')}
+                                    className="flex-1 px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-all"
+                                >
+                                    Not this one
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (onItemFound) onItemFound(foundItem);
+                                        handleClose();
+                                    }}
+                                    className="flex-1 px-4 py-3 rounded-2xl bg-medical-600 text-white font-bold shadow-xl shadow-medical-500/30 hover:bg-medical-700 transition-all"
+                                >
+                                    Open Item
+                                </button>
+                            </div>
                         </div>
                     )}
 

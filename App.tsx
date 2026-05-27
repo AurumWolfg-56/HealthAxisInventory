@@ -472,6 +472,11 @@ const App: React.FC = () => {
                         addToast(`Scan save failed: ${e.message}`, 'error');
                     }
                 }}
+                onItemFound={(item) => {
+                    setModalItem(item);
+                    setIsModalOpen(true);
+                }}
+                inventory={inventory}
                 t={t}
             />
             <ProductModal
