@@ -16,12 +16,17 @@ interface ItemScannerModalProps {
 type ScannerState = 'idle' | 'camera' | 'processing' | 'preview' | 'error' | 'found_match';
 
 const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, onAddItem, onItemFound, inventory, t }) => {
+    const addToast = (text: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+        // Just use console log or alert if toast isn't available from props, but we can emit a small local state or just console.
+        console.log(`[Scanner] ${type}: ${text}`);
+    };
     const [state, setState] = useState<ScannerState>('idle');
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [scannedData, setScannedData] = useState<ScannedItemData | null>(null);
     const [editedData, setEditedData] = useState<Partial<ScannedItemData>>({});
     const [foundItem, setFoundItem] = useState<InventoryItem | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>('');
+    const [debugMessage, setDebugMessage] = useState<string>('');
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -99,11 +104,20 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
 
             if (inventory && inventory.length > 0 && result.name) {
                 const matchResult = findBestMatch(result.name, inventory);
+                console.log(`[Semantic Search] Extracted name: "${result.name}"`);
+                console.log(`[Semantic Search] Best match: `, matchResult);
+
                 if (matchResult) {
                     setFoundItem(matchResult.item);
                     setState('found_match');
                     return;
+                } else {
+                    console.log(`[Semantic Search] No strong match found for "${result.name}". Showing new item form.`);
+                    setDebugMessage(`IA leyó: "${result.name}". No se encontró coincidencia en base de datos.`);
                 }
+            } else {
+                console.log(`[Semantic Search] Could not search. Inventory length: ${inventory?.length}, Extracted name: "${result.name}"`);
+                setDebugMessage(`Error en la IA: No pudo leer el nombre o el inventario está vacío.`);
             }
 
             setState('preview');
@@ -143,6 +157,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
         setEditedData({});
         setFoundItem(null);
         setErrorMessage('');
+        setDebugMessage('');
         onClose();
     };
 
@@ -153,6 +168,7 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
         setEditedData({});
         setFoundItem(null);
         setErrorMessage('');
+        setDebugMessage('');
         setState('idle');
     };
 
@@ -345,6 +361,14 @@ const ItemScannerModal: React.FC<ItemScannerModalProps> = ({ isOpen, onClose, on
                                     {scannedData.confidence}% Confidence
                                 </div>
                             </div>
+
+                            {/* Debug message */}
+                            {debugMessage && (
+                                <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-sm font-medium">
+                                    <i className="fa-solid fa-circle-info mr-2"></i>
+                                    {debugMessage}
+                                </div>
+                            )}
 
                             {/* Editable Fields */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
