@@ -630,7 +630,7 @@ export const checkConnection = async (): Promise<{
 // ─── Inventory Auditing ─────────────────────────────────────────────────────
 
 export interface InventoryAnomaly {
-  type: 'DUPLICATE' | 'CATEGORY' | 'LOGIC' | 'MISSING_DATA';
+  type: 'DUPLICATE' | 'CATEGORY' | 'NOMENCLATURE' | 'LOGIC' | 'MISSING_DATA';
   itemIds: string[]; // IDs of the items involved
   reason: string;    // Human-readable explanation
   suggestion: string; // Actionable suggestion
@@ -646,23 +646,24 @@ export const auditInventoryData = async (items: import('../types').InventoryItem
   
   console.log(`[LocalAI] 🕵️ Starting audit on batch of ${items.length} items...`);
 
-  const systemPrompt = `You are a medical inventory auditor system.
-You will be provided with a JSON array of inventory items.
-Analyze them strictly for the following 4 types of anomalies:
-1. "DUPLICATE": Items that represent the exact same physical product but are spelled slightly differently (e.g., "Gasa 4x4" vs "Gasas 4x4", "Advil" vs "Advil 200mg").
-2. "CATEGORY": The item's category logically mismatches its name (e.g., "Syringe 5ml" in "Office Supplies"). Valid categories: ${INVENTORY_CATEGORIES.join(', ')}.
-3. "LOGIC": Nonsensical stock values (e.g., minStock is greater than maxStock) or highly improbable unit/stock combinations (e.g., 5000 "Boxes" when it likely means "Each").
-4. "MISSING_DATA": Critical medical items (medicines, lab reagents, perishables) that are missing an expiryDate or batchNumber.
+  const systemPrompt = `You are an elite Medical Inventory AI Auditor. Your job is to strictly analyze a JSON array of medical and clinic inventory items and find ALL anomalies, errors, and optimizations. Leave no stone unturned.
+Analyze strictly for these 5 types of anomalies:
 
-Return ONLY a JSON array of anomalies. If none, return [].
+1. "DUPLICATE": Items that represent the exact same physical product (same active ingredient, dosage, or tool) but are spelled differently, have different casing, or use synonyms (e.g., "Gasa 4x4" vs "Gasas 4x4", "Ibuprofen 200mg" vs "Advil 200mg", "Alcohol Prep Pads" vs "Alcohol Swabs"). You MUST catch slight variations.
+2. "CATEGORY": The item's category logically mismatches its name or medical use. (e.g., "Syringe 5ml" in "Office Supplies", "Amoxicillin" in "Cleaning", "Bandages" in "Uncategorized"). Valid categories are: ${INVENTORY_CATEGORIES.join(', ')}. If an item fits better in a specific category, flag it!
+3. "NOMENCLATURE": The name is unprofessional, messy, or lacks vital details. Suggest a standardized, clean medical name (e.g., "tylenol pills" -> "Tylenol (Acetaminophen) 500mg - Tablets").
+4. "LOGIC": Mathematical or unit errors. (e.g., minStock > maxStock, stock is 5000 but unit is "boxes" which is highly improbable, or averageCost is $0.00 for an expensive machine).
+5. "MISSING_DATA": Critical medical items (medicines, vaccines, lab reagents, sterile tools) that are MISSING an \`expiryDate\` or \`batchNumber\`. This is a severe compliance risk.
+
+Return ONLY a valid JSON array of anomalies. If everything is perfect, return [].
 Format for each anomaly:
 {
-  "type": "DUPLICATE" | "CATEGORY" | "LOGIC" | "MISSING_DATA",
-  "itemIds": ["id1", "id2"], // Include all affected item IDs
-  "reason": "Clear explanation of why this is an anomaly",
-  "suggestion": "What the user should do to fix it",
-  "suggestedUpdates": { "category": "Medical Supplies" }, // ONLY include fields that need changing, if applicable
-  "targetItemId": "id1" // ONLY for DUPLICATE: the ID of the item to keep as the primary
+  "type": "DUPLICATE" | "CATEGORY" | "NOMENCLATURE" | "LOGIC" | "MISSING_DATA",
+  "itemIds": ["id1", "id2"], // Include all affected item IDs. If single item error, just ["id1"]
+  "reason": "Detailed explanation of the error and why it matters medically or logistically.",
+  "suggestion": "Exact action the user should take.",
+  "suggestedUpdates": { "category": "Medical Supplies", "name": "Standardized Name" }, // Provide the exact JSON patch to fix it, if applicable.
+  "targetItemId": "id1" // ONLY for DUPLICATE: the ID of the item to KEEP as the primary master record.
 }`;
 
   // We only send necessary fields to save tokens

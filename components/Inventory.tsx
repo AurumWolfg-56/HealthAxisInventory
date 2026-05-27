@@ -885,6 +885,7 @@ const Inventory: React.FC<InventoryProps> = ({ items, user, hasPermission, onAdd
         onClose={() => setShowAIAuditor(false)} 
         items={items} 
         onUpdateItem={onUpdateItem} 
+        onEditItem={onEditItem}
         t={t} 
       />
 

@@ -7,12 +7,13 @@ interface InventoryAIAuditorProps {
   onClose: () => void;
   items: InventoryItem[];
   onUpdateItem: (id: string, updates: Partial<InventoryItem>) => void;
+  onEditItem: (item: InventoryItem) => void;
   t: (key: string) => string;
 }
 
 const BATCH_SIZE = 50;
 
-const InventoryAIAuditor: React.FC<InventoryAIAuditorProps> = ({ isOpen, onClose, items, onUpdateItem, t }) => {
+const InventoryAIAuditor: React.FC<InventoryAIAuditorProps> = ({ isOpen, onClose, items, onUpdateItem, onEditItem, t }) => {
   const [isAuditing, setIsAuditing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [anomalies, setAnomalies] = useState<InventoryAnomaly[]>([]);
@@ -71,6 +72,7 @@ const InventoryAIAuditor: React.FC<InventoryAIAuditorProps> = ({ isOpen, onClose
     switch (type) {
       case 'DUPLICATE': return 'fa-clone text-blue-500';
       case 'CATEGORY': return 'fa-tags text-purple-500';
+      case 'NOMENCLATURE': return 'fa-spell-check text-indigo-500';
       case 'LOGIC': return 'fa-calculator text-amber-500';
       case 'MISSING_DATA': return 'fa-triangle-exclamation text-red-500';
       default: return 'fa-bolt text-medical-500';
@@ -81,6 +83,7 @@ const InventoryAIAuditor: React.FC<InventoryAIAuditorProps> = ({ isOpen, onClose
     switch (type) {
       case 'DUPLICATE': return 'Duplicate Items';
       case 'CATEGORY': return 'Miscategorized';
+      case 'NOMENCLATURE': return 'Naming Standard';
       case 'LOGIC': return 'Logic Error';
       case 'MISSING_DATA': return 'Missing Data';
       default: return 'Anomaly';
@@ -203,14 +206,30 @@ const InventoryAIAuditor: React.FC<InventoryAIAuditorProps> = ({ isOpen, onClose
                         {anomaly.suggestedUpdates && (
                           <button 
                             onClick={() => handleApply(anomaly, idx)}
-                            className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
+                            className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
                           >
                             <i className="fa-solid fa-check"></i> Apply Fix
                           </button>
                         )}
                         <button 
+                          onClick={() => {
+                            // Find the primary item to edit
+                            const itemToEditId = anomaly.targetItemId || anomaly.itemIds[0];
+                            const itemToEdit = items.find(i => i.id === itemToEditId);
+                            if (itemToEdit) {
+                              onClose(); // Close auditor to show edit modal
+                              onEditItem(itemToEdit);
+                              // Mark as resolved in background so it's gone when they come back
+                              handleDismiss(idx);
+                            }
+                          }}
+                          className="w-full py-2 bg-medical-50 dark:bg-medical-900/20 text-medical-600 dark:text-medical-400 hover:bg-medical-100 dark:hover:bg-medical-900/40 rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
+                        >
+                          <i className="fa-solid fa-pen-to-square"></i> Edit Manually
+                        </button>
+                        <button 
                           onClick={() => handleDismiss(idx)}
-                          className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-bold transition-all active:scale-95"
+                          className="w-full py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-bold transition-all active:scale-95 text-sm"
                         >
                           Ignore
                         </button>
