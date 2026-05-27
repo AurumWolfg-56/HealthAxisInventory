@@ -237,7 +237,8 @@ serve(async (req) => {
     for (const shift of (shifts || [])) {
       const dtStamp = new Date(shift.updated_at || shift.created_at || new Date()).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
       const dateNoDash = shift.date.replace(/-/g, '')
-      const startTimeNoColon = shift.start_time.replace(/:/g, '') + '00'
+      // Ensure exact 6 digit HHMMSS format. PostgreSQL time type returns HH:MM:SS.
+      const startTimeNoColon = shift.start_time.replace(/:/g, '').padEnd(6, '0').substring(0, 6)
       
       const [startHour, startMin] = shift.start_time.split(':').map(Number)
       const [endHour, endMin] = shift.end_time.split(':').map(Number)
@@ -253,7 +254,7 @@ serve(async (req) => {
         endDateNoDash = `${yyyy}${mm}${dd}`
       }
       
-      const endTimeNoColon = shift.end_time.replace(/:/g, '') + '00'
+      const endTimeNoColon = shift.end_time.replace(/:/g, '').padEnd(6, '0').substring(0, 6)
       const summary = `Work Shift (${shift.start_time} - ${shift.end_time})`
       const description = shift.notes ? `Notes: ${shift.notes}` : 'Scheduled work shift.'
       
