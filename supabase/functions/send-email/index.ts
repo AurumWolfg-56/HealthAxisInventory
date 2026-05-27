@@ -271,7 +271,7 @@ serve(async (req: Request) => {
         const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
         const cleanUrl = supabaseUrl.replace('https://', '');
         const feedUrl = `https://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}`;
-        const appleUrl = `https://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}&platform=apple`;
+        const appleUrl = `https://www.norvexiscore.com/apple-bridge.html?user_id=${data.userId}&domain=${cleanUrl}`;
 
         subject = `[Norvexis] Workforce Schedule Calendar Subscription`;
         html = `
@@ -317,7 +317,7 @@ serve(async (req: Request) => {
          const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
          const cleanUrl = supabaseUrl.replace('https://', '');
          const feedUrl = `https://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}`;
-         const appleUrl = `https://${cleanUrl}/functions/v1/calendar-feed?user_id=${data.userId}&platform=apple`;
+         const appleUrl = `https://www.norvexiscore.com/apple-bridge.html?user_id=${data.userId}&domain=${cleanUrl}`;
 
          subject = `[Norvexis] Workforce Schedule Summary - ${data.monthName}`;
          
