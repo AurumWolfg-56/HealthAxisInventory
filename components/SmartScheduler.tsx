@@ -142,7 +142,7 @@ export const SmartScheduler: React.FC<SmartSchedulerProps> = ({ users, currentUs
     const [publishSuccessStates, setPublishSuccessStates] = useState<Record<string, 'success' | 'error' | null>>({});
 
     const syncUsers = useMemo(() => {
-        return users.filter(u => u.role !== 'MANAGER' && u.role !== 'OWNER');
+        return users;
     }, [users]);
 
     const userPeriodStats = useMemo(() => {
