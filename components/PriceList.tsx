@@ -453,10 +453,12 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {featuredPrices.map((item, idx) => {
                             const color = cardColors[idx % cardColors.length];
+                            const isSelected = selectedItems.some(p => p.id === item.id);
                             return (
                                 <div
                                     key={`featured-${item.id}`}
-                                    className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${color.bg} p-5 shadow-xl ${color.shadow} hover:scale-[1.03] hover:shadow-2xl transition-all duration-300 cursor-default group`}
+                                    onClick={() => toggleSelection(item)}
+                                    className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${color.bg} p-5 shadow-xl ${color.shadow} hover:scale-[1.03] hover:shadow-2xl transition-all duration-300 cursor-pointer group ${isSelected ? 'ring-4 ring-white dark:ring-emerald-400 transform scale-[1.02]' : ''}`}
                                 >
                                     {/* Decorative circles */}
                                     <div className={`absolute -top-6 -right-6 w-24 h-24 rounded-full ${color.light} blur-sm group-hover:scale-150 transition-transform duration-500`}></div>
@@ -476,11 +478,20 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                                         </button>
                                     )}
 
+                                    {/* Selection Overlay Indicator */}
+                                    {isSelected && (
+                                        <div className="absolute top-3 left-3 w-8 h-8 flex items-center justify-center rounded-full bg-white text-emerald-500 shadow-md z-20 animate-scale-in">
+                                            <i className="fa-solid fa-check text-lg"></i>
+                                        </div>
+                                    )}
+
                                     <div className="relative z-10">
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="flex-1 min-w-0 pr-8">
-                                                <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest mb-1 truncate">{item.category}</p>
-                                                <h3 className="text-white font-bold text-sm leading-tight line-clamp-2">{item.serviceName}</h3>
+                                                <div className={`text-white/70 text-[10px] font-bold uppercase tracking-widest mb-1 truncate ${isSelected ? 'pl-10' : ''} transition-all`}>
+                                                    {item.category}
+                                                </div>
+                                                <h3 className={`text-white font-bold text-sm leading-tight line-clamp-2 ${isSelected ? 'pl-10' : ''} transition-all`}>{item.serviceName}</h3>
                                             </div>
                                             <div className="flex-shrink-0 text-right">
                                                 <div className="text-white font-bold text-2xl tabular-nums leading-none">
