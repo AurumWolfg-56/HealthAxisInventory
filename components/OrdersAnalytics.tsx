@@ -99,32 +99,37 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
             margin: [10, 10, 10, 10], // top, left, bottom, right
             filename: `NervexisCore_Orders_Report_${new Date().toISOString().split('T')[0]}.pdf`,
             image: { type: 'jpeg', quality: 1.0 },
-            html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1000, scrollX: 0, scrollY: 0 },
+            html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1000 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         };
 
-        // Temporarily show the report to capture it
         if (element) {
-            const originalPosition = element.style.position;
-            const originalTop = element.style.top;
-            const originalLeft = element.style.left;
-            const originalZIndex = element.style.zIndex;
+            // Create a pristine wrapper at the document root to avoid any layout/scroll interference
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'absolute';
+            wrapper.style.top = '0';
+            wrapper.style.left = '0';
+            wrapper.style.width = '210mm';
+            wrapper.style.zIndex = '9999';
+            wrapper.style.backgroundColor = 'white';
 
-            element.style.display = 'flex';
-            element.style.position = 'fixed';
-            element.style.top = '0';
-            element.style.left = '0';
-            element.style.zIndex = '9999';
-            element.style.backgroundColor = 'white';
+            // Clone the element so we don't break React's virtual DOM
+            const clone = element.cloneNode(true) as HTMLElement;
+            clone.style.display = 'flex';
+            clone.removeAttribute('id'); // Prevent duplicate IDs
+            
+            wrapper.appendChild(clone);
+            document.body.appendChild(wrapper);
 
-            await (window as any).html2pdf().set(opt).from(element).save();
-
-            element.style.display = 'none'; // Hide again
-            element.style.position = originalPosition;
-            element.style.top = originalTop;
-            element.style.left = originalLeft;
-            element.style.zIndex = originalZIndex;
+            try {
+                // Yield to browser to ensure the DOM is painted
+                await new Promise(resolve => setTimeout(resolve, 50));
+                await (window as any).html2pdf().set(opt).from(clone).save();
+            } finally {
+                // Cleanup
+                document.body.removeChild(wrapper);
+            }
         }
     };
 
