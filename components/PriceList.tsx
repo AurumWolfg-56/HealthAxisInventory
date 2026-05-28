@@ -854,15 +854,19 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
             )}
             {/* Floating FAB to open Calculator if there are items */}
             {selectedItems.length > 0 && !isCartOpen && (
-                <button
-                    onClick={() => setIsCartOpen(true)}
-                    className="fixed bottom-6 right-6 h-16 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-black text-lg shadow-2xl flex items-center gap-3 animate-fade-in-up hover:scale-105 active:scale-95 transition-transform z-40"
-                >
-                    <i className="fa-solid fa-calculator"></i>
-                    Review Quote ({selectedItems.length})
-                    <span className="opacity-60 font-medium">|</span>
-                    ${cartTotal.toFixed(2)}
-                </button>
+                <div className="fixed top-24 left-0 right-0 pointer-events-none flex justify-center z-50 animate-fade-in-down">
+                    <button
+                        onClick={() => setIsCartOpen(true)}
+                        className="pointer-events-auto h-14 px-6 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 text-slate-900 dark:text-white rounded-full font-bold text-sm shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center gap-3 hover:scale-105 active:scale-95 transition-all"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-md">
+                            <i className="fa-solid fa-calculator text-xs"></i>
+                        </div>
+                        <span>Review Quote ({selectedItems.length})</span>
+                        <span className="w-px h-4 bg-slate-300 dark:bg-slate-700"></span>
+                        <span className="font-black text-emerald-600 dark:text-emerald-400">${cartTotal.toFixed(2)}</span>
+                    </button>
+                </div>
             )}
 
             {/* Service Calculator Floating Panel */}
