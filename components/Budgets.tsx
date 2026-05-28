@@ -3,6 +3,8 @@ import { useAppData } from "../contexts/AppDataContext";
 import { useInventory } from "../contexts/InventoryContext";
 import { Budget, Order, User } from "../types";
 import { BudgetService } from "../services/BudgetService";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   BarChart,
   Bar,
@@ -114,6 +116,8 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
     "cards" | "chart" | "trends" | "history"
   >("cards");
   const [showOnlyAtRisk, setShowOnlyAtRisk] = useState(false);
+  const [startDateFilter, setStartDateFilter] = useState('');
+  const [endDateFilter, setEndDateFilter] = useState('');
 
   const exportRef = useRef<HTMLDivElement>(null);
 
@@ -279,7 +283,18 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
   // Budget Stats — match by VENDOR
   // ──────────────────────────────────────────────────────────────
   const budgetStats = useMemo(() => {
-    return budgets.map((budget) => {
+    const filterStart = startDateFilter ? parseLocalDate(startDateFilter).getTime() : 0;
+    const filterEnd = endDateFilter ? parseLocalDate(endDateFilter).getTime() : Infinity;
+
+    return budgets
+      .filter((budget) => {
+        const [sY, sM, sD] = budget.startDate.split("-").map(Number);
+        const [eY, eM, eD] = budget.endDate.split("-").map(Number);
+        const budgetStart = new Date(sY, sM - 1, sD, 0, 0, 0, 0).getTime();
+        const budgetEnd = new Date(eY, eM - 1, eD, 23, 59, 59, 999).getTime();
+        return budgetEnd >= filterStart && budgetStart <= filterEnd;
+      })
+      .map((budget) => {
       const [sY, sM, sD] = budget.startDate.split("-").map(Number);
       const [eY, eM, eD] = budget.endDate.split("-").map(Number);
 
@@ -354,7 +369,7 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
         vendors,
       };
     });
-  }, [budgets, orders]);
+  }, [budgets, orders, startDateFilter, endDateFilter]);
 
   const totalBudgeted = budgetStats.reduce((sum, b) => sum + b.amount, 0);
   const totalSpent = budgetStats.reduce((sum, b) => sum + b.spent, 0);
@@ -466,24 +481,75 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
   // ──────────────────────────────────────────────────────────────
   // Export to PDF
   // ──────────────────────────────────────────────────────────────
-  const handleExportPDF = async () => {
-    const el = exportRef.current;
-    if (!el) return;
-    // @ts-ignore
-    const html2pdf =
-      (
-        await import("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js")
-      ).default || window.html2pdf;
-    html2pdf()
-      .set({
-        margin: 0.5,
-        filename: `Budget_Report_${new Date().toISOString().split("T")[0]}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
-      })
-      .from(el)
-      .save();
+  const handleExportPDF = () => {
+    const doc = new jsPDF('landscape');
+    const primaryColor: [number, number, number] = [16, 185, 129]; // emerald-500
+    const textColor: [number, number, number] = [30, 41, 59]; // slate-800
+    const pageWidth = doc.internal.pageSize.width;
+    
+    // 1. Header
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 0, pageWidth, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.text('Budget Control Report', 14, 25);
+    
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, pageWidth - 14, 20, { align: 'right' });
+    
+    // Period Subtitle
+    const formatSelectedDate = (dateStr: string) => {
+        const [year, month, day] = dateStr.split('-');
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    };
+    const startStr = startDateFilter ? formatSelectedDate(startDateFilter) : 'Beginning';
+    const endStr = endDateFilter ? formatSelectedDate(endDateFilter) : 'Present';
+    let dateRange = `${startStr} - ${endStr}`;
+    if (!startDateFilter && !endDateFilter) dateRange = "All Time";
+    
+    doc.text(`Period: ${dateRange}`, pageWidth - 14, 30, { align: 'right' });
+
+    // 2. Summary Metrics
+    let currentY = 50;
+    doc.setTextColor(...textColor);
+    doc.setFontSize(12);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Summary Overview', 14, currentY);
+    
+    currentY += 10;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Allocated: $${fmt(totalBudgeted)}`, 14, currentY);
+    doc.text(`Total Spent: $${fmt(totalSpent)}`, pageWidth / 3, currentY);
+    const rem = Math.max(0, totalBudgeted - totalSpent);
+    doc.text(`Remaining: $${fmt(rem)}`, (pageWidth / 3) * 2, currentY);
+    
+    currentY += 15;
+    
+    // 3. Budgets Table
+    const tableData = budgetStats.map(b => {
+        return [
+            b.vendors.join(', ') || b.category,
+            `${b.startDate} to ${b.endDate}`,
+            `$${fmt(b.amount)}`,
+            `$${fmt(b.spent)}`,
+            `$${fmt(Math.max(0, b.amount - b.spent))}`,
+            `${b.truePercentUsed.toFixed(1)}% Used (${b.status.label})`
+        ];
+    });
+
+    autoTable(doc, {
+        startY: currentY,
+        head: [['Vendor(s)', 'Period', 'Limit', 'Spent', 'Remaining', 'Status']],
+        body: tableData,
+        headStyles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 14, right: 14 },
+        styles: { fontSize: 9 }
+    });
+
+    doc.save(`Budget_Report_${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
   // ═══════════════════════════════════════════════════════════════
@@ -561,6 +627,47 @@ const Budgets: React.FC<BudgetsProps> = ({ user, t }) => {
           </button>
         </div>
       </header>
+
+      {/* ─── Global Date Filters ─── */}
+      <div className="glass-panel p-2.5 rounded-2xl flex flex-col md:flex-row gap-2.5 items-center mb-6 border-white/50 dark:border-slate-800/80">
+        <div className="flex-1 relative group w-full md:w-auto">
+            <i className="fa-solid fa-calendar-day absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm group-focus-within:text-medical-500 transition-colors z-10 pointer-events-none"></i>
+            <input
+                type={startDateFilter ? 'date' : 'text'}
+                value={startDateFilter}
+                placeholder={t('filter_start_date')}
+                onFocus={(e) => (e.target.type = 'date')}
+                onBlur={(e) => {
+                    if (!e.target.value) e.target.type = 'text';
+                }}
+                onChange={(e) => setStartDateFilter(e.target.value)}
+                className="w-full h-11 pl-10 pr-4 bg-slate-50/50 dark:bg-slate-900/50 border-none rounded-xl font-medium text-sm text-slate-700 dark:text-slate-200 focus:ring-4 ring-medical-500/10 transition-all outline-none placeholder:text-slate-400"
+            />
+        </div>
+        <div className="flex-1 relative group w-full md:w-auto">
+            <i className="fa-solid fa-calendar-check absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm group-focus-within:text-medical-500 transition-colors z-10 pointer-events-none"></i>
+            <input
+                type={endDateFilter ? 'date' : 'text'}
+                value={endDateFilter}
+                placeholder={t('filter_end_date')}
+                onFocus={(e) => (e.target.type = 'date')}
+                onBlur={(e) => {
+                    if (!e.target.value) e.target.type = 'text';
+                }}
+                onChange={(e) => setEndDateFilter(e.target.value)}
+                className="w-full h-11 pl-10 pr-4 bg-slate-50/50 dark:bg-slate-900/50 border-none rounded-xl font-medium text-sm text-slate-700 dark:text-slate-200 focus:ring-4 ring-medical-500/10 transition-all outline-none placeholder:text-slate-400"
+            />
+        </div>
+        {(startDateFilter || endDateFilter) && (
+            <button
+                onClick={() => { setStartDateFilter(''); setEndDateFilter(''); }}
+                className="h-11 w-full md:w-auto px-5 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-500 font-bold text-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-red-500/20"
+            >
+                <i className="fa-solid fa-xmark text-base"></i>
+                {t('btn_clear_filters')}
+            </button>
+        )}
+      </div>
 
       {/* ─── Summary Cards ─── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
