@@ -1,7 +1,10 @@
 
 import React, { useState, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { PriceItem, User, Permission } from '../types';
 import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 interface PriceListProps {
     prices: PriceItem[];
@@ -226,69 +229,52 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
     const cartTotal = useMemo(() => selectedItems.reduce((sum, p) => sum + p.price, 0), [selectedItems]);
 
     const handlePrintQuote = () => {
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-        
-        const html = `
-            <html>
-                <head>
-                    <title>Service Estimate</title>
-                    <style>
-                        body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #111; }
-                        .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
-                        h1 { margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 1px; }
-                        .subtitle { color: #666; font-size: 14px; margin-top: 5px; }
-                        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-                        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
-                        th { background: #f8f9fa; font-weight: bold; text-transform: uppercase; font-size: 12px; color: #666; }
-                        .qty { width: 60px; text-align: center; }
-                        .price { width: 100px; text-align: right; }
-                        .total-row { font-weight: bold; font-size: 18px; }
-                        .total-row td { border-top: 2px solid #333; border-bottom: none; }
-                        .footer { margin-top: 50px; font-size: 12px; color: #888; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>Service Estimate</h1>
-                        <div class="subtitle">Estimated costs for requested services</div>
-                        <div style="margin-top: 10px; font-size: 12px;">Date: ${new Date().toLocaleDateString()}</div>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Service</th>
-                                <th class="price">Price</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${selectedItems.map(c => `
-                                <tr>
-                                    <td>
-                                        <strong>${c.serviceName}</strong>
-                                        ${c.code ? `<br/><span style="font-size:11px;color:#666">Code: ${c.code}</span>` : ''}
-                                    </td>
-                                    <td class="price">$${c.price.toFixed(2)}</td>
-                                </tr>
-                            `).join('')}
-                            <tr class="total-row">
-                                <td align="right">Estimated Total:</td>
-                                <td class="price">$${cartTotal.toFixed(2)}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div class="footer">
-                        This is an estimate only. Actual costs may vary depending on medical necessity or insurance adjustments.<br/>
-                        Thank you for choosing our clinic.
-                    </div>
-                    <script>
-                        window.onload = () => { window.print(); window.close(); }
-                    </script>
-                </body>
-            </html>
-        `;
-        printWindow.document.write(html);
-        printWindow.document.close();
+        try {
+            const doc = new jsPDF();
+            
+            // Header
+            doc.setFontSize(22);
+            doc.setTextColor(17, 24, 39); // slate-900
+            doc.text('Service Estimate', 14, 25);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(107, 114, 128); // slate-500
+            doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 33);
+            doc.text('Estimated costs for requested services', 14, 38);
+            
+            // Table
+            const tableBody: any[] = selectedItems.map(item => [
+                item.serviceName,
+                item.category,
+                `$${item.price.toFixed(2)}`
+            ]);
+            
+            tableBody.push([{ content: 'Estimated Total:', colSpan: 2, styles: { halign: 'right', fontStyle: 'bold' } }, `$${cartTotal.toFixed(2)}`]);
+            
+            (doc as any).autoTable({
+                startY: 45,
+                head: [['Service', 'Category', 'Price']],
+                body: tableBody,
+                theme: 'striped',
+                headStyles: { fillColor: [16, 185, 129] }, // emerald-500
+                styles: { fontSize: 10, cellPadding: 6 },
+                columnStyles: {
+                    2: { halign: 'right', fontStyle: 'bold' }
+                }
+            });
+            
+            // Footer
+            const finalY = (doc as any).lastAutoTable.finalY + 15;
+            doc.setFontSize(9);
+            doc.setTextColor(156, 163, 175); // slate-400
+            doc.text('This is an estimate only. Actual costs may vary depending on medical necessity or insurance adjustments.', 14, finalY);
+            doc.text('Thank you for choosing our clinic.', 14, finalY + 5);
+            
+            doc.save(`service-estimate-${new Date().toISOString().split('T')[0]}.pdf`);
+        } catch (error) {
+            console.error('Failed to generate PDF:', error);
+            alert('Failed to generate PDF. Please try again.');
+        }
     };
 
     return (
@@ -702,7 +688,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
             </div>
 
             {/* Add/Edit Modal */}
-            {isModalOpen && (
+            {isModalOpen && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 animate-fade-in">
                     <div
                         className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-slate-800 animate-scale-in"
@@ -850,11 +836,12 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
             {/* Floating FAB to open Calculator if there are items */}
-            {selectedItems.length > 0 && !isCartOpen && (
-                <div className="fixed top-24 left-0 right-0 pointer-events-none flex justify-center z-50 animate-fade-in-down">
+            {selectedItems.length > 0 && !isCartOpen && createPortal(
+                <div className="fixed top-24 left-0 right-0 pointer-events-none flex justify-center z-[9999] animate-fade-in-down">
                     <button
                         onClick={() => setIsCartOpen(true)}
                         className="pointer-events-auto h-14 px-6 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 text-slate-900 dark:text-white rounded-full font-bold text-sm shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center gap-3 hover:scale-105 active:scale-95 transition-all"
@@ -866,11 +853,12 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                         <span className="w-px h-4 bg-slate-300 dark:bg-slate-700"></span>
                         <span className="font-black text-emerald-600 dark:text-emerald-400">${cartTotal.toFixed(2)}</span>
                     </button>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* Service Calculator Floating Panel */}
-            {isCartOpen && (
+            {isCartOpen && createPortal(
                 <>
                     {/* Backdrop */}
                     <div 
@@ -880,8 +868,8 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                     
                     {/* Floating Panel */}
                     <div 
-                        className="fixed bottom-24 right-6 w-[calc(100vw-3rem)] sm:w-[420px] max-h-[75vh] bg-white dark:bg-slate-900 shadow-2xl rounded-[2.5rem] flex flex-col z-[101] overflow-hidden border border-slate-200/50 dark:border-slate-800 animate-scale-in"
-                        style={{ transformOrigin: 'bottom right' }}
+                        className="fixed top-40 sm:top-24 right-6 sm:right-1/2 sm:translate-x-1/2 w-[calc(100vw-3rem)] sm:w-[420px] max-h-[75vh] bg-white dark:bg-slate-900 shadow-2xl rounded-[2.5rem] flex flex-col z-[101] overflow-hidden border border-slate-200/50 dark:border-slate-800 animate-scale-in"
+                        style={{ transformOrigin: 'top center' }}
                         onClick={e => e.stopPropagation()} 
                     >
                         <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
@@ -954,7 +942,8 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                             </div>
                         </div>
                     </div>
-                </>
+                </>,
+                document.body
             )}
         </>
     );
