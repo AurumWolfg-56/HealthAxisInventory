@@ -3,8 +3,8 @@ import React, { useState, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { PriceItem, User, Permission } from '../types';
 import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface PriceListProps {
     prices: PriceItem[];
@@ -251,7 +251,7 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
             
             tableBody.push([{ content: 'Estimated Total:', colSpan: 2, styles: { halign: 'right', fontStyle: 'bold' } }, `$${cartTotal.toFixed(2)}`]);
             
-            (doc as any).autoTable({
+            autoTable(doc, {
                 startY: 45,
                 head: [['Service', 'Category', 'Price']],
                 body: tableBody,
