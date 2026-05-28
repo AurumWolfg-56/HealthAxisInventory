@@ -5,6 +5,8 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell, LineChart, Line, AreaChart, Area
 } from 'recharts';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface OrdersAnalyticsProps {
     orders: Order[];
@@ -84,53 +86,127 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
     }, [orders, inventory]);
 
     // --- PDF Generation ---
-    const generatePDF = async () => {
-        // Dynamic import of html2pdf from CDN
-        if (!(window as any).html2pdf) {
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-            script.onload = () => generatePDF(); // Retry after load
-            document.head.appendChild(script);
-            return;
+    const generatePDF = () => {
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        // Brand Colors
+        const primaryColor: [number, number, number] = [15, 118, 110]; // Teal 700
+        const secondaryColor: [number, number, number] = [100, 116, 139]; // Slate 500
+
+        // 1. Header
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(15, 23, 42); // Slate 900
+        doc.text('Orders Analytics Report', 14, 22);
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...primaryColor);
+        doc.text('IMMEDIATE CARE PLUS', 14, 30);
+
+        // Date Info (Top Right)
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...secondaryColor);
+        const dateStr = `DATE GENERATED: ${new Date().toLocaleDateString()}`;
+        const periodStr = `PERIOD: ${metrics.dateRange}`;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        doc.text(dateStr, pageWidth - 14, 22, { align: 'right' });
+        doc.text(periodStr, pageWidth - 14, 28, { align: 'right' });
+
+        // Line separator
+        doc.setDrawColor(226, 232, 240); // Slate 200
+        doc.setLineWidth(0.5);
+        doc.line(14, 35, pageWidth - 14, 35);
+
+        // 2. Executive Summary
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...secondaryColor);
+        doc.text('EXECUTIVE SUMMARY', 14, 45);
+
+        // Metrics Row
+        const yMetrics = 55;
+        doc.setFontSize(9);
+        doc.text('Total Spend', 14, yMetrics);
+        doc.text('Total Orders', 64, yMetrics);
+        doc.text('Avg Order Value', 114, yMetrics);
+        doc.text('Items Received', 164, yMetrics);
+
+        doc.setFontSize(14);
+        doc.setTextColor(15, 23, 42);
+        doc.text(`$${metrics.totalSpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, yMetrics + 7);
+        doc.text(`${metrics.totalOrders}`, 64, yMetrics + 7);
+        doc.text(`$${metrics.averageOrderValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 114, yMetrics + 7);
+        doc.text(`${metrics.totalItemsOrdered}`, 164, yMetrics + 7);
+
+        // 3. Top Vendors Table
+        let currentY = yMetrics + 20;
+
+        autoTable(doc, {
+            startY: currentY,
+            head: [['Vendor', 'Total Spend']],
+            body: metrics.vendorData.map(v => [v.name, `$${v.value.toLocaleString()}`]),
+            headStyles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            margin: { left: 14, right: pageWidth / 2 + 5 },
+            styles: { fontSize: 9 }
+        });
+
+        // 4. Monthly Trend Table
+        autoTable(doc, {
+            startY: currentY,
+            head: [['Month', 'Total Spend']],
+            body: metrics.trendData.slice(0, 12).map(t => [t.date, `$${t.value.toLocaleString()}`]),
+            headStyles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            margin: { left: pageWidth / 2 + 5, right: 14 },
+            styles: { fontSize: 9 }
+        });
+
+        // Advance Y below both tables
+        currentY = Math.max((doc as any).lastAutoTable.finalY, currentY) + 15;
+
+        // 5. Recent High-Value Orders
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...secondaryColor);
+        doc.text('RECENT HIGH-VALUE ORDERS', 14, currentY);
+
+        autoTable(doc, {
+            startY: currentY + 5,
+            head: [['Date', 'PO Number', 'Vendor', 'Status', 'Amount']],
+            body: orders.sort((a, b) => b.grandTotal - a.grandTotal).slice(0, 10).map(order => [
+                order.orderDate,
+                order.poNumber,
+                order.vendor,
+                order.status.toUpperCase(),
+                `$${order.grandTotal.toLocaleString()}`
+            ]),
+            headStyles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            styles: { fontSize: 9 }
+        });
+
+        // Footer
+        const pageCount = (doc.internal as any).getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(148, 163, 184); // Slate 400
+            doc.text(
+                `Confidential Property of Immediate Care Plus - Page ${i} of ${pageCount}`,
+                pageWidth / 2,
+                doc.internal.pageSize.getHeight() - 10,
+                { align: 'center' }
+            );
         }
 
-        const element = document.getElementById('professional-report');
-        const opt = {
-            margin: [10, 10, 10, 10], // top, left, bottom, right
-            filename: `NervexisCore_Orders_Report_${new Date().toISOString().split('T')[0]}.pdf`,
-            image: { type: 'jpeg', quality: 1.0 },
-            html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1000 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        };
-
-        if (element) {
-            // Create a pristine wrapper at the document root to avoid any layout/scroll interference
-            const wrapper = document.createElement('div');
-            wrapper.style.position = 'absolute';
-            wrapper.style.top = '0';
-            wrapper.style.left = '0';
-            wrapper.style.width = '210mm';
-            wrapper.style.zIndex = '9999';
-            wrapper.style.backgroundColor = 'white';
-
-            // Clone the element so we don't break React's virtual DOM
-            const clone = element.cloneNode(true) as HTMLElement;
-            clone.style.display = 'flex';
-            clone.removeAttribute('id'); // Prevent duplicate IDs
-            
-            wrapper.appendChild(clone);
-            document.body.appendChild(wrapper);
-
-            try {
-                // Yield to browser to ensure the DOM is painted
-                await new Promise(resolve => setTimeout(resolve, 50));
-                await (window as any).html2pdf().set(opt).from(clone).save();
-            } finally {
-                // Cleanup
-                document.body.removeChild(wrapper);
-            }
-        }
+        doc.save(`ImmediateCarePlus_Orders_${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
     return (
@@ -252,129 +328,6 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
                     </div>
                 </div>
 
-            </div>
-
-            {/* --- HIDDEN PROFESSIONAL REPORT TEMPLATE --- */}
-            <div id="professional-report" className="hidden bg-white text-slate-900 p-12 w-[210mm] min-h-[277mm] font-sans flex-col box-border origin-top-left">
-                {/* 1. Header Header */}
-                <div className="flex justify-between items-end border-b-2 border-medical-500 pb-5 mb-8">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-8 h-8 bg-medical-600 rounded-lg flex items-center justify-center text-white">
-                                <i className="fa-solid fa-chart-line"></i>
-                            </div>
-                            <h1 className="text-4xl font-serif font-black tracking-tight text-slate-900">Orders Analytics Report</h1>
-                        </div>
-                        <p className="text-sm text-medical-600 mt-1 uppercase tracking-widest font-bold">Immediate Care Plus</p>
-                    </div>
-                    <div className="text-right bg-slate-50 p-3 rounded-xl border border-slate-100 min-w-[200px]">
-                        <div className="text-xs text-slate-400 uppercase font-bold tracking-wider">Date Generated</div>
-                        <div className="text-lg font-black text-medical-700">{new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                        <div className="text-[10px] text-slate-500 font-bold mt-1 uppercase tracking-widest border-t border-slate-200 pt-1">Period: {metrics.dateRange}</div>
-                    </div>
-                </div>
-
-                {/* 2. Executive Summary Metrics */}
-                <div className="mb-10">
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-                        <i className="fa-solid fa-bolt text-medical-500"></i> Executive Summary
-                    </h2>
-                    <div className="grid grid-cols-4 gap-5">
-                        <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm border-l-4 border-l-emerald-500">
-                            <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Total Spend</div>
-                            <div className="text-2xl font-black text-slate-900">${metrics.totalSpend.toLocaleString()}</div>
-                        </div>
-                        <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm border-l-4 border-l-blue-500">
-                            <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Total Orders</div>
-                            <div className="text-2xl font-black text-slate-900">{metrics.totalOrders}</div>
-                        </div>
-                        <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm border-l-4 border-l-violet-500">
-                            <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Avg Order Value</div>
-                            <div className="text-2xl font-black text-slate-900">${metrics.averageOrderValue.toLocaleString()}</div>
-                        </div>
-                        <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm border-l-4 border-l-orange-500">
-                            <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Items Received</div>
-                            <div className="text-2xl font-black text-slate-900">{metrics.totalItemsOrdered}</div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 3. Detailed Breakdown Tables */}
-                <div className="grid grid-cols-2 gap-12 mb-10">
-                    {/* Top Vendors Table */}
-                    <div>
-                        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-2 mb-4">Top Vendors by Spend</h2>
-                        <table className="w-full text-sm text-left">
-                            <thead>
-                                <tr>
-                                    <th className="py-3 px-2 font-black text-slate-700 bg-slate-50 rounded-l-lg">Vendor</th>
-                                    <th className="py-3 px-2 font-black text-slate-700 bg-slate-50 text-right rounded-r-lg">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {metrics.vendorData.map((v, i) => (
-                                    <tr key={i} className="border-b border-slate-50">
-                                        <td className="py-3 px-2 text-slate-600 font-medium">{v.name}</td>
-                                        <td className="py-3 px-2 text-slate-900 font-bold text-right">${v.value.toLocaleString()}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Monthly Trend Table */}
-                    <div>
-                        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-2 mb-4">Monthly Spending History</h2>
-                        <table className="w-full text-sm text-left">
-                            <thead>
-                                <tr>
-                                    <th className="py-3 px-2 font-black text-slate-700 bg-slate-50 rounded-l-lg">Month</th>
-                                    <th className="py-3 px-2 font-black text-slate-700 bg-slate-50 text-right rounded-r-lg">Total Spend</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {metrics.trendData.slice(0, 12).map((t, i) => (
-                                    <tr key={i} className="border-b border-slate-50">
-                                        <td className="py-3 px-2 text-slate-600 font-medium">{t.date}</td>
-                                        <td className="py-3 px-2 text-slate-900 font-bold text-right">${t.value.toLocaleString()}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* 4. Recent Orders Snapshot */}
-                <div className="mb-8">
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-2 mb-4">Recent High-Value Orders</h2>
-                    <table className="w-full text-sm text-left">
-                        <thead className="bg-slate-50">
-                            <tr>
-                                <th className="p-3 font-black text-slate-700 rounded-l-lg">Date</th>
-                                <th className="p-3 font-black text-slate-700">PO Number</th>
-                                <th className="p-3 font-black text-slate-700">Vendor</th>
-                                <th className="p-3 font-black text-slate-700">Status</th>
-                                <th className="p-3 font-black text-slate-700 text-right rounded-r-lg">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {orders.sort((a, b) => b.grandTotal - a.grandTotal).slice(0, 5).map((order) => (
-                                <tr key={order.id} className="border-b border-slate-50">
-                                    <td className="p-3 text-slate-500 font-medium">{order.orderDate}</td>
-                                    <td className="p-3 font-mono text-slate-900 font-bold">{order.poNumber}</td>
-                                    <td className="p-3 text-slate-700">{order.vendor}</td>
-                                    <td className="p-3"><span className="px-2 py-1 rounded-md bg-slate-100 text-[10px] uppercase tracking-wider font-bold text-slate-600">{order.status}</span></td>
-                                    <td className="p-3 text-slate-900 font-black text-right">${order.grandTotal.toLocaleString()}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Footer */}
-                <div className="text-center text-xs font-medium text-slate-400 pt-6 border-t border-slate-100 mt-auto">
-                    <p>Confidential Property of Immediate Care Plus.</p>
-                </div>
             </div>
         </div>
     );
