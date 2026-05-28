@@ -292,7 +292,8 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
     };
 
     return (
-        <div className="space-y-10 animate-fade-in-up">
+        <>
+            <div className="space-y-10 animate-fade-in-up">
             <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".csv,.xlsx,.xls" />
 
             {/* Header with Stats */}
@@ -697,6 +698,9 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                 )}
             </div>
 
+            {/* End of content */}
+            </div>
+
             {/* Add/Edit Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 animate-fade-in">
@@ -861,31 +865,39 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                 </button>
             )}
 
-            {/* Service Calculator Drawer */}
+            {/* Service Calculator Floating Panel */}
             {isCartOpen && (
-                <div 
-                    className="fixed inset-0 z-[10000] bg-transparent"
-                    onClick={() => setIsCartOpen(false)} // Close when clicking outside
-                >
+                <>
+                    {/* Backdrop */}
                     <div 
-                        className="absolute right-0 top-0 bottom-0 w-full sm:w-[400px] bg-white dark:bg-slate-900 shadow-[-10px_0_40px_rgba(0,0,0,0.1)] dark:shadow-[-10px_0_40px_rgba(0,0,0,0.3)] flex flex-col animate-slide-in-right border-l border-slate-200 dark:border-slate-800"
-                        onClick={e => e.stopPropagation()} // Prevent click-through
+                        className="fixed inset-0 z-[100] bg-slate-900/20 backdrop-blur-sm animate-fade-in"
+                        onClick={() => setIsCartOpen(false)}
+                    />
+                    
+                    {/* Floating Panel */}
+                    <div 
+                        className="fixed bottom-24 right-6 w-[calc(100vw-3rem)] sm:w-[420px] max-h-[75vh] bg-white dark:bg-slate-900 shadow-2xl rounded-[2.5rem] flex flex-col z-[101] overflow-hidden border border-slate-200/50 dark:border-slate-800 animate-scale-in"
+                        style={{ transformOrigin: 'bottom right' }}
+                        onClick={e => e.stopPropagation()} 
                     >
-                        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shadow-sm">
-                                    <i className="fa-solid fa-calculator"></i>
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                                    <i className="fa-solid fa-calculator text-xl"></i>
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Service Calculator</h3>
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">Service Quote</h3>
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{selectedItems.length} items</p>
+                                </div>
                             </div>
-                            <button onClick={() => setIsCartOpen(false)} className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">
-                                <i className="fa-solid fa-xmark"></i>
+                            <button onClick={() => setIsCartOpen(false)} className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white shadow-sm flex items-center justify-center transition-colors">
+                                <i className="fa-solid fa-xmark text-lg"></i>
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-slate-50/50 dark:bg-slate-900/50">
                             {selectedItems.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                                <div className="h-full flex flex-col items-center justify-center text-slate-400 py-10">
                                     <i className="fa-solid fa-basket-shopping text-4xl mb-4 opacity-50"></i>
                                     <p className="font-bold">No services selected</p>
                                     <p className="text-sm mt-1">Tap services in the list to select them.</p>
@@ -912,32 +924,35 @@ const PriceList: React.FC<PriceListProps> = ({ prices, user, hasPermission, onAd
                             )}
                         </div>
 
-                        <div className="p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
-                            <div className="flex items-end justify-between mb-4">
+                        <div className="p-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 z-10 relative">
+                            {/* Decorative shadow */}
+                            <div className="absolute -top-6 left-0 right-0 h-6 bg-gradient-to-t from-white dark:from-slate-900 to-transparent pointer-events-none"></div>
+                            
+                            <div className="flex items-end justify-between mb-5">
                                 <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Total Estimate</span>
-                                <span className="text-3xl font-black text-slate-900 dark:text-white">${cartTotal.toFixed(2)}</span>
+                                <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">${cartTotal.toFixed(2)}</span>
                             </div>
                             <div className="flex gap-3">
                                 <button 
                                     onClick={() => setSelectedItems([])} 
                                     disabled={selectedItems.length === 0}
-                                    className="h-14 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors flex-shrink-0"
+                                    className="h-14 px-6 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors flex-shrink-0"
                                 >
                                     Clear
                                 </button>
                                 <button 
                                     onClick={handlePrintQuote}
                                     disabled={selectedItems.length === 0}
-                                    className="flex-1 h-14 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                    className="flex-1 h-14 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black shadow-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
-                                    <i className="fa-solid fa-print"></i> Generate Estimate
+                                    <i className="fa-solid fa-print"></i> PDF
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
+                </>
             )}
-        </div>
+        </>
     );
 };
 
