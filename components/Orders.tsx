@@ -648,6 +648,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, inventory, user, hasPermission,
                         orders={filteredOrders}
                         inventory={inventory}
                         t={t}
+                        startDate={startDate}
+                        endDate={endDate}
                     />
                 )
             }

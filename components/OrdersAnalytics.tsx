@@ -12,11 +12,13 @@ interface OrdersAnalyticsProps {
     orders: Order[];
     inventory: InventoryItem[];
     t: (key: string) => string;
+    startDate?: string;
+    endDate?: string;
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
-const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t }) => {
+const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t, startDate, endDate }) => {
 
     // --- Metrics Calculations ---
     const metrics = useMemo(() => {
@@ -66,7 +68,16 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
 
         // Date Range
         let dateRange = 'All Time';
-        if (orders.length > 0) {
+        if (startDate || endDate) {
+            // Split the date string manually to avoid timezone issues when converting 'YYYY-MM-DD'
+            const formatSelectedDate = (dateStr: string) => {
+                const [year, month, day] = dateStr.split('-');
+                return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+            };
+            const startStr = startDate ? formatSelectedDate(startDate) : 'Beginning';
+            const endStr = endDate ? formatSelectedDate(endDate) : 'Present';
+            dateRange = `${startStr} - ${endStr}`;
+        } else if (orders.length > 0) {
             const sortedDates = [...orders].sort((a, b) => new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime());
             const firstDate = new Date(sortedDates[0].orderDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
             const lastDate = new Date(sortedDates[sortedDates.length - 1].orderDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -83,7 +94,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
             trendData,
             dateRange
         };
-    }, [orders, inventory]);
+    }, [orders, inventory, startDate, endDate]);
 
     // --- PDF Generation ---
     const generatePDF = () => {
@@ -156,6 +167,7 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
             margin: { left: 14, right: pageWidth / 2 + 5 },
             styles: { fontSize: 9 }
         });
+        const finalYTable1 = (doc as any).lastAutoTable.finalY;
 
         // 4. Monthly Trend Table
         autoTable(doc, {
@@ -167,9 +179,10 @@ const OrdersAnalytics: React.FC<OrdersAnalyticsProps> = ({ orders, inventory, t 
             margin: { left: pageWidth / 2 + 5, right: 14 },
             styles: { fontSize: 9 }
         });
+        const finalYTable2 = (doc as any).lastAutoTable.finalY;
 
         // Advance Y below both tables
-        currentY = Math.max((doc as any).lastAutoTable.finalY, currentY) + 15;
+        currentY = Math.max(finalYTable1, finalYTable2) + 15;
 
         // 5. Recent High-Value Orders
         doc.setFontSize(12);
