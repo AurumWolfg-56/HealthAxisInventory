@@ -59,8 +59,8 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ currentRange, onRange
     };
 
     return (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="flex overflow-x-auto hide-scrollbar bg-slate-100 dark:bg-slate-800 p-1 rounded-xl max-w-full">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full">
+            <div className="flex overflow-x-auto hide-scrollbar bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full md:w-auto">
                 {['all', 'month', 'quarter', 'semester', 'year', 'custom'].map((r) => (
                     <button
                         key={r}

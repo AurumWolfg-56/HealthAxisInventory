@@ -271,12 +271,14 @@ const DashboardAnalytics: React.FC<DashboardAnalyticsProps> = ({
         <div className="space-y-6 animate-fade-in-up">
 
             {/* Header & Filter */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Analytics Overview</h2>
                     <p className="text-slate-500 text-sm">Real-time performance metrics</p>
                 </div>
-                <DateRangeFilter currentRange={dateFilter.range} onRangeChange={setDateFilter} />
+                <div className="w-full md:w-auto overflow-hidden">
+                    <DateRangeFilter currentRange={dateFilter.range} onRangeChange={setDateFilter} />
+                </div>
             </div>
 
             {/* KPI Cards */}
