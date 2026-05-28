@@ -26,5 +26,6 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "exclude": ["supabase", "scripts", "server", "server.js", "test*.ts", "test*.js", "test*.cjs", "generateRules.js", "generateRules.mjs", "node_modules"]
 }

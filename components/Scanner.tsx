@@ -56,13 +56,15 @@ const Scanner: React.FC<ScannerProps> = ({ onScanComplete, onCancel }) => {
 
       {/* Camera Viewport */}
       <div className="flex-1 relative bg-black overflow-hidden flex items-center justify-center">
-        <Webcam
-          audio={false}
-          ref={webcamRef}
-          screenshotFormat="image/jpeg"
-          videoConstraints={{ facingMode }}
-          className="absolute w-full h-full object-cover opacity-80"
-        />
+                    <Webcam
+                        {...({
+                            audio: false,
+                            ref: webcamRef,
+                            screenshotFormat: "image/jpeg",
+                            videoConstraints: { facingMode },
+                            className: "absolute w-full h-full object-cover opacity-80"
+                        } as any)}
+                    />
         
         {/* Grid Overlay */}
         <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ 

@@ -70,8 +70,8 @@ export const AISmartCartModal: React.FC<AISmartCartModalProps> = ({
 
     const handleConfirm = () => {
         const finalItems = Object.entries(selectedItems)
-            .filter(([_, data]) => data.selected && data.quantity > 0)
-            .map(([itemId, data]) => ({ itemId, quantity: data.quantity }));
+            .filter(([_, data]: [string, any]) => data.selected && data.quantity > 0)
+            .map(([itemId, data]: [string, any]) => ({ itemId, quantity: data.quantity }));
             
         onCommitCart(finalItems);
         onClose();
@@ -204,7 +204,7 @@ export const AISmartCartModal: React.FC<AISmartCartModalProps> = ({
                 <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 flex items-center justify-between">
                     <div className="text-sm font-medium text-slate-500">
                         Ítems seleccionados: <strong className="text-slate-900 dark:text-white">
-                            {Object.values(selectedItems).filter(s => s.selected).length}
+                            {Object.values(selectedItems).filter((s: any) => s.selected).length}
                         </strong>
                     </div>
                     <div className="flex gap-3">
