@@ -129,7 +129,7 @@ const Constellation: React.FC = () => {
       </svg>
 
       {/* Real logo overlaid at center */}
-      <img src="/logo.png" alt="" className="nv-geo-logo" />
+      <img src="/logo_ready.png" alt="" className="nv-geo-logo" />
       {/* Slow rotating outer ring */}
       <div className="nv-orbit-ring" />
     </div>
@@ -240,7 +240,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
           <div className="nv-hero-inner">
             {/* Brand top-left */}
             <div className="nv-hero-top">
-              <img src="/logo.png" alt="" className="nv-htl" />
+              <img src="/logo_ready.png" alt="" className="nv-htl" />
               <div>
                 <div className="nv-hn">Norvexis <span>Core</span></div>
                 <div className="nv-hs">Clinical Operations Platform</div>
@@ -263,7 +263,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onPasswordSet, t, forcePasswordU
         <div className={`nv-form-side ${ready ? 'is-in' : ''}`}>
           <div className="nv-fc">
             <div className="nv-mb">
-              <img src="/logo.png" alt="Norvexis Core" className="nv-ml" />
+              <img src="/logo_ready.png" alt="Norvexis Core" className="nv-ml" />
               <h1 className="nv-mn">Norvexis <span>Core</span></h1>
             </div>
 

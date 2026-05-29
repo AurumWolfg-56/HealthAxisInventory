@@ -306,7 +306,7 @@ export const PlatformAdmin: React.FC<{ readOnly?: boolean }> = ({ readOnly = fal
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Logo URL</label>
                                     <input type="text" value={editingOrg.logo_url} onChange={e => setEditingOrg({ ...editingOrg, logo_url: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-sm outline-none focus:border-medical-500 dark:text-white" placeholder="/logo.png" disabled={readOnly} />
+                                        className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold text-sm outline-none focus:border-medical-500 dark:text-white" placeholder="/logo_ready.png" disabled={readOnly} />
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Primary Color</label>

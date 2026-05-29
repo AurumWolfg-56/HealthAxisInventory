@@ -13,7 +13,7 @@ const Logo: React.FC<LogoProps> = ({ className = "w-12 h-12", classNameText = "t
       {/* Norvexis Logo */}
       <div className={`relative ${className} transition-transform duration-500 ease-out group-hover:scale-110 flex items-center justify-center`}>
         <img
-          src="/logo.png"
+          src="/logo_ready.png"
           alt="Norvexis Core"
           className="w-full h-full object-contain"
         />

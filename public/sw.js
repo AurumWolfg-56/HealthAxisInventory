@@ -1,7 +1,7 @@
 // IMPORTANT: Increment this version whenever you deploy new code to force cache refresh
 const CACHE_VERSION = 'norvexis-v14-dailyclose-fix';
 const ASSETS_TO_CACHE = [
-    '/logo.png',
+    '/logo_ready.png',
     '/manifest.json'
     // NOTE: Intentionally NOT caching index.html or JS files - they need to be fresh
 ];

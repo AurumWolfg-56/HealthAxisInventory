@@ -233,7 +233,9 @@ export const Layout: React.FC<LayoutProps> = ({
                     <div className="p-6 pb-2">
                         <div className="flex justify-between items-center mb-3">
                             <div className="flex items-center gap-2">
-                                <img src="/logo.png" alt="Norvexis Core" className="w-6 h-6 sm:w-7 sm:h-7 object-contain" />
+                                <div className="w-8 h-8 rounded-xl bg-white/20 dark:bg-black/20 flex items-center justify-center backdrop-blur-md shadow-inner">
+                                    <img src="/logo_ready.png" alt="Norvexis Core" className="w-6 h-6 sm:w-7 sm:h-7 object-contain" />
+                                </div>
                                 <span className="text-sm sm:text-base font-black text-slate-400 dark:text-slate-500 tracking-tight">Norvexis <span className="text-medical-500">Core</span></span>
                             </div>
                             <button onClick={() => setIsMobileMenuOpen(false)} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center active:scale-95 transition-transform">
@@ -266,7 +268,9 @@ export const Layout: React.FC<LayoutProps> = ({
                 <div className="h-[96%] m-3 rounded-[2rem] bg-white/70 dark:bg-[#0c1511]/80 backdrop-blur-2xl border border-white/40 dark:border-medical-500/8 shadow-glass flex flex-col relative overflow-hidden ring-1 ring-white/50 dark:ring-medical-500/5">
                     <div className="p-6 pb-3 z-10">
                         <div className="flex items-center gap-2 mb-4">
-                            <img src="/logo.png" alt="Norvexis Core" className="w-7 h-7 object-contain" />
+                            <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-md sm:hidden flex-shrink-0">
+                                <img src="/logo_ready.png" alt="Norvexis Core" className="w-7 h-7 object-contain" />
+                            </div>
                             <span className="text-sm font-black text-slate-500 dark:text-slate-400 tracking-tight">Norvexis <span className="text-medical-500">Core</span></span>
                         </div>
                         <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800">
