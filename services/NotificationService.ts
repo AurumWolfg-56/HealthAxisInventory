@@ -1,4 +1,5 @@
 import { InventoryItem } from '../types';
+import { supabase } from '../src/lib/supabase';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -16,9 +17,15 @@ export const NotificationService = {
             if (wasAboveMin && isNowBelowMin) {
                 console.log(`[NotificationService] Stock for ${newItem.name} dropped below min. Sending alert...`);
                 
+                const { data: { session } } = await supabase.auth.getSession();
+                const token = session?.access_token;
+
                 const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
                     body: JSON.stringify({
                         type: 'inventory_alert',
                         data: {
@@ -34,6 +41,47 @@ export const NotificationService = {
                     console.error('[NotificationService] Failed to send inventory alert:', await response.text());
                 } else {
                     console.log('[NotificationService] Inventory alert sent successfully.');
+                }
+            }
+
+            // Also check for instant expiry alert
+            if (newItem.expiryDate && newItem.stock > 0) {
+                const now = new Date().getTime();
+                const thirtyDaysFromNow = now + (30 * 24 * 60 * 60 * 1000);
+                const expiryTime = new Date(newItem.expiryDate).getTime();
+                
+                // If it is expiring within 30 days and the old item was NOT (or didn't exist)
+                const oldExpiryTime = oldItem?.expiryDate ? new Date(oldItem.expiryDate).getTime() : Infinity;
+                const wasExpiring = oldItem ? (oldExpiryTime <= thirtyDaysFromNow && oldItem.stock > 0) : false;
+                const isExpiring = expiryTime <= thirtyDaysFromNow;
+
+                if (!wasExpiring && isExpiring) {
+                    console.log(`[NotificationService] Item ${newItem.name} is expiring soon. Sending instant alert...`);
+                    
+                    const { data: { session } } = await supabase.auth.getSession();
+                    const token = session?.access_token;
+
+                    const expiryResponse = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}` 
+                        },
+                        body: JSON.stringify({
+                            type: 'expiry_alert',
+                            data: {
+                                items: [{
+                                    name: newItem.name,
+                                    expiry_date: newItem.expiryDate,
+                                    stock: newItem.stock
+                                }]
+                            }
+                        })
+                    });
+
+                    if (!expiryResponse.ok) {
+                        console.error('[NotificationService] Failed to send instant expiry alert:', await expiryResponse.text());
+                    }
                 }
             }
         } catch (e) {
@@ -64,9 +112,15 @@ export const NotificationService = {
 
             console.log(`[NotificationService] Found ${expiringItems.length} items expiring soon. Sending batch alert...`);
 
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
             const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
                 body: JSON.stringify({
                     type: 'expiry_alert',
                     data: {
