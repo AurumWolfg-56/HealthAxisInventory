@@ -45,6 +45,7 @@ import { medicalCodes as INITIAL_CODES } from './data/medicalCodes';
 import { billingRules as INITIAL_BILLING_RULES } from './data/billingRules';
 import { supabase } from './src/lib/supabase';
 import { InventoryService } from './services/InventoryService';
+import { NotificationService } from './services/NotificationService';
 import { OrderService } from './services/OrderService';
 import { PriceService } from './services/PriceService';
 import { MedicalCodeService } from './services/MedicalCodeService';
@@ -461,6 +462,8 @@ const App: React.FC = () => {
                             setInventory(prev => [newItem, ...prev]);
                             addToast('Item added via AI Scanner', 'success');
 
+                            await NotificationService.checkAndSendLowStockAlert(undefined, newItem);
+
                             if (user?.id) {
                                 await InventoryService.logAction(user.id, 'ADDED', newItem.id, `AI Scanner added: ${newItem.name}`);
                                 addLog('ADDED', `AI Scanner added: ${newItem.name}`);
@@ -485,15 +488,24 @@ const App: React.FC = () => {
                 onSave={async (itemData) => {
                     try {
                         if (itemData.id) {
+                            const oldItem = inventory.find(i => i.id === itemData.id);
                             await InventoryService.updateItem(itemData.id, itemData);
                             setInventory(prev => prev.map(i => i.id === itemData.id ? { ...i, ...itemData } : i as InventoryItem));
                             addToast('Item updated', 'success');
+                            
+                            if (oldItem) {
+                                await NotificationService.checkAndSendLowStockAlert(oldItem, { ...oldItem, ...itemData } as InventoryItem);
+                            }
+
                             if (user?.id) await InventoryService.logAction(user.id, 'UPDATED', itemData.id, `Updated ${itemData.name}`);
                         } else {
                             const newItem = await InventoryService.createItem(itemData);
                             if (newItem) {
                                 setInventory(prev => [newItem, ...prev]);
                                 addToast('Item added', 'success');
+
+                                await NotificationService.checkAndSendLowStockAlert(undefined, newItem);
+
                                 if (user?.id) await InventoryService.logAction(user.id, 'ADDED', newItem.id, `Added ${newItem.name}`);
                             } else {
                                 throw new Error("Failed to create item");
@@ -532,9 +544,16 @@ const App: React.FC = () => {
                             onEditItem={(i) => { setModalItem(i); setIsModalOpen(true); }}
                             onUpdateItem={async (id, updates) => {
                                 try {
+                                    const oldItem = inventory.find(i => i.id === id);
                                     await InventoryService.updateItem(id, updates);
                                     setInventory(prev => prev.map(inv => inv.id === id ? { ...inv, ...updates } : inv));
                                     addToast('Item updated successfully', 'success');
+
+                                    // Check and send low stock alert
+                                    if (oldItem) {
+                                        const newItemState = { ...oldItem, ...updates };
+                                        await NotificationService.checkAndSendLowStockAlert(oldItem, newItemState);
+                                    }
 
                                     // Optional: Log update
                                     if (user?.id) await InventoryService.logAction(user.id, 'UPDATED', id, `Updated item details`, updates);

@@ -6,6 +6,8 @@ import { DailyReportState, DailyReportAction, DailyReport } from '../types/daily
 import CalculatorModal from './CalculatorModal';
 import SmartDictationInput from '../src/components/dictation/SmartDictationInput';
 import { DailyReportService } from '../services/DailyReportService';
+import { InventoryService } from '../services/InventoryService';
+import { NotificationService } from '../services/NotificationService';
 import { formatDateForFilename, formatDate, formatDateTime } from '../utils/dateUtils';
 import { supabase } from '../src/lib/supabase';
 
@@ -506,6 +508,15 @@ const DailyCloseWizard: React.FC<DailyCloseWizardProps> = ({ user, usersDb, onCl
                         alert(`Error sending email: ${txt}`);
                     }
                 }
+            }
+
+            // --- EXPIRY ALERTS ---
+            // Trigger Expiration Report when Daily Close succeeds
+            try {
+                const currentInventory = await InventoryService.fetchAll();
+                await NotificationService.sendExpiryAlertBatch(currentInventory);
+            } catch (expiryErr) {
+                console.error('Failed to send expiry alert during Daily Close:', expiryErr);
             }
 
             // 4. Complete
