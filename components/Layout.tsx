@@ -126,6 +126,7 @@ export const Layout: React.FC<LayoutProps> = ({
             key: 'management', label: 'Management', icon: 'fa-chart-line',
             items: [
                 { route: AppRoute.INTELLIGENCE, icon: "fa-brain", label: "Intelligence", perm: 'intelligence.view', moduleFlag: 'mod_intelligence' as FeatureFlagKey },
+                { route: AppRoute.INBOX, icon: "fa-envelope-open-text", label: "Inbox AI", perm: 'admin.access' }, // Add Inbox AI
                 { route: AppRoute.REPORTS, icon: "fa-clipboard-list", label: t('nav_reports'), perm: 'reports.view', moduleFlag: 'mod_reports' as FeatureFlagKey },
                 { route: AppRoute.DAILY_HISTORY, icon: "fa-calendar-check", label: t('nav_daily'), perm: 'reports.create', moduleFlag: 'mod_daily_close' as FeatureFlagKey },
                 { route: AppRoute.PETTY_CASH, icon: "fa-vault", label: "Petty Cash", perm: 'finance.view', moduleFlag: 'mod_petty_cash' as FeatureFlagKey },

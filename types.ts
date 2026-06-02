@@ -251,6 +251,7 @@ export interface PettyCashTransaction {
 export enum AppRoute {
   LOGIN = 'LOGIN',
   DASHBOARD = 'DASHBOARD',
+  INBOX = 'INBOX', // New Inbox Triage Module
   INVENTORY = 'INVENTORY',
   ORDERS = 'ORDERS',
   PRICELIST = 'PRICELIST',
@@ -264,13 +265,13 @@ export enum AppRoute {
   BILLING_WIZARD = 'BILLING_WIZARD',
   MEDICAL_CODES = 'MEDICAL_CODES',
   PETTY_CASH = 'PETTY_CASH',
-  INTELLIGENCE = 'INTELLIGENCE', // New
-  VOICE_MEMOS = 'VOICE_MEMOS', // New
-  BUDGETS = 'BUDGETS', // New
-  PROTOCOLS = 'PROTOCOLS', // New
-  SCHEDULE = 'SCHEDULE', // New Smart Scheduler
-  PLATFORM = 'PLATFORM', // Norvexis Core Command Center
-  DICTATION_PROTOCOLS = 'DICTATION_PROTOCOLS' // New Dictation Protocols UI
+  INTELLIGENCE = 'INTELLIGENCE', 
+  VOICE_MEMOS = 'VOICE_MEMOS', 
+  BUDGETS = 'BUDGETS', 
+  PROTOCOLS = 'PROTOCOLS', 
+  SCHEDULE = 'SCHEDULE', 
+  PLATFORM = 'PLATFORM', 
+  DICTATION_PROTOCOLS = 'DICTATION_PROTOCOLS' 
 }
 
 export interface ChartDataPoint {

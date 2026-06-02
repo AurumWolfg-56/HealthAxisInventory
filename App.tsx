@@ -34,6 +34,7 @@ import DictationProtocols from './components/DictationProtocols';
 import { SmartScheduler } from './components/SmartScheduler';
 import { InventoryIntelligenceDashboard } from './components/InventoryIntelligence';
 import { InventoryIntelligenceVerification } from './components/InventoryIntelligenceVerification';
+import InboxTriage from './components/InboxTriage';
 import Login from './components/Login';
 import Toast from './components/Toast';
 import Logo from './components/Logo';
@@ -673,6 +674,9 @@ const App: React.FC = () => {
                         <div className="p-4">
                             <InventoryIntelligenceVerification />
                         </div>
+                    )}
+                    {currentRoute === AppRoute.INBOX && hasPermission('admin.access') && (
+                        <InboxTriage />
                     )}
                     {currentRoute === AppRoute.ORDERS && hasPermission('orders.view') && (
                         <Orders
