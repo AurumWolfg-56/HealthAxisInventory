@@ -105,6 +105,7 @@ const InboxTriage = () => {
 
   const handleMarkRead = async (email: Email) => {
     try {
+      setProcessing(true);
       const { data: { session } } = await supabase.auth.getSession();
       const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -120,11 +121,18 @@ const InboxTriage = () => {
         })
       });
 
-      await supabase.from('email_inbox').update({ status: 'archived' }).eq('id', email.id);
+      await supabase.from('email_inbox').update({ status: 'read' }).eq('id', email.id);
+      setSelectedEmail(null);
       await fetchEmails();
     } catch (e) {
       console.error(e);
+    } finally {
+      setProcessing(false);
     }
+  };
+
+  const handleKeepPending = () => {
+    setSelectedEmail(null);
   };
 
   const renderEmailCard = (email: Email, accentColor: string) => (
@@ -155,10 +163,10 @@ const InboxTriage = () => {
 
   const importantEmails = emails.filter(e => e.category === 'Importante' && e.status === 'pending_approval');
   const b2bEmails = emails.filter(e => e.category === 'B2B' && e.status === 'pending_approval');
-  const promoEmails = emails.filter(e => e.category === 'Promocional' && e.status !== 'replied');
+  const promoEmails = emails.filter(e => e.category === 'Promocional' && e.status !== 'replied' && e.status !== 'read' && e.status !== 'archived');
 
   return (
-    <div className="p-6 h-[calc(100vh-64px)] overflow-hidden flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-300">
+    <div className="p-6 h-full min-h-[calc(100vh-80px)] flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-300">
       <div className="flex justify-between items-end mb-8 px-2 animate-fade-in-up">
         <div>
           <h2 className="text-3xl font-extrabold text-slate-800 dark:text-white flex items-center gap-3 tracking-tight">
@@ -180,7 +188,7 @@ const InboxTriage = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 flex-1 min-h-[600px]">
         {/* Important Column */}
         <div className="flex flex-col bg-slate-100/50 dark:bg-slate-900/50 rounded-3xl p-5 border border-slate-200/60 dark:border-slate-800 animate-fade-in-up shadow-inner-light" style={{animationDelay: '100ms'}}>
           <div className="flex justify-between items-center mb-6 px-2">
@@ -249,9 +257,9 @@ const InboxTriage = () => {
                   <h4 className="font-medium text-slate-800 dark:text-slate-200 line-clamp-1 text-sm">{email.subject}</h4>
                   <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-1">{email.sender}</p>
                 </div>
-                {email.status !== 'archived' && (
-                  <button onClick={() => handleMarkRead(email)} className="shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 hover:bg-green-100 dark:hover:bg-green-500/20 hover:text-green-600 dark:hover:text-green-400 transition-colors" title="Mark as Read & Archive">
-                    <i className="fa-solid fa-check"></i>
+                {email.status !== 'read' && email.status !== 'archived' && (
+                  <button onClick={(e) => { e.stopPropagation(); handleMarkRead(email); }} className="shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 hover:bg-green-100 dark:hover:bg-green-500/20 hover:text-green-600 dark:hover:text-green-400 transition-colors" title="Mark as Read">
+                    <i className="fa-solid fa-check-double"></i>
                   </button>
                 )}
               </div>
@@ -329,17 +337,22 @@ const InboxTriage = () => {
                   placeholder="Draft your response here..."
                 />
                 
-                <div className="mt-8 flex justify-between items-center">
-                  <button onClick={() => handleMarkRead(selectedEmail)} className="px-5 py-3 rounded-xl text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2">
-                    <i className="fa-solid fa-box-archive"></i> Archive Only
-                  </button>
+                <div className="mt-8 flex justify-between items-center gap-3">
+                  <div className="flex gap-2">
+                    <button onClick={handleKeepPending} className="px-5 py-3 rounded-xl text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2">
+                      <i className="fa-regular fa-clock"></i> Keep Pending
+                    </button>
+                    <button onClick={() => handleMarkRead(selectedEmail)} disabled={processing} className="px-5 py-3 rounded-xl text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors flex items-center gap-2">
+                      <i className="fa-solid fa-check-double"></i> Mark as Read
+                    </button>
+                  </div>
                   <button 
                     onClick={handleApprove}
                     disabled={processing || !draftContent.trim()}
                     className="flex items-center gap-3 px-8 py-3.5 rounded-xl bg-medical-600 hover:bg-medical-500 text-white font-bold shadow-lg shadow-medical-500/30 hover:shadow-medical-500/50 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
                   >
                     <i className="fa-solid fa-paper-plane"></i>
-                    {processing ? 'Sending...' : 'Approve & Send'}
+                    {processing ? 'Processing...' : 'Send Response'}
                   </button>
                 </div>
               </div>
