@@ -1,8 +1,5 @@
 import { supabase } from '../src/lib/supabase';
-
-// URL for LocalAI instance
-const AI_URL = 'http://127.0.0.1:1234/v1/chat/completions';
-const MODEL = 'llama-3.2-3b-instruct'; // or whichever model the user has running
+import { jsonChat } from './LocalAIService';
 
 export interface EmailTriageResult {
   category: string;
@@ -84,32 +81,15 @@ Output ONLY valid JSON matching this structure:
 }
 `;
 
-    const response = await fetch(AI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: 'system', content: 'You are a helpful assistant that outputs only valid JSON.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.1,
-      })
-    });
-
-    if (!response.ok) {
-        throw new Error('LocalAI request failed');
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '{}';
-    
     try {
-       // Try to parse the JSON. Sometimes models wrap it in markdown.
-       const cleaned = content.replace(/^```json/m, '').replace(/```$/m, '').trim();
-       return JSON.parse(cleaned) as EmailTriageResult;
+      const result = await jsonChat<EmailTriageResult>(
+        'You are a helpful assistant that outputs only valid JSON.',
+        prompt,
+        { model: 'smart', maxTokens: 1024, temperature: 0.1 }
+      );
+      return result;
     } catch (e) {
-       console.error('Failed to parse AI response as JSON:', content);
+       console.error('Failed to process AI response:', e);
        return {
            category: 'Importante',
            ai_summary: 'Failed to process intelligently. Needs manual review.',
