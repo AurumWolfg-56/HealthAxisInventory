@@ -44,9 +44,31 @@ const InboxTriage = () => {
 
   const handleRunAI = async () => {
     setProcessing(true);
-    await EmailIntelligenceService.processPendingEmails();
-    await fetchEmails();
-    setProcessing(false);
+    
+    try {
+      // 1. Manually trigger the edge function to fetch latest unread emails from Gmail
+      const { data: { session } } = await supabase.auth.getSession();
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+      await fetch(`${SUPABASE_URL}/functions/v1/fetch-emails`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({})
+      });
+
+      // 2. Process all pending emails with Local AI
+      await EmailIntelligenceService.processPendingEmails();
+      
+      // 3. Refresh UI
+      await fetchEmails();
+    } catch (e) {
+      console.error('Error during manual scan:', e);
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleApprove = async () => {
