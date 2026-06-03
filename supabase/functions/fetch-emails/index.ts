@@ -44,7 +44,7 @@ serve(async (req: Request) => {
     const accessToken = tokenData.access_token;
 
     // 2. Fetch unread messages
-    const listResponse = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread+in:inbox', {
+    const listResponse = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread+in:inbox+newer_than:7d', {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
     const listData = await listResponse.json();
